@@ -10,7 +10,7 @@
     :align: center
 
 ===================================
-Spectral Energy Distribution Analyzer (SEDA) for Forward Modeling of Ultracool Objects
+SEDA: Spectral Energy Distribution Analyzer
 ===================================
 
 SEDA is an open-source Python package for comparisons between observed data and atmospheric models. It compares spectra and/or photometry to modern and widely used atmospheric models for brown dwarfs, giant exoplanets, and low-mass stars. The code uses a *Bayesian* framework to sample posteriors. Alternatively, the code minimizes chi-square to find the best model fit. 
