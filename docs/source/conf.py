@@ -2,12 +2,12 @@
 
 # -- Project information
 
-project = 'Lumache'
-copyright = '2021, Graziella'
-author = 'Graziella'
+project = 'SEDA'
+copyright = '2024, Genaro Suarez'
+author = 'Genaro Suarez'
 
-release = '0.1'
-version = '0.1.0'
+release = '1.0'
+#version = '0.1.0'
 
 # -- General configuration
 
@@ -30,6 +30,10 @@ templates_path = ['_templates']
 # -- Options for HTML output
 
 html_theme = 'sphinx_rtd_theme'
+#html_theme = 'bizstyle'
+#html_theme = 'classic'
 
 # -- Options for EPUB output
 epub_show_urls = 'footnote'
+
+html_logo = 'SEDA_logo_wb_nobg.png'
