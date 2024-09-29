@@ -36,4 +36,4 @@ html_theme = 'sphinx_rtd_theme'
 # -- Options for EPUB output
 epub_show_urls = 'footnote'
 
-html_logo = 'SEDA_logo_wb_nobg.png'
+html_logo = 'SEDA_logo_nobg.png'
