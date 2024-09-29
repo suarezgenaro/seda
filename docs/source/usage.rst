@@ -1,4 +1,4 @@
-Installation
+Installation and Dependencies
 =====
 
 .. _installation:
@@ -10,9 +10,6 @@ To use Lumache, first install it using pip:
 .. code-block:: console
 
    (.venv) $ pip install lumache
-
-Dependencies
-=====
 
 To retrieve a list of random ingredients,
 you can use the ``lumache.get_random_ingredients()`` function:
