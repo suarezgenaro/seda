@@ -1,3 +1,20 @@
+.. raw:: html
+
+   <div align="center">
+   <img src="SEDA_logo.png" width="300px">
+   </img>
+   </div>
+
+
+=======
+dynesty
+=======
+
+.. image:: SEDA_logo.png
+    :width: 300px
+    :align: center
+
+===================================
 SEDA: Spectral Energy Distribution Analyzer
 ===================================
 
