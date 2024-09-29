@@ -1,7 +1,15 @@
-API
-===
+The Code
+==============
 
-.. autosummary::
-   :toctree: generated
+Input Parameters
+----------
+.. module:: seda
 
-   lumache
+.. automodule:: seda.input_parameters
+    :members:
+
+
+#.. autosummary::
+#   :toctree: generated
+
+#   lumache
