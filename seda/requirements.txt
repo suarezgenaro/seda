@@ -1,0 +1,5 @@
+numpy 
+matplotlib
+corner
+# complete the list
+# and version
