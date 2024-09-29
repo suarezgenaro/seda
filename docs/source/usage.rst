@@ -1,9 +1,13 @@
 Installation and Dependencies
 =====
 
+Installation
+--------
+
 .. _installation:
 
-
+Dependencies
+--------
 
 To use Lumache, first install it using pip:
 
