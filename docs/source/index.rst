@@ -24,9 +24,9 @@ the package :ref:`installation`.
 
 
 .. toctree::
-   :maxdepth: 1
-   :hidden:
+   :maxdepth: 2
+   :caption: Contents
 
    Installation <installation>
-   Installation <user/installation>
+   Installation_user <user/installation>
    Github <https://github.com/suarezgenaro/seda>
