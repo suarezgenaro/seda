@@ -1,33 +1,25 @@
 .. raw:: html
 
-   <div align="center">
-   <img src="SEDA_logo.png" width="300px">
-   </img>
-   </div>
+   <br/>
 
-
-=======
-dynesty
-=======
-
+.. image:: SEDA_logo_wb.png
+    :width: 300px
+    :align: center
 .. image:: SEDA_logo.png
     :width: 300px
     :align: center
 
 ===================================
-SEDA: Spectral Energy Distribution Analyzer
+Spectral Energy Distribution Analyzer (SEDA) for Forward Modeling of Ultracool Objects
 ===================================
 
-SEDA is an open-source Python package for forward modeling of brown dwarfs, low-mass stars, and giant exoplanets.
+SEDA is an open-source Python package for comparisons between observed data and atmospheric models. It compares spectra and/or photometry to modern and widely used atmospheric models for brown dwarfs, giant exoplanets, and low-mass stars. The code uses a *Bayesian* framework to sample posteriors. Alternatively, the code minimizes chi-square to find the best model fit. 
 
-
-**Lumache** (/lu'make/) is a Python library for cooks and food lovers
-that creates recipes mixing random ingredients.
-It pulls data from the `Open Food Facts database <https://world.openfoodfacts.org/>`_
-and offers a *simple* and *intuitive* API.
+**The SEDA release paper is**
+`here <https:xxx>`__.
 
 Check out the :doc:`usage` section for further information, including
-how to :ref:`installation` the project.
+the package :ref:`installation`.
 
 .. note::
 
