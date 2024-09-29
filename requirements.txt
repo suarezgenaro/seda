@@ -1,6 +1,11 @@
 scipy
 numpy 
+xarray
+astropy
+pickle
+lmfit
+dynesty
+spectres
 matplotlib
 corner
-# complete the list
-# and version
+# dust_extinction
