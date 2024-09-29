@@ -1,10 +1,9 @@
-Usage
+Installation
 =====
 
 .. _installation:
 
-Installation
-------------
+
 
 To use Lumache, first install it using pip:
 
@@ -12,8 +11,8 @@ To use Lumache, first install it using pip:
 
    (.venv) $ pip install lumache
 
-Creating recipes
-----------------
+Dependencies
+=====
 
 To retrieve a list of random ingredients,
 you can use the ``lumache.get_random_ingredients()`` function:
