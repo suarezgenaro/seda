@@ -32,13 +32,19 @@ Contents
 
 .. Tutorials
 .. ---------
-
 .. toctree::
    :maxdepth: 2
    :caption: Tutorials
 
-   tutorials/bayesian_method.ipynb
-   tutorials/customize_plots.ipynb
+   tutorials/test.ipynb
+
+.. SEDA API
+.. ---------
+.. toctree::
+   :maxdepth: 2
+   :caption: Tutorials
+
+   user/api
 
 
 Contents_old
