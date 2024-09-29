@@ -1,0 +1,86 @@
+MODIFICATION HISTORY
+
+------------
+2024/05/18
+Genaro Suarez
+
+	Organized the code as a python package 
+	Used classes
+
+------------
+2024/06/18
+Genaro Suarez
+
+	Included Lacy & Burrows (2023) extended models
+
+------------
+2024/06/18  
+Genaro Suarez
+
+	Included Lacy & Burrows (2023) extended models
+
+------------
+2024/05/01  
+Genaro Suarez
+
+	Included Nested sampling by Dynesty to create posteriors
+
+------------
+2024/04/18  
+Genaro Suarez
+
+	Added an interpolator to generate spectra from Elf-Owl models for any combination of parameters within the grid
+
+------------
+2024/02/24  
+Genaro Suarez
+
+	Sonora Diamondback atmospheric models (Morley et al. 2024) are available
+
+------------
+2024/02/19  
+Genaro Suarez
+
+	Sonora Elf Owl atmospheric models (Mukherjee et al. 2024) are available
+
+------------
+2024/02/18  
+Genaro Suarez
+
+	Code split into multiple definitions
+
+------------
+2023/09/21  
+Genaro Suarez
+
+	Scaling factor can be fixed (useful when the distance and radius are known so the scaling could be derived)
+
+------------
+2023/08/31  
+Genaro Suarez
+
+	Lacy & Burrows (2023; LB23) models are available
+
+------------
+2023/03/15  
+Genaro Suarez
+
+	Sonora_Cholla models are available
+
+------------
+2023/03/09  
+Genaro Suarez
+
+	Option available to use together the three ATMO 2020 model grids 
+
+------------
+2023/03/06  
+Genaro Suarez
+
+	For multiple spectra, convolve wavelength regions between the spectra and out of the coverage
+
+------------
+2020/03/10  
+Genaro Suarez
+
+	First version of the code working to find the best fit from the grid spectra by minimizing chi square
