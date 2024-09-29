@@ -22,6 +22,14 @@ the package :ref:`installation`.
 
    This project is under active development.
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents
+
+   installation.rst
+   tutorials.rst
+   api.rst
+
 Contents
 --------
 .. toctree::
@@ -36,7 +44,7 @@ Contents
    :maxdepth: 2
    :caption: Tutorials
 
-   tutorials/test.ipynb
+   tutorials/test_SEDA_chi2.ipynb
 
 .. SEDA API
 .. ---------
