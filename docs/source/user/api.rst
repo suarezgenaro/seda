@@ -3,7 +3,8 @@ The Code
 
 Input Parameters
 ----------
-.. module:: seda
 
-.. automodule:: seda.input_parameters
+.. automodule:: seda.input
     :members:
+    :undoc-members:
+    :show-inheritance:
