@@ -24,6 +24,25 @@ the package :ref:`installation`.
 
 Contents
 --------
+.. toctree::
+   :maxdepth: 2
+   :caption: User Guide
+
+   user/installation
+
+.. Tutorials
+.. ---------
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Tutorials
+
+   tutorials/bayesian_method.ipynb
+   tutorials/customize_plots.ipynb
+
+
+Contents_old
+--------
 
 .. toctree::
 
