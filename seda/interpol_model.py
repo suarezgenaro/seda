@@ -1,7 +1,6 @@
 from scipy.interpolate import RegularGridInterpolator
 import numpy as np
 from .seda_utils import time_elapsed
-import numpy as np
 import time
 import os
 import xarray
