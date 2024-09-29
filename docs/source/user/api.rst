@@ -7,9 +7,3 @@ Input Parameters
 
 .. automodule:: seda.input_parameters
     :members:
-
-
-#.. autosummary::
-#   :toctree: generated
-
-#   lumache
