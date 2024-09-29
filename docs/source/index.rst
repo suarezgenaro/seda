@@ -22,43 +22,11 @@ the package :ref:`installation`.
 
    This project is under active development.
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents
-
-   installation.rst
-   tutorials.rst
-   api.rst
-
-Contents
---------
-.. toctree::
-   :maxdepth: 2
-   :caption: User Guide
-
-   user/installation
-
-.. Tutorials
-.. ---------
-.. toctree::
-   :maxdepth: 2
-   :caption: Tutorials
-
-   tutorials/test_SEDA_chi2.ipynb
-
-.. SEDA API
-.. ---------
-.. toctree::
-   :maxdepth: 2
-   :caption: Tutorials
-
-   user/api
-
-
-Contents_old
---------
 
 .. toctree::
+   :maxdepth: 1
+   :hidden:
 
-   usage
-   api
+   Installation <installation>
+   Installation <user/installation>
+   Github <https://github.com/suarezgenaro/seda>
