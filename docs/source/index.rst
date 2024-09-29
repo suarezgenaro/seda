@@ -1,5 +1,8 @@
-Welcome to Lumache's documentation!
+SEDA: Spectral Energy Distribution Analyzer
 ===================================
+
+SEDA is an open-source Python package for forward modeling of brown dwarfs, low-mass stars, and giant exoplanets.
+
 
 **Lumache** (/lu'make/) is a Python library for cooks and food lovers
 that creates recipes mixing random ingredients.
