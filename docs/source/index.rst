@@ -2,9 +2,6 @@
 
    <br/>
 
-.. image:: SEDA_logo_wb_nobg.png
-    :width: 300px
-    :align: center
 .. image:: SEDA_logo.png
     :width: 300px
     :align: center
