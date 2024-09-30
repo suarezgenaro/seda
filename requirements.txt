@@ -2,7 +2,7 @@ scipy
 numpy 
 xarray
 astropy
-# pickle
+pickle
 lmfit
 dynesty
 spectres
