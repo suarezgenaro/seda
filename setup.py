@@ -10,9 +10,9 @@ setup(name='seda',
                   'spectroscopy', 'photometry', 'atmospheres', 'astronomy', 'astrophysics'],
       author='Genaro Suarez',
       author_email='gsuarez2405@gmail.com',
-      url='https://github.com/rkiman/wdwarfdate',
-      #license='MIT',
+      url='https://github.com/suarezgenaro/seda',
+      license='MIT',
       packages=['seda'],
       install_requires=['numpy','astropy','matplotlib','scipy'], # complete the list
-#      zip_safe=False,
-#      include_package_data=True)
+      zip_safe=False,
+      include_package_data=True)
