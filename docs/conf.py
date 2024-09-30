@@ -4,7 +4,7 @@
 
 project = 'SEDA'
 copyright = '2024, Genaro Suarez'
-author = 'Genaro Suarez'
+author = 'Genaro Suárez'
 
 release = '1.0'
 #version = '1.0'
