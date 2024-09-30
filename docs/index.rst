@@ -15,8 +15,6 @@ SEDA is an open-source Python package for forward modeling analysis of brown dwa
 **The SEDA release paper is**
 `here <https:xxx>`__.
 
-TEST
-
 Check out the :doc:`usage` section for further information, including
 the package :ref:`installation` and :ref:`tutorials`.
 
