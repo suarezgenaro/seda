@@ -1,10 +1,10 @@
-astropy
-corner
-dynesty
-lmfit
-matplotlib
-numpy 
-scipy
-spectres
-xarray
+#astropy
+#corner
+#dynesty
+#lmfit
+#matplotlib
+#numpy 
+#scipy
+#spectres
+#xarray
 # dust_extinction
