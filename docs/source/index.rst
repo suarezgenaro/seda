@@ -27,7 +27,7 @@ the package :ref:`installation`.
    :maxdepth: 2
    :caption: Contents
 
-   Installation <user/installation.rst>
-   Tutorials <user/tutorials.rst>
+   Installation <installation.rst>
+   Tutorials <tutorials.rst>
    Github <https://github.com/suarezgenaro/seda>
-   API <user/api.rst>
+   API <api.rst>
