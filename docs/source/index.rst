@@ -31,11 +31,3 @@ the package :ref:`installation`.
    Tutorials <user/tutorials.rst>
    Github <https://github.com/suarezgenaro/seda>
    API <user/api.rst>
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Contentsss
-
-   user/installation.rst
-   user/tutorials.rst
-   user/api.rst
