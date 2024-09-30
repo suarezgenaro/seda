@@ -28,5 +28,6 @@ the package :ref:`installation`.
    :caption: Contents
 
    Installation <user/installation>
+   tutorials <user/tutorials>
    Github <https://github.com/suarezgenaro/seda>
    API <user/api>
