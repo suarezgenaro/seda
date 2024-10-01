@@ -28,3 +28,4 @@ Check out the content below for further information on how to install and use SE
    Installation <installation.rst>
    Github <https://github.com/suarezgenaro/seda>
    SEDA API <api.rst>
+   test_SEDA_chi2.ipynb
