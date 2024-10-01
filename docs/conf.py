@@ -3,7 +3,7 @@
 # -- Project information
 
 project = 'SEDA'
-copyright = '2024, Genaro Suarez'
+copyright = '2024, Genaro Suárez'
 author = 'Genaro Suárez'
 
 release = '1.0'
