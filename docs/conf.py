@@ -10,9 +10,15 @@ release = '1.0'
 #version = '1.0'
 
 # -- General configuration
-extensions = [
-    'nbsphinx'
-]
+extensions = ['sphinx_rtd_theme',
+              'sphinx.ext.autodoc',
+              'sphinx.ext.doctest',
+              'sphinx.ext.todo',
+              'sphinx.ext.mathjax',    
+              'sphinx.ext.napoleon',
+              'sphinx.ext.viewcode',
+              'nbsphinx',
+              ]
 
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
