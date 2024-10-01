@@ -4,9 +4,7 @@ The Code
 Input Parameters
 ----------------
 
-.. module:: seda
-
 TEST
 +++++++++++++++++
-.. automodule:: seda.input_parameters
+.. autoclass:: seda.input_parameters.InputData
     :members:
