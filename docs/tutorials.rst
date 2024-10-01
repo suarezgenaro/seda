@@ -5,9 +5,9 @@ Chi square comparison of model spectra to an observed spectrum
 --------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
-   tutorials/test_SEDA_chi2.ipynb
+   Tutorial 1  </tutorials/test_SEDA_chi2.ipynb>
 
 TEST
 --------
