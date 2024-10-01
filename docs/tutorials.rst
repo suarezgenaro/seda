@@ -7,4 +7,4 @@ Basics of Reflected Light
 .. toctree::
    :maxdepth: 1
 
-   test.ipynb
+   notebooks/test_SEDA_chi2.ipynb
