@@ -24,6 +24,7 @@ class InputData:
 		wavelength in um of the spectrum or set of spectra for the fits
 			CAVEAT. When providing more than one spectrum, verify that there is no overlap between spectra
 				Provide the multiple spectra as a list including the individual spectrum (e.g. wl_spectra = [], wl_spectra.append(spectrum_1), etc.).
+				The input list must have the spectra from shorter to longer wavelength coverage
 	'''
 
 	def __init__(self, 
