@@ -26,6 +26,5 @@ Check out the content below for further information on how to install and use SE
    :caption: Contents
 
    Installation <installation.rst>
-   Tutorials <tutorials.rst>
    Github <https://github.com/suarezgenaro/seda>
    SEDA API <api.rst>
