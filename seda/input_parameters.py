@@ -2,7 +2,6 @@ import numpy as np
 from sys import exit
 
 print('\n    SEDA package imported')
-print(  '            v1.0        \n')
 
 # Define input parameters to run SEDA
 
