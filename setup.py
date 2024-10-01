@@ -8,7 +8,7 @@ setup(name='seda',
       description='Spectral Energy Distribution Analyzer: fit atmospheric models to spectra and/or photometry',
       keywords = ['ultracool dwarfs', 'low mass stars', 'brown dwarfs', 'gas planets', \
                   'spectroscopy', 'photometry', 'atmospheres', 'astronomy', 'astrophysics'],
-      author='Genaro Suarez',
+      author='Genaro Suárez',
       author_email='gsuarez2405@gmail.com',
       url='https://github.com/suarezgenaro/seda',
       license='MIT',
