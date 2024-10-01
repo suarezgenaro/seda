@@ -4,12 +4,26 @@ from sys import exit
 print('\n    SEDA package imported')
 
 # Define input parameters to run SEDA
-
 #+++++++++++++++++++++++++++
 class InputData:
 	'''
 	Description:
 		Spectral Energy Distribution Analyzer (SEDA): compare observed data (photometry and/or spectra) 
+													  to atmospheric models to constrain fundamental parameters
+		(version 2024.05.01 by Genaro Suárez)
+	
+	Parameters
+	----------
+	fit_spectra : string, optional
+		'yes': (default) fit spectra
+		'no': do not fit spectra
+	fit_photometry : string, optional
+		'yes': fit photometry
+		'no': (default) do not fit photometry
+	wl_spectra : float array, optional (required when fit_spectra=='yes')
+		wavelength in um of the spectrum or set of spectra for the fits
+			CAVEAT. When providing more than one spectrum, verify that there is no overlap between spectra
+				Provide the multiple spectra as a list including the individual spectrum (e.g. wl_spectra = [], wl_spectra.append(spectrum_1), etc.).
 	'''
 
 	def __init__(self, 
