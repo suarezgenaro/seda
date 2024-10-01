@@ -1,7 +1,7 @@
 Tutorials
 =========
 
-Basics of Reflected Light
+Fit atmospheric models to an observed spectrum
 -------------------------
 
 .. toctree::
