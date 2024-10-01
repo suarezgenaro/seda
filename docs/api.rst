@@ -6,7 +6,7 @@ Input Parameters
 
 .. module:: seda
 
-Global functions:
+TEST
 +++++++++++++++++
 .. automodule:: seda.input_parameters
     :members:
