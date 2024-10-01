@@ -29,4 +29,4 @@ Check out the content below for further information on how to install and use SE
    Installation <installation.rst>
    Tutorials <tutorials.rst>
    Github <https://github.com/suarezgenaro/seda>
-   API <api.rst>
+   SEDA API <api.rst>
