@@ -2,7 +2,7 @@ Tutorials
 =========
 
 Fit atmospheric models to an observed spectrum
--------------------------
+----------------------------------------------
 
 .. toctree::
    :maxdepth: 1
