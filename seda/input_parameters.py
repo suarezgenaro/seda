@@ -54,20 +54,12 @@ class InputData:
 		target distance (in pc) used to derive a radius from the scaling factor
 	edistance : float, optional
 		distance error (in pc)
-#	posteriors: string
-#		'yes' (default) or 'no' calculate the posteriors (this is the most time-consuming step in the code)
-#	dynamic_sampling: string
-#		'no' or 'yes' (default) to consider 'static' or 'dynamic' nested sampling
 	'''
 
-	def __init__(self, #model, model_dir, Teff_range, logg_range, R_range=None, 
+	def __init__(self, 
 		fit_spectra=True, fit_photometry=False, 
 		wl_spectra=None, flux_spectra=None, eflux_spectra=None, 
-		mag_phot=None, emag_phot=None, filter_phot=None, #avoid_IR_excess='no', 
-		#chi2_wl_range=None, extinction_free_param='no', scaling_free_param='yes', 
-		#scaling=None, skip_convolution='no', posteriors='yes', dynamic_sampling='yes', 
-		#save_results='yes', 
-		#IR_excess_limit=3, model_wl_range=None, 
+		mag_phot=None, emag_phot=None, filter_phot=None,
 		R=100, lam_R=2, distance=None, edistance=None):	
 
 		'''
