@@ -8,9 +8,7 @@ print('\n    SEDA package imported')
 class InputData:
 	'''
 	Description:
-		Spectral Energy Distribution Analyzer (SEDA): compare observed data (photometry and/or spectra) 
-													  to atmospheric models to constrain fundamental parameters
-		(version 2024.05.01 by Genaro Suárez)
+		Read input parameters for SEDA
 	
 	Parameters
 	----------
