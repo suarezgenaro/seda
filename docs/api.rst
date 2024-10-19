@@ -4,7 +4,13 @@ The Code
 Input Parameters
 ----------------
 
-TEST
-+++++++++++++++++
+Input Data
+++++++++++
 .. autoclass:: seda.input_parameters.InputData
     :members:
+
+Model Options
++++++++++++++
+
+Chi2 Fit Options
+++++++++++++++++
