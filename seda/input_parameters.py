@@ -30,6 +30,7 @@ class InputData:
 		- eflux_spectra : float array, optional
 			Fluxes uncertainties in erg/cm^2/s/A of the input spectrum or spectra. 
 			Input multiple spectra as a list (equivalent to wl_spectra). 
+			https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract
 	'''
 #	fit_spectra : string, optional
 #		'yes': (default) fit spectra
