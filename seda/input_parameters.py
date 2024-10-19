@@ -14,11 +14,11 @@ class InputData:
 	Parameters:
 	-----------
 		fit_spectra : string, optional
-			* 'yes': (default) fit spectra
-			* 'no': do not fit spectra
+			- 'yes': (default) fit spectra
+			- 'no': do not fit spectra
 		fit_photometry : string, optional
-			* 'yes': fit photometry
-			* 'no': (default) do not fit photometry
+			- 'yes': fit photometry
+			- 'no': (default) do not fit photometry
 		wl_spectra : float array, optional (required when fit_spectra=='yes')
 			wavelength in um of the spectrum or set of spectra for the fits
 				CAVEAT. When providing more than one spectrum, verify that there is no overlap between the spectra
@@ -29,6 +29,7 @@ class InputData:
 				input list for multiple spectra (equivalent to wl_spectra)
 		eflux_spectra : float array, optional
 			- fluxes uncertainties in erg/cm^2/s/A of the input spectrum or spectra 
+				input list for multiple spectra (equivalent to wl_spectra)
 				input list for multiple spectra (equivalent to wl_spectra)
 	'''
 #	fit_spectra : string, optional
