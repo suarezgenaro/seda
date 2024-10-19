@@ -14,6 +14,10 @@ class InputData:
 	-----------
 		fit_spectra : string, optional
   			* 'yes': (default) fit spectra
+			* 'no': do not fit spectra
+		fit_photometry : string, optional
+			* 'yes': fit photometry
+			* 'no': (default) do not fit photometry
 	'''
 #	fit_spectra : string, optional
 #		'yes': (default) fit spectra
