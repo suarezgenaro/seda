@@ -12,6 +12,7 @@ class InputData:
 	
 	Parameters:
 		fit_spectra : string, optional
+  			'yes': (default) fit spectra
 	'''
 #	----------
 #	fit_spectra : string, optional
