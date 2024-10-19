@@ -30,7 +30,21 @@ class InputData:
 		- eflux_spectra : float array, optional
 			Fluxes uncertainties in erg/cm^2/s/A of the input spectrum or spectra. 
 			Input multiple spectra as a list (equivalent to wl_spectra). 
-			https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract
+		- mag_phot : float array, optional (required when ``fit_photometry=='yes'``)
+			magnitudes for the fit
+		- emag_phot : float array, optional (required when ``fit_photometry=='yes'``)
+			Magnitude uncertainties for the fit. Magnitudes with uncertainties equal to zero are excluded from the fit.
+		- filter_phot : float array, optional (required when ``fit_photometry=='yes'``)
+			filters associated to the input magnitudes following SVO filter IDs 
+			http://svo2.cab.inta-csic.es/theory/fps/
+		- R : float, optional
+			resolution at ``lam_R`` of input spectra (default R=100) to smooth model spectra.
+		- lam_R : float, optional
+			wavelength reference (default 2 um) for ``R``.
+		- distance : float, optional
+			target distance (in pc) used to derive radius from the scaling factor
+		- edistance : float, optional
+			distance error (in pc)
 	'''
 #	fit_spectra : string, optional
 #		'yes': (default) fit spectra
