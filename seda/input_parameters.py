@@ -45,57 +45,28 @@ class InputData:
 			target distance (in pc) used to derive radius from the scaling factor
 		- edistance : float, optional
 			distance error (in pc)
+
+	Example:
+	--------
+		>>> import seda
+		>>> 
+		>>> # input spectrum wl_input, flux_input, eflux_input
+		>>> wl_spectra = wl_input # in um
+		>>> flux_spectra = flux_input # in erg/cm^2/s/A
+		>>> eflux_spectra = eflux_input # in erg/cm^2/s/A
+		>>> R = 100 # input spectrum resolution
+		>>> lam_R = 2.0 # (um) wavelength reference for R
+		>>> 
+		>>> my_input_data = seda.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, 
+											eflux_spectra=eflux_spectra, R=R, lam_R=lam_R)
+			Input data loaded successfully
 	'''
-#	fit_spectra : string, optional
-#		'yes': (default) fit spectra
-#		'no': do not fit spectra
-#	fit_photometry : string, optional
-#		'yes': fit photometry
-#		'no': (default) do not fit photometry
-#	wl_spectra : float array, optional (required when fit_spectra=='yes')
-#		wavelength in um of the spectrum or set of spectra for the fits
-#			CAVEAT. When providing more than one spectrum, verify that there is no overlap between spectra
-#				Provide the multiple spectra as a list including the individual spectrum (e.g. wl_spectra = [], wl_spectra.append(spectrum_1), etc.).
-#				The input list must have the spectra from shorter to longer wavelength coverage
-#	flux_spectra : float array, optional
-#		fluxes in erg/cm^2/s/A of the input spectrum or spectra 
-#	eflux_spectra : float array, optional
-#		fluxes uncertainties in erg/cm^2/s/A of the input spectrum or spectra 
-#	mag_phot : float array, optional (required when fit_photometry=='yes')
-#		magnitudes used in the fit
-#	emag_phot : float array, optional (required when fit_photometry=='yes')
-#		uncertainties of the magnitudes used in the fit. Magnitudes with uncertainties equal to zero are excluded from the fit.
-#	filter_phot : float array, optional (required when fit_photometry=='yes')
-#		filters associated to the input magnitudes
-#		available filters from different catalogs
-#			Gaia: Gaia_BP, Gai_G, Gaia_RP
-#			PanSTARRS: PanSTARRS_g, PanSTARRS_r, PanSTARRS_i, PanSTARRS_z, PanSTARRS_y
-#			MOSAICII: MOSAICII_I
-#			2MASS: 2MASS_J, 2MASS_H, 2MASS_K
-#			VHS: VHS_J, VHS_Ks
-#			MKO: MKO_J, MKO_H, MKO_K
-#			IRAC: IRAC_CH1, IRAC_CH2, IRAC_CH3, IRAC_CH4
-#			WISE: WISE_W1, WISE_W2, WISE_W3, WISE_W4
-#			MIPS: MIPS_24um
-#	R : float, optional
-#		input spectra resolution (default R=100) at lam_R to smooth model spectra
-#	lam_R : float, optional
-#		wavelength reference (default 2 um) to estimate the spectral resolution of model spectra considering R
-#	distance : float, optional
-#		target distance (in pc) used to derive a radius from the scaling factor
-#	edistance : float, optional
-#		distance error (in pc)
-#	'''
 
 	def __init__(self, 
 		fit_spectra=True, fit_photometry=False, 
 		wl_spectra=None, flux_spectra=None, eflux_spectra=None, 
 		mag_phot=None, emag_phot=None, filter_phot=None,
 		R=100, lam_R=2, distance=None, edistance=None):	
-
-		'''
-		SOME TEXT HERE
-		'''
 
 		self.fit_spectra = fit_spectra
 		self.fit_photometry = fit_photometry
