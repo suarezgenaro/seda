@@ -836,7 +836,7 @@ def select_model_spectra(Teff_range, logg_range, model, model_dir, OS, path_sep)
 	'''
 
 	# make a list with all the synthetic spectra
-	if os.path.exists('model_spectra_files_tmp'): os.remove('model_spectra_tmp_list') # delete the file to store spectra if already exists
+	if os.path.exists('model_spectra_files_tmp'): os.remove('model_spectra_files_tmp') # delete the file to store spectra if already exists
 	for i in range(len(model_dir)):
 		if OS=='Linux':
 			os.system(f'ls {model_dir[i]}{path_sep}* >> model_spectra_files_tmp')
