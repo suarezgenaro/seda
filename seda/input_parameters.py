@@ -8,16 +8,19 @@ print('\n    SEDA package imported')
 class InputData:
 	'''
 	Description:
+	------------
 		Read input parameters for SEDA
 	
 	Parameters:
 	-----------
 		fit_spectra : string, optional
-  			* 'yes': (default) fit spectra
+			* 'yes': (default) fit spectra
 			* 'no': do not fit spectra
 		fit_photometry : string, optional
 			* 'yes': fit photometry
 			* 'no': (default) do not fit photometry
+		wl_spectra : float array, optional (required when fit_spectra=='yes')
+			wavelength in um of the spectrum or set of spectra for the fits
 	'''
 #	fit_spectra : string, optional
 #		'yes': (default) fit spectra
