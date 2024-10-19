@@ -9,7 +9,7 @@ class InputData:
 	'''
 	Description:
 	------------
-		Define input parameters for SEDA
+		Define input data for SEDA
 	
 	Parameters:
 	-----------
@@ -58,7 +58,7 @@ class InputData:
 		>>> lam_R = 2.0 # (um) wavelength reference for R
 		>>> 
 		>>> my_input_data = seda.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, eflux_spectra=eflux_spectra, R=R, lam_R=lam_R)
-		Input data loaded successfully
+			Input data loaded successfully
 	'''
 
 	def __init__(self, 
