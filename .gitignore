@@ -1,2 +1,4 @@
 .ipynb_checkponts
 */__pycache__
+/docs/notebooks/*chi2_minimization.dat
+/docs/notebooks/*chi2_minimization.pickle
