@@ -19,7 +19,7 @@ class InputData:
 		- fit_photometry : string, optional
 			'yes': fit photometry
 			'no': (default) do not fit photometry
-		- wl_spectra : float array, optional (required when fit_spectra=='yes')
+		- wl_spectra : float array, optional (required when ``fit_spectra=='yes'``)
 			Wavelength in um of the spectrum or set of spectra for the fits. 
    			When providing more than one spectrum, verify that there is no overlap between the spectra. 
 			Provide the multiple spectra as a list (e.g., wl_spectra = [], wl_spectra.append(spectrum_1), etc.).
