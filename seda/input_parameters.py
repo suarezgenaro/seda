@@ -11,10 +11,10 @@ class InputData:
 		Read input parameters for SEDA
 	
 	Parameters:
+	-----------
 		fit_spectra : string, optional
-  			'yes': (default) fit spectra
+  			* 'yes': (default) fit spectra
 	'''
-#	----------
 #	fit_spectra : string, optional
 #		'yes': (default) fit spectra
 #		'no': do not fit spectra
