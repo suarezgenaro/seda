@@ -13,21 +13,21 @@ class InputData:
 	
 	Parameters:
 	-----------
-		fit_spectra : string, optional
-			- 'yes': (default) fit spectra
-			- 'no': do not fit spectra
-		fit_photometry : string, optional
-			- 'yes': fit photometry
-			- 'no': (default) do not fit photometry
-		wl_spectra : float array, optional (required when fit_spectra=='yes')
+		- fit_spectra : string, optional
+			'yes': (default) fit spectra
+			'no': do not fit spectra
+		- fit_photometry : string, optional
+			'yes': fit photometry
+			'no': (default) do not fit photometry
+		- wl_spectra : float array, optional (required when fit_spectra=='yes')
 			Wavelength in um of the spectrum or set of spectra for the fits. 
    			When providing more than one spectrum, verify that there is no overlap between the spectra. 
 			Provide the multiple spectra as a list (e.g., wl_spectra = [], wl_spectra.append(spectrum_1), etc.).
 			The input list must have the spectra from shorter to longer wavelength coverage
-		flux_spectra : float array, optional
+		- flux_spectra : float array, optional
 			Fluxes in erg/cm^2/s/A of the input spectrum or spectra.
 			Input list for multiple spectra (equivalent to wl_spectra).
-		eflux_spectra : float array, optional
+		- eflux_spectra : float array, optional
 			Fluxes uncertainties in erg/cm^2/s/A of the input spectrum or spectra. 
 			Input multiple spectra as a list (equivalent to wl_spectra). 
 	'''
