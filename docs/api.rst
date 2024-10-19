@@ -14,3 +14,6 @@ Model Options
 
 Chi2 Fit Options
 ++++++++++++++++
+
+Bayes Fit Options
+++++++++++++++++
