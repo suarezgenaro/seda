@@ -113,91 +113,96 @@ class InputData:
 #+++++++++++++++++++++++++++
 class ModelOptions:
 	'''
+	Description:
+	------------
+		Define model options for SEDA
+
 	Parameters
 	----------
 	model : string
-		atmospheric models used in the comparison
-		available models: 
-			'Sonora_Diamondback': cloudy (silicate clouds) atmospheric models assuming chemical equilibrium but considering the effect of both clouds and metallicity by Morley et al. (2024).
-					(https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract)
-					Parameters coverage: 0.3<=wavelength(um)<=250
-										 900<=Teff(K)<=2400 in steps of 100 K
-										 3.5<=logg<=5.5 in steps of 0.5
-										 -0.5<=[M/H](cgs)<=0.5 in steps of 0.5
-										 fsed = 1, 2, 3, 4, 8, nc
-			'Sonora_Elf_Owl': models with atmospheric mixing and chemical disequilibrium with varying metallicity and C/O by Mukherjee et al. (2024)
-					(https://ui.adsabs.harvard.edu/abs/2024arXiv240200756M/abstract)
-					Parameters coverage: 0.6<=wavelength(um)<=15 
-										 275<=Teff(K)<=2400 in steps: 25 K between 275-600 K, 50 K between 600-1000 K, and 100 K between 1000-2400 K
-										 3.25<=logg<=5.5 in steps of 0.25 dex
-										 2<=logKzz(cgs)<=9 with values of 2, 4, 7, 8, and 9 (Kzz in cm2/s)
-										 -1.0<=[M/H](cgs)<=1.0 with values of -1.0, -0.5, +0.0, +0.5, +0.7, and +1.0
-										 0.5<=C/O<=2.5 with steps of 0.5 (relative to solar C/O, assumed as 0.458)(these are the values in the filenames)
-											the C/O range relative to solar corresponds to:
-												0.22<=C/O<=1.14 with values of 0.22, 0.458, 0.687, and 1.12 (e.g. 0.5 in the filename means 0.5*0.458=0.22)
-			'LB23': cloudy (water clouds) atmospheric models with equilibrium and non-equilibrium chemistry for Y-dwarf atmospheres by Lacy & Burrows (2023).
-				(https://ui.adsabs.harvard.edu/abs/2023ApJ...950....8L)
-					Parameters coverage in common for all grids:
-										lambda=0.5-300 um with 30,000 frequency points evenly spaced in ln(frequency)
-										average resolving power of R~4340
-					Parameters coverage for clear equilibrium and disequilibrium chemistry models
-										200<=Teff(K)<=600 in steps 25 K
-										3.50<=logg(cgs)<=5.0 in log g steps of 0.25
-										[M/H]=-0.5, 0.0, and 0.5 (Z/Z_sun = 0.316, 1.0, 3.16)
-										logKzz=6 for non-equilibrium models
-					Parameters coverage for cloudy equilibrium and disequilibrium chemistry models
-										200<=Teff(K)<=400 (350 for Z/Z_sun = 3.16) in steps 25 K
-										3.75<=logg(cgs)<=5.0 in log g steps of 0.25
-										[M/H]=-0.5, 0.0, and 0.5 (Z/Z_sun = 0.316, 1.0, 3.16), but some Z/Z_sun=3.16 are missing for equilibrium and non-equilibrium models
-										logKzz=6 for non-equilibrium models
-										There are some additional cloudy atmospheres extending to lower surface gravities and warmer temperatures in some combinations where convergence was easy.
-				EXTENDED MODELS
-					Additions:
-						Teff(K) up tp 800
-						Hmix (mixing length) = 1.0, 0.1, and 0.01
-						This grid replaces the original one (Brianna: "The original spectra had an inconsistent wavelength grid and was missing CO2, so new ones are really a replacement.")
-							
-			'Sonora_Cholla': cloudless models with non-equilibrium chemistry due to different eddy diffusion parameters by Karalidi et al. (2021)
-					(https://ui.adsabs.harvard.edu/abs/2021ApJ...923..269K/abstract)
-					Parameters coverage: 1<=wavelength(um)<=250 for Teff>=850 K (plus some with Teff=750 K)
-										 0.3<=wavelength(um)<=250 for Teff<800 K (plus 950K_1780g_logkzz2.spec)
-										 500<=Teff(K)<=1300 in steps of 50 K
-										 3.0<=logg<=5.5 in steps of 0.25
-										 log Kzz=2, 4, and 7
-			'Sonora_Bobcat': cloudless models in chemical equilibrium by Marley et al. (2021)
-					(https://ui.adsabs.harvard.edu/abs/2021ApJ...920...85M/abstract)
-					Parameters coverage: 0.4<=wavelength(um)<=50
-										 200<=Teff(K)<=2400 in steps: 25 K between 200-600 K, 50 K between 600-1000 K, and 100 K between 1000-2400 K
-										 3.25<=logg(cgs)<=5.50 in log g steps of 0.25
-										 metallicity: M/H=-0.5, 0.0, and 0.5
-										 C/O=0.5, 1.0 (solar C/O), and 1.5 for solar metallicity models
-										 The resolving power varies with wavelength and ranges from R=6000 to 200000 but is otherwise the same for all spectra.
-			'ATMO2020': cloudless atmospheric models with chemical and non-chemical equilibrium by Phillips et al. (2020)
-					(https://ui.adsabs.harvard.edu/abs/2020A%26A...637A..38P/abstract)
-					ATMO2020 includes three grid:
-						'ATMO2020_CEQ': cloudless models with equilibrium chemistry
-						'ATMO2020_NEQ_weak': cloudless models with non-equilibrium chemistry due to weak vertical mixing (logKzz=4).
-						'ATMO2020_NEQ_strong': cloudless models with non-equilibrium chemistry due to strong vertical mixing (logKzz=6).
-					Parameters coverage: 0.2<=wavelength(um)<=2000
-										 200<=Teff(K)<=2400 in steps varying from 25 K to 100 K 
-										 2.5<=logg<=5.5 in steps of 0.5 dex
-										 logKzz=4 (ATMO2020_NEQ_weak) and 6 (ATMO2020_NEQ_strong) and non Kzz for ATMO2020_CEQ
-			'BT-Settl': cloudy models with non-equilibrium chemistry by Allard et al. (2012). 
-					(https://ui.adsabs.harvard.edu/abs/2012RSPTA.370.2765A/abstract)
-					Parameters coverage: 200<=Teff<=4200 (Teff<=450 K for only logg<=3.5), 2.0<=logg<=5.5
-			'SM08': cloudy models with equilibrium chemistry by Saumon & Marley (2008). 
-					(https://ui.adsabs.harvard.edu/abs/2008ApJ...689.1327S)
-					Parameters coverage: 800<=Teff<=2400, 3.0<=logg<=5.5
-	model_dir : str or list
-		path to the directory (as str or list) or directories (as a list) containing the models
-		avoid using paths with null spaces because it will mess the format of tables with with the full path for model spectra
-	Teff_range : float array
-		minimum and maximum Teff values to select a model grid subset
-	logg_range : float array
-		minimum and maximum logg values to select a model grid subset
-	R_range: float array, optional
-		minimum and maximum R values to sample the posterior for radius. It also needs the parameter distance.
 	'''
+#		atmospheric models used in the comparison
+#		available models: 
+#			'Sonora_Diamondback': cloudy (silicate clouds) atmospheric models assuming chemical equilibrium but considering the effect of both clouds and metallicity by Morley et al. (2024).
+#					(https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract)
+#					Parameters coverage: 0.3<=wavelength(um)<=250
+#										 900<=Teff(K)<=2400 in steps of 100 K
+#										 3.5<=logg<=5.5 in steps of 0.5
+#										 -0.5<=[M/H](cgs)<=0.5 in steps of 0.5
+#										 fsed = 1, 2, 3, 4, 8, nc
+#			'Sonora_Elf_Owl': models with atmospheric mixing and chemical disequilibrium with varying metallicity and C/O by Mukherjee et al. (2024)
+#					(https://ui.adsabs.harvard.edu/abs/2024arXiv240200756M/abstract)
+#					Parameters coverage: 0.6<=wavelength(um)<=15 
+#										 275<=Teff(K)<=2400 in steps: 25 K between 275-600 K, 50 K between 600-1000 K, and 100 K between 1000-2400 K
+#										 3.25<=logg<=5.5 in steps of 0.25 dex
+#										 2<=logKzz(cgs)<=9 with values of 2, 4, 7, 8, and 9 (Kzz in cm2/s)
+#										 -1.0<=[M/H](cgs)<=1.0 with values of -1.0, -0.5, +0.0, +0.5, +0.7, and +1.0
+#										 0.5<=C/O<=2.5 with steps of 0.5 (relative to solar C/O, assumed as 0.458)(these are the values in the filenames)
+#											the C/O range relative to solar corresponds to:
+#												0.22<=C/O<=1.14 with values of 0.22, 0.458, 0.687, and 1.12 (e.g. 0.5 in the filename means 0.5*0.458=0.22)
+#			'LB23': cloudy (water clouds) atmospheric models with equilibrium and non-equilibrium chemistry for Y-dwarf atmospheres by Lacy & Burrows (2023).
+#				(https://ui.adsabs.harvard.edu/abs/2023ApJ...950....8L)
+#					Parameters coverage in common for all grids:
+#										lambda=0.5-300 um with 30,000 frequency points evenly spaced in ln(frequency)
+#										average resolving power of R~4340
+#					Parameters coverage for clear equilibrium and disequilibrium chemistry models
+#										200<=Teff(K)<=600 in steps 25 K
+#										3.50<=logg(cgs)<=5.0 in log g steps of 0.25
+#										[M/H]=-0.5, 0.0, and 0.5 (Z/Z_sun = 0.316, 1.0, 3.16)
+#										logKzz=6 for non-equilibrium models
+#					Parameters coverage for cloudy equilibrium and disequilibrium chemistry models
+#										200<=Teff(K)<=400 (350 for Z/Z_sun = 3.16) in steps 25 K
+#										3.75<=logg(cgs)<=5.0 in log g steps of 0.25
+#										[M/H]=-0.5, 0.0, and 0.5 (Z/Z_sun = 0.316, 1.0, 3.16), but some Z/Z_sun=3.16 are missing for equilibrium and non-equilibrium models
+#										logKzz=6 for non-equilibrium models
+#										There are some additional cloudy atmospheres extending to lower surface gravities and warmer temperatures in some combinations where convergence was easy.
+#				EXTENDED MODELS
+#					Additions:
+#						Teff(K) up tp 800
+#						Hmix (mixing length) = 1.0, 0.1, and 0.01
+#						This grid replaces the original one (Brianna: "The original spectra had an inconsistent wavelength grid and was missing CO2, so new ones are really a replacement.")
+#							
+#			'Sonora_Cholla': cloudless models with non-equilibrium chemistry due to different eddy diffusion parameters by Karalidi et al. (2021)
+#					(https://ui.adsabs.harvard.edu/abs/2021ApJ...923..269K/abstract)
+#					Parameters coverage: 1<=wavelength(um)<=250 for Teff>=850 K (plus some with Teff=750 K)
+#										 0.3<=wavelength(um)<=250 for Teff<800 K (plus 950K_1780g_logkzz2.spec)
+#										 500<=Teff(K)<=1300 in steps of 50 K
+#										 3.0<=logg<=5.5 in steps of 0.25
+#										 log Kzz=2, 4, and 7
+#			'Sonora_Bobcat': cloudless models in chemical equilibrium by Marley et al. (2021)
+#					(https://ui.adsabs.harvard.edu/abs/2021ApJ...920...85M/abstract)
+#					Parameters coverage: 0.4<=wavelength(um)<=50
+#										 200<=Teff(K)<=2400 in steps: 25 K between 200-600 K, 50 K between 600-1000 K, and 100 K between 1000-2400 K
+#										 3.25<=logg(cgs)<=5.50 in log g steps of 0.25
+#										 metallicity: M/H=-0.5, 0.0, and 0.5
+#										 C/O=0.5, 1.0 (solar C/O), and 1.5 for solar metallicity models
+#										 The resolving power varies with wavelength and ranges from R=6000 to 200000 but is otherwise the same for all spectra.
+#			'ATMO2020': cloudless atmospheric models with chemical and non-chemical equilibrium by Phillips et al. (2020)
+#					(https://ui.adsabs.harvard.edu/abs/2020A%26A...637A..38P/abstract)
+#					ATMO2020 includes three grid:
+#						'ATMO2020_CEQ': cloudless models with equilibrium chemistry
+#						'ATMO2020_NEQ_weak': cloudless models with non-equilibrium chemistry due to weak vertical mixing (logKzz=4).
+#						'ATMO2020_NEQ_strong': cloudless models with non-equilibrium chemistry due to strong vertical mixing (logKzz=6).
+#					Parameters coverage: 0.2<=wavelength(um)<=2000
+#										 200<=Teff(K)<=2400 in steps varying from 25 K to 100 K 
+#										 2.5<=logg<=5.5 in steps of 0.5 dex
+#										 logKzz=4 (ATMO2020_NEQ_weak) and 6 (ATMO2020_NEQ_strong) and non Kzz for ATMO2020_CEQ
+#			'BT-Settl': cloudy models with non-equilibrium chemistry by Allard et al. (2012). 
+#					(https://ui.adsabs.harvard.edu/abs/2012RSPTA.370.2765A/abstract)
+#					Parameters coverage: 200<=Teff<=4200 (Teff<=450 K for only logg<=3.5), 2.0<=logg<=5.5
+#			'SM08': cloudy models with equilibrium chemistry by Saumon & Marley (2008). 
+#					(https://ui.adsabs.harvard.edu/abs/2008ApJ...689.1327S)
+#					Parameters coverage: 800<=Teff<=2400, 3.0<=logg<=5.5
+#	model_dir : str or list
+#		path to the directory (as str or list) or directories (as a list) containing the models
+#		avoid using paths with null spaces because it will mess the format of tables with with the full path for model spectra
+#	Teff_range : float array
+#		minimum and maximum Teff values to select a model grid subset
+#	logg_range : float array
+#		minimum and maximum logg values to select a model grid subset
+#	R_range: float array, optional
+#		minimum and maximum R values to sample the posterior for radius. It also needs the parameter distance.
+#	'''
 
 	def __init__(self, model, model_dir, Teff_range, logg_range, R_range=None):
 
