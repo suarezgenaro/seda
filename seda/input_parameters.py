@@ -69,31 +69,12 @@ class InputData:
 
 		self.fit_spectra = fit_spectra
 		self.fit_photometry = fit_photometry
-		self.wl_spectra = wl_spectra
-		self.flux_spectra = flux_spectra
-		self.eflux_spectra = eflux_spectra
 		self.mag_phot = mag_phot
 		self.emag_phot = emag_phot
 		self.filter_phot = filter_phot
-		self.R = R
-		self.lam_R = lam_R
 		self.distance = distance
 		self.edistance = edistance
 
-#		self.save_results = save_results
-#		self.chi2_wl_range = chi2_wl_range
-#		self.model_wl_range = model_wl_range
-#		self.scaling_free_param = scaling_free_param
-#		self.scaling = scaling
-#		self.extinction_free_param = extinction_free_param
-#		self.skip_convolution = skip_convolution
-##		self.posteriors = posteriors
-##		self.dynamic_sampling = dynamic_sampling
-#		self.avoid_IR_excess = avoid_IR_excess
-#		self.IR_excess_limit = IR_excess_limit
-
-#	def manage_inputs(self):
-		# MANAGE INPUT PARAMETERS
 		# number of input spectra
 		if isinstance(wl_spectra, list): # when multiple spectra are provided
 			N_spectra = len(wl_spectra) # number of input spectra
@@ -108,111 +89,25 @@ class InputData:
 			if not isinstance(R, np.ndarray): R = np.array([R])
 			if not isinstance(lam_R, np.ndarray): lam_R = np.array([lam_R])
 
-#			# when only one directory with models is given
-#			if not isinstance(model_dir, list): model_dir = [model_dir]
-
 			# when one spectrum is given, convert the spectrum into a list
 			if not isinstance(wl_spectra, list): wl_spectra = [wl_spectra]
 			if not isinstance(flux_spectra, list): flux_spectra = [flux_spectra]
 			if not isinstance(eflux_spectra, list): eflux_spectra = [eflux_spectra]
 
-#			# define chi2_wl_range when not provided
-#			if chi2_wl_range is None:
-#				chi2_wl_range = np.zeros((N_spectra, 2)) # Nx2 array, N:number of spectra and 2 for the minimum and maximum values for each spectrum
-#				for i in range(N_spectra):
-#					chi2_wl_range[i,:] = np.array((wl_spectra[i].min(), wl_spectra[i].max()))
-#			else: # chi2_wl_range is provided
-#				if len(chi2_wl_range.shape)==1: chi2_wl_range = chi2_wl_range.reshape((1, 2)) # reshape chi2_wl_range array
-#
-#			# model_wl_range
-#			if model_wl_range is None:
-#				model_wl_range = np.array((chi2_wl_range.min()-0.1*chi2_wl_range.min(), 
-#										   chi2_wl_range.max()+0.1*chi2_wl_range.max()
-#										 )) # add a pad to have enough spectral coverage in models for the fits
+		# handle input parameters
+		# remove NaN values
+		for i in range(N_spectra):
+			mask_nonan = (~np.isnan(wl_spectra[i])) & (~np.isnan(flux_spectra[i])) & (~np.isnan(eflux_spectra[i]))
+			wl_spectra[i] = wl_spectra[i][mask_nonan]
+			flux_spectra[i] = flux_spectra[i][mask_nonan]
+			eflux_spectra[i] = eflux_spectra[i][mask_nonan]
 
-#			# add a padding to the model range when it is the same to the fit range
-#			if (model_wl_range.min()==model_wl_range.min()):
-#				model_wl_range[0] = model_wl_range.min()-0.1*model_wl_range.min()
-#			if (model_wl_range.max()==model_wl_range.max()):
-#				model_wl_range[1] = model_wl_range.max()+0.1*model_wl_range.max()
-	
-			self.R = R
-			self.lam_R = lam_R
-#			self.chi2_wl_range = chi2_wl_range
-#			self.model_wl_range = model_wl_range
-			self.wl_spectra = wl_spectra
-			self.flux_spectra = flux_spectra
-			self.eflux_spectra = eflux_spectra
-			
-#			# remove astropy units of input arrays (if any) to avoid potential issues (the code gives them units when using the extinction laws, even if extinction is zero)
-#			if (fit_spectra=='yes') & (N_spectra==1):
-#				if (str(type(wl_spectra)).split('\'')[1].split('.')[0]=='astropy'): # only astropy parameter may have units
-#					if (bool(wl_spectra.unit)==True):
-#						wl_spectra = wl_spectra.value
-#				if (str(type(flux_spectra)).split('\'')[1].split('.')[0]=='astropy'): # only astropy parameter may have units
-#					if (bool(flux_spectra.unit)==True):
-#						flux_spectra = flux_spectra.value
-#				if (str(type(eflux_spectra)).split('\'')[1].split('.')[0]=='astropy'): # only astropy parameter may have units
-#					if (bool(eflux_spectra.unit)==True):
-#						eflux_spectra = eflux_spectra.value
+		self.R = R
+		self.lam_R = lam_R
+		self.wl_spectra = wl_spectra
+		self.flux_spectra = flux_spectra
+		self.eflux_spectra = eflux_spectra
 
-#			I AM HERE: READ ABOUT HOW TO UPDATE self WHEN A PARAMETER IS CHANGED, E.G.
-#				self.distance = distance
-#				distance = round(distance, 3)
-#				HOW TO UPDATE self.distance without doing again self.distance=distance
-
-#		# total number of data points
-#		if N_spectra>1 : # when multiple spectra are provided
-#			# function to count the total number of elements in a list of arrays
-#			def get_number_of_elements(list):
-#				count = 0
-#				for element in list:
-#					count += element.size # add the number of points in each input spectrum
-#				return count
-#			total_N = get_number_of_elements(wl_spectra) # total number of elements in the input list
-#	
-#		## number of data points in the spectral ranges for the fit
-#		#if N_spectra>1 : # when multiple spectra are provided
-#		#	# number of elements for the fit
-#		#	total_N_fit = 0
-#		#	for k in range(N_spectra): # for each input observed spectrum
-#		#		mask = (wl_spectra[k]>=chi2_wl_range[k][0]) & (wl_spectra[k]<=chi2_wl_range[k][1])
-#		#		total_N_fit += wl_spectra[k][mask].size
-#	
-#		# when multiple spectra are provided, transform the input list with the spectra to arrays having the spectra next to each other
-#		if N_spectra>1 : # when multiple spectra are provided
-#			# rename the input list with the spectra for convenience 
-#			wl_spectra_list = wl_spectra
-#			flux_spectra_list = flux_spectra
-#			eflux_spectra_list = eflux_spectra
-#			
-#			wl_spectra = np.zeros(total_N) # flat array with all wavelengths of input spectra
-#			flux_spectra = np.zeros(total_N) # flat array with all fluxes of input spectra
-#			eflux_spectra = np.zeros(total_N) # flat array with all flux errors of input spectra
-#			l = 0
-#			for k in range(N_spectra): # for each input observed spectrum
-#				wl_spectra[l:wl_spectra_list[k].size+l] = wl_spectra_list[k] # add wavelengths of each input spectrum
-#				flux_spectra[l:wl_spectra_list[k].size+l] = flux_spectra_list[k] # add fluxes of each input spectrum
-#				eflux_spectra[l:wl_spectra_list[k].size+l] = eflux_spectra_list[k] # add flux errors of each input spectrum
-#				l += wl_spectra_list[k].size # counter to indicate the minimum index
-#	
-#		# manipulate parameters to avoid errors
-#		# Sonora Elf Owl spectra do not cover wavelength>15 um, 
-#		# error: if input spectra have longer wavelengths, and error will show up when resampling the model spectra to the input spectra
-#		# solution: remove >15 um data points in the input spectra
-#		if ((model=='Sonora_Elf_Owl') & (wl_spectra.max()>15)): 
-#			print('\nWARNING: Input spectra have longer wavelengths than the Sonora Elf Owl coverage (up to 15 um).')
-#			print('         Cut input spectra to be within the Sonora Elf Owl coverage.')
-#			print('         I will try to cut the input spectra to fit data points only up to 15 um.')
-#			mask = wl_spectra<14.9 # 14.9 um rather than 15 um to give a pad for the resampling with spectres
-#			wl_spectra = wl_spectra[mask]
-#			flux_spectra = flux_spectra[mask]
-#			eflux_spectra = eflux_spectra[mask]
-#	
-#			model_wl_range = np.array((model_wl_range[0], 15)) # range to cut model spectra up to 15 um (not necessary, it should works if it is up to longer wavelength)
-#			chi2_wl_range[chi2_wl_range>15] = 15 # fit range up to 15 um
-#			#total_N = len(wl_spectra) # total number of elements in the input spectra after removing long wavelengths
-	
 		print('\nInput data loaded successfully')
 
 #+++++++++++++++++++++++++++
@@ -412,7 +307,7 @@ class Chi2FitOptions:
 									   chi2_wl_range.max()+0.1*chi2_wl_range.max()
 									   )) # add a pad to have enough spectral coverage in models for the fits
 
-		# when model_wl_range is given and is equal or wider than chi2_wl_range
+		# when model_wl_range is given and is equal or narrower than chi2_wl_range
 		# add padding to model_wl_range to avoid problems with the spectres routine
 		# first find the minimum and maximum wavelength from the input spectra
 		min_tmp1 = min(wl_spectra[0])
