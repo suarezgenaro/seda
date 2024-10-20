@@ -848,16 +848,18 @@ def select_model_spectra(Teff_range, logg_range, model, model_dir, OS, path_sep)
 #	os.remove('model_spectra_files_tmp') # delete temporal file with all synthetic spectra names
 
 	# to store files in model_dir
-	files = []
+	files = [] # with full path
+	files_short = [] # only spectra names
 	for i in range(len(model_dir)):
 		files_model_dir = os.listdir(model_dir[i])
 		for file in files_model_dir:
 			files.append(model_dir[i]+file)
+			files_short.append(file)
 
-	# read file name only without full path
-	files_short = []
-	for i in range(len(files)):
-		files_short.append(files[i].split(path_sep)[-1]) # synthetic spectrum name without full path
+#	# read file name only without full path
+#	files_short = []
+#	for i in range(len(files)):
+#		files_short.append(files[i].split(path_sep)[-1]) # synthetic spectrum name without full path
 
 	# select spectra within the desired Teff and logg ranges
 	# read Teff and logg from each model spectrum
@@ -865,15 +867,17 @@ def select_model_spectra(Teff_range, logg_range, model, model_dir, OS, path_sep)
 	spectra_name_Teff = out_separate_params['Teff']
 	spectra_name_logg = out_separate_params['logg']
 
-	spectra_name_full = []
+	spectra_name_full = [] # full name with path
+	spectra_name = [] # only spectra names
 	for i in range(len(files)):
 		if ((spectra_name_Teff[i]>=Teff_range[0]) & (spectra_name_Teff[i]<=Teff_range[1]) & (spectra_name_logg[i]>=logg_range[0]) & (spectra_name_logg[i]<=logg_range[1])): # spectrum with Teff and logg within the indicated ranges
 			spectra_name_full.append(files[i]) # keep only spectra within the Teff and logg ranges
+			spectra_name.append(files_short[i]) # keep only spectra within the Teff and logg ranges
 
-	# read file name only without full path
-	spectra_name = []
-	for i in range(len(spectra_name_full)):
-		spectra_name.append(spectra_name_full[i].split(path_sep)[-1]) # synthetic spectrum name without full path
+#	# read file name only without full path
+#	spectra_name = []
+#	for i in range(len(spectra_name_full)):
+#		spectra_name.append(spectra_name_full[i].split(path_sep)[-1]) # synthetic spectrum name without full path
 
 	#--------------
 	# TEST to fit only a few model spectra
