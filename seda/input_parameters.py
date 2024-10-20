@@ -117,8 +117,8 @@ class ModelOptions:
 	------------
 		Define model options for SEDA
 
-	Parameters
-	----------
+	Parameters:
+	-----------
 		- model : string
 			Atmospheric models used in the comparison. Available models: 
 				'Sonora_Diamondback': cloudy (silicate clouds) atmospheric models assuming chemical equilibrium but considering the effect of both clouds and metallicity by Morley et al. (2024).
