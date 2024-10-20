@@ -11,6 +11,8 @@ Input Data
 
 Model Options
 +++++++++++++
+.. autoclass:: seda.input_parameters.ModelOptions
+    :members:
 
 Chi2 Fit Options
 ++++++++++++++++
