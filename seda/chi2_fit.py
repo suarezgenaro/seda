@@ -835,18 +835,25 @@ def select_model_spectra(Teff_range, logg_range, model, model_dir, OS, path_sep)
 		spectra_name : selected model spectra without full path
 	'''
 
-	# make a list with all the synthetic spectra
-	if os.path.exists('model_spectra_files_tmp'): os.remove('model_spectra_files_tmp') # delete the file to store spectra if already exists
-	for i in range(len(model_dir)):
-		if OS=='Linux':
-			os.system(f'ls {model_dir[i]}{path_sep}* >> model_spectra_files_tmp')
-		if OS=='Windows':
-			os.system(f'Dir /b /s {model_dir[i]}{path_sep}* >> model_spectra_files_tmp')
+#	# make a list with all the synthetic spectra
+#	if os.path.exists('model_spectra_files_tmp'): os.remove('model_spectra_files_tmp') # delete the file to store spectra if already exists
+#	for i in range(len(model_dir)):
+#		if OS=='Linux':
+#			os.system(f'ls {model_dir[i]}{path_sep}* >> model_spectra_files_tmp')
+#		if OS=='Windows':
+#			os.system(f'Dir /b /s {model_dir[i]}{path_sep}* >> model_spectra_files_tmp')
+#
+#	# read all model spectra files
+#	files = ascii.read('model_spectra_files_tmp', format='no_header', comment='#')['col1']
+#	os.remove('model_spectra_files_tmp') # delete temporal file with all synthetic spectra names
 
-	# read all model spectra files
-	files = ascii.read('model_spectra_files_tmp', format='no_header', comment='#')['col1']
-	os.remove('model_spectra_files_tmp') # delete temporal file with all synthetic spectra names
-	
+	# to store files in model_dir
+	files = []
+	for i in range(len(model_dir)):
+		files_model_dir = os.listdir(model_dir[i])
+		for file in files_model_dir:
+			files.append(model_dir[i]+file)
+
 	# read file name only without full path
 	files_short = []
 	for i in range(len(files)):
