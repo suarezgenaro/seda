@@ -355,17 +355,12 @@ class Chi2FitOptions:
 		CAVEAT: the selected wavelength range of model spectra must cover the spectrophotometry used in the fit AND A BIT MORE (to avoid errors when resampling synthetic spectra)
 	save_results: string, optional
 		'yes' (default) or 'no' to save SEDA results
-	OS: str
-		operative system (from the options below) used to run the code
-			'Linux' (default)
-			'Windows'
-			'Mac'
 	'''
 
 	def __init__(self, my_input_data, my_grid, 
 		chi2_wl_range=None, model_wl_range=None, extinction_free_param='no', 
 		scaling_free_param='yes', scaling=None, skip_convolution='no', 
-		avoid_IR_excess='no', IR_excess_limit=3, save_results='yes', OS='Linux'):
+		avoid_IR_excess='no', IR_excess_limit=3, save_results='yes'):
 
 		## input data
 		#self.fit_spectra = my_input_data.fit_spectra
@@ -397,7 +392,6 @@ class Chi2FitOptions:
 		self.skip_convolution = skip_convolution
 		self.avoid_IR_excess = avoid_IR_excess
 		self.IR_excess_limit = IR_excess_limit
-		self.OS = OS
 
 		# read parameters from other classes
 		N_spectra = my_input_data.N_spectra
@@ -453,11 +447,6 @@ class Chi2FitOptions:
 		self.wl_spectra_min = wl_spectra_min
 		self.wl_spectra_max = wl_spectra_max
 		self.N_datapoints = N_datapoints
-
-		# define path separator for the indicated platform
-		if OS=='Linux': path_sep = '/'
-		if OS=='Windows': path_sep = '\\'
-		self.path_sep = path_sep
 
 		# file name to save the chi2 results as a pickle
 		self.pickle_file = f'{model}_chi2_minimization.pickle'

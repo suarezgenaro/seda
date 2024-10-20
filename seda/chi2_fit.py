@@ -193,14 +193,12 @@ def chi2_fit(my_input_data, my_grid, my_chi2):
 	skip_convolution = my_chi2.skip_convolution
 	avoid_IR_excess = my_chi2.avoid_IR_excess
 	IR_excess_limit = my_chi2.IR_excess_limit
-	OS = my_chi2.OS
 	chi2_wl_range = my_chi2.chi2_wl_range
 	model_wl_range = my_chi2.model_wl_range
 	wl_spectra_min = my_chi2.wl_spectra_min
 	wl_spectra_max = my_chi2.wl_spectra_max
 	N_datapoints = my_chi2.N_datapoints
 	pickle_file = my_chi2.pickle_file
-	path_sep = my_chi2.path_sep
 
 	path_seda = os.path.dirname(__file__) # gets directory path of seda
 
@@ -264,7 +262,7 @@ def chi2_fit(my_input_data, my_grid, my_chi2):
 			if chi2_wl_range[i][1]>=15: chi2_wl_range[i][1] = 14.9
 
 	# read the name of the spectra from the indicated models and meeting the parameters ranges 
-	out_select_model_spectra = select_model_spectra(Teff_range=Teff_range, logg_range=logg_range, model=model, model_dir=model_dir, OS=OS, path_sep=path_sep)
+	out_select_model_spectra = select_model_spectra(Teff_range=Teff_range, logg_range=logg_range, model=model, model_dir=model_dir)
 	spectra_name_full = out_select_model_spectra['spectra_name_full']
 	spectra_name = out_select_model_spectra['spectra_name']
 	
@@ -803,7 +801,7 @@ def chi2_fit(my_input_data, my_grid, my_chi2):
 #	self.logflux_residuals = logflux_residuals
 
 	# separate physical parameters from each model spectrum name
-	out_separate_params = separate_params(spectra_name=spectra_name, model=model, OS=OS)
+	out_separate_params = separate_params(spectra_name=spectra_name, model=model)
 	# add model spectra parameters to the output dictionary
 	out_chi2.update(out_separate_params)
 
@@ -827,25 +825,13 @@ def chi2_fit(my_input_data, my_grid, my_chi2):
 
 ##########################
 # select model spectra from the indicated models and meeting the parameters ranges 
-def select_model_spectra(Teff_range, logg_range, model, model_dir, OS, path_sep):
+def select_model_spectra(Teff_range, logg_range, model, model_dir):
 
 	'''
 	Output: dictionary
 		spectra_name_full : full path to each selected model spectrum
 		spectra_name : selected model spectra without full path
 	'''
-
-#	# make a list with all the synthetic spectra
-#	if os.path.exists('model_spectra_files_tmp'): os.remove('model_spectra_files_tmp') # delete the file to store spectra if already exists
-#	for i in range(len(model_dir)):
-#		if OS=='Linux':
-#			os.system(f'ls {model_dir[i]}{path_sep}* >> model_spectra_files_tmp')
-#		if OS=='Windows':
-#			os.system(f'Dir /b /s {model_dir[i]}{path_sep}* >> model_spectra_files_tmp')
-#
-#	# read all model spectra files
-#	files = ascii.read('model_spectra_files_tmp', format='no_header', comment='#')['col1']
-#	os.remove('model_spectra_files_tmp') # delete temporal file with all synthetic spectra names
 
 	# to store files in model_dir
 	files = [] # with full path
@@ -856,28 +842,19 @@ def select_model_spectra(Teff_range, logg_range, model, model_dir, OS, path_sep)
 			files.append(model_dir[i]+file)
 			files_short.append(file)
 
-#	# read file name only without full path
-#	files_short = []
-#	for i in range(len(files)):
-#		files_short.append(files[i].split(path_sep)[-1]) # synthetic spectrum name without full path
-
 	# select spectra within the desired Teff and logg ranges
 	# read Teff and logg from each model spectrum
-	out_separate_params = separate_params(files_short, model, OS)
+	out_separate_params = separate_params(files_short, model)
 	spectra_name_Teff = out_separate_params['Teff']
 	spectra_name_logg = out_separate_params['logg']
 
 	spectra_name_full = [] # full name with path
 	spectra_name = [] # only spectra names
 	for i in range(len(files)):
-		if ((spectra_name_Teff[i]>=Teff_range[0]) & (spectra_name_Teff[i]<=Teff_range[1]) & (spectra_name_logg[i]>=logg_range[0]) & (spectra_name_logg[i]<=logg_range[1])): # spectrum with Teff and logg within the indicated ranges
+		if ((spectra_name_Teff[i]>=Teff_range[0]) & (spectra_name_Teff[i]<=Teff_range[1]) & 
+			(spectra_name_logg[i]>=logg_range[0]) & (spectra_name_logg[i]<=logg_range[1])): # spectrum with Teff and logg within the indicated ranges
 			spectra_name_full.append(files[i]) # keep only spectra within the Teff and logg ranges
 			spectra_name.append(files_short[i]) # keep only spectra within the Teff and logg ranges
-
-#	# read file name only without full path
-#	spectra_name = []
-#	for i in range(len(spectra_name_full)):
-#		spectra_name.append(spectra_name_full[i].split(path_sep)[-1]) # synthetic spectrum name without full path
 
 	#--------------
 	# TEST to fit only a few model spectra
@@ -917,7 +894,7 @@ def chi_square(params, data, edata, model, extinction_curve, weight):
 
 ##########################
 # separate parameters from each model spectrum name
-def separate_params(spectra_name, model, OS):
+def separate_params(spectra_name, model):
 
 	out = {'spectra_name': spectra_name} # start dictionary with some parameters
 
