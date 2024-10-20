@@ -858,8 +858,8 @@ def select_model_spectra(Teff_range, logg_range, model, model_dir):
 
 	#--------------
 	# TEST to fit only a few model spectra
-	spectra_name = spectra_name[:2]
-	spectra_name_full = spectra_name_full[:2]
+	#spectra_name = spectra_name[:2]
+	#spectra_name_full = spectra_name_full[:2]
 	#--------------
 
 	if len(spectra_name_full)==0: print('   ERROR: NO SYNTHETIC SPECTRA IN THE INDICATED PARAMETER RANGES'), exit() # show up an error when there are no models in the indicated ranges
