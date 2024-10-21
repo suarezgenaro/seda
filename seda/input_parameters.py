@@ -265,10 +265,9 @@ class Chi2FitOptions:
 		Wavelengths longer than ``IR_excess_limit`` will (``'yes'``) or will not (``'no'``; default) be avoided in the fit in case infrared excesses are expected. 
 	- IR_excess_limit : float, optional
 		Shortest wavelength at which IR excesses are expected (default 3 um).
+	- save_results: {``'yes'``, ``'no'``}, optional
+		Save (``'yes'``; default) or do not save (``'no'``)	``seda.chi2_fit`` results
 	'''
-#	save_results: string, optional
-#		'yes' (default) or 'no' to save SEDA results
-#	'''
 
 	def __init__(self, my_input_data, my_grid, 
 		chi2_wl_range=None, model_wl_range=None, extinction_free_param='no', 
