@@ -13,8 +13,6 @@ class InputData:
 	
 	Parameters:
 	-----------
-		- fit_spectra : {``'yes'``, ``'no'``}, optional
-			
 		- fit_spectra : string, optional
 			'yes': (default) fit spectra. 
 			'no': do not fit spectra. 
@@ -58,7 +56,6 @@ class InputData:
 		>>> eflux_spectra = eflux_input # in erg/cm^2/s/A
 		>>> R = 100 # input spectrum resolution
 		>>> lam_R = 2.0 # (um) wavelength reference for R
-		>>> 
 		>>> my_input_data = seda.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, eflux_spectra=eflux_spectra, R=R, lam_R=lam_R)
 			Input data loaded successfully
 	'''
@@ -121,6 +118,8 @@ class ModelOptions:
 
 	Parameters:
 	-----------
+		- mo : string
+			   asdf asdf 
 		- model : string
 			Atmospheric models used in the comparison. Available models: 
 				'Sonora_Diamondback': cloudy (silicate clouds) atmospheric models assuming chemical equilibrium but considering the effect of both clouds and metallicity by Morley et al. (2024).
