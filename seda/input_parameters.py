@@ -200,6 +200,17 @@ class ModelOptions:
 		Minimum and maximum logg values to select a model grid subset
 	- R_range: float array, optional (used in ``bayes_fit``)
 		Minimum and maximum radius values to sample the posterior for radius. It requires the parameter ``distance`` in `input_parameters.InputData`
+
+	Example:
+	--------
+	>>> import seda
+	>>> 
+	>>> model = 'Sonora_Elf_Owl'
+	>>> model_dir = ['my_path/output_575.0_650.0/', 'my_path/output_700.0_800.0/'] # folders to look for model spectra
+	>>> Teff_range = np.array((600, 800)) # Teff range
+	>>> logg_range = np.array((4.0, 5.0)) # logg range
+	>>> my_grid = seda.ModelOptions(model=model, model_dir=model_dir, logg_range=logg_range, Teff_range=Teff_range)
+		Model grid options loaded successfully
 	'''
 
 	def __init__(self, model, model_dir, Teff_range, logg_range, R_range=None):
