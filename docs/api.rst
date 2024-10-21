@@ -28,3 +28,9 @@ Chi2 Fit
 
 Bayes Fit
 ---------
+
+Plots
+-----
+
+Utils
+-----
