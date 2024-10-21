@@ -59,29 +59,27 @@ def plot_chi2_fit(pickle_file, N_best_fits=1):
 
 #	import matplotlib.ticker as mtick
 
+	# read best fits
+	out_best_chi2_fits = best_chi2_fits(pickle_file=pickle_file, N_best_fits=N_best_fits)
+	spectra_name_best = out_best_chi2_fits['spectra_name_best']
+	chi2_red_fit_best = out_best_chi2_fits['chi2_red_fit_best']
+	wl_model = out_best_chi2_fits['wl_model']
+	flux_model = out_best_chi2_fits['flux_model']
+	wl_model_conv = out_best_chi2_fits['wl_model_conv']
+	flux_model_conv = out_best_chi2_fits['flux_model_conv']
+
 	# open results from the chi square analysis
 	with open(pickle_file, 'rb') as file:
 		out_chi2 = pickle.load(file)
-
-	# read best fits
-	out_best_chi2_fits = best_chi2_fits(pickle_file=pickle_file, N_best_fits=N_best_fits)
-
 	model = out_chi2['model']
 	wl_spectra = out_chi2['wl_array_data'] # it is an array with all spectra, which is different to the list with all spectra in self.wl_spectra
 	flux_spectra = out_chi2['flux_array_data']
 	eflux_spectra = out_chi2['eflux_array_data']
 	wl_array_model_conv_resam = out_chi2['wl_array_model_conv_resam']
 	logflux_residuals = out_chi2['logflux_residuals']
-
+	# sort variables read from the pickle file
 	sort_ind = np.argsort(out_chi2['chi2_red_fit'])
 	logflux_residuals_best = logflux_residuals[sort_ind][:N_best_fits,:]
-
-	wl_model = out_best_chi2_fits['wl_model']
-	flux_model = out_best_chi2_fits['flux_model']
-	wl_model_conv = out_best_chi2_fits['wl_model_conv']
-	flux_model_conv = out_best_chi2_fits['flux_model_conv']
-	spectra_name_best = out_best_chi2_fits['spectra_name_best']
-	chi2_red_fit_best = out_best_chi2_fits['chi2_red_fit_best']
 
 	#------------------------
 	# initialize plot for best fits and residuals

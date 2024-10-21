@@ -235,35 +235,41 @@ class ModelOptions:
 #+++++++++++++++++++++++++++
 class Chi2FitOptions:
 	'''
+	Description:
+	------------
+		Define chi2 fit options for SEDA
+
 	Parameters
 	----------
-	extinction_free_param : string
-		extinction as a free parameter: 'no' (default; null extinction is assumed and it is not changed)
-										'yes' (null extinction is assumed and it varies to minimize chi square)
-	scaling_free_param : string
-		scaling as a free parameter: 'yes' (default; to find the scaling that minimizes chi square for each model)
-									 'no' (to fix the scaling if radius and distance are known)
-	scaling: float, optional (required if scaling_free_param=='no')
-		fixed scaling factor ((R/d)^2, R: object's radius, d: distance to the object) to be applied to model spectral to be compared to data
-	skip_convolution : string
-		'no' (default) or 'yes' to do not or do skip the convolution of model spectra (the slowest process in the code). 
-			Predetermined synthetic magnitudes in the desired filters are required. 
-			CAVEAT: for skip_convolution='yes', fit_spectra must be 'no' i.e. the convolution process can be avoided only when photometry is compared.
-			So far, skip_convolution=='yes' works with the filters from Gaia, PanSTARRS, 2MASS, and WISE (see filter_phot parameter)
-	chi2_wl_range : float array, optional
-		minimum and maximum wavelengths in micron where model spectra are compared to the data. This parameter is used when fitting spectra but ignored when comparing photometry only.
-		default values are the minimum and the maximum wavelengths of each input spectrum.
-	avoid_IR_excess : string, optional
-		'yes' or 'no' (default) to avoid or do not avoid fitting data where IR excesses could exist beyond IR_excess_limit
-	IR_excess_limit : float, optional
-		shortest wavelength where IR excesses are expected (default 3 um)
-	model_wl_range : float array, optional
-		minimum and maximum wavelength to cut model spectra (to make the code faster). 
-		default values are chi2_wl_range with a padding to avoid the point below.
-		CAVEAT: the selected wavelength range of model spectra must cover the spectrophotometry used in the fit AND A BIT MORE (to avoid errors when resampling synthetic spectra)
-	save_results: string, optional
-		'yes' (default) or 'no' to save SEDA results
+	- extinction_free_param : string, optional
+		Extinction as a free parameter. 
+			- 'no' (default; null extinction is assumed and it will not change)
+			- 'yes' (null extinction is assumed and it varies to minimize chi square)
 	'''
+#	scaling_free_param : string
+#		scaling as a free parameter: 'yes' (default; to find the scaling that minimizes chi square for each model)
+#									 'no' (to fix the scaling if radius and distance are known)
+#	scaling: float, optional (required if scaling_free_param=='no')
+#		fixed scaling factor ((R/d)^2, R: object's radius, d: distance to the object) to be applied to model spectral to be compared to data
+#	skip_convolution : string
+#		'no' (default) or 'yes' to do not or do skip the convolution of model spectra (the slowest process in the code). 
+#			Predetermined synthetic magnitudes in the desired filters are required. 
+#			CAVEAT: for skip_convolution='yes', fit_spectra must be 'no' i.e. the convolution process can be avoided only when photometry is compared.
+#			So far, skip_convolution=='yes' works with the filters from Gaia, PanSTARRS, 2MASS, and WISE (see filter_phot parameter)
+#	chi2_wl_range : float array, optional
+#		minimum and maximum wavelengths in micron where model spectra are compared to the data. This parameter is used when fitting spectra but ignored when comparing photometry only.
+#		default values are the minimum and the maximum wavelengths of each input spectrum.
+#	avoid_IR_excess : string, optional
+#		'yes' or 'no' (default) to avoid or do not avoid fitting data where IR excesses could exist beyond IR_excess_limit
+#	IR_excess_limit : float, optional
+#		shortest wavelength where IR excesses are expected (default 3 um)
+#	model_wl_range : float array, optional
+#		minimum and maximum wavelength to cut model spectra (to make the code faster). 
+#		default values are chi2_wl_range with a padding to avoid the point below.
+#		CAVEAT: the selected wavelength range of model spectra must cover the spectrophotometry used in the fit AND A BIT MORE (to avoid errors when resampling synthetic spectra)
+#	save_results: string, optional
+#		'yes' (default) or 'no' to save SEDA results
+#	'''
 
 	def __init__(self, my_input_data, my_grid, 
 		chi2_wl_range=None, model_wl_range=None, extinction_free_param='no', 
