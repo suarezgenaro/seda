@@ -259,10 +259,8 @@ class Chi2FitOptions:
 		Minimum and maximum wavelengths in microns where model spectra will be compared to the data. 
 		This parameter is used when ``fit_spectra='yes'`` but ignored when only ``fit_photometry='yes'``. 
 		Default values are the minimum and the maximum wavelengths of each input spectrum. E.g., ``chi2_wl_range = np.array([chi2_wl_min, chi2_wl_max]``)
-	- avoid_IR_excess : string, optional
-		Wavelengths longer that ``IR_excess_limit`` can be avoided in the fit if infrared excesses are expected
-			-``'yes'``: avoid fitting data beyond ``IR_excess_limit``
-			-``'no'``: (default) do not avoid wavelengths
+	- avoid_IR_excess : {``'yes'``, ``'no'`` (default)}, optional
+		If infrared excesses are expected, wavelengths longer that ``IR_excess_limit`` can be avoided in the fit
 	'''
 #	IR_excess_limit : float, optional
 #		shortest wavelength where IR excesses are expected (default 3 um)
