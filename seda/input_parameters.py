@@ -192,7 +192,7 @@ class ModelOptions:
 					- fsed = 1, 2, 3, 4
 					- R = [100000, 700000] (the resolving power varies with wavelength)
 	- model_dir : str or list
-		Path to the directory (as str or list) or directories (as a list) containing the models
+		Path to the directory (as str or list) or directories (as a list) containing the models (e.g., ``model_dir = ['path_1', 'path_2']``)
 		avoid using paths with null spaces because it will mess the format of tables with with the full path for model spectra
 	'''
 #	Teff_range : float array
