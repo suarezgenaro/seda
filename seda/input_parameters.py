@@ -243,8 +243,8 @@ class Chi2FitOptions:
 	----------
 	- extinction_free_param : string, optional
 		Extinction as a free parameter: 
-			- 'no' (default; null extinction is assumed and it will not change)
-			- 'yes' (null extinction is assumed and it varies to minimize chi square)
+			- ``'no'``: (default) null extinction is assumed and it will not change.
+			- ``'yes'``: null extinction is assumed and it varies to minimize chi square.
 	'''
 #	scaling_free_param : string
 #		scaling as a free parameter: 'yes' (default; to find the scaling that minimizes chi square for each model)
