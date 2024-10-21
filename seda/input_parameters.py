@@ -158,17 +158,17 @@ class ModelOptions:
 					- wavelength = [1, 250] um for Teff>=850 K (plus some with Teff=750 K)
 					- wavelength = [0.3, 250] um for Teff<800 K (plus 950K_1780g_logkzz2.spec)
 					- Teff = [500, 1300] K in steps of 50 K
-					- logg = [3.00, 5.50] in steps of 0.25
+					- logg = [3.00, 5.50] in steps of 0.25 (g in cgs)
 					- log Kzz=2, 4, and 7
+			- ``'Sonora_Bobcat'`` : cloudless models in chemical equilibrium by Marley et al. (2021). https://ui.adsabs.harvard.edu/abs/2021ApJ...920...85M/abstract
+				Parameters coverage: 
+					- wavelength = [0.4, 50] um
+					- Teff = [200, 2400] K in steps: 25 K for 200-600 K, 50 K for 600-1000 K, and 100 K for 1000-2400 K
+					- logg = [3.25, 5.50] in steps of 0.25 (g in cgs)
+					- M/H=-0.5, 0.0, and 0.5
+					- C/O = 0.5, 1.0 (solar C/O), and 1.5 for solar metallicity models
+					- R = [6000, 200000] (the resolving power varies with wavelength but is otherwise the same for all spectra)
 	'''
-#			'Sonora_Bobcat': cloudless models in chemical equilibrium by Marley et al. (2021)
-#					(https://ui.adsabs.harvard.edu/abs/2021ApJ...920...85M/abstract)
-#					Parameters coverage: 0.4<=wavelength(um)<=50
-#										 200<=Teff(K)<=2400 in steps: 25 K between 200-600 K, 50 K between 600-1000 K, and 100 K between 1000-2400 K
-#										 3.25<=logg(cgs)<=5.50 in log g steps of 0.25
-#										 metallicity: M/H=-0.5, 0.0, and 0.5
-#										 C/O=0.5, 1.0 (solar C/O), and 1.5 for solar metallicity models
-#										 The resolving power varies with wavelength and ranges from R=6000 to 200000 but is otherwise the same for all spectra.
 #			'ATMO2020': cloudless atmospheric models with chemical and non-chemical equilibrium by Phillips et al. (2020)
 #					(https://ui.adsabs.harvard.edu/abs/2020A%26A...637A..38P/abstract)
 #					ATMO2020 includes three grid:
