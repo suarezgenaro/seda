@@ -241,6 +241,14 @@ class Chi2FitOptions:
 
 	Parameters:
 	-----------
+	- chi2_wl_range : float array, optional
+		Minimum and maximum wavelengths in microns where model spectra will be compared to the data. 
+		This parameter is used when ``fit_spectra='yes'`` but ignored when only ``fit_photometry='yes'``. 
+		Default values are the minimum and the maximum wavelengths of each input spectrum. E.g., ``chi2_wl_range = np.array([chi2_wl_min, chi2_wl_max]``)
+	- model_wl_range : float array, optional
+		Minimum and maximum wavelength to cut model spectra (to make the code faster). 
+		Default values are the same as ``chi2_wl_range`` with a padding to avoid the point below.
+		CAVEAT: the selected wavelength range of model spectra must cover the spectrophotometry used in the fit and a bit more (to avoid errors when resampling synthetic spectra using spectres)
 	- extinction_free_param : {``'yes'``, ``'no'``}, optional
 		Extinction as a free parameter: 
 			- ``'no'``: (default) null extinction is assumed and it will not change.
@@ -252,22 +260,12 @@ class Chi2FitOptions:
 	- scaling: float, optional (required if ``scaling_free_param='no'``)
 		Fixed scaling factor ((R/d)^2, R: object's radius, d: distance to the object) to be applied to model spectra
 	- skip_convolution : {``'yes'``, ``'no'``}, optional
-		Convolution of model spectra (the slowest process in the code) can be avoided only if ``fit_photometry='yes'`` and ``fit_spectra='no'``. Predetermined synthetic magnitudes in the desired filters are required. 
-			- ``'no'``: (default) do not avoid convolution
-			- ``'yes'``: skip the convolution of model spectra
-	- chi2_wl_range : float array, optional
-		Minimum and maximum wavelengths in microns where model spectra will be compared to the data. 
-		This parameter is used when ``fit_spectra='yes'`` but ignored when only ``fit_photometry='yes'``. 
-		Default values are the minimum and the maximum wavelengths of each input spectrum. E.g., ``chi2_wl_range = np.array([chi2_wl_min, chi2_wl_max]``)
+		Convolution of model spectra (the slowest process in the code) can (``'yes'``) or cannot (``'no'``; default) be avoided. ``skip_convolution='yes'`` only if ``fit_photometry='yes'`` and ``fit_spectra='no'``. Predetermined synthetic magnitudes in the desired filters are required. 
 	- avoid_IR_excess : {``'yes'``, ``'no'``}, optional
 		Wavelengths longer than ``IR_excess_limit`` will (``'yes'``) or will not (``'no'``; default) be avoided in the fit in case infrared excesses are expected. 
 	- IR_excess_limit : float, optional
 		Shortest wavelength at which IR excesses are expected (default 3 um).
 	'''
-#	model_wl_range : float array, optional
-#		minimum and maximum wavelength to cut model spectra (to make the code faster). 
-#		default values are chi2_wl_range with a padding to avoid the point below.
-#		CAVEAT: the selected wavelength range of model spectra must cover the spectrophotometry used in the fit AND A BIT MORE (to avoid errors when resampling synthetic spectra)
 #	save_results: string, optional
 #		'yes' (default) or 'no' to save SEDA results
 #	'''
