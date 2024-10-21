@@ -118,9 +118,8 @@ class ModelOptions:
 
 	Parameters:
 	-----------
-		- mo : string
-			   asdf asdf 
-		- model : string
+	- model : string
+		- model : {``'Sonora_Diamondback'``, ``'Sonora_Elf_Owl'``, ``'LB23'``} 
 			Atmospheric models used in the comparison. Available models: 
 				'Sonora_Diamondback': cloudy (silicate clouds) atmospheric models assuming chemical equilibrium but considering the effect of both clouds and metallicity by Morley et al. (2024).
 				(https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract)
