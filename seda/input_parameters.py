@@ -253,12 +253,13 @@ class Chi2FitOptions:
 		Fixed scaling factor ((R/d)^2, R: object's radius, d: distance to the object) to be applied to model spectra
 	- skip_convolution : string, optional
 		Convolution of model spectra (the slowest process in the code) can be avoided only if ``fit_photometry='yes'`` and ``fit_spectra='no'``. Predetermined synthetic magnitudes in the desired filters are required. 
-			- 'no': (default) 
-			- 'yes': to do not or do skip the convolution of model spectra (the slowest process in the code). 
+			- ``'no'``: (default) do not avoid convolution
+			- ``'yes'``: skip the convolution of model spectra
+	- chi2_wl_range : float array, optional
+		Minimum and maximum wavelengths in microns where model spectra will be compared to the data. 
+		This parameter is used when ``fit_spectra='yes'`` but ignored when only ``fit_photometry='yes'``. 
+		Default values are the minimum and the maximum wavelengths of each input spectrum. E.g., chi2_wl_range = np.array([chi2_wl_min, chi2_wl_max])
 	'''
-#	chi2_wl_range : float array, optional
-#		minimum and maximum wavelengths in micron where model spectra are compared to the data. This parameter is used when fitting spectra but ignored when comparing photometry only.
-#		default values are the minimum and the maximum wavelengths of each input spectrum.
 #	avoid_IR_excess : string, optional
 #		'yes' or 'no' (default) to avoid or do not avoid fitting data where IR excesses could exist beyond IR_excess_limit
 #	IR_excess_limit : float, optional
