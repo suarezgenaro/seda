@@ -252,15 +252,16 @@ class Chi2FitOptions:
 	- scaling: float, optional (required if ``scaling_free_param='no'``)
 		Fixed scaling factor ((R/d)^2, R: object's radius, d: distance to the object) to be applied to model spectra
 	- skip_convolution : string, optional
-		Convolution of model spectra (the slowest process in the code) can be avoided only if ``fit_photometry='yes'`` and ``fit_spectra='no'``. Predetermined synthetic magnitudes in the desired filters are required. 
+		-Convolution of model spectra (the slowest process in the code) can be avoided only if ``fit_photometry='yes'`` and ``fit_spectra='no'``. 
+		-Predetermined synthetic magnitudes in the desired filters are required. 
 			- ``'no'``: (default) do not avoid convolution
 			- ``'yes'``: skip the convolution of model spectra
 	- chi2_wl_range : float array, optional
 		Minimum and maximum wavelengths in microns where model spectra will be compared to the data. 
 		This parameter is used when ``fit_spectra='yes'`` but ignored when only ``fit_photometry='yes'``. 
 		Default values are the minimum and the maximum wavelengths of each input spectrum. E.g., ``chi2_wl_range = np.array([chi2_wl_min, chi2_wl_max]``)
-	- avoid_IR_excess : {``'yes'``, ``'no'`` (default)}, optional
-		If infrared excesses are expected, wavelengths longer that ``IR_excess_limit`` can be avoided in the fit
+	- avoid_IR_excess : {``'yes'``, ``'no'``}, optional
+		Wavelengths longer than ``IR_excess_limit`` will (``'yes'``) or will not (``'no'`` (default)) be avoided in the fit in case infrared excesses are expected. 
 	'''
 #	IR_excess_limit : float, optional
 #		shortest wavelength where IR excesses are expected (default 3 um)
