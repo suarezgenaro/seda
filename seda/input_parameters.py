@@ -241,17 +241,17 @@ class Chi2FitOptions:
 
 	Parameters:
 	-----------
-	- extinction_free_param : string, optional
+	- extinction_free_param : {``'yes'``, ``'no'``}, optional
 		Extinction as a free parameter: 
 			- ``'no'``: (default) null extinction is assumed and it will not change.
 			- ``'yes'``: null extinction is assumed and it varies to minimize chi square.
-	- scaling_free_param : string, optional
+	- scaling_free_param : {``'yes'``, ``'no'``}, optional
 		Scaling as a free parameter: 
 			- ``'yes'``: (default) to find the scaling that minimizes chi square for each model
-			- ``'no'``: to fix the scaling if radius and distance are known
+			- ``'no'``: to fix ``scaling`` if radius and distance are known
 	- scaling: float, optional (required if ``scaling_free_param='no'``)
 		Fixed scaling factor ((R/d)^2, R: object's radius, d: distance to the object) to be applied to model spectra
-	- skip_convolution : string, optional
+	- skip_convolution : {``'yes'``, ``'no'``}, optional
 		Convolution of model spectra (the slowest process in the code) can be avoided only if ``fit_photometry='yes'`` and ``fit_spectra='no'``. Predetermined synthetic magnitudes in the desired filters are required. 
 			- ``'no'``: (default) do not avoid convolution
 			- ``'yes'``: skip the convolution of model spectra
@@ -261,9 +261,9 @@ class Chi2FitOptions:
 		Default values are the minimum and the maximum wavelengths of each input spectrum. E.g., ``chi2_wl_range = np.array([chi2_wl_min, chi2_wl_max]``)
 	- avoid_IR_excess : {``'yes'``, ``'no'``}, optional
 		Wavelengths longer than ``IR_excess_limit`` will (``'yes'``) or will not (``'no'`` (default)) be avoided in the fit in case infrared excesses are expected. 
+	- IR_excess_limit : float, optional
+		Shortest wavelength at which IR excesses are expected (default 3 um).
 	'''
-#	IR_excess_limit : float, optional
-#		shortest wavelength where IR excesses are expected (default 3 um)
 #	model_wl_range : float array, optional
 #		minimum and maximum wavelength to cut model spectra (to make the code faster). 
 #		default values are chi2_wl_range with a padding to avoid the point below.
