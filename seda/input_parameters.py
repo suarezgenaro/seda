@@ -19,10 +19,10 @@ class InputData:
 		- fit_photometry : string, optional
 			'yes': fit photometry
 			'no': (default) do not fit photometry
-		- wl_spectra : float array, optional (required when `fit_spectra=='yes'`)
+		- wl_spectra : float array, optional (required when ``fit_spectra=='yes'``)
 			Wavelength in um of the spectrum or set of spectra for the fits. 
    			When providing more than one spectrum, verify that there is no overlap between the spectra. 
-			Provide the multiple spectra as a list (e.g., `wl_spectra = []`, `wl_spectra.append(spectrum_1)`, etc.).
+			Provide the multiple spectra as a list (e.g., ``wl_spectra = []``, ``wl_spectra.append(spectrum_1)``, etc.).
 			The input list must have the spectra from shorter to longer wavelength coverage
 		- flux_spectra : float array, optional
 			Fluxes in erg/cm^2/s/A of the input spectrum or spectra.
@@ -30,17 +30,17 @@ class InputData:
 		- eflux_spectra : float array, optional
 			Fluxes uncertainties in erg/cm^2/s/A of the input spectrum or spectra. 
 			Input multiple spectra as a list (equivalent to wl_spectra). 
-		- mag_phot : float array, optional (required when `fit_photometry=='yes'`)
+		- mag_phot : float array, optional (required when ``fit_photometry=='yes'``)
 			magnitudes for the fit
-		- emag_phot : float array, optional (required when `fit_photometry=='yes'`)
+		- emag_phot : float array, optional (required when ``fit_photometry=='yes'``)
 			Magnitude uncertainties for the fit. Magnitudes with uncertainties equal to zero are excluded from the fit.
-		- filter_phot : float array, optional (required when `fit_photometry=='yes'`)
+		- filter_phot : float array, optional (required when ``fit_photometry=='yes'``)
 			filters associated to the input magnitudes following SVO filter IDs 
 			http://svo2.cab.inta-csic.es/theory/fps/
 		- R : float, optional
-			resolution at `lam_R` of input spectra (default R=100) to smooth model spectra.
+			resolution at ``lam_R`` of input spectra (default R=100) to smooth model spectra.
 		- lam_R : float, optional
-			wavelength reference (default 2 um) for `R`.
+			wavelength reference (default 2 um) for ``R``.
 		- distance : float, optional
 			target distance (in pc) used to derive radius from the scaling factor
 		- edistance : float, optional
