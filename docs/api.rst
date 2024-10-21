@@ -18,6 +18,8 @@ Model Options
 
 Chi2 Fit Options
 ++++++++++++++++
+.. autoclass:: seda.input_parameters.Chi2FitOptions
+    :members:
 
 Bayes Fit Options
 +++++++++++++++++
