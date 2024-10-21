@@ -251,12 +251,12 @@ class Chi2FitOptions:
 			- ``'no'``: to fix the scaling if radius and distance are known
 	- scaling: float, optional (required if ``scaling_free_param='no'``)
 		Fixed scaling factor ((R/d)^2, R: object's radius, d: distance to the object) to be applied to model spectra
+	- skip_convolution : string, optional
+		Convolution of model spectra (the slowest process in the code) can be avoided when ``fit_photometry='yes'`` and ``fit_spectra='no'``. 
+		Predetermined synthetic magnitudes in the desired filters are required. 
+			- 'no': (default) 
+			- 'yes': to do not or do skip the convolution of model spectra (the slowest process in the code). 
 	'''
-#	skip_convolution : string
-#		'no' (default) or 'yes' to do not or do skip the convolution of model spectra (the slowest process in the code). 
-#			Predetermined synthetic magnitudes in the desired filters are required. 
-#			CAVEAT: for skip_convolution='yes', fit_spectra must be 'no' i.e. the convolution process can be avoided only when photometry is compared.
-#			So far, skip_convolution=='yes' works with the filters from Gaia, PanSTARRS, 2MASS, and WISE (see filter_phot parameter)
 #	chi2_wl_range : float array, optional
 #		minimum and maximum wavelengths in micron where model spectra are compared to the data. This parameter is used when fitting spectra but ignored when comparing photometry only.
 #		default values are the minimum and the maximum wavelengths of each input spectrum.
