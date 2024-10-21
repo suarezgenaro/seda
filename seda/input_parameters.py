@@ -191,10 +191,10 @@ class ModelOptions:
 					- logg = [3.0, 5.5] in steps of 0.5 (g in cgs)
 					- fsed = 1, 2, 3, 4
 					- R = [100000, 700000] (the resolving power varies with wavelength)
+	- model_dir : str or list
+		Path to the directory (as str or list) or directories (as a list) containing the models
+		avoid using paths with null spaces because it will mess the format of tables with with the full path for model spectra
 	'''
-#	model_dir : str or list
-#		path to the directory (as str or list) or directories (as a list) containing the models
-#		avoid using paths with null spaces because it will mess the format of tables with with the full path for model spectra
 #	Teff_range : float array
 #		minimum and maximum Teff values to select a model grid subset
 #	logg_range : float array
