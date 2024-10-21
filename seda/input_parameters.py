@@ -120,7 +120,7 @@ class ModelOptions:
 	-----------
 	- model : {``'Sonora_Diamondback'``, ``'Sonora_Elf_Owl'``, ``'LB23'``, ``'Sonora_Cholla'``, ``'Sonora_Bobcat'``, ``'ATMO2020'``, ``'BT-Settl'``, ``'SM08'``}
 		Atmospheric models used in the comparison. Available models: 
-			- ``'Sonora_Diamondback'`` : cloudy (silicate clouds) atmospheric models assuming chemical equilibrium but considering the effect of both clouds and metallicity by Morley et al. (2024). https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract. https://zenodo.org/records/12735103
+			- ``'Sonora_Diamondback'`` : cloudy (silicate clouds) atmospheric models assuming chemical equilibrium but considering the effect of both clouds and metallicity by Morley et al. (2024). Paper: https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract. Data: https://zenodo.org/records/12735103
 				Parameter coverage: 
 					- wavelength = [0.3, 250] um
 					- Teff = [900, 2400] K in steps of 100 K
@@ -260,7 +260,7 @@ class Chi2FitOptions:
 		This parameter is used when ``fit_spectra='yes'`` but ignored when only ``fit_photometry='yes'``. 
 		Default values are the minimum and the maximum wavelengths of each input spectrum. E.g., ``chi2_wl_range = np.array([chi2_wl_min, chi2_wl_max]``)
 	- avoid_IR_excess : {``'yes'``, ``'no'``}, optional
-		Wavelengths longer than ``IR_excess_limit`` will (``'yes'``) or will not (``'no'`` (default)) be avoided in the fit in case infrared excesses are expected. 
+		Wavelengths longer than ``IR_excess_limit`` will (``'yes'``) or will not (``'no'``; default) be avoided in the fit in case infrared excesses are expected. 
 	- IR_excess_limit : float, optional
 		Shortest wavelength at which IR excesses are expected (default 3 um).
 	'''
