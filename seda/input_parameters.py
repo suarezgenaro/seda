@@ -13,51 +13,51 @@ class InputData:
 	
 	Parameters:
 	-----------
-		- fit_spectra : string, optional
-			'yes': (default) fit spectra. 
-			'no': do not fit spectra. 
-		- fit_photometry : string, optional
-			'yes': fit photometry. 
-			'no': (default) do not fit photometry.  
-		- wl_spectra : float array, optional (required when ``fit_spectra=='yes'``)
-			Wavelength in um of the spectrum or set of spectra for the fits. 
-   			When providing more than one spectrum, verify that there is no overlap between the spectra. 
-			Provide the multiple spectra as a list (e.g., ``wl_spectra = []``, ``wl_spectra.append(spectrum_1)``, etc.).
-			The input list must have the spectra from shorter to longer wavelength coverage
-		- flux_spectra : float array, optional
-			Fluxes in erg/cm^2/s/A of the input spectrum or spectra.
-			Input list for multiple spectra (equivalent to wl_spectra).
-		- eflux_spectra : float array, optional
-			Fluxes uncertainties in erg/cm^2/s/A of the input spectrum or spectra. 
-			Input multiple spectra as a list (equivalent to wl_spectra). 
-		- mag_phot : float array, optional (required when ``fit_photometry=='yes'``)
-			Magnitudes for the fit
-		- emag_phot : float array, optional (required when ``fit_photometry=='yes'``)
-			Magnitude uncertainties for the fit. Magnitudes with uncertainties equal to zero are excluded from the fit.
-		- filter_phot : float array, optional (required when ``fit_photometry=='yes'``)
-			Filters associated to the input magnitudes following SVO filter IDs 
-			http://svo2.cab.inta-csic.es/theory/fps/
-		- R : float, optional
-			Resolution at ``lam_R`` of input spectra (default R=100) to smooth model spectra.
-		- lam_R : float, optional
-			Wavelength reference (default 2 um) for ``R``.
-		- distance : float, optional
-			Target distance (in pc) used to derive radius from the scaling factor
-		- edistance : float, optional
-			Distance error (in pc)
+	- fit_spectra : string, optional
+		'yes': (default) fit spectra. 
+		'no': do not fit spectra. 
+	- fit_photometry : string, optional
+		'yes': fit photometry. 
+		'no': (default) do not fit photometry.  
+	- wl_spectra : float array, optional (required when ``fit_spectra=='yes'``)
+		Wavelength in um of the spectrum or set of spectra for the fits. 
+		When providing more than one spectrum, verify that there is no overlap between the spectra. 
+		Provide the multiple spectra as a list (e.g., ``wl_spectra = []``, ``wl_spectra.append(spectrum_1)``, etc.).
+		The input list must have the spectra from shorter to longer wavelength coverage
+	- flux_spectra : float array, optional
+		Fluxes in erg/cm^2/s/A of the input spectrum or spectra.
+		Input list for multiple spectra (equivalent to wl_spectra).
+	- eflux_spectra : float array, optional
+		Fluxes uncertainties in erg/cm^2/s/A of the input spectrum or spectra. 
+		Input multiple spectra as a list (equivalent to wl_spectra). 
+	- mag_phot : float array, optional (required when ``fit_photometry=='yes'``)
+		Magnitudes for the fit
+	- emag_phot : float array, optional (required when ``fit_photometry=='yes'``)
+		Magnitude uncertainties for the fit. Magnitudes with uncertainties equal to zero are excluded from the fit.
+	- filter_phot : float array, optional (required when ``fit_photometry=='yes'``)
+		Filters associated to the input magnitudes following SVO filter IDs 
+		http://svo2.cab.inta-csic.es/theory/fps/
+	- R : float, optional
+		Resolution at ``lam_R`` of input spectra (default R=100) to smooth model spectra.
+	- lam_R : float, optional
+		Wavelength reference (default 2 um) for ``R``.
+	- distance : float, optional
+		Target distance (in pc) used to derive radius from the scaling factor
+	- edistance : float, optional
+		Distance error (in pc)
 
 	Example:
 	--------
-		>>> import seda
-		>>> 
-		>>> # input spectrum wl_input, flux_input, eflux_input
-		>>> wl_spectra = wl_input # in um
-		>>> flux_spectra = flux_input # in erg/cm^2/s/A
-		>>> eflux_spectra = eflux_input # in erg/cm^2/s/A
-		>>> R = 100 # input spectrum resolution
-		>>> lam_R = 2.0 # (um) wavelength reference for R
-		>>> my_input_data = seda.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, eflux_spectra=eflux_spectra, R=R, lam_R=lam_R)
-			Input data loaded successfully
+	>>> import seda
+	>>> 
+	>>> # input spectrum wl_input, flux_input, eflux_input
+	>>> wl_spectra = wl_input # in um
+	>>> flux_spectra = flux_input # in erg/cm^2/s/A
+	>>> eflux_spectra = eflux_input # in erg/cm^2/s/A
+	>>> R = 100 # input spectrum resolution
+	>>> lam_R = 2.0 # (um) wavelength reference for R
+	>>> my_input_data = seda.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, eflux_spectra=eflux_spectra, R=R, lam_R=lam_R)
+		Input data loaded successfully
 	'''
 
 	def __init__(self, 
