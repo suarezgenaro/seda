@@ -120,24 +120,39 @@ class ModelOptions:
 	-----------
 	- model : string
 		Atmospheric models used in the comparison. Available models: 
-			- ``'Sonora_Diamondback'`` : cloudy (silicate clouds) atmospheric models assuming chemical equilibrium but considering the effect of both clouds and metallicity by Morley et al. (2024). https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract. 
+			- ``'Sonora_Diamondback'`` : cloudy (silicate clouds) atmospheric models assuming chemical equilibrium but considering the effect of both clouds and metallicity by Morley et al. (2024). https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract
 				Parameters coverage: 
 					- wavelength = [0.3, 250] um
 					- Teff = [900, 2400] K in steps of 100 K
 					- logg = [3.5, 5.5] in steps of 0.5
 					- [M/H] = [-0.5, 0.5] (cgs) in steps of 0.5
 					- fsed = 1, 2, 3, 4, 8, nc
-			- ``'Sonora_Elf_Owl'`` : models with atmospheric mixing and chemical disequilibrium with varying metallicity and C/O by Mukherjee et al. (2024). https://ui.adsabs.harvard.edu/abs/2024arXiv240200756M/abstract.
+			- ``'Sonora_Elf_Owl'`` : models with atmospheric mixing and chemical disequilibrium with varying metallicity and C/O by Mukherjee et al. (2024). https://ui.adsabs.harvard.edu/abs/2024ApJ...963...73M/abstract
 				Parameters coverage: 
 					- wavelength = [0.6, 15] um
 					- Teff = [275, 2400] K in steps: 25 K for 275-600 K, 50 K for 600-1000 K, and 100 K for 1000-2400 K
 					- logg = [3.25, 5.50] in steps of 0.25 dex
 					- logKzz = 2, 4, 7, 8, and 9 (Kzz in cm2/s)
 					- [M/H] = [-1.0, 1.0] (cgs) with values of -1.0, -0.5, +0.0, +0.5, +0.7, and +1.0
-					- C/O = [0.5, 2.5] with steps of 0.5 (relative to solar C/O, assumed as 0.458)(these are the values in the filenames). It corresponds to C/O=[0.22, 1.12] with values of 0.22, 0.458, 0.687, and 1.12 (e.g. 0.5 in the filename means 0.5*0.458=0.22)
+					- C/O = [0.5, 2.5] with steps of 0.5 (relative to solar C/O, assumed as 0.458) (these are the values in the filenames). It corresponds to C/O=[0.22, 1.12] with values of 0.22, 0.458, 0.687, and 1.12 (e.g. 0.5 in the filename means 0.5*0.458=0.22)
+			- ``'LB23'`` : cloudy (water clouds) atmospheric models with equilibrium and non-equilibrium chemistry for Y-dwarf atmospheres by Lacy & Burrows (2023). https://ui.adsabs.harvard.edu/abs/2023ApJ...950....8L/abstract
+				Parameters coverage for cloudless models:
+					- wavelength = [0.5, 300] um with 30,000 frequency points evenly spaced in ln(frequency)
+					- R~4340 (average resolving power)
+					- Teff = [200, 600] K in steps of 25 K
+					- logg = [3.50, 5.00] in steps of 0.25 (g in cgs)
+					- [M/H] = -0.5, 0.0, and 0.5 (Z/Z_sun = 0.316, 1.0, 3.16)
+					- logKzz = 6 for non-equilibrium models
+
+				Parameters coverage for cloudy models:
+					- Teff = [200, 400] K (200-350 for Z/Z_sun=3.16) in steps of 25 K 
+					- logg = [3.75, 5.00] in steps of 0.25 (g in cgs)
+					- [M/H] = -0.5, 0.0, and 0.5 (Z/Z_sun = 0.316, 1.0, 3.16), but some Z/Z_sun=3.16 are missing
+					- logKzz = 6 for non-equilibrium models
 	'''
-#			'LB23': cloudy (water clouds) atmospheric models with equilibrium and non-equilibrium chemistry for Y-dwarf atmospheres by Lacy & Burrows (2023).
-#				(https://ui.adsabs.harvard.edu/abs/2023ApJ...950....8L)
+
+#					There are some additional cloudy atmospheres extending to lower surface gravities and warmer temperatures in some combinations where convergence was easy.
+#
 #					Parameters coverage in common for all grids:
 #										lambda=0.5-300 um with 30,000 frequency points evenly spaced in ln(frequency)
 #										average resolving power of R~4340
