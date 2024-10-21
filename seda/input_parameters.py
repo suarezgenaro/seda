@@ -154,31 +154,31 @@ class ModelOptions:
 					- Hmix (mixing length) = 1.0, 0.1, and 0.01
 					- This grid replaces the original one ("The original spectra had an inconsistent wavelength grid and was missing CO2, so new ones are really a replacement.")
 			- ``'Sonora_Cholla'`` : cloudless models with non-equilibrium chemistry due to different eddy diffusion parameters by Karalidi et al. (2021). https://ui.adsabs.harvard.edu/abs/2021ApJ...923..269K/abstract
-				Parameters coverage: 
+				Parameter coverage: 
 					- wavelength = [1, 250] um for Teff>=850 K (plus some with Teff=750 K)
 					- wavelength = [0.3, 250] um for Teff<800 K (plus 950K_1780g_logkzz2.spec)
 					- Teff = [500, 1300] K in steps of 50 K
 					- logg = [3.00, 5.50] in steps of 0.25 (g in cgs)
 					- log Kzz=2, 4, and 7
 			- ``'Sonora_Bobcat'`` : cloudless models in chemical equilibrium by Marley et al. (2021). https://ui.adsabs.harvard.edu/abs/2021ApJ...920...85M/abstract
-				Parameters coverage: 
+				Parameter coverage: 
 					- wavelength = [0.4, 50] um
 					- Teff = [200, 2400] K in steps: 25 K for 200-600 K, 50 K for 600-1000 K, and 100 K for 1000-2400 K
 					- logg = [3.25, 5.50] in steps of 0.25 (g in cgs)
 					- M/H=-0.5, 0.0, and 0.5
 					- C/O = 0.5, 1.0 (solar C/O), and 1.5 for solar metallicity models
 					- R = [6000, 200000] (the resolving power varies with wavelength but is otherwise the same for all spectra)
+			- ``'ATMO2020'`` : cloudless atmospheric models with chemical and non-chemical equilibrium by Phillips et al. (2020). https://ui.adsabs.harvard.edu/abs/2020A%26A...637A..38P/abstract
+				ATMO2020 includes three grid:
+						- 'ATMO2020_CEQ': cloudless models with equilibrium chemistry
+						- 'ATMO2020_NEQ_weak': cloudless models with non-equilibrium chemistry due to weak vertical mixing (logKzz=4).
+						- 'ATMO2020_NEQ_strong': cloudless models with non-equilibrium chemistry due to strong vertical mixing (logKzz=6).
+				Parameter coverage: 
+					- wavelength = [0.2, 2000] um
+					- Teff = [200, 2400] K in steps varying from 25 K to 100 K
+					- logg = [2.5, 5.5] in steps of 0.5 (g in cgs)
+					- logKzz = 0 (ATMO2020_CEQ), 4 (ATMO2020_NEQ_weak), and 6 (ATMO2020_NEQ_strong)
 	'''
-#			'ATMO2020': cloudless atmospheric models with chemical and non-chemical equilibrium by Phillips et al. (2020)
-#					(https://ui.adsabs.harvard.edu/abs/2020A%26A...637A..38P/abstract)
-#					ATMO2020 includes three grid:
-#						'ATMO2020_CEQ': cloudless models with equilibrium chemistry
-#						'ATMO2020_NEQ_weak': cloudless models with non-equilibrium chemistry due to weak vertical mixing (logKzz=4).
-#						'ATMO2020_NEQ_strong': cloudless models with non-equilibrium chemistry due to strong vertical mixing (logKzz=6).
-#					Parameters coverage: 0.2<=wavelength(um)<=2000
-#										 200<=Teff(K)<=2400 in steps varying from 25 K to 100 K 
-#										 2.5<=logg<=5.5 in steps of 0.5 dex
-#										 logKzz=4 (ATMO2020_NEQ_weak) and 6 (ATMO2020_NEQ_strong) and non Kzz for ATMO2020_CEQ
 #			'BT-Settl': cloudy models with non-equilibrium chemistry by Allard et al. (2012). 
 #					(https://ui.adsabs.harvard.edu/abs/2012RSPTA.370.2765A/abstract)
 #					Parameters coverage: 200<=Teff<=4200 (Teff<=450 K for only logg<=3.5), 2.0<=logg<=5.5
