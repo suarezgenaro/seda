@@ -245,13 +245,13 @@ class Chi2FitOptions:
 		Extinction as a free parameter: 
 			- ``'no'``: (default) null extinction is assumed and it will not change.
 			- ``'yes'``: null extinction is assumed and it varies to minimize chi square.
-	- scaling_free_param : string
+	- scaling_free_param : string, optional
+		Scaling as a free parameter: 
+			- ``'yes'``: (default) to find the scaling that minimizes chi square for each model
+			- ``'no'``: to fix the scaling if radius and distance are known
+	- scaling: float, optional (required if ``scaling_free_param='no'``)
+		Fixed scaling factor ((R/d)^2, R: object's radius, d: distance to the object) to be applied to model spectra
 	'''
-#	scaling_free_param : string
-#		scaling as a free parameter: 'yes' (default; to find the scaling that minimizes chi square for each model)
-#									 'no' (to fix the scaling if radius and distance are known)
-#	scaling: float, optional (required if scaling_free_param=='no')
-#		fixed scaling factor ((R/d)^2, R: object's radius, d: distance to the object) to be applied to model spectral to be compared to data
 #	skip_convolution : string
 #		'no' (default) or 'yes' to do not or do skip the convolution of model spectra (the slowest process in the code). 
 #			Predetermined synthetic magnitudes in the desired filters are required. 
