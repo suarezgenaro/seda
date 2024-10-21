@@ -118,7 +118,7 @@ class ModelOptions:
 
 	Parameters:
 	-----------
-	- model : string
+	- model : {``'Sonora_Diamondback'``, ``'Sonora_Elf_Owl'``, ``'LB23'``, ``'Sonora_Cholla'``, ``'Sonora_Bobcat'``, ``'ATMO2020'``, ```'BT-Settl'``, `'SM08'``}
 		Atmospheric models used in the comparison. Available models: 
 			- ``'Sonora_Diamondback'`` : cloudy (silicate clouds) atmospheric models assuming chemical equilibrium but considering the effect of both clouds and metallicity by Morley et al. (2024). https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract
 				Parameter coverage: 
@@ -184,7 +184,7 @@ class ModelOptions:
 					- Teff = [200, 4200] K (Teff<=450 K for only logg<=3.5) in steps varying from 25 K to 100 K
 					- logg = [2.0, 5.5] in steps of 0.5 (g in cgs)
 					- R = [100000, 500000] (the resolving power varies with wavelength)
-			- 'SM08': cloudy models with equilibrium chemistry by Saumon & Marley (2008). https://ui.adsabs.harvard.edu/abs/2008ApJ...689.1327S
+			- ``'SM08'`` : cloudy models with equilibrium chemistry by Saumon & Marley (2008). https://ui.adsabs.harvard.edu/abs/2008ApJ...689.1327S
 				Parameter coverage: 
 					- wavelength = [0.4, 50] um
 					- Teff = [800, 2400] K in steps of 100 K
