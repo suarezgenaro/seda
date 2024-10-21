@@ -120,8 +120,7 @@ class ModelOptions:
 	-----------
 	- model : string
 		Atmospheric models used in the comparison. Available models: 
-			- ``'Sonora_Diamondback'``: cloudy (silicate clouds) atmospheric models assuming chemical equilibrium but considering the effect of both clouds and metallicity by Morley et al. (2024). 
-				https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract. 
+			- ``'Sonora_Diamondback'``: cloudy (silicate clouds) atmospheric models assuming chemical equilibrium but considering the effect of both clouds and metallicity by Morley et al. (2024). https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract. 
 				Parameters coverage: 
 					- wavelength = [0.3, 250] um
 					- Teff = [900, 2400] K in steps of 100 K
