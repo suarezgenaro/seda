@@ -242,7 +242,7 @@ class Chi2FitOptions:
 	Parameters
 	----------
 	- extinction_free_param : string, optional
-		Extinction as a free parameter. 
+		Extinction as a free parameter: 
 			- 'no' (default; null extinction is assumed and it will not change)
 			- 'yes' (null extinction is assumed and it varies to minimize chi square)
 	'''
