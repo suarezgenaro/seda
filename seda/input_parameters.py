@@ -252,8 +252,7 @@ class Chi2FitOptions:
 	- scaling: float, optional (required if ``scaling_free_param='no'``)
 		Fixed scaling factor ((R/d)^2, R: object's radius, d: distance to the object) to be applied to model spectra
 	- skip_convolution : string, optional
-		Convolution of model spectra (the slowest process in the code) can be avoided when ``fit_photometry='yes'`` and ``fit_spectra='no'``. 
-		Predetermined synthetic magnitudes in the desired filters are required. 
+		Convolution of model spectra (the slowest process in the code) can be avoided only if ``fit_photometry='yes'`` and ``fit_spectra='no'``. Predetermined synthetic magnitudes in the desired filters are required. 
 			- 'no': (default) 
 			- 'yes': to do not or do skip the convolution of model spectra (the slowest process in the code). 
 	'''
