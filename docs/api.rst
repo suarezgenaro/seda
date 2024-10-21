@@ -8,6 +8,8 @@ Input Data
 ++++++++++
 .. autoclass:: seda.input_parameters.InputData
     :members:
+    :undoc-members:
+    :show-inheritance:
 
 Model Options
 +++++++++++++
