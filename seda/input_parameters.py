@@ -13,12 +13,14 @@ class InputData:
 	
 	Parameters:
 	-----------
+		- fit_spectra : {``'yes'``, ``'no'``}, optional
+			
 		- fit_spectra : string, optional
-			'yes': (default) fit spectra
-			'no': do not fit spectra
+			'yes': (default) fit spectra. 
+			'no': do not fit spectra. 
 		- fit_photometry : string, optional
-			'yes': fit photometry
-			'no': (default) do not fit photometry
+			'yes': fit photometry. 
+			'no': (default) do not fit photometry.  
 		- wl_spectra : float array, optional (required when ``fit_spectra=='yes'``)
 			Wavelength in um of the spectrum or set of spectra for the fits. 
    			When providing more than one spectrum, verify that there is no overlap between the spectra. 
@@ -31,20 +33,20 @@ class InputData:
 			Fluxes uncertainties in erg/cm^2/s/A of the input spectrum or spectra. 
 			Input multiple spectra as a list (equivalent to wl_spectra). 
 		- mag_phot : float array, optional (required when ``fit_photometry=='yes'``)
-			magnitudes for the fit
+			Magnitudes for the fit
 		- emag_phot : float array, optional (required when ``fit_photometry=='yes'``)
 			Magnitude uncertainties for the fit. Magnitudes with uncertainties equal to zero are excluded from the fit.
 		- filter_phot : float array, optional (required when ``fit_photometry=='yes'``)
-			filters associated to the input magnitudes following SVO filter IDs 
+			Filters associated to the input magnitudes following SVO filter IDs 
 			http://svo2.cab.inta-csic.es/theory/fps/
 		- R : float, optional
-			resolution at ``lam_R`` of input spectra (default R=100) to smooth model spectra.
+			Resolution at ``lam_R`` of input spectra (default R=100) to smooth model spectra.
 		- lam_R : float, optional
-			wavelength reference (default 2 um) for ``R``.
+			Wavelength reference (default 2 um) for ``R``.
 		- distance : float, optional
-			target distance (in pc) used to derive radius from the scaling factor
+			Target distance (in pc) used to derive radius from the scaling factor
 		- edistance : float, optional
-			distance error (in pc)
+			Distance error (in pc)
 
 	Example:
 	--------
