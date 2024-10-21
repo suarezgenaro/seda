@@ -144,12 +144,12 @@ class ModelOptions:
 					- logg = [3.50, 5.00] in steps of 0.25 (g in cgs)
 					- [M/H] = -0.5, 0.0, and 0.5 (Z/Z_sun = 0.316, 1.0, 3.16)
 					- logKzz = 6 for non-equilibrium models
-				Parameter coverage for cloudy models:
+				Parameter coverage for cloudy models (there are some additional cloudy atmospheres extending to lower surface gravities and warmer temperatures in some combinations where convergence was easy): 
 					- Teff = [200, 400] K (200-350 for Z/Z_sun=3.16) in steps of 25 K 
 					- logg = [3.75, 5.00] in steps of 0.25 (g in cgs)
 					- [M/H] = -0.5, 0.0, and 0.5 (Z/Z_sun = 0.316, 1.0, 3.16), but some Z/Z_sun=3.16 are missing
 					- logKzz = 6 for non-equilibrium models
-				There are some additional cloudy atmospheres extending to lower surface gravities and warmer temperatures in some combinations where convergence was easy. Extended models (additions to models in the paper)
+				Extended models (additions to models in the paper)
 					- Teff(K) up to 800 K
 					- Hmix (mixing length) = 1.0, 0.1, and 0.01
 					- This grid replaces the original one ("The original spectra had an inconsistent wavelength grid and was missing CO2, so new ones are really a replacement.")
