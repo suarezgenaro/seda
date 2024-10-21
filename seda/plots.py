@@ -107,7 +107,8 @@ def plot_chi2_fit(pickle_file, N_best_fits=1):
 	# plot best fits
 	for i in range(N_best_fits):
 		if model=='Sonora_Diamondback':
-			label_model = spectra_name_best[i][:-15]
+			label_model = spectra_name_best[i][:-11] # for models on Zenodo
+			#label_model = spectra_name_best[i][:-15] # for model files on dropbox via a private link
 		if model=='Sonora_Elf_Owl':
 			label_model = spectra_name_best[i][8:-3]
 		if model=='Sonora_Cholla':
