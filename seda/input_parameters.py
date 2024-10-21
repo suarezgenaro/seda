@@ -198,14 +198,13 @@ class ModelOptions:
 		Minimum and maximum Teff values to select a model grid subset (e.g., ``Teff_range = np.array([Teff_min, Teff_max])``)
 	logg_range : float array
 		Minimum and maximum logg values to select a model grid subset
+	- R_range: float array, optional ``bayes_fit``
+		Minimum and maximum radius values to sample the posterior for radius. It also needs the parameter ``distance`` in input_parameters.InputData
 	'''
-#	- R_range: float array, optional
-#		Minimum and maximum R values to sample the posterior for radius. It also needs the parameter distance.
 
 	def __init__(self, model, model_dir, Teff_range, logg_range, R_range=None):
 
 		self.model = model
-#		self.model_dir = model_dir
 		models_valid = ['Sonora_Diamondback', 'Sonora_Elf_Owl', 'LB23_all', 'Sonora_Cholla', 
 						'Sonora_Bobcat', 'ATMO2020_all', 'BT-Settl', 'SM08']
 		if model not in models_valid:
