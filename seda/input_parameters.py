@@ -239,8 +239,8 @@ class Chi2FitOptions:
 	------------
 		Define chi2 fit options for SEDA
 
-	Parameters
-	----------
+	Parameters:
+	-----------
 	- extinction_free_param : string, optional
 		Extinction as a free parameter: 
 			- ``'no'``: (default) null extinction is assumed and it will not change.
