@@ -150,18 +150,17 @@ class ModelOptions:
 					- [M/H] = -0.5, 0.0, and 0.5 (Z/Z_sun = 0.316, 1.0, 3.16), but some Z/Z_sun=3.16 are missing
 					- logKzz = 6 for non-equilibrium models
 				Extended models (additions to models in the paper)
-					- Teff(K) up to 800 K
+					- Teff up to 800 K
 					- Hmix (mixing length) = 1.0, 0.1, and 0.01
 					- This grid replaces the original one ("The original spectra had an inconsistent wavelength grid and was missing CO2, so new ones are really a replacement.")
+			- ``'Sonora_Cholla'`` : cloudless models with non-equilibrium chemistry due to different eddy diffusion parameters by Karalidi et al. (2021). https://ui.adsabs.harvard.edu/abs/2021ApJ...923..269K/abstract
+				Parameters coverage: 
+					- wavelength = [1, 250] um for Teff>=850 K (plus some with Teff=750 K)
+					- wavelength = [0.3, 250] um for Teff<800 K (plus 950K_1780g_logkzz2.spec)
+					- Teff = [500, 1300] K in steps of 50 K
+					- logg = [3.00, 5.50] in steps of 0.25
+					- log Kzz=2, 4, and 7
 	'''
-#							
-#			'Sonora_Cholla': cloudless models with non-equilibrium chemistry due to different eddy diffusion parameters by Karalidi et al. (2021)
-#					(https://ui.adsabs.harvard.edu/abs/2021ApJ...923..269K/abstract)
-#					Parameters coverage: 1<=wavelength(um)<=250 for Teff>=850 K (plus some with Teff=750 K)
-#										 0.3<=wavelength(um)<=250 for Teff<800 K (plus 950K_1780g_logkzz2.spec)
-#										 500<=Teff(K)<=1300 in steps of 50 K
-#										 3.0<=logg<=5.5 in steps of 0.25
-#										 log Kzz=2, 4, and 7
 #			'Sonora_Bobcat': cloudless models in chemical equilibrium by Marley et al. (2021)
 #					(https://ui.adsabs.harvard.edu/abs/2021ApJ...920...85M/abstract)
 #					Parameters coverage: 0.4<=wavelength(um)<=50
