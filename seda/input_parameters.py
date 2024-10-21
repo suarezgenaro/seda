@@ -192,16 +192,15 @@ class ModelOptions:
 					- fsed = 1, 2, 3, 4
 					- R = [100000, 700000] (the resolving power varies with wavelength)
 	- model_dir : str or list
-		Path to the directory (as str or list) or directories (as a list) containing the models (e.g., ``model_dir = ['path_1', 'path_2']``)
-		avoid using paths with null spaces because it will mess the format of tables with with the full path for model spectra
+		Path to the directory (str or list) or directories (as a list) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
+		Avoid using paths with null spaces. 
+	- Teff_range : float array
+		Minimum and maximum Teff values to select a model grid subset (e.g., ``Teff_range = np.array([Teff_min, Teff_max])``)
+	logg_range : float array
+		Minimum and maximum logg values to select a model grid subset
 	'''
-#	Teff_range : float array
-#		minimum and maximum Teff values to select a model grid subset
-#	logg_range : float array
-#		minimum and maximum logg values to select a model grid subset
-#	R_range: float array, optional
-#		minimum and maximum R values to sample the posterior for radius. It also needs the parameter distance.
-#	'''
+#	- R_range: float array, optional
+#		Minimum and maximum R values to sample the posterior for radius. It also needs the parameter distance.
 
 	def __init__(self, model, model_dir, Teff_range, logg_range, R_range=None):
 
