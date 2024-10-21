@@ -178,13 +178,20 @@ class ModelOptions:
 					- Teff = [200, 2400] K in steps varying from 25 K to 100 K
 					- logg = [2.5, 5.5] in steps of 0.5 (g in cgs)
 					- logKzz = 0 (ATMO2020_CEQ), 4 (ATMO2020_NEQ_weak), and 6 (ATMO2020_NEQ_strong)
+			- ``'BT-Settl'`` : cloudy models with non-equilibrium chemistry by Allard et al. (2012). https://ui.adsabs.harvard.edu/abs/2012RSPTA.370.2765A/abstract
+				Parameter coverage: 
+					- wavelength = [1.e-4, 100] um
+					- Teff = [200, 4200] K (Teff<=450 K for only logg<=3.5) in steps varying from 25 K to 100 K
+					- logg = [2.0, 5.5] in steps of 0.5 (g in cgs)
+					- R = [100000, 500000] (the resolving power varies with wavelength)
+			- 'SM08': cloudy models with equilibrium chemistry by Saumon & Marley (2008). https://ui.adsabs.harvard.edu/abs/2008ApJ...689.1327S
+				Parameter coverage: 
+					- wavelength = [0.4, 50] um
+					- Teff = [800, 2400] K in steps of 100 K
+					- logg = [3.0, 5.5] in steps of 0.5 (g in cgs)
+					- fsed = 1, 2, 3, 4
+					- R = [100000, 700000] (the resolving power varies with wavelength)
 	'''
-#			'BT-Settl': cloudy models with non-equilibrium chemistry by Allard et al. (2012). 
-#					(https://ui.adsabs.harvard.edu/abs/2012RSPTA.370.2765A/abstract)
-#					Parameters coverage: 200<=Teff<=4200 (Teff<=450 K for only logg<=3.5), 2.0<=logg<=5.5
-#			'SM08': cloudy models with equilibrium chemistry by Saumon & Marley (2008). 
-#					(https://ui.adsabs.harvard.edu/abs/2008ApJ...689.1327S)
-#					Parameters coverage: 800<=Teff<=2400, 3.0<=logg<=5.5
 #	model_dir : str or list
 #		path to the directory (as str or list) or directories (as a list) containing the models
 #		avoid using paths with null spaces because it will mess the format of tables with with the full path for model spectra
