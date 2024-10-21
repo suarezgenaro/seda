@@ -196,7 +196,7 @@ class ModelOptions:
 		Avoid using paths with null spaces. 
 	- Teff_range : float array
 		Minimum and maximum Teff values to select a model grid subset (e.g., ``Teff_range = np.array([Teff_min, Teff_max])``)
-	logg_range : float array
+	- logg_range : float array
 		Minimum and maximum logg values to select a model grid subset
 	- R_range: float array, optional ``bayes_fit``
 		Minimum and maximum radius values to sample the posterior for radius. It also needs the parameter ``distance`` in input_parameters.InputData
