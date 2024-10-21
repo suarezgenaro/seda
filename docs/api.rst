@@ -1,4 +1,4 @@
-The Code
+SEDA
 ========
 
 Input Parameters
@@ -21,3 +21,10 @@ Chi2 Fit Options
 
 Bayes Fit Options
 +++++++++++++++++
+
+
+Chi2 Fit
+--------
+
+Bayes Fit
+---------
