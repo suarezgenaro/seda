@@ -1,7 +1,7 @@
 Tutorials
 =========
 
-Fit atmospheric models to an observed spectrum
+Chi square fit of atmospheric models to an observed spectrum
 ----------------------------------------------
 
 .. toctree::
