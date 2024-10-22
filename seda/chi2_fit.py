@@ -11,7 +11,6 @@ from lmfit import Minimizer, minimize, Parameters, report_fit # model fit for no
 from sys import exit
 
 def chi2_fit(my_data, my_model, my_chi2):
-
 	'''
 	Description:
 	------------
@@ -25,7 +24,7 @@ def chi2_fit(my_data, my_model, my_chi2):
 
 	Returns:
 	--------
-	- ``model``+'_chi2_minimization.dat': file with all fitted model spectra sorted by chi square and including the information:
+	- ``model``+'_chi2_minimization.dat' : file with all fitted model spectra sorted by chi square and including the information:
 		spectrum name, chi square, reduced chi square, scaling, scaling error, extinction, extinction error, effective temperature, surface gravity, and iteration.
 	'''
 #	model+dynamic_sampling+'nested.pickle': results from the nested sampling provided by Dynesty
