@@ -272,29 +272,6 @@ class Chi2FitOptions:
 		scaling_free_param='yes', scaling=None, skip_convolution='no', 
 		avoid_IR_excess='no', IR_excess_limit=3, save_results='yes'):
 
-		## input data
-		#self.fit_spectra = my_input_data.fit_spectra
-		#self.fit_photometry = my_input_data.fit_photometry
-		#self.wl_spectra = my_input_data.wl_spectra
-		#self.flux_spectra = my_input_data.flux_spectra
-		#self.eflux_spectra = my_input_data.eflux_spectra
-		#self.mag_phot = my_input_data.mag_phot
-		#self.emag_phot = my_input_data.emag_phot
-		#self.filter_phot = my_input_data.filter_phot
-		#self.R = my_input_data.R
-		#self.lam_R = my_input_data.lam_R
-		#self.distance = my_input_data.distance
-		#self.edistance = my_input_data.edistance
-		#self.N_spectra = my_input_data.N_spectra
-
-		## model grid options
-		#self.model = my_grid.model
-		#self.model_dir = my_grid.model_dir
-		#self.Teff_range = my_grid.Teff_range
-		#self.logg_range = my_grid.logg_range
-		#self.R_range = my_grid.R_range
-
-		# chi2 options
 		self.save_results = save_results
 		self.scaling_free_param = scaling_free_param
 		self.scaling = scaling
