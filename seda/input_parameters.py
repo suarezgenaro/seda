@@ -44,6 +44,10 @@ class InputData:
 	- edistance : float, optional
 		Distance error (in pc)
 
+	Returns:
+	--------
+	- Dictionary with all input parameters (provided and default ones).
+
 	Example:
 	--------
 	>>> import seda
