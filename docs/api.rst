@@ -1,5 +1,5 @@
-:math:`\texttt{SEDA}`
-=====================
+SEDA
+====
 
 Input Parameters
 ----------------
