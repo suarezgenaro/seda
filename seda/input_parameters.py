@@ -301,7 +301,29 @@ class Chi2Options:
 		self.avoid_IR_excess = avoid_IR_excess
 		self.IR_excess_limit = IR_excess_limit
 
-		# read parameters from other classes
+		# read parameters from InputData
+		self.fit_spectra = my_data.fit_spectra
+		self.fit_photometry = my_data.fit_photometry
+		self.mag_phot = my_data.mag_phot
+		self.emag_phot = my_data.emag_phot
+		self.filter_phot = my_data.filter_phot
+		self.distance = my_data.distance
+		self.edistance = my_data.edistance
+		self.N_spectra = my_data.N_spectra
+		self.R = my_data.R
+		self.lam_R = my_data.lam_R
+		self.wl_spectra = my_data.wl_spectra
+		self.flux_spectra = my_data.flux_spectra
+		self.eflux_spectra = my_data.eflux_spectra
+
+		# read parameters from ModelOptions
+		self.model = my_model.model
+		self.Teff_range = my_model.Teff_range
+		self.logg_range = my_model.logg_range
+		self.R_range = my_model.R_range
+		self.model_dir = my_model.model_dir
+		
+		# extract parameters for convenience
 		N_spectra = my_data.N_spectra
 		wl_spectra = my_data.wl_spectra
 		model = my_model.model

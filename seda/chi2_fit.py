@@ -10,7 +10,7 @@ from astropy.table import vstack
 from lmfit import Minimizer, minimize, Parameters, report_fit # model fit for non-linear least-squares problems
 from sys import exit
 
-def chi2_fit(my_data, my_model, my_chi2):
+def chi2_fit(my_chi2):
 	'''
 	Description:
 	------------
@@ -29,10 +29,10 @@ def chi2_fit(my_data, my_model, my_chi2):
 		spectrum name, chi square, reduced chi square, scaling, scaling error, extinction, extinction error, physical parameters from the models (e.g. Teff and logg), and iterations to minimize chi square.
 	- '``model``\_chi2\_minimization.pickle' : dictionary
 		Dictionary with the results from the chi square minimization with the following parameters:
+		out_chi2['model']: model used
 	'''
 #	model+dynamic_sampling+'nested.pickle': results from the nested sampling provided by Dynesty
 #
-#		out_chi2['model']: model used
 #		out_chi2['spectra_name']: model spectra name
 #		out_chi2['out_lmfit']: output of the minner.minimize routine that minimizes chi2, which is used by seda to obtain parameters from the fit, 
 #								 namely iterations, scaling factor, extinction, and (reduced) chi square
@@ -171,27 +171,28 @@ def chi2_fit(my_data, my_model, my_chi2):
 	print('\nRunning chi2 fitting...')
 
 	# load input parameters
-	# input data
-	fit_spectra = my_data.fit_spectra
-	fit_photometry = my_data.fit_photometry
-	wl_spectra = my_data.wl_spectra
-	flux_spectra = my_data.flux_spectra
-	eflux_spectra = my_data.eflux_spectra
-	mag_phot = my_data.mag_phot
-	emag_phot = my_data.emag_phot
-	filter_phot = my_data.filter_phot
-	R = my_data.R
-	lam_R = my_data.lam_R
-	distance = my_data.distance
-	edistance = my_data.edistance
-	N_spectra = my_data.N_spectra
-	# model grid options
-	model = my_model.model
-	model_dir = my_model.model_dir
-	Teff_range = my_model.Teff_range
-	logg_range = my_model.logg_range
-	R_range = my_model.R_range
-	# chi2 options
+	# all are stored in my_chi2 but were defined in different classes
+	# from InputData
+	fit_spectra = my_chi2.fit_spectra
+	fit_photometry = my_chi2.fit_photometry
+	wl_spectra = my_chi2.wl_spectra
+	flux_spectra = my_chi2.flux_spectra
+	eflux_spectra = my_chi2.eflux_spectra
+	mag_phot = my_chi2.mag_phot
+	emag_phot = my_chi2.emag_phot
+	filter_phot = my_chi2.filter_phot
+	R = my_chi2.R
+	lam_R = my_chi2.lam_R
+	distance = my_chi2.distance
+	edistance = my_chi2.edistance
+	N_spectra = my_chi2.N_spectra
+	# from ModelOptions
+	model = my_chi2.model
+	model_dir = my_chi2.model_dir
+	Teff_range = my_chi2.Teff_range
+	logg_range = my_chi2.logg_range
+	R_range = my_chi2.R_range
+	# from Chi2Options
 	save_results = my_chi2.save_results
 	scaling_free_param = my_chi2.scaling_free_param
 	scaling = my_chi2.scaling
