@@ -9,8 +9,6 @@ Installation of :math:`\texttt{SEDA}` via GitHub:
     $ cd seda
     $ python setup.py install
 
-Dependencies
-++++++++++++
 The :math:`\texttt{SEDA}` code uses the following packages:
 
 Included in the `Ananconda <https://docs.continuum.io/>`_ installation:
