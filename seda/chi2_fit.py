@@ -18,9 +18,7 @@ def chi2_fit(my_chi2):
 
 	Parameters:
 	-----------
-	- my_data : parameters from ``input_parameters.InputData``
-	- my_model : parameters from ``input_parameters.ModelOptions``
-	- my_chi2 : parameters from ``input_parameters.Chi2Options``
+	- my_chi2 : return parameters from ``input_parameters.Chi2Options``, which also includes the parameters from ``input_parameters.InputData`` and ``input_parameters.ModelOptions``.
 
 	Returns:
 	--------
@@ -29,11 +27,11 @@ def chi2_fit(my_chi2):
 		spectrum name, chi square, reduced chi square, scaling, scaling error, extinction, extinction error, physical parameters from the models (e.g. Teff and logg), and iterations to minimize chi square.
 	- '``model``\_chi2\_minimization.pickle' : dictionary
 		Dictionary with the results from the chi square minimization with the following parameters:
-		out_chi2['model']: model used
+			- out_chi2['model']: atmospheric model chosen
+			- out_chi2['spectra_name']: model spectra names
 	'''
 #	model+dynamic_sampling+'nested.pickle': results from the nested sampling provided by Dynesty
 #
-#		out_chi2['spectra_name']: model spectra name
 #		out_chi2['out_lmfit']: output of the minner.minimize routine that minimizes chi2, which is used by seda to obtain parameters from the fit, 
 #								 namely iterations, scaling factor, extinction, and (reduced) chi square
 #		out_chi2['iterations_fit']: number of iterations to minimize chi square
