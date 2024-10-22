@@ -18,13 +18,13 @@ def chi2_fit(my_data, my_model, my_chi2):
 
 	Parameters:
 	-----------
-	- my_data: parameters from ``input_parameters.InputData``
-	- my_model: parameters from ``input_parameters.ModelOptions``
-	- my_chi2: parameters from ``input_parameters.Chi2Options``
+	- my_data : parameters from ``input_parameters.InputData``
+	- my_model : parameters from ``input_parameters.ModelOptions``
+	- my_chi2 : parameters from ``input_parameters.Chi2Options``
+
+	Returns:
+	--------
 	'''
-#
-#	Returns:
-#	--------
 #	- ``model``+'_chi2_minimization.dat' : file with all fitted model spectra sorted by chi square and including the information:
 #		spectrum name, chi square, reduced chi square, scaling, scaling error, extinction, extinction error, effective temperature, surface gravity, and iteration.
 #	'''
