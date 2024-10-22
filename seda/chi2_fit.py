@@ -10,7 +10,7 @@ from astropy.table import vstack
 from lmfit import Minimizer, minimize, Parameters, report_fit # model fit for non-linear least-squares problems
 from sys import exit
 
-def chi2_fit(my_input_data, my_grid, my_chi2):
+def chi2_fit(my_data, my_model, my_chi2):
 
 	'''
 	Description:
@@ -19,8 +19,9 @@ def chi2_fit(my_input_data, my_grid, my_chi2):
 	
 	Parameters:
 	-----------
-		Parameters from ``InputData``, ``ModelGridOptions``, and ``Chi2FitOptions`` classes in ``input_parameters``.
-
+		- my_data: parameters from ``input_parameters.InputData``
+		- my_model: parameters from ``input_parameters.ModelGridOptions``
+		- my_chi2: parameters from ``input_parameters.Chi2FitOptions``
 	'''
 #	Returns
 #	------
@@ -168,25 +169,25 @@ def chi2_fit(my_input_data, my_grid, my_chi2):
 
 	# load input parameters
 	# input data
-	fit_spectra = my_input_data.fit_spectra
-	fit_photometry = my_input_data.fit_photometry
-	wl_spectra = my_input_data.wl_spectra
-	flux_spectra = my_input_data.flux_spectra
-	eflux_spectra = my_input_data.eflux_spectra
-	mag_phot = my_input_data.mag_phot
-	emag_phot = my_input_data.emag_phot
-	filter_phot = my_input_data.filter_phot
-	R = my_input_data.R
-	lam_R = my_input_data.lam_R
-	distance = my_input_data.distance
-	edistance = my_input_data.edistance
-	N_spectra = my_input_data.N_spectra
+	fit_spectra = my_data.fit_spectra
+	fit_photometry = my_data.fit_photometry
+	wl_spectra = my_data.wl_spectra
+	flux_spectra = my_data.flux_spectra
+	eflux_spectra = my_data.eflux_spectra
+	mag_phot = my_data.mag_phot
+	emag_phot = my_data.emag_phot
+	filter_phot = my_data.filter_phot
+	R = my_data.R
+	lam_R = my_data.lam_R
+	distance = my_data.distance
+	edistance = my_data.edistance
+	N_spectra = my_data.N_spectra
 	# model grid options
-	model = my_grid.model
-	model_dir = my_grid.model_dir
-	Teff_range = my_grid.Teff_range
-	logg_range = my_grid.logg_range
-	R_range = my_grid.R_range
+	model = my_model.model
+	model_dir = my_model.model_dir
+	Teff_range = my_model.Teff_range
+	logg_range = my_model.logg_range
+	R_range = my_model.R_range
 	# chi2 options
 	save_results = my_chi2.save_results
 	scaling_free_param = my_chi2.scaling_free_param

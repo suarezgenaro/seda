@@ -54,7 +54,7 @@ class InputData:
 	>>> eflux_spectra = eflux_input # in erg/cm^2/s/A
 	>>> R = 100 # input spectrum resolution
 	>>> lam_R = 2.0 # (um) wavelength reference for R
-	>>> my_input_data = seda.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, eflux_spectra=eflux_spectra, R=R, lam_R=lam_R)
+	>>> my_data = seda.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, eflux_spectra=eflux_spectra, R=R, lam_R=lam_R)
 		Input data loaded successfully
 	'''
 
@@ -207,7 +207,7 @@ class ModelOptions:
 	>>> model_dir = ['my_path/output_575.0_650.0/', 'my_path/output_700.0_800.0/'] # folders to look for model spectra
 	>>> Teff_range = np.array((600, 800)) # Teff range
 	>>> logg_range = np.array((4.0, 5.0)) # logg range
-	>>> my_grid = seda.ModelOptions(model=model, model_dir=model_dir, logg_range=logg_range, Teff_range=Teff_range)
+	>>> my_model = seda.ModelOptions(model=model, model_dir=model_dir, logg_range=logg_range, Teff_range=Teff_range)
 		Model grid options loaded successfully
 	'''
 
@@ -267,7 +267,7 @@ class Chi2FitOptions:
 		Save (``'yes'``; default) or do not save (``'no'``)	``seda.chi2_fit`` results
 	'''
 
-	def __init__(self, my_input_data, my_grid, 
+	def __init__(self, my_data, my_model, 
 		chi2_wl_range=None, model_wl_range=None, extinction_free_param='no', 
 		scaling_free_param='yes', scaling=None, skip_convolution='no', 
 		avoid_IR_excess='no', IR_excess_limit=3, save_results='yes'):
@@ -281,9 +281,9 @@ class Chi2FitOptions:
 		self.IR_excess_limit = IR_excess_limit
 
 		# read parameters from other classes
-		N_spectra = my_input_data.N_spectra
-		wl_spectra = my_input_data.wl_spectra
-		model = my_grid.model
+		N_spectra = my_data.N_spectra
+		wl_spectra = my_data.wl_spectra
+		model = my_model.model
 
 		# define chi2_wl_range when not provided
 		if chi2_wl_range is None:
