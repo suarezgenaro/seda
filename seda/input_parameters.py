@@ -133,7 +133,7 @@ class ModelOptions:
 					- logKzz = 2, 4, 7, 8, and 9 (Kzz in cm2/s)
 					- [M/H] = [-1.0, 1.0] (cgs) with values of -1.0, -0.5, +0.0, +0.5, +0.7, and +1.0
 					- C/O = [0.5, 2.5] with steps of 0.5 (relative to solar C/O, assumed as 0.458) (these are the values in the filenames). It corresponds to C/O=[0.22, 1.12] with values of 0.22, 0.458, 0.687, and 1.12 (e.g. 0.5 in the filename means 0.5*0.458=0.22)
-			- ``'LB23'`` : cloudy (water clouds) atmospheric models with equilibrium and non-equilibrium chemistry for Y-dwarf atmospheres by Lacy & Burrows (2023). Paper: https://ui.adsabs.harvard.edu/abs/2023ApJ...950....8L/abstract. Data: https://zenodo.org/records/7779180. Extended models: Private communication with authors.
+			- ``'LB23'`` : cloudy (water clouds) atmospheric models with equilibrium and non-equilibrium chemistry for Y-dwarf atmospheres by Lacy & Burrows (2023). Paper: https://ui.adsabs.harvard.edu/abs/2023ApJ...950....8L/abstract. Data: https://zenodo.org/records/7779180. Extended models: Private communication with the authors.
 				Parameter coverage in common for all grids:
 					- wavelength = [0.5, 300] um with 30,000 frequency points evenly spaced in ln(frequency)
 					- R~4340 (average resolving power)
@@ -151,14 +151,14 @@ class ModelOptions:
 					- Teff up to 800 K
 					- Hmix (mixing length) = 1.0, 0.1, and 0.01
 					- This grid replaces the original one ("The original spectra had an inconsistent wavelength grid and was missing CO2, so new ones are really a replacement.")
-			- ``'Sonora_Cholla'`` : cloudless models with non-equilibrium chemistry due to different eddy diffusion parameters by Karalidi et al. (2021). https://ui.adsabs.harvard.edu/abs/2021ApJ...923..269K/abstract
+			- ``'Sonora_Cholla'`` : cloudless models with non-equilibrium chemistry due to different eddy diffusion parameters by Karalidi et al. (2021). Paper: https://ui.adsabs.harvard.edu/abs/2021ApJ...923..269K/abstract. Data: https://zenodo.org/records/4450269.
 				Parameter coverage: 
 					- wavelength = [1, 250] um for Teff>=850 K (plus some with Teff=750 K)
 					- wavelength = [0.3, 250] um for Teff<800 K (plus 950K_1780g_logkzz2.spec)
 					- Teff = [500, 1300] K in steps of 50 K
 					- logg = [3.00, 5.50] in steps of 0.25 (g in cgs)
 					- log Kzz=2, 4, and 7
-			- ``'Sonora_Bobcat'`` : cloudless models in chemical equilibrium by Marley et al. (2021). https://ui.adsabs.harvard.edu/abs/2021ApJ...920...85M/abstract
+			- ``'Sonora_Bobcat'`` : cloudless models in chemical equilibrium by Marley et al. (2021). Paper: https://ui.adsabs.harvard.edu/abs/2021ApJ...920...85M/abstract. Data: https://zenodo.org/records/5063476.
 				Parameter coverage: 
 					- wavelength = [0.4, 50] um
 					- Teff = [200, 2400] K in steps: 25 K for 200-600 K, 50 K for 600-1000 K, and 100 K for 1000-2400 K
@@ -166,7 +166,7 @@ class ModelOptions:
 					- M/H=-0.5, 0.0, and 0.5
 					- C/O = 0.5, 1.0 (solar C/O), and 1.5 for solar metallicity models
 					- R = [6000, 200000] (the resolving power varies with wavelength but is otherwise the same for all spectra)
-			- ``'ATMO2020'`` : cloudless atmospheric models with chemical and non-chemical equilibrium by Phillips et al. (2020). https://ui.adsabs.harvard.edu/abs/2020A%26A...637A..38P/abstract
+			- ``'ATMO2020'`` : cloudless atmospheric models with chemical and non-chemical equilibrium by Phillips et al. (2020). Paper: https://ui.adsabs.harvard.edu/abs/2020A%26A...637A..38P/abstract. Data: https://noctis.erc-atmo.eu/fsdownload/zyU96xA6o/phillips2020, http://perso.ens-lyon.fr/isabelle.baraffe/ATMO2020/.
 				ATMO2020 includes three grid:
 						- 'ATMO2020_CEQ': cloudless models with equilibrium chemistry
 						- 'ATMO2020_NEQ_weak': cloudless models with non-equilibrium chemistry due to weak vertical mixing (logKzz=4).
