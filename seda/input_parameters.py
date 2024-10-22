@@ -176,13 +176,13 @@ class ModelOptions:
 					- Teff = [200, 2400] K in steps varying from 25 K to 100 K
 					- logg = [2.5, 5.5] in steps of 0.5 (g in cgs)
 					- logKzz = 0 (ATMO2020_CEQ), 4 (ATMO2020_NEQ_weak), and 6 (ATMO2020_NEQ_strong)
-			- ``'BT-Settl'`` : cloudy models with non-equilibrium chemistry by Allard et al. (2012). https://ui.adsabs.harvard.edu/abs/2012RSPTA.370.2765A/abstract
+			- ``'BT-Settl'`` : cloudy models with non-equilibrium chemistry by Allard et al. (2012). Paper: https://ui.adsabs.harvard.edu/abs/2012RSPTA.370.2765A/abstract. Data: http://phoenix.ens-lyon.fr/simulator/.
 				Parameter coverage: 
 					- wavelength = [1.e-4, 100] um
 					- Teff = [200, 4200] K (Teff<=450 K for only logg<=3.5) in steps varying from 25 K to 100 K
 					- logg = [2.0, 5.5] in steps of 0.5 (g in cgs)
 					- R = [100000, 500000] (the resolving power varies with wavelength)
-			- ``'SM08'`` : cloudy models with equilibrium chemistry by Saumon & Marley (2008). https://ui.adsabs.harvard.edu/abs/2008ApJ...689.1327S
+			- ``'SM08'`` : cloudy models with equilibrium chemistry by Saumon & Marley (2008). Paper: https://ui.adsabs.harvard.edu/abs/2008ApJ...689.1327S. Data: Private communication with the authors.
 				Parameter coverage: 
 					- wavelength = [0.4, 50] um
 					- Teff = [800, 2400] K in steps of 100 K
