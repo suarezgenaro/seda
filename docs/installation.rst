@@ -34,3 +34,6 @@ These packages can be installed using ``pip``:
 
     $ pip install astropy matplotlib numy scipy
     $ pip install corner dynesty lmfit spectres xarray
+
+:math:`\texttt{SEDA}` has been tested in Python 3.9.
+:math:`\texttt{SEDA}` has been tested in Linux (Ubuntu 22.04), Windows, and macOS.
