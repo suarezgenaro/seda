@@ -231,7 +231,7 @@ class ModelOptions:
 		print('\nModel grid options loaded successfully')
 
 #+++++++++++++++++++++++++++
-class Chi2FitOptions:
+class Chi2Options:
 	'''
 	Description:
 	------------
