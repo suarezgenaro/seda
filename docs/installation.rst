@@ -27,3 +27,10 @@ External packages that must be installed separately (using ``pip``):
 * `lmfit <https://pypi.org/project/lmfit/>`_
 * `spectres <https://spectres.readthedocs.io/en/latest/>`_
 * `xarray <https://docs.xarray.dev/en/stable/>`_
+
+These packages can be installed using ``pip``:
+
+.. code-block:: console
+
+    $ pip install astropy matplotlib numy scipy
+    $ pip install corner dynesty lmfit spectres xarray
