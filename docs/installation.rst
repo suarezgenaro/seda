@@ -1,7 +1,7 @@
 Installation and Dependencies
 =============================
 
-Installation of :math:`\textttt{SEDA}` via GitHub:
+Installation of :math:`\texttt{SEDA}` via GitHub:
 
 .. code-block:: bash
 
