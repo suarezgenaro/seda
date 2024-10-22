@@ -12,7 +12,7 @@ Installation of :math:`\texttt{SEDA}` via GitHub:
 The :math:`\texttt{SEDA}` code uses the following packages:
 
 Dependencies
-++++++++++++
+------------
 
 Included in the `Ananconda <https://docs.continuum.io/>`_ installation:
 
