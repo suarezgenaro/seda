@@ -1,5 +1,5 @@
-Installation and Dependencies
-=============================
+Installation
+============
 
 Installation of :math:`\texttt{SEDA}` via GitHub:
 
@@ -9,8 +9,5 @@ Installation of :math:`\texttt{SEDA}` via GitHub:
     cd seda
     python setup.py install
 
-Installation
-------------
-
 Dependencies
-------------
+============
