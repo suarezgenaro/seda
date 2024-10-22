@@ -27,6 +27,8 @@ Bayes Fit Options
 
 Chi2 Fit
 --------
+.. autoclass:: seda.chi2_fit
+    :members:
 
 Bayes Fit
 ---------
