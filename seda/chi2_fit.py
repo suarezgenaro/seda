@@ -24,10 +24,10 @@ def chi2_fit(my_data, my_model, my_chi2):
 
 	Returns:
 	--------
-	- '``model``\_chi2\_minimization.dat' 
+	- '``model``\_chi2\_minimization.dat' : ascii table
+		Table with all fitted model spectra sorted by chi square and including the information: 
+		spectrum name, chi square, reduced chi square, scaling, scaling error, extinction, extinction error, effective temperature, surface gravity, and iteration.
 	'''
-#	- ``model``+'_chi2_minimization.dat' : file with all fitted model spectra sorted by chi square and including the information:
-#		spectrum name, chi square, reduced chi square, scaling, scaling error, extinction, extinction error, effective temperature, surface gravity, and iteration.
 #	'''
 #	model+dynamic_sampling+'nested.pickle': results from the nested sampling provided by Dynesty
 #	model+'chi2_minimization.pickle': dictionary with the results from the chi square minimization with the following parameters:
