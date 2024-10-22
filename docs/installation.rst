@@ -15,7 +15,7 @@ Installation of :math:`\texttt{SEDA}` via GitHub:
 Dependencies
 ------------
 
-The :math:`\texttt{SEDA}` code uses the following packages:
+:math:`\texttt{SEDA}` uses several python packages, as indicated below.
 
 Included in the `Ananconda <https://docs.continuum.io/>`_ installation:
 
