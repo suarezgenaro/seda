@@ -15,9 +15,8 @@ class InputData:
 	-----------
 	- fit_spectra : {``'yes'``, ``'no'``}, optional
 		Include (``'yes'``; default) or do not include (``'no'``) spectra.
-	- fit_photometry : string, optional
-		- ``'yes'``: fit photometry. 
-		- ``'no'``: (default) do not fit photometry.  
+	- fit_photometry : {``'yes'``, ``'no'``}, optional
+		Include (``'yes'``) or do not include (``'no'``; default) photometry.
 	- wl_spectra : float array, optional (required when ``fit_spectra=='yes'``)
 		Wavelength in um of the spectrum or set of spectra for the fits. 
 		When providing more than one spectrum, verify that there is no overlap between the spectra. 
