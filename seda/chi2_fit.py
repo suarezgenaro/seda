@@ -17,11 +17,11 @@ def chi2_fit(my_input_data, my_grid, my_chi2):
 	------------
 		Minimize the chi-square statistic to find the best model fits
 	
+	Parameters:
+	-----------
+		Parameters from ``InputData``, ``ModelGridOptions``, and ``Chi2FitOptions`` classes in ``input_parameters``.
+
 	'''
-#	Parameters
-#	----------
-#	Parameters in InputData, ModelGridOptions, and Chi2FitOptions classes
-#
 #	Returns
 #	------
 #	model+dynamic_sampling+'nested.pickle': results from the nested sampling provided by Dynesty
