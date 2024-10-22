@@ -46,6 +46,9 @@ def chi2_fit(my_chi2):
 			- out_chi2['chi2_red_wl_fit']: reduced chi-square as a function of wavelength.
 			- out_chi2['chi2_fit']: total chi-square.
 			- out_chi2['chi2_red_fit']: total reduced chi-square.
+			- out_chi2['weight_fit']: weight given to each data point in the fit considering the equation chi2 = weight * (data-model)^2 / edata^2.
+			- out_chi2['wl_array_model_conv_resam']: (if ``fit_spectra='yes'``) wavelength (in um) of model resampled, convolved model.
+			- out_chi2['flux_array_model_conv_resam']: scaled fluxes (in erg/cm2/s/A) of resampled, convolved model spectra.
 	'''
 #	model+dynamic_sampling+'nested.pickle': results from the nested sampling provided by Dynesty
 #
@@ -66,12 +69,9 @@ def chi2_fit(my_chi2):
 #		out_chi2['flux_array_model_conv']: scaled fluxes (in erg/cm2/s/A) of convolved model spectra
 #		out_chi2['flux_array_model_red']: scaled fluxes (in erg/cm2/s/A) of original-resolution reddened model spectra
 #		out_chi2['flux_array_model_conv_red']: scaled fluxes (in erg/cm2/s/A) of convolved reddened model spectra
-#		out_chi2['wl_array_model_conv_resam']: wavelengths (in um) of convolved model spectra re-sampled to the observed spectra (when provided)
-#		out_chi2['flux_array_model_conv_resam']: scaled fluxes (in erg/cm2/s/A) of resampled, convolved model spectra
 #		out_chi2['flux_array_model_conv_resam_red']: scaled fluxes (in erg/cm2/s/A) of resampled, convolved reddened model spectra
 #		out_chi2['flux_residuals']: linear of flux residual (in erg/cm2/s/A) between observed data and model spectra within the fit wavelength range
 #		out_chi2['logflux_residuals']: logarithm of flux residual (in erg/cm2/s/A) between observed data and model spectra within the fit wavelength range
-#		out_chi2['weight_fit']: weight given to each data point in the model comparison (weight in the equation chi2 = weight * (data-model)^2 / edata^2)
 #
 #	EXAMPLES
 #	--------
