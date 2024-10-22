@@ -15,13 +15,13 @@ def chi2_fit(my_data, my_model, my_chi2):
 	Description:
 	------------
 		Minimize the chi-square statistic to find the best model fits
+
+	Parameters:
+	-----------
+	- my_data: parameters from ``input_parameters.InputData``
+	- my_model: parameters from ``input_parameters.ModelOptions``
+	- my_chi2: parameters from ``input_parameters.Chi2Options``
 	'''
-#	
-#	Parameters:
-#	-----------
-#	- my_data: parameters from ``input_parameters.InputData``
-#	- my_model: parameters from ``input_parameters.ModelOptions``
-#	- my_chi2: parameters from ``input_parameters.Chi2Options``
 #
 #	Returns:
 #	--------
