@@ -143,7 +143,7 @@ def plot_chi2_fit(pickle_file, N_best_fits=1, ylog=True):
 	if (wl_spectra.max()-wl_spectra.min()>10): # use log-scale for wavelength in broad SEDs
 		plt.xscale('log')
 		ax[0].xaxis.set_major_formatter(StrMethodFormatter('{x:.0f}'))
-	ax[0].set_ylabel(r'$F_\lambda\ ($erg s$^{-1}$ cm$^{-2})$', size=12)
+	ax[0].set_ylabel(r'$F_\lambda\ ($erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)', size=12)
 	if model=='Sonora_Diamondback':
 		ax[0].set_title('Sonora Diamondback Atmospheric Models')
 	if model=='Sonora_Elf_Owl':
