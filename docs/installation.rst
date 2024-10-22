@@ -1,5 +1,8 @@
+Installation and Dependencies
+=============================
+
 Installation
-============
+------------
 
 Installation of :math:`\texttt{SEDA}` via GitHub:
 
