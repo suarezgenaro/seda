@@ -47,7 +47,7 @@ def plot_SED_sampling(wl_spectra, flux_spectra, eflux_spectra, model, sampling_f
 
 ##########################
 # plot SED and best model fits from SEDA
-def plot_chi2_fit(pickle_file, N_best_fits=1):
+def plot_chi2_fit(pickle_file, N_best_fits=1, ylog=True):
 	'''
 	Parameters
 	----------
@@ -55,6 +55,8 @@ def plot_chi2_fit(pickle_file, N_best_fits=1):
 		file name with the pickle file with chi2 results
 	N_best_fits: int 
 		number (default 1) of best model fits for plotting
+	ylog: boolen, optional
+		use logarithmic (``True``) or linear (``Flase``) scale plot fluxes and residuals.
 	'''
 
 #	import matplotlib.ticker as mtick
@@ -76,9 +78,11 @@ def plot_chi2_fit(pickle_file, N_best_fits=1):
 	flux_spectra = out_chi2['flux_array_data']
 	eflux_spectra = out_chi2['eflux_array_data']
 	wl_array_model_conv_resam = out_chi2['wl_array_model_conv_resam']
+	flux_residuals = out_chi2['flux_residuals']
 	logflux_residuals = out_chi2['logflux_residuals']
 	# sort variables read from the pickle file
 	sort_ind = np.argsort(out_chi2['chi2_red_fit'])
+	flux_residuals_best = flux_residuals[sort_ind][:N_best_fits,:]
 	logflux_residuals_best = logflux_residuals[sort_ind][:N_best_fits,:]
 
 	#------------------------
@@ -127,7 +131,7 @@ def plot_chi2_fit(pickle_file, N_best_fits=1):
 		mask = (wl_model_conv[:,i]>wl_array_model_conv_resam.min()) & (wl_model_conv[:,i]<wl_array_model_conv_resam.max())
 		ax[0].plot(wl_model_conv[:,i][mask], flux_model_conv[mask][:,i]*(1e4*wl_model_conv[mask][:,i]), '--', linewidth=1.0, label=label) # in erg/s/cm2
 
-	ax[0].set_yscale('log')
+	if ylog: ax[0].set_yscale('log')
 	ax[0].legend(loc='best', prop={'size': 6}, handlelength=1.5, handletextpad=0.5, labelspacing=0.5) 
 	ax[0].xaxis.set_minor_locator(AutoMinorLocator())
 	ax[0].grid(True, which='both', color='gainsboro', linewidth=0.5, alpha=1.0)
@@ -157,11 +161,15 @@ def plot_chi2_fit(pickle_file, N_best_fits=1):
 	#------------------------
 	# residuals
 	for i in range(N_best_fits): # for best fists
-		ax[1].plot(wl_array_model_conv_resam[i,:], logflux_residuals_best[i,:], linewidth=1.0) # in erg/s/cm2
+		if ylog:
+			ax[1].plot(wl_array_model_conv_resam[i,:], logflux_residuals_best[i,:], linewidth=1.0) # in erg/s/cm2
+		if not ylog:
+			ax[1].plot(wl_array_model_conv_resam[i,:], flux_residuals_best[i,:], linewidth=1.0) # in erg/s/cm2
 
 	ax[1].grid(True, which='both', color='gainsboro', linewidth=0.5, alpha=1.0)
 	ax[1].set_xlabel(r'$\lambda\ (\mu$m)', size=12)
-	ax[1].set_ylabel(r'$\Delta (\log \lambda F_\lambda$)', size=12)
+	if ylog: ax[1].set_ylabel(r'$\Delta (\log \lambda F_\lambda$)', size=12)
+	if not ylog: ax[1].set_ylabel(r'$\Delta (\lambda F_\lambda$)', size=12)
 
 	plt.savefig('SED_'+out_chi2['model']+'.pdf', bbox_inches='tight')
 	plt.show()

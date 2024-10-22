@@ -59,6 +59,7 @@ def chi2_fit(my_input_data, my_grid, my_chi2):
 		out_chi2['wl_array_model_conv_resam']: wavelengths (in um) of convolved model spectra re-sampled to the observed spectra (when provided)
 		out_chi2['flux_array_model_conv_resam']: scaled fluxes (in erg/cm2/s/A) of resampled, convolved model spectra
 		out_chi2['flux_array_model_conv_resam_red']: scaled fluxes (in erg/cm2/s/A) of resampled, convolved reddened model spectra
+		out_chi2['flux_residuals']: linear of flux residual (in erg/cm2/s/A) between observed data and model spectra within the fit wavelength range
 		out_chi2['logflux_residuals']: logarithm of flux residual (in erg/cm2/s/A) between observed data and model spectra within the fit wavelength range
 		out_chi2['weight_fit']: weight given to each data point in the model comparison (weight in the equation chi2 = weight * (data-model)^2 / edata^2)
 
@@ -791,10 +792,13 @@ def chi2_fit(my_input_data, my_grid, my_chi2):
 	out_chi2['flux_array_data'] = flux_spectra[ind_chi2]
 	out_chi2['eflux_array_data'] = eflux_spectra[ind_chi2]
 
-	# obtain residuals in log-scale for flux
+	# obtain residuals in linear and logarithmic-scale for fluxes
+	flux_residuals = np.zeros((len(spectra_name), len(flux_spectra[ind_chi2])))
 	logflux_residuals = np.zeros((len(spectra_name), len(flux_spectra[ind_chi2])))
 	for i in range(len(spectra_name)):
+		flux_residuals[i,:]	= out_chi2['flux_array_model_conv_resam'][i,:] - out_chi2['flux_array_data']
 		logflux_residuals[i,:]	= np.log10(out_chi2['flux_array_model_conv_resam'][i,:]) - np.log10(out_chi2['flux_array_data'])
+	out_chi2['flux_residuals'] = flux_residuals
 	out_chi2['logflux_residuals'] = logflux_residuals
 
 #	self.wl_array_model_conv_resam = out_chi2['wl_array_model_conv_resam']
