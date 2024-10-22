@@ -104,9 +104,11 @@ def plot_chi2_fit(pickle_file, N_best_fits=1, ylog=True):
 	mask = np.where(flux_spectra-eflux_spectra>0.1*flux_spectra.min()) # to avoid very small flux-eflux values
 	wl_region = np.append(wl_spectra[mask], np.flip(wl_spectra[mask]))
 	flux_region = np.append(flux_spectra[mask]-eflux_spectra[mask], np.flip(flux_spectra[mask]+eflux_spectra[mask]))
-	ax[0].fill(wl_region, flux_region*(1e4*wl_region), facecolor='black', edgecolor='white', linewidth=1, alpha=0.30, zorder=2) # in erg/s/cm2
+	#ax[0].fill(wl_region, flux_region*(1e4*wl_region), facecolor='black', edgecolor='white', linewidth=1, alpha=0.30, zorder=2) # in erg/s/cm2
+	ax[0].fill(wl_region, flux_region, facecolor='black', edgecolor='white', linewidth=1, alpha=0.30, zorder=2) # in erg/s/cm2
 	# plot observed spectra
-	ax[0].plot(wl_spectra, flux_spectra*(1e4*wl_spectra), color='black', linewidth=1.0, label='Observed spectra') # in erg/s/cm2
+	#ax[0].plot(wl_spectra, flux_spectra*(1e4*wl_spectra), color='black', linewidth=1.0, label='Observed spectra') # in erg/s/cm2
+	ax[0].plot(wl_spectra, flux_spectra, color='black', linewidth=1.0, label='Observed spectra') # in erg/s/cm2
 
 	# plot best fits
 	for i in range(N_best_fits):
@@ -129,7 +131,8 @@ def plot_chi2_fit(pickle_file, N_best_fits=1, ylog=True):
 			label_model = spectra_name_best[i][3:]
 		label = label_model+r' ($\chi^2_\nu=$'+str(round(chi2_red_fit_best[i],1))+')'
 		mask = (wl_model_conv[:,i]>wl_array_model_conv_resam.min()) & (wl_model_conv[:,i]<wl_array_model_conv_resam.max())
-		ax[0].plot(wl_model_conv[:,i][mask], flux_model_conv[mask][:,i]*(1e4*wl_model_conv[mask][:,i]), '--', linewidth=1.0, label=label) # in erg/s/cm2
+		#ax[0].plot(wl_model_conv[:,i][mask], flux_model_conv[mask][:,i]*(1e4*wl_model_conv[mask][:,i]), '--', linewidth=1.0, label=label) # in erg/s/cm2
+		ax[0].plot(wl_model_conv[:,i][mask], flux_model_conv[mask][:,i], '--', linewidth=1.0, label=label) # in erg/s/cm2
 
 	if ylog: ax[0].set_yscale('log')
 	ax[0].legend(loc='best', prop={'size': 6}, handlelength=1.5, handletextpad=0.5, labelspacing=0.5) 
@@ -138,7 +141,7 @@ def plot_chi2_fit(pickle_file, N_best_fits=1, ylog=True):
 	if (wl_spectra.max()-wl_spectra.min()>10): # use log-scale for wavelength in broad SEDs
 		plt.xscale('log')
 		ax[0].xaxis.set_major_formatter(StrMethodFormatter('{x:.0f}'))
-	ax[0].set_ylabel(r'$\lambda\ F_\lambda\ ($erg s$^{-1}$ cm$^{-2})$', size=12)
+	ax[0].set_ylabel(r'$F_\lambda\ ($erg s$^{-1}$ cm$^{-2})$', size=12)
 	if model=='Sonora_Diamondback':
 		ax[0].set_title('Sonora Diamondback Atmospheric Models')
 	if model=='Sonora_Elf_Owl':
@@ -168,8 +171,8 @@ def plot_chi2_fit(pickle_file, N_best_fits=1, ylog=True):
 
 	ax[1].grid(True, which='both', color='gainsboro', linewidth=0.5, alpha=1.0)
 	ax[1].set_xlabel(r'$\lambda\ (\mu$m)', size=12)
-	if ylog: ax[1].set_ylabel(r'$\Delta (\log \lambda F_\lambda$)', size=12)
-	if not ylog: ax[1].set_ylabel(r'$\Delta (\lambda F_\lambda$)', size=12)
+	if ylog: ax[1].set_ylabel(r'$\Delta (\log F_\lambda$)', size=12)
+	if not ylog: ax[1].set_ylabel(r'$\Delta (F_\lambda$)', size=12)
 
 	plt.savefig('SED_'+out_chi2['model']+'.pdf', bbox_inches='tight')
 	plt.show()
