@@ -825,7 +825,7 @@ def chi2_fit(my_data, my_model, my_chi2):
 		# save table with model spectra names sorted by chi square along with the parameters from each spectrum
 		out_save_params = save_params(dict_for_table=out_chi2)
 
-	print('\nSEDA ran SUCCESSFULLY')
+	print('\nChi square fit ran successfully')
 	fin_time_SEDA = time.time()
 	out_time_elapsed = time_elapsed(fin_time_SEDA-ini_time_SEDA)
 	print(f'   elapsed time running SEDA: {out_time_elapsed[0]} {out_time_elapsed[1]}')

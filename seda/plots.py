@@ -137,6 +137,8 @@ def plot_chi2_fit(pickle_file, N_best_fits=1, ylog=True):
 	if ylog: ax[0].set_yscale('log')
 	ax[0].legend(loc='best', prop={'size': 6}, handlelength=1.5, handletextpad=0.5, labelspacing=0.5) 
 	ax[0].xaxis.set_minor_locator(AutoMinorLocator())
+	if not ylog:
+		ax[0].yaxis.set_minor_locator(AutoMinorLocator())
 	ax[0].grid(True, which='both', color='gainsboro', linewidth=0.5, alpha=1.0)
 	if (wl_spectra.max()-wl_spectra.min()>10): # use log-scale for wavelength in broad SEDs
 		plt.xscale('log')
@@ -169,6 +171,7 @@ def plot_chi2_fit(pickle_file, N_best_fits=1, ylog=True):
 		if not ylog:
 			ax[1].plot(wl_array_model_conv_resam[i,:], flux_residuals_best[i,:], linewidth=1.0) # in erg/s/cm2
 
+	ax[1].yaxis.set_minor_locator(AutoMinorLocator())
 	ax[1].grid(True, which='both', color='gainsboro', linewidth=0.5, alpha=1.0)
 	ax[1].set_xlabel(r'$\lambda\ (\mu$m)', size=12)
 	if ylog: ax[1].set_ylabel(r'$\Delta (\log F_\lambda$)', size=12)
