@@ -1,5 +1,5 @@
 Installation
-++++++++++++
+============
 
 Installation of :math:`\texttt{SEDA}` via GitHub:
 
@@ -10,6 +10,9 @@ Installation of :math:`\texttt{SEDA}` via GitHub:
     $ python setup.py install
 
 The :math:`\texttt{SEDA}` code uses the following packages:
+
+Dependencies
+++++++++++++
 
 Included in the `Ananconda <https://docs.continuum.io/>`_ installation:
 
