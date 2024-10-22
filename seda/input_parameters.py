@@ -46,7 +46,7 @@ class InputData:
 
 	Returns:
 	--------
-	- Dictionary with all input parameters (provided and default ones).
+	- Dictionary with all (provided and default) input data parameters.
 
 	Example:
 	--------
@@ -203,6 +203,10 @@ class ModelOptions:
 	- R_range: float array, optional (used in ``bayes_fit``)
 		Minimum and maximum radius values to sample the posterior for radius. It requires the parameter ``distance`` in `input_parameters.InputData`
 
+	Returns:
+	--------
+	- Dictionary with all (provided and default) model option parameters.
+
 	Example:
 	--------
 	>>> import seda
@@ -269,6 +273,19 @@ class Chi2Options:
 		Shortest wavelength at which IR excesses are expected.
 	- save_results: {``'yes'``, ``'no'``}, optional (default ``'yes'``)
 		Save (``'yes'``) or do not save (``'no'``)	``seda.chi2_fit`` results
+
+	Returns:
+	--------
+	- Dictionary with all (provided and default) chi2 fit option parameters.
+
+	Example:
+	--------
+	>>> import seda
+	>>> 
+	>>> # input spectrum wl_input, flux_input, eflux_input
+	>>> chi2_wl_range = np.array([value1, value2]) # to make the fit between value1 and value2
+	>>> my_chi2 = seda.Chi2FitOptions(my_data=my_data, my_model=my_model, chi2_wl_range=chi2_wl_range)
+		Chi2 fit options loaded successfully
 	'''
 
 	def __init__(self, my_data, my_model, 
