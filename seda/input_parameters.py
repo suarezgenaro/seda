@@ -13,10 +13,10 @@ class InputData:
 	
 	Parameters:
 	-----------
-	- fit_spectra : {``'yes'``, ``'no'``}, optional
-		Include (``'yes'``; default) or do not include (``'no'``) spectra.
-	- fit_photometry : {``'yes'``, ``'no'``}, optional
-		Include (``'yes'``) or do not include (``'no'``; default) photometry.
+	- fit_spectra : {``'yes'``, ``'no'``}, optional (default ``'yes'``)
+		Include (``'yes'``) or do not include (``'no'``) spectra.
+	- fit_photometry : {``'yes'``, ``'no'``}, optional (default ``'no'``)
+		Include (``'yes'``) or do not include (``'no'``) photometry.
 	- wl_spectra : float array, optional (required when ``fit_spectra=='yes'``)
 		Wavelength in um of the spectrum or set of spectra for the fits. 
 		When providing more than one spectrum, verify that there is no overlap between the spectra. 
@@ -35,10 +35,10 @@ class InputData:
 	- filter_phot : float array, optional (required when ``fit_photometry=='yes'``)
 		Filters associated to the input magnitudes following SVO filter IDs 
 		http://svo2.cab.inta-csic.es/theory/fps/
-	- R : float, optional
-		Resolution at ``lam_R`` of input spectra (default R=100) to smooth model spectra.
-	- lam_R : float, optional
-		Wavelength reference (default 2 um) for ``R``.
+	- R : float, optional (default R=100)
+		Resolution at ``lam_R`` of input spectra to smooth model spectra.
+	- lam_R : float, optional (default 2 um) 
+		Wavelength reference for ``R``.
 	- distance : float, optional
 		Target distance (in pc) used to derive radius from the scaling factor
 	- edistance : float, optional
@@ -247,24 +247,24 @@ class Chi2Options:
 		Minimum and maximum wavelength to cut model spectra (to make the code faster). 
 		Default values are the same as ``chi2_wl_range`` with a padding to avoid the point below.
 		CAVEAT: the selected wavelength range of model spectra must cover the spectrophotometry used in the fit and a bit more (to avoid errors when resampling synthetic spectra using spectres)
-	- extinction_free_param : {``'yes'``, ``'no'``}, optional
+	- extinction_free_param : {``'yes'``, ``'no'``}, optional (default ``'no'``)
 		Extinction as a free parameter: 
-			- ``'no'``: (default) null extinction is assumed and it will not change.
+			- ``'no'``: null extinction is assumed and it will not change.
 			- ``'yes'``: null extinction is assumed and it varies to minimize chi square.
-	- scaling_free_param : {``'yes'``, ``'no'``}, optional
+	- scaling_free_param : {``'yes'``, ``'no'``}, optional (default ``'yes'``)
 		Scaling as a free parameter: 
-			- ``'yes'``: (default) to find the scaling that minimizes chi square for each model
+			- ``'yes'``: to find the scaling that minimizes chi square for each model
 			- ``'no'``: to fix ``scaling`` if radius and distance are known
 	- scaling: float, optional (required if ``scaling_free_param='no'``)
 		Fixed scaling factor ((R/d)^2, R: object's radius, d: distance to the object) to be applied to model spectra
-	- skip_convolution : {``'yes'``, ``'no'``}, optional
-		Convolution of model spectra (the slowest process in the code) can (``'yes'``) or cannot (``'no'``; default) be avoided. ``skip_convolution='yes'`` only if ``fit_photometry='yes'`` and ``fit_spectra='no'``. Predetermined synthetic magnitudes in the desired filters are required. 
-	- avoid_IR_excess : {``'yes'``, ``'no'``}, optional
-		Wavelengths longer than ``IR_excess_limit`` will (``'yes'``) or will not (``'no'``; default) be avoided in the fit in case infrared excesses are expected. 
-	- IR_excess_limit : float, optional
-		Shortest wavelength at which IR excesses are expected (default 3 um).
-	- save_results: {``'yes'``, ``'no'``}, optional
-		Save (``'yes'``; default) or do not save (``'no'``)	``seda.chi2_fit`` results
+	- skip_convolution : {``'yes'``, ``'no'``}, optional (default ``'no'``)
+		Convolution of model spectra (the slowest process in the code) can (``'yes'``) or cannot (``'no'``) be avoided. ``skip_convolution='yes'`` only if ``fit_photometry='yes'`` and ``fit_spectra='no'``. Predetermined synthetic magnitudes in the desired filters are required. 
+	- avoid_IR_excess : {``'yes'``, ``'no'``}, optional (default ``'no'``)
+		Wavelengths longer than ``IR_excess_limit`` will (``'yes'``) or will not (``'no'``) be avoided in the fit in case infrared excesses are expected. 
+	- IR_excess_limit : float, optional (default 3 um).
+		Shortest wavelength at which IR excesses are expected.
+	- save_results: {``'yes'``, ``'no'``}, optional (default ``'yes'``)
+		Save (``'yes'``) or do not save (``'no'``)	``seda.chi2_fit`` results
 	'''
 
 	def __init__(self, my_data, my_model, 
