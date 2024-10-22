@@ -11,10 +11,11 @@ from lmfit import Minimizer, minimize, Parameters, report_fit # model fit for no
 from sys import exit
 
 def chi2_fit(my_data, my_model, my_chi2):
-#	'''
-#	Description:
-#	------------
-#		Minimize the chi-square statistic to find the best model fits
+	'''
+	Description:
+	------------
+		Minimize the chi-square statistic to find the best model fits
+	'''
 #	
 #	Parameters:
 #	-----------
