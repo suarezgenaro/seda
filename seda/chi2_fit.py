@@ -48,7 +48,8 @@ def chi2_fit(my_chi2):
 			- ``chi2_red_fit``: total reduced chi-square.
 			- ``weight_fit``: weight given to each data point in the fit considering the equation chi2 = weight * (data-model)^2 / edata^2.
 			- ``wl_array_model_conv_resam``: (if ``fit_spectra``) wavelength (in um) of model resampled, convolved model.
-			- ``flux_array_model_conv_resam``: (if ``fit_spectra``) scaled fluxes (in erg/cm2/s/A) of resampled, convolved model spectra.
+			- ``flux_array_model_conv_resam``: (if ``fit_spectra``) scaled, resampled, convolved model spectra (in erg/cm2/s/A).
+			- ``flux_array_model_conv_resam_red``: (if ``fit_spectra``) scaled, resampled, convolved, reddened model spectra (in erg/cm2/s/A).
 			- ``lambda_eff_mean``: (if ``fit_photometry``) mean effective wavelength (in um) of each input photometric passband.
 			- ``width_eff_mean``: (if ``fit_photometry``) mean effective width (in um) of each input photometric passband.
 			- ``f_phot``: (if ``fit_photometry``) fluxes (in erg/s/cm2/A) of each input photometry.
@@ -64,10 +65,10 @@ def chi2_fit(my_chi2):
 			- ``logflux_residuals``: logarithm flux residual (in erg/cm2/s/A) between observed data and model spectra ``chi2_wl_range``.
 			- ``Teff``: effective temperature (in K) for each model spectrum.
 			- ``logg``: surface gravity (log g) for each model spectrum.
-			- ``Z``: metallicity (if provided by ``model``) for each model spectrum.
-			- ``logKzz``: diffusion parameter (if provided by ``model``) for each model spectrum. 
-			- ``fsed``: cloudiness parameter (if provided by ``model``) for each model spectrum.
-			- ``CtoO``: C/O ratio (if provided by ``model``) for each model spectrum.
+			- ``Z``: (if provided by ``model``) metallicity for each model spectrum.
+			- ``logKzz``: (if provided by ``model``) diffusion parameter for each model spectrum. 
+			- ``fsed``: (if provided by ``model``) cloudiness parameter for each model spectrum.
+			- ``CtoO``: (if provided by ``model``) C/O ratio for each model spectrum.
 
 	Example:
 	--------
@@ -100,83 +101,8 @@ def chi2_fit(my_chi2):
 
 	Author: Genaro Suárez
 	'''
-#	model+dynamic_sampling+'nested.pickle': results from the nested sampling provided by Dynesty
-#		out_chi2['wl_array_model']: wavelengths (in um) of model spectra with their original-resolution 
-#		out_chi2['flux_array_model']: scaled fluxes (in erg/cm2/s/A) of original-resolution model spectra
-#		out_chi2['wl_array_model_conv']: wavelengths (in um) of convolved model spectra
-#		out_chi2['flux_array_model_conv']: scaled fluxes (in erg/cm2/s/A) of convolved model spectra
-#		out_chi2['flux_array_model_red']: scaled fluxes (in erg/cm2/s/A) of original-resolution reddened model spectra
-#		out_chi2['flux_array_model_conv_red']: scaled fluxes (in erg/cm2/s/A) of convolved reddened model spectra
-#		out_chi2['flux_array_model_conv_resam_red']: scaled fluxes (in erg/cm2/s/A) of resampled, convolved reddened model spectra
-#
-#	Example 2: call the routine to compare atmospheric models to observed photometry:
-#
-#	>>> # input parameters (unreal values are given as a reference)
-#	>>> model = 'BT-Settl'
-#	>>> logg_range = np.array((3.0, 5.5)) # dex
-#	>>> Teff_range = np.array((1500, 3500)) # K
-#	>>> fit_spectra = 'no'
-#	>>> fit_photometry = 'yes'
-#	>>> model_wl_range = np.array((0.29, 35))
-#	>>> mag_phot = np.array((0.034, 15.908, 12.991, 11.864)) # input photometry
-#	>>> emag_phot = np.array((0.034, 0.002, 0.026, 0.023)) # photometry errors
-#	>>> filter_phot = np.array(('Gaia_G', 'PanSTARRS_i', '2MASS_J', 'WISE_W1')) # filter information following the filter_phot nomenclature above
-#	>>> extinction_free_param = 'no' # do not consider extinction as a free parameter
-#	>>> distance = 38.31 # pc
-#	>>> edistance = 0.14 # pc
-#	>>> model_wl_range = np.array((0.3, 30)) # um
-#	>>> skip_convolution = 'yes' # synthetic magnitudes have been calculated for these filters
-#	
-#	>>> seda_out = seda.seda(model=model, logg_range=logg_range, 
-#		 Teff_range=Teff_range, fit_spectra=fit_spectra, fit_photometry=fit_photometry, mag_phot=mag_phot, emag_phot=emag_phot, 
-#		 filter_phot=filter_phot, extinction_free_param=extinction_free_param, distance=distance, edistance=edistance, 
-#		 model_wl_range=model_wl_range, skip_convolution='yes')
-#
-#	>>> # output parameters
-#	>>> spectra_name = seda_out['spectra_name'] 
-#	>>> out_lmfit = seda_out['out_lmfit']
-#	>>> iterations_fit = seda_out['iterations_fit']
-#	>>> Av_fit = seda_out['Av_fit'] # mag
-#	>>> eAv_fit = seda_out['eAv_fit'] # mag
-#	>>> scaling_fit = seda_out['scaling_fit']
-#	>>> escaling_fit = seda_out['escaling_fit']
-#	>>> chi2_wl_fit = seda_out['chi2_wl_fit']
-#	>>> chi2_red_wl_fit = seda_out['chi2_red_wl_fit']
-#	>>> chi2_fit = seda_out['chi2_fit']
-#	>>> chi2_red_fit = seda_out['chi2_red_fit']
-#	>>> Teff = seda_out['Teff'] # K
-#	>>> logg = seda_out['logg'] # dex
-#	>>> radius = seda_out['radius'] # Rjup
-#	>>> eradius = seda_out['eradius'] # Rjup
-#	>>> lambda_eff_mean = seda_out['lambda_eff_mean'] # um
-#	>>> width_eff_mean = seda_out['width_eff_mean'] # um
-#	>>> f_phot = seda_out['f_phot'] # erg/s/cm2/A
-#	>>> ef_phot = seda_out['ef_phot'] # erg/s/cm2/A
-#	>>> phot_synt = seda_out['phot_synt'] # erg/s/cm2/A
-#	>>> wl_array_model_convolve = seda_out['wl_array_model_conv'] # um
-#	>>> flux_array_model_convolve = seda_out['flux_array_model_conv'] # erg/cm2/s/A
-#	>>> weight_fit = seda_out['weight_fit']
-#
-#	MODIFICATION HISTORY
-#				by G. Suárez
-#	
-#	2024/06/18	Included Lacy & Burrows (2023) extended models
-#	2024/05/01	Included Nested sampling by Dynesty to create posteriors
-#	2024/04/18	Added an interpolator to generate spectra from Elf-Owl models for any combination of parameters within the grid
-#	2024/02/24	Sonora Diamondback atmospheric models (Morley et al. 2024) are available
-#	2024/02/19	Sonora Elf Owl atmospheric models (Mukherjee et al. 2024) are available
-#	2024/02/18	code split into multiple definitions
-#	2023/09/21	Scaling factor can be fixed (useful when the distance and radius are known so the scaling could be derived)
-#	2023/08/31	Lacy & Burrows (2023; LB23) models are available
-#	2023/03/15	Sonora_Cholla models are available
-#	2023/03/09	Option available to use together the three ATMO 2020 model grids 
-#	2023/03/06	For multiple spectra, convolve wavelength regions between the spectra and out of the coverage
-#	2020/03/10	First version of the code working to find the best fit from the grid spectra by minimizing chi square
-#	-----------------------
-#
-#	'''
 
-	ini_time_SEDA = time.time() # to estimate the time elapsed running SEDA
+	ini_time_chi2 = time.time() # to estimate the time elapsed running chi2
 	print('\nRunning chi2 fitting...')
 
 	# load input parameters
@@ -755,18 +681,10 @@ def chi2_fit(my_chi2):
 		radius = radius / 0.102763 # in Rjup
 		eradius = eradius / 0.102763 # in Rjup
 
-#	# start dictionary with some output parameters from the chi square minimization
-#	# sort with respect to reduced chi2
-#	ind = np.argsort(chi2_red_fit)
-#	spectra_name = spectra_name[ind]
-#	Teff_range = Teff_range[ind]
-#	logg_range = logg_range[ind]
-##	I AM HERE sorting the output wrt chi2
-
-	out_chi2 = {'model': model, 'spectra_name_full': spectra_name_full, 'spectra_name': spectra_name, 'Teff_range': Teff_range, 'logg_range': logg_range, 'res': res, 'lam_res': lam_res, 
-	 'chi2_wl_range': chi2_wl_range, 'N_rows_model': N_rows_model, 'out_lmfit': out_lmfit, 
-	 'iterations_fit': iterations_fit, 'Av_fit': Av_fit, 'eAv_fit': eAv_fit, 'scaling_fit': scaling_fit, 'escaling_fit': escaling_fit, 
-	 'chi2_wl_fit': chi2_wl_fit, 'chi2_red_wl_fit': chi2_red_wl_fit, 'chi2_fit': chi2_fit, 'chi2_red_fit': chi2_red_fit, 'weight_fit': weight_fit}
+	out_chi2 = {'model': model, 'spectra_name_full': spectra_name_full, 'spectra_name': spectra_name, 'Teff_range': Teff_range, 'logg_range': logg_range, 
+				'res': res, 'lam_res': lam_res, 'chi2_wl_range': chi2_wl_range, 'N_rows_model': N_rows_model, 'out_lmfit': out_lmfit, 'iterations_fit': iterations_fit, 
+				'Av_fit': Av_fit, 'eAv_fit': eAv_fit, 'scaling_fit': scaling_fit, 'escaling_fit': escaling_fit, 'chi2_wl_fit': chi2_wl_fit, 
+				'chi2_red_wl_fit': chi2_red_wl_fit, 'chi2_fit': chi2_fit, 'chi2_red_fit': chi2_red_fit, 'weight_fit': weight_fit}
 
 	# add more output parameters depending on the input information
 #	if (skip_convolution=='no'):
@@ -837,8 +755,8 @@ def chi2_fit(my_chi2):
 		out_save_params = save_params(dict_for_table=out_chi2)
 
 	print('\nChi square fit ran successfully')
-	fin_time_SEDA = time.time()
-	out_time_elapsed = time_elapsed(fin_time_SEDA-ini_time_SEDA)
+	fin_time_chi2 = time.time()
+	out_time_elapsed = time_elapsed(fin_time_chi2-ini_time_chi2)
 	print(f'   elapsed time running SEDA: {out_time_elapsed[0]} {out_time_elapsed[1]}')
 
 	return out_chi2
