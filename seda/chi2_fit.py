@@ -72,27 +72,23 @@ def chi2_fit(my_chi2):
 	>>> flux_spectra = flux_input # in erg/cm^2/s/A
 	>>> eflux_spectra = eflux_input # in erg/cm^2/s/A
 	>>> my_data = seda.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, eflux_spectra=eflux_spectra)
+	>>> 
+	>>> # load model options
+	>>> model = 'Sonora_Elf_Owl'
+	>>> model_dir = ['my_path/output_575.0_650.0/', 'my_path/output_700.0_800.0/'] # folders to look for model spectra
+	>>> Teff_range = np.array((700, 900)) # Teff range
+	>>> logg_range = np.array((4.0, 5.0)) # logg range
+	>>> my_model = seda.ModelOptions(model=model, model_dir=model_dir, logg_range=logg_range, Teff_range=Teff_range)
+	>>> 
+	>>> # load chi-square options
+	>>> chi2_wl_range = np.array([value1, value2]) # to make the fit between value1 and value2
+	>>> my_chi2 = seda.Chi2FitOptions(my_data=my_data, my_model=my_model, chi2_wl_range=chi2_wl_range)
+	>>> 
+	>>> # run chi-square fit
+	>>> out_chi2_fit = seda.chi2_fit(my_chi2=my_chi2)
 
-	Author: Genaro Suárez 
+	Author: Genaro Suárez
 	'''
-#	>>> 
-#	>>> # load model options
-#	>>> model = 'Sonora_Elf_Owl'
-#	>>> model_dir = ['my_path/output_575.0_650.0/', 'my_path/output_700.0_800.0/'] # folders to look for model spectra
-#	>>> Teff_range = np.array((700, 900)) # Teff range
-#	>>> logg_range = np.array((4.0, 5.0)) # logg range
-#	>>> my_model = seda.ModelOptions(model=model, model_dir=model_dir, logg_range=logg_range, Teff_range=Teff_range)
-#	>>> 
-#	>>> # load chi-square options
-#	>>> chi2_wl_range = np.array([value1, value2]) # to make the fit between value1 and value2
-#	>>> my_chi2 = seda.Chi2FitOptions(my_data=my_data, my_model=my_model, chi2_wl_range=chi2_wl_range)
-#	>>> 
-#	>>> # run chi-square fit
-#	>>> out_chi2_fit = seda.chi2_fit(my_chi2=my_chi2)
-#
-#    Author: Genaro Suárez
-#	'''
-
 #	model+dynamic_sampling+'nested.pickle': results from the nested sampling provided by Dynesty
 #
 #		out_chi2['Teff']: effective temperature (in K)
