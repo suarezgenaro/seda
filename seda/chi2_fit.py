@@ -27,7 +27,7 @@ def chi2_fit(my_chi2):
 		spectrum name, chi square, reduced chi square, scaling, scaling error, extinction, extinction error, physical parameters from the models (e.g. Teff and logg), and iterations to minimize chi square.
 	- '``model``\_chi2\_minimization.pickle' : dictionary
 		Dictionary with the results from the chi square minimization with the following parameters:
-			- out_chi2['``model``']: atmospheric model chosen.
+			- out_chi2[``'model'``]: atmospheric model chosen.
 			- out_chi2[``'spectra_name'``]: model spectra names.
 			- out_chi2[``'spectra_name_full'``]: model spectra names with full path.
 			- out_chi2[``'Teff_range'``]: input ``Teff_range``.
