@@ -58,8 +58,9 @@ class InputData:
 	>>> eflux_spectra = eflux_input # in erg/cm^2/s/A
 	>>> res = 100 # input spectrum resolution
 	>>> lam_res = 2.0 # (um) reference wavelength for res
-	>>> my_data = seda.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, eflux_spectra=eflux_spectra, res=res, lam_res=lam_res)
-		Input data loaded successfully
+	>>> my_data = seda.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, 
+	>>>                          eflux_spectra=eflux_spectra, res=res, lam_res=lam_res)
+	    Input data loaded successfully
 
 	Author: Genaro Suárez
 	'''
@@ -214,11 +215,13 @@ class ModelOptions:
 	>>> import seda
 	>>> 
 	>>> model = 'Sonora_Elf_Owl'
-	>>> model_dir = ['my_path/output_575.0_650.0/', 'my_path/output_700.0_800.0/'] # folders to look for model spectra
+	>>> model_dir = ['my_path/output_575.0_650.0/', 
+	>>>              'my_path/output_700.0_800.0/'] # folders to look for model spectra
 	>>> Teff_range = np.array((700, 900)) # Teff range
 	>>> logg_range = np.array((4.0, 5.0)) # logg range
-	>>> my_model = seda.ModelOptions(model=model, model_dir=model_dir, logg_range=logg_range, Teff_range=Teff_range)
-		Model options loaded successfully
+	>>> my_model = seda.ModelOptions(model=model, model_dir=model_dir, 
+	>>>                              logg_range=logg_range, Teff_range=Teff_range)
+	    Model options loaded successfully
 
 	Author: Genaro Suárez
 	'''
@@ -288,8 +291,9 @@ class Chi2Options:
 	>>> 
 	>>> # input spectrum wl_input, flux_input, eflux_input
 	>>> chi2_wl_range = np.array([value1, value2]) # to make the fit between value1 and value2
-	>>> my_chi2 = seda.Chi2FitOptions(my_data=my_data, my_model=my_model, chi2_wl_range=chi2_wl_range)
-		Chi2 fit options loaded successfully
+	>>> my_chi2 = seda.Chi2FitOptions(my_data=my_data, my_model=my_model, 
+	>>>                               chi2_wl_range=chi2_wl_range)
+	    Chi2 fit options loaded successfully
 
 	Author: Genaro Suárez
 	'''
