@@ -62,12 +62,12 @@ def chi2_fit(my_chi2):
 			- ``eflux_array_data``: input observed flux errors for ``wl_array_data``.
 			- ``flux_residuals``: linear flux residual (in erg/cm2/s/A) between observed data and model spectra in ``chi2_wl_range``.
 			- ``logflux_residuals``: logarithm flux residual (in erg/cm2/s/A) between observed data and model spectra ``chi2_wl_range``.
-			- ``Teff``: effective temperature (in K) for each model spectrum from ``seda.separate_params``.
-			- ``logg``: surface gravity (log g) for each model spectrum from ``seda.separate_params``.
-			- ``Z``: metallicity (if provided by ``model``) for each model spectrum from ``seda.separate_params``.
-			- ``fsed``: cloudiness parameter (if provided by ``model``) for each model spectrum from ``seda.separate_params``.
-			- ``logKzz``: diffusion parameter (if provided by ``model``) for each model spectrum from ``seda.separate_params``.
-			- ``CtoO``: C/O ratio (if provided by ``model``) for each model spectrum from ``seda.separate_params``.
+			- ``Teff``: effective temperature (in K) for each model spectrum.
+			- ``logg``: surface gravity (log g) for each model spectrum.
+			- ``Z``: metallicity (if provided by ``model``) for each model spectrum.
+			- ``logKzz``: diffusion parameter (if provided by ``model``) for each model spectrum. 
+			- ``fsed``: cloudiness parameter (if provided by ``model``) for each model spectrum.
+			- ``CtoO``: C/O ratio (if provided by ``model``) for each model spectrum.
 
 	Example:
 	--------
@@ -101,8 +101,6 @@ def chi2_fit(my_chi2):
 	Author: Genaro Suárez
 	'''
 #	model+dynamic_sampling+'nested.pickle': results from the nested sampling provided by Dynesty
-#
-
 #		out_chi2['wl_array_model']: wavelengths (in um) of model spectra with their original-resolution 
 #		out_chi2['flux_array_model']: scaled fluxes (in erg/cm2/s/A) of original-resolution model spectra
 #		out_chi2['wl_array_model_conv']: wavelengths (in um) of convolved model spectra
@@ -110,38 +108,6 @@ def chi2_fit(my_chi2):
 #		out_chi2['flux_array_model_red']: scaled fluxes (in erg/cm2/s/A) of original-resolution reddened model spectra
 #		out_chi2['flux_array_model_conv_red']: scaled fluxes (in erg/cm2/s/A) of convolved reddened model spectra
 #		out_chi2['flux_array_model_conv_resam_red']: scaled fluxes (in erg/cm2/s/A) of resampled, convolved reddened model spectra
-#
-#	EXAMPLES
-#	--------
-#	UPDATE THE EXAMPLES BELOW
-#	Example 1: call the routine to compare atmospheric models to an observed spectrum:
-#	>>> # input parameters
-#	>>> model = 'ATMO2020'
-#	>>> Teff_range = np.array((300, 1000)) # K
-#	>>> logg_range = np.array((3.0, 5.5)) # dex
-#	>>> wl_spectra = wl_SpeX # wavelength of the observed spectrum
-#	>>> flux_spectra = flux_SpeX # flux of the observed spectrum
-#	>>> eflux_spectra = eflux_SpeX # flux error of the observed spectrum
-#	>>> res = 100 # resolution of the observed spectrum
-#	>>> lam_res = 2.0 # um; wavelength reference
-#
-#	>>> # run code 
-#	>>> seda_out = seda.seda(model=model, logg_range=logg_range, Teff_range=Teff_range, wl_spectra=wl_spectra, flux_spectra=flux_spectra, eflux_spectra=eflux_spectra, res=res, lam_res=lam_res)
-#
-#	>>> # output parameters
-#	>>> spectra_name = seda_out['spectra_name'] # model spectra name
-#	>>> scaling_fit = seda_out['scaling_fit'] # scaling factor that minimizes chi square
-#	>>> escaling_fit = seda_out['escaling_fit'] # scaling factor uncertainty
-#	>>> chi2_fit = seda_out['chi2_fit'] # total chi square
-#	>>> Teff = seda_out['Teff'] # effective temperature (in K)
-#	>>> logg = seda_out['logg'] # surface gravity (log g)
-#	>>> wl_array_model = seda_out['wl_array_model'] # wavelengths (in um) of model spectra with their original-resolution 
-#	>>> flux_array_model = seda_out['flux_array_model'] # scaled fluxes (in erg/cm2/s/A) of original-resolution model spectra
-#	>>> wl_array_model_conv = seda_out['wl_array_model_conv'] # wavelengths (in um) of convolved model spectra
-#	>>> flux_array_model_conv = seda_out['flux_array_model_conv'] # scaled fluxes (in erg/cm2/s/A) of convolved model spectra
-#	>>> wl_array_model_conv_resam = seda_out['wl_array_model_conv_resam'] # wavelengths (in um) of convolved model spectra re-sampled to the observed spectra (when provided)
-#	>>> flux_array_model_conv_resam = seda_out['flux_array_model_conv_resam'] # scaled fluxes (in erg/cm2/s/A) of resampled, convolved model spectra
-#	>>>	logflux_residuals = seda_out['logflux_residuals'] # flux residual (in erg/cm2/s/A) between observed data and model spectra within the fit wavelength range
 #
 #	Example 2: call the routine to compare atmospheric models to observed photometry:
 #
