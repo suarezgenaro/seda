@@ -8,10 +8,10 @@ from .utils import *
 
 ##########################
 # plot input spectra and the synthetic spectrum with the constrained parameters from the sampling
-def plot_SED_sampling(wl_spectra, flux_spectra, eflux_spectra, model, sampling_file, lam_R, R, distance, grid=None):
+def plot_SED_sampling(wl_spectra, flux_spectra, eflux_spectra, model, sampling_file, lam_res, res, distance, grid=None):
 	import sampling
 
-	out_best_fit_sampling = sampling.best_fit_sampling(wl_spectra=wl_spectra, model=model, sampling_file=sampling_file, lam_R=lam_R, R=R, distance=distance, grid=grid)
+	out_best_fit_sampling = sampling.best_fit_sampling(wl_spectra=wl_spectra, model=model, sampling_file=sampling_file, lam_res=lam_res, res=res, distance=distance, grid=grid)
 	wl_syn = out_best_fit_sampling['wl']
 	flux_syn = out_best_fit_sampling['flux_scaled']
 	wl_syn_conv = out_best_fit_sampling['wl_conv']

@@ -6,7 +6,7 @@ from sys import exit
 
 ##########################
 # convolve a spectrum to a desired resolution at a given wavelength
-def convolve_spectrum(wl, flux, lam_R, R, eflux=None, disp_wl_range=None, convolve_wl_range=None):
+def convolve_spectrum(wl, flux, lam_res, res, eflux=None, disp_wl_range=None, convolve_wl_range=None):
 	'''
 	wl : float array
 		wavelength (any length units) for the spectrum
@@ -14,10 +14,10 @@ def convolve_spectrum(wl, flux, lam_R, R, eflux=None, disp_wl_range=None, convol
 		fluxes (any flux units) for the spectrum
 	flux : float array, optional
 		error fluxes (any flux units) for the spectrum
-	lam_R : scalar
+	lam_res : scalar
 		wavelength reference to estimate the spectral resolution of the input spectrum
-	R : scalar
-		resolution at lam_R to smooth the spectrum
+	res : scalar
+		resolution at lam_res to smooth the spectrum
 	disp_wl_range : float array, optional
 		wavelength range (minimum and maximum) to calculate the median wavelength dispersion of the input spectrum
 		default values are the minimum and maximum wavelengths of wl
@@ -45,7 +45,7 @@ def convolve_spectrum(wl, flux, lam_R, R, eflux=None, disp_wl_range=None, convol
 
 	# define a Gaussian for convolution
 	mask_fit = (wl>=disp_wl_range[0]) & (wl<=disp_wl_range[1]) # mask to obtain the median wavelength dispersion
-	stddev = (lam_R/R)*(1./np.median(wl_bin[mask_fit]))/2.36 # stddev is given in pixels
+	stddev = (lam_res/res)*(1./np.median(wl_bin[mask_fit]))/2.36 # stddev is given in pixels
 	gauss = Gaussian1DKernel(stddev=stddev)
 
 	mask_conv = (wl>=convolve_wl_range[0]) & (wl<=convolve_wl_range[1]) # range to convolve the spectrum
@@ -185,8 +185,8 @@ def best_chi2_fits(pickle_file, N_best_fits=1):
 		out_chi2 = pickle.load(file)
 
 	model = out_chi2['model']
-	R = out_chi2['R']#[0] # resolution for the first input spectrum
-	lam_R = out_chi2['lam_R']#[0] # wavelength reference for the first input spectrum
+	res = out_chi2['res']#[0] # resolution for the first input spectrum
+	lam_res = out_chi2['lam_res']#[0] # wavelength reference for the first input spectrum
 	N_rows_model = out_chi2['N_rows_model']
 	chi2_wl_range = out_chi2['chi2_wl_range'][0] # for the first input spectrum
 	spectra_name_full = out_chi2['spectra_name_full']
@@ -213,7 +213,7 @@ def best_chi2_fits(pickle_file, N_best_fits=1):
 	wl_model_conv = np.zeros((N_rows_model, N_best_fits))
 	flux_model_conv = np.zeros((N_rows_model, N_best_fits))
 	for i in range(N_best_fits):
-		out_convolve_spectrum = convolve_spectrum(wl=wl_model[:,i], flux=flux_model[:,i], lam_R=lam_R, R=R, disp_wl_range=chi2_wl_range)
+		out_convolve_spectrum = convolve_spectrum(wl=wl_model[:,i], flux=flux_model[:,i], lam_res=lam_res, res=res, disp_wl_range=chi2_wl_range)
 		wl_model_conv[:,i] = out_convolve_spectrum['wl_conv']
 		flux_model_conv[:,i] = out_convolve_spectrum['flux_conv']
 

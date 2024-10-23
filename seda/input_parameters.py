@@ -13,11 +13,11 @@ class InputData:
 	
 	Parameters:
 	-----------
-	- fit_spectra : {``'yes'``, ``'no'``}, optional (default ``'yes'``)
+	- fit_spectra : {``True``, ``False``}, optional (default ``True``)
 		Include (``'yes'``) or do not include (``'no'``) spectra.
-	- fit_photometry : {``'yes'``, ``'no'``}, optional (default ``'no'``)
+	- fit_photometry : {``True``, ``False``}, optional (default ``False``)
 		Include (``'yes'``) or do not include (``'no'``) photometry.
-	- wl_spectra : float array, optional (required when ``fit_spectra=='yes'``)
+	- wl_spectra : float array, optional (required if ``fit_spectra``)
 		Wavelength in um of the spectrum or set of spectra for the fits. 
 		When providing more than one spectrum, verify that there is no overlap between the spectra. 
 		Provide the multiple spectra as a list (e.g., ``wl_spectra = []``, ``wl_spectra.append(spectrum_1)``, etc.).
@@ -28,17 +28,17 @@ class InputData:
 	- eflux_spectra : float array, optional
 		Fluxes uncertainties in erg/cm^2/s/A of the input spectrum or spectra. 
 		Input multiple spectra as a list (equivalent to wl_spectra). 
-	- mag_phot : float array, optional (required when ``fit_photometry=='yes'``)
+	- mag_phot : float array, optional (required if ``fit_photometry``)
 		Magnitudes for the fit
-	- emag_phot : float array, optional (required when ``fit_photometry=='yes'``)
+	- emag_phot : float array, optional (required if ``fit_photometry``)
 		Magnitude uncertainties for the fit. Magnitudes with uncertainties equal to zero are excluded from the fit.
-	- filter_phot : float array, optional (required when ``fit_photometry=='yes'``)
+	- filter_phot : float array, optional (required if ``fit_photometry``)
 		Filters associated to the input magnitudes following SVO filter IDs 
 		http://svo2.cab.inta-csic.es/theory/fps/
-	- R : float, optional (default R=100)
-		Resolution at ``lam_R`` of input spectra to smooth model spectra.
-	- lam_R : float, optional (default 2 um) 
-		Wavelength reference for ``R``.
+	- res : float, optional (default res=100)
+		Spectral resolution at ``lam_res`` of input spectra to smooth model spectra.
+	- lam_res : float, optional (default 2 um) 
+		Wavelength of reference at which ``res`` is given.
 	- distance : float, optional
 		Target distance (in pc) used to derive radius from the scaling factor
 	- edistance : float, optional
@@ -56,9 +56,9 @@ class InputData:
 	>>> wl_spectra = wl_input # in um
 	>>> flux_spectra = flux_input # in erg/cm^2/s/A
 	>>> eflux_spectra = eflux_input # in erg/cm^2/s/A
-	>>> R = 100 # input spectrum resolution
-	>>> lam_R = 2.0 # (um) wavelength reference for R
-	>>> my_data = seda.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, eflux_spectra=eflux_spectra, R=R, lam_R=lam_R)
+	>>> res = 100 # input spectrum resolution
+	>>> lam_res = 2.0 # (um) reference wavelength for res
+	>>> my_data = seda.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, eflux_spectra=eflux_spectra, res=res, lam_res=lam_res)
 		Input data loaded successfully
 	'''
 
@@ -66,7 +66,7 @@ class InputData:
 		fit_spectra=True, fit_photometry=False, 
 		wl_spectra=None, flux_spectra=None, eflux_spectra=None, 
 		mag_phot=None, emag_phot=None, filter_phot=None,
-		R=100, lam_R=2, distance=None, edistance=None):	
+		res=100, lam_res=2, distance=None, edistance=None):	
 
 		self.fit_spectra = fit_spectra
 		self.fit_photometry = fit_photometry
@@ -86,9 +86,9 @@ class InputData:
 
 		# reshape some input parameters and define non-provided parameters in terms of other parameters
 		if fit_spectra:
-			# if R and lam_R are scalars, convert them into array
-			if not isinstance(R, np.ndarray): R = np.array([R])
-			if not isinstance(lam_R, np.ndarray): lam_R = np.array([lam_R])
+			# if res and lam_res are scalars, convert them into array
+			if not isinstance(res, np.ndarray): res = np.array([res])
+			if not isinstance(lam_res, np.ndarray): lam_res = np.array([lam_res])
 
 			# when one spectrum is given, convert the spectrum into a list
 			if not isinstance(wl_spectra, list): wl_spectra = [wl_spectra]
@@ -103,8 +103,8 @@ class InputData:
 			flux_spectra[i] = flux_spectra[i][mask_nonan]
 			eflux_spectra[i] = eflux_spectra[i][mask_nonan]
 
-		self.R = R
-		self.lam_R = lam_R
+		self.res = res
+		self.lam_res = lam_res
 		self.wl_spectra = wl_spectra
 		self.flux_spectra = flux_spectra
 		self.eflux_spectra = eflux_spectra
@@ -213,10 +213,10 @@ class ModelOptions:
 	>>> 
 	>>> model = 'Sonora_Elf_Owl'
 	>>> model_dir = ['my_path/output_575.0_650.0/', 'my_path/output_700.0_800.0/'] # folders to look for model spectra
-	>>> Teff_range = np.array((600, 800)) # Teff range
+	>>> Teff_range = np.array((700, 900)) # Teff range
 	>>> logg_range = np.array((4.0, 5.0)) # logg range
 	>>> my_model = seda.ModelOptions(model=model, model_dir=model_dir, logg_range=logg_range, Teff_range=Teff_range)
-		Model grid options loaded successfully
+		Model options loaded successfully
 	'''
 
 	def __init__(self, model, model_dir, Teff_range, logg_range, R_range=None):
@@ -236,7 +236,7 @@ class ModelOptions:
 		if not isinstance(model_dir, list): model_dir = [model_dir]
 		self.model_dir = model_dir
 
-		print('\nModel grid options loaded successfully')
+		print('\nModel options loaded successfully')
 
 #+++++++++++++++++++++++++++
 class Chi2Options:
@@ -249,7 +249,7 @@ class Chi2Options:
 	-----------
 	- chi2_wl_range : float array, optional
 		Minimum and maximum wavelengths in microns where model spectra will be compared to the data. 
-		This parameter is used when ``fit_spectra='yes'`` but ignored when only ``fit_photometry='yes'``. 
+		This parameter is used if ``fit_spectra`` but ignored if only ``fit_photometry``. 
 		Default values are the minimum and the maximum wavelengths of each input spectrum. E.g., ``chi2_wl_range = np.array([chi2_wl_min, chi2_wl_max]``)
 	- model_wl_range : float array, optional
 		Minimum and maximum wavelength to cut model spectra (to make the code faster). 
@@ -266,7 +266,7 @@ class Chi2Options:
 	- scaling: float, optional (required if ``scaling_free_param='no'``)
 		Fixed scaling factor ((R/d)^2, R: object's radius, d: distance to the object) to be applied to model spectra
 	- skip_convolution : {``'yes'``, ``'no'``}, optional (default ``'no'``)
-		Convolution of model spectra (the slowest process in the code) can (``'yes'``) or cannot (``'no'``) be avoided. ``skip_convolution='yes'`` only if ``fit_photometry='yes'`` and ``fit_spectra='no'``. Predetermined synthetic magnitudes in the desired filters are required. 
+		Convolution of model spectra (the slowest process in the code) can (``'yes'``) or cannot (``'no'``) be avoided. ``skip_convolution='yes'`` only if ``fit_photometry`` and ``fit_spectra=False``. Predetermined synthetic magnitudes in the desired filters are required. 
 	- avoid_IR_excess : {``'yes'``, ``'no'``}, optional (default ``'no'``)
 		Wavelengths longer than ``IR_excess_limit`` will (``'yes'``) or will not (``'no'``) be avoided in the fit in case infrared excesses are expected. 
 	- IR_excess_limit : float, optional (default 3 um).
@@ -310,8 +310,8 @@ class Chi2Options:
 		self.distance = my_data.distance
 		self.edistance = my_data.edistance
 		self.N_spectra = my_data.N_spectra
-		self.R = my_data.R
-		self.lam_R = my_data.lam_R
+		self.res = my_data.res
+		self.lam_res = my_data.lam_res
 		self.wl_spectra = my_data.wl_spectra
 		self.flux_spectra = my_data.flux_spectra
 		self.eflux_spectra = my_data.eflux_spectra
@@ -381,4 +381,4 @@ class Chi2Options:
 		# file name to save the chi2 results as a pickle
 		self.pickle_file = f'{model}_chi2_minimization.pickle'
 
-		print('\nChi2 fit options loaded successfully')
+		print('\nChi-square fit options loaded successfully')

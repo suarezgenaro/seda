@@ -32,8 +32,8 @@ def chi2_fit(my_chi2):
 			- ``spectra_name_full``: model spectra names with full path.
 			- ``Teff_range``: input ``Teff_range``.
 			- ``logg_range``: input ``logg_range``.
-			- ``R``: input ``R``.
-			- ``lam_R``: input ``lam_R``.
+			- ``res``: input ``res``.
+			- ``lam_res``: input ``lam_res``.
 			- ``chi2_wl_range``: input ``chi2_wl_range``.
 			- ``N_rows_model``: maximum number of data points in original model spectra.
 			- ``out_lmfit``: output of the ``minner.minimize`` module that minimizes chi2.
@@ -62,6 +62,30 @@ def chi2_fit(my_chi2):
 			- ``eflux_array_data``: input observed flux errors for ``wl_array_data``.
 			- ``flux_residuals``: linear flux residual (in erg/cm2/s/A) between observed data and model spectra in ``chi2_wl_range``.
 			- ``logflux_residuals``: logarithm flux residual (in erg/cm2/s/A) between observed data and model spectra ``chi2_wl_range``.
+
+	Example:
+	>>> import seda
+	>>> 
+	>>> # load input data
+	>>> wl_spectra = wl_input # in um
+	>>> flux_spectra = flux_input # in erg/cm^2/s/A
+	>>> eflux_spectra = eflux_input # in erg/cm^2/s/A
+	>>> my_data = seda.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, eflux_spectra=eflux_spectra)
+	>>> 
+	>>> # load model options
+	>>> model = 'Sonora_Elf_Owl'
+	>>> model_dir = ['my_path/output_575.0_650.0/', 'my_path/output_700.0_800.0/'] # folders to look for model spectra
+	>>> Teff_range = np.array((700, 900)) # Teff range
+	>>> logg_range = np.array((4.0, 5.0)) # logg range
+	>>> my_model = seda.ModelOptions(model=model, model_dir=model_dir, logg_range=logg_range, Teff_range=Teff_range)
+	>>> 
+	>>> # load chi-square options
+	>>> chi2_wl_range = np.array([value1, value2]) # to make the fit between value1 and value2
+	>>> my_chi2 = seda.Chi2FitOptions(my_data=my_data, my_model=my_model, chi2_wl_range=chi2_wl_range)
+	>>> 
+	>>> # run chi-square fit
+	>>> out_chi2_fit = seda.chi2_fit(my_chi2=my_chi2)
+	--------
 	'''
 #	model+dynamic_sampling+'nested.pickle': results from the nested sampling provided by Dynesty
 #
@@ -87,11 +111,11 @@ def chi2_fit(my_chi2):
 #	>>> wl_spectra = wl_SpeX # wavelength of the observed spectrum
 #	>>> flux_spectra = flux_SpeX # flux of the observed spectrum
 #	>>> eflux_spectra = eflux_SpeX # flux error of the observed spectrum
-#	>>> R = 100 # resolution of the observed spectrum
-#	>>> lam_R = 2.0 # um; wavelength reference
+#	>>> res = 100 # resolution of the observed spectrum
+#	>>> lam_res = 2.0 # um; wavelength reference
 #
 #	>>> # run code 
-#	>>> seda_out = seda.seda(model=model, logg_range=logg_range, Teff_range=Teff_range, wl_spectra=wl_spectra, flux_spectra=flux_spectra, eflux_spectra=eflux_spectra, R=R, lam_R=lam_R)
+#	>>> seda_out = seda.seda(model=model, logg_range=logg_range, Teff_range=Teff_range, wl_spectra=wl_spectra, flux_spectra=flux_spectra, eflux_spectra=eflux_spectra, res=res, lam_res=lam_res)
 #
 #	>>> # output parameters
 #	>>> spectra_name = seda_out['spectra_name'] # model spectra name
@@ -189,8 +213,8 @@ def chi2_fit(my_chi2):
 	mag_phot = my_chi2.mag_phot
 	emag_phot = my_chi2.emag_phot
 	filter_phot = my_chi2.filter_phot
-	R = my_chi2.R
-	lam_R = my_chi2.lam_R
+	res = my_chi2.res
+	lam_res = my_chi2.lam_res
 	distance = my_chi2.distance
 	edistance = my_chi2.edistance
 	N_spectra = my_chi2.N_spectra
@@ -315,7 +339,7 @@ def chi2_fit(my_chi2):
 			# convolved spectra
 			wl_model_conv = wl_model # convolved spectrum have the same wavelength data points as the original spectrum
 			if N_spectra==1 : # when only one spectrum is provided
-				out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, lam_R=lam_R, R=R, disp_wl_range=chi2_wl_range[0])
+				out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, lam_res=lam_res, res=res, disp_wl_range=chi2_wl_range[0])
 				flux_model_conv = out_convolve_spectrum['flux_conv']
 			if N_spectra>1 : # when multiple spectra are provided
 				flux_model_conv = np.zeros(wl_model.size) # to save convolved fluxes
@@ -327,7 +351,7 @@ def chi2_fit(my_chi2):
 					if k==N_spectra-1: # for the last spectrum
 						mask_conv = (wl_model>=chi2_wl_range[k][0]) # from the minimum of the last spectrum to the maximum of the model wavelengths
 	
-					out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, lam_R=lam_R[k], R=R[k], disp_wl_range=chi2_wl_range[k,:], 
+					out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, lam_res=lam_res[k], res=res[k], disp_wl_range=chi2_wl_range[k,:], 
 																		 convolve_wl_range=np.array((wl_model[mask_conv].min(), wl_model[mask_conv].max()))) # convolve model spectrum
 					flux_model_conv[mask_conv] = out_convolve_spectrum['flux_conv']
 
@@ -762,7 +786,7 @@ def chi2_fit(my_chi2):
 #	logg_range = logg_range[ind]
 ##	I AM HERE sorting the output wrt chi2
 
-	out_chi2 = {'model': model, 'spectra_name_full': spectra_name_full, 'spectra_name': spectra_name, 'Teff_range': Teff_range, 'logg_range': logg_range, 'R': R, 'lam_R': lam_R, 
+	out_chi2 = {'model': model, 'spectra_name_full': spectra_name_full, 'spectra_name': spectra_name, 'Teff_range': Teff_range, 'logg_range': logg_range, 'res': res, 'lam_res': lam_res, 
 	 'chi2_wl_range': chi2_wl_range, 'N_rows_model': N_rows_model, 'out_lmfit': out_lmfit, 
 	 'iterations_fit': iterations_fit, 'Av_fit': Av_fit, 'eAv_fit': eAv_fit, 'scaling_fit': scaling_fit, 'escaling_fit': escaling_fit, 
 	 'chi2_wl_fit': chi2_wl_fit, 'chi2_red_wl_fit': chi2_red_wl_fit, 'chi2_fit': chi2_fit, 'chi2_red_fit': chi2_red_fit, 'weight_fit': weight_fit}
