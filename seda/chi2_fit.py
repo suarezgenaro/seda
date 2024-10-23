@@ -76,14 +76,17 @@ def chi2_fit(my_chi2):
 	>>> 
 	>>> # load model options
 	>>> model = 'Sonora_Elf_Owl'
-	>>> model_dir = ['my_path/output_575.0_650.0/', 'my_path/output_700.0_800.0/'] # folders to look for model spectra
+	>>> model_dir = ['my_path/output_575.0_650.0/', 
+	>>>              'my_path/output_700.0_800.0/'] # folders to seek model spectra
 	>>> Teff_range = np.array((700, 900)) # Teff range
 	>>> logg_range = np.array((4.0, 5.0)) # logg range
-	>>> my_model = seda.ModelOptions(model=model, model_dir=model_dir, logg_range=logg_range, Teff_range=Teff_range)
+	>>> my_model = seda.ModelOptions(model=model, model_dir=model_dir, 
+	>>>                              logg_range=logg_range, Teff_range=Teff_range)
 	>>> 
 	>>> # load chi-square options
 	>>> chi2_wl_range = np.array([value1, value2]) # to make the fit between value1 and value2
-	>>> my_chi2 = seda.Chi2FitOptions(my_data=my_data, my_model=my_model, chi2_wl_range=chi2_wl_range)
+	>>> my_chi2 = seda.Chi2FitOptions(my_data=my_data, my_model=my_model, 
+	>>>                               chi2_wl_range=chi2_wl_range)
 	>>> 
 	>>> # run chi-square fit
 	>>> out_chi2_fit = seda.chi2_fit(my_chi2=my_chi2)
