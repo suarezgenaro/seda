@@ -49,21 +49,20 @@ def chi2_fit(my_chi2):
 			- out_chi2[``'weight_fit'``]: weight given to each data point in the fit considering the equation chi2 = weight * (data-model)^2 / edata^2.
 			- out_chi2[``'wl_array_model_conv_resam'``]: (if ``fit_spectra='yes'``) wavelength (in um) of model resampled, convolved model.
 			- out_chi2[``'flux_array_model_conv_resam'``]: (if ``fit_spectra='yes'``) scaled fluxes (in erg/cm2/s/A) of resampled, convolved model spectra.
+			- out_chi2[``'lambda_eff_mean'``]: mean effective wavelength (in um) of each input photometric passband (if ``fit_photometry='yes'``).
+			- out_chi2[``'width_eff_mean'``]: mean effective width (in um) of each input photometric passband (if ``fit_photometry='yes'``).
+			- out_chi2[``'f_phot'``]: fluxes (in erg/s/cm2/A) of each input photometry (if ``fit_photometry='yes'``).
+			- out_chi2[``'ef_phot'``]: flux uncertainties (in erg/s/cm2/A) (if ``fit_photometry='yes'``).
+			- out_chi2[``'phot_synt'``]: synthetic fluxes (in erg/s/cm2/A) from each model spectrum considering the different filters (if ``fit_photometry='yes'``).
+			- out_chi2[``'phot_synt_red'``]: synthetic fluxes (in erg/s/cm2/A) from each reddened model spectrum considering the different filters (if ``fit_photometry='yes'``).
 
-			- out_chi2[``'lambda_eff_mean'``]: mean effective wavelength (in um) of each photometric passband (when using photometry)
-			- out_chi2[``'width_eff_mean'``]: mean effective width (in um) of each photometric passband (when using photometry)
-			- out_chi2[``'f_phot'``]: fluxes (in erg/s/cm2/A) of input photometry (when using photometry)
-			- out_chi2[``'ef_phot'``]: flux uncertainties (in erg/s/cm2/A)
-			- out_chi2[``'phot_synt'``]: synthetic fluxes (in erg/s/cm2/A) from each model spectrum considering the photometric passbands (when using photometry)
-			- out_chi2[``'phot_synt_red'``]: synthetic fluxes (in erg/s/cm2/A) from each reddened model spectrum considering the photometric passbands (when using photometry)
-
-			- out_chi2[``'radius'``]: radius (in Rjup) corresponding to the scaling factor and input distance (calculated only when distance and edistance are provided)
-			- out_chi2[``'eradius'``]: radius uncertainty (in Rjup)
-			- out_chi2[``'wl_array_data'``]: 
-			- out_chi2[``'flux_array_data'``]: 
-			- out_chi2[``'eflux_array_data'``]: 
-			- out_chi2[``'flux_residuals'``]: linear of flux residual (in erg/cm2/s/A) between observed data and model spectra within the fit wavelength range
-			- out_chi2[``'logflux_residuals'``]: logarithm of flux residual (in erg/cm2/s/A) between observed data and model spectra within the fit wavelength range
+			- out_chi2[``'radius'``]: radius (in Rjup) considering the ``scaling_fit`` and input ``distance`` (if ``distance`` is provided).
+			- out_chi2[``'eradius'``]: radius uncertainty (in Rjup) (if ``edistance`` is provided).
+			- out_chi2[``'wl_array_data'``]: input observed wavelengths within ``chi2_wl_range``.
+			- out_chi2[``'flux_array_data'``]: input observed fluxes for ``wl_array_data``.
+			- out_chi2[``'eflux_array_data'``]: input observed flux errors for ``wl_array_data``.
+			- out_chi2[``'flux_residuals'``]: linear flux residual (in erg/cm2/s/A) between observed data and model spectra in ``chi2_wl_range``.
+			- out_chi2[``'logflux_residuals'``]: logarithm flux residual (in erg/cm2/s/A) between observed data and model spectra ``chi2_wl_range``.
 	'''
 #	model+dynamic_sampling+'nested.pickle': results from the nested sampling provided by Dynesty
 #
