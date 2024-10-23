@@ -49,14 +49,14 @@ def chi2_fit(my_chi2):
 			- ``weight_fit``: weight given to each data point in the fit considering the equation chi2 = weight * (data-model)^2 / edata^2.
 			- ``wl_array_model_conv_resam``: (if ``fit_spectra``) wavelength (in um) of model resampled, convolved model.
 			- ``flux_array_model_conv_resam``: (if ``fit_spectra``) scaled fluxes (in erg/cm2/s/A) of resampled, convolved model spectra.
-			- ``lambda_eff_mean``: mean effective wavelength (in um) of each input photometric passband (if ``fit_photometry``).
-			- ``width_eff_mean``: mean effective width (in um) of each input photometric passband (if ``fit_photometry``).
-			- ``f_phot``: fluxes (in erg/s/cm2/A) of each input photometry (if ``fit_photometry``).
-			- ``ef_phot``: flux uncertainties (in erg/s/cm2/A) (if ``fit_photometry``).
-			- ``phot_synt``: synthetic fluxes (in erg/s/cm2/A) from each model spectrum considering the different filters (if ``fit_photometry``).
-			- ``phot_synt_red``: synthetic fluxes (in erg/s/cm2/A) from each reddened model spectrum considering the different filters (if ``fit_photometry``).
-			- ``radius``: radius (in Rjup) considering the ``scaling_fit`` and input ``distance`` (if ``distance`` is provided).
-			- ``eradius``: radius uncertainty (in Rjup) (if ``edistance`` is provided).
+			- ``lambda_eff_mean``: (if ``fit_photometry``) mean effective wavelength (in um) of each input photometric passband.
+			- ``width_eff_mean``: (if ``fit_photometry``) mean effective width (in um) of each input photometric passband.
+			- ``f_phot``: (if ``fit_photometry``) fluxes (in erg/s/cm2/A) of each input photometry.
+			- ``ef_phot``: (if ``fit_photometry``) flux uncertainties (in erg/s/cm2/A).
+			- ``phot_synt``: (if ``fit_photometry``) synthetic fluxes (in erg/s/cm2/A) from each model spectrum considering the different filters.
+			- ``phot_synt_red``: (if ``fit_photometry``) synthetic fluxes (in erg/s/cm2/A) from each reddened model spectrum considering the different filters.
+			- ``radius``: (if ``distance`` is provided) radius (in Rjup) considering the ``scaling_fit`` and input ``distance``.
+			- ``eradius``: (if ``edistance`` is provided) radius uncertainty (in Rjup).
 			- ``wl_array_data``: input observed wavelengths within ``chi2_wl_range``.
 			- ``flux_array_data``: input observed fluxes for ``wl_array_data``.
 			- ``eflux_array_data``: input observed flux errors for ``wl_array_data``.
