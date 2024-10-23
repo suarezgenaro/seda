@@ -850,8 +850,34 @@ def Ndata_model_spectra(model):
 	return N_rows_model
 
 ##########################
-#  define objective function that returns the array to be minimized
-def chi_square(params, data, edata, model, extinction_curve, weight):
+def chi_square(params, data_fit, edata_fit, model_fit, extinction_curve, weight_fit):
+	'''
+	Description:
+	------------
+		Define objective function that returns the array to be minimized.
+
+	Parameters:
+	-----------
+	- params : ''lmfit.parameter.Parameters''
+		Parameters as ``Parameters()`` for fitting models to data using ``Minimizer``.
+	- data_fit : array
+		Input data (spectra and/or photometry) for the fit.
+	- edata_fit : array
+		Input data uncertainties for the fit.
+	- model_fit : array
+		Model spectrum for the fit.
+	- extinction_curve_fit : array, (0 when ``extinction_free_param=='no'``)
+		Extinction curve for wavelengths in the fit.
+	- weight_fit: array
+		Weight given to each data point in the fit.
+
+	Returns:
+	--------
+	Objective function to be minimized by ``Minimizer``.
+
+	Author: Genaro Suárez
+	'''
+
 	extinction = params['extinction']
 	scaling = params['scaling']
 	model_red = 10**(-extinction*extinction_curve/2.5) * scaling * model
