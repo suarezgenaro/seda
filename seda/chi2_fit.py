@@ -851,32 +851,32 @@ def Ndata_model_spectra(model):
 
 ##########################
 def chi_square(params, data_fit, edata_fit, model_fit, extinction_curve, weight_fit):
-	'''
-	Description:
-	------------
-		Define objective function that returns the array to be minimized.
-
-	Parameters:
-	-----------
-	- params : ''lmfit.parameter.Parameters''
-		Parameters as ``Parameters()`` for fitting models to data using ``Minimizer``.
-	- data_fit : array
-		Input data (spectra and/or photometry) for the fit.
-	- edata_fit : array
-		Input data uncertainties for the fit.
-	- model_fit : array
-		Model spectrum for the fit.
-	- extinction_curve_fit : array, (0 when ``extinction_free_param=='no'``)
-		Extinction curve for wavelengths in the fit.
-	- weight_fit: array
-		Weight given to each data point in the fit.
-
-	Returns:
-	--------
-	Objective function to be minimized by ``Minimizer``.
-
-	Author: Genaro Suárez
-	'''
+#	'''
+#	Description:
+#	------------
+#		Define objective function that returns the array to be minimized.
+#
+#	Parameters:
+#	-----------
+#	- params : ''lmfit.parameter.Parameters''
+#		Parameters as ``Parameters()`` for fitting models to data using ``Minimizer``.
+#	- data_fit : array
+#		Input data (spectra and/or photometry) for the fit.
+#	- edata_fit : array
+#		Input data uncertainties for the fit.
+#	- model_fit : array
+#		Model spectrum for the fit.
+#	- extinction_curve_fit : array, (0 when ``extinction_free_param=='no'``)
+#		Extinction curve for wavelengths in the fit.
+#	- weight_fit: array
+#		Weight given to each data point in the fit.
+#
+#	Returns:
+#	--------
+#	Objective function to be minimized by ``Minimizer``.
+#
+#	Author: Genaro Suárez
+#	'''
 
 	extinction = params['extinction']
 	scaling = params['scaling']
@@ -886,6 +886,31 @@ def chi_square(params, data_fit, edata_fit, model_fit, extinction_curve, weight_
 ##########################
 # separate parameters from each model spectrum name
 def separate_params(spectra_name, model):
+	'''
+	Description:
+	------------
+		Separate parameters from each model spectrum name.
+
+	Parameters:
+	-----------
+	- spectra_name : array
+		Model spectra names.
+	- model : str
+		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
+
+	Returns:
+	--------
+	Dictionary with parameters for each model spectrum.
+		- ``Teff``: effective temperature (in K) for each model spectrum.
+		- ``logg``: surface gravity (log g) for each model spectrum.
+		- ``Z``: (if provided by ``model``) metallicity for each model spectrum.
+		- ``logKzz``: (if provided by ``model``) diffusion parameter for each model spectrum. 
+		- ``fsed``: (if provided by ``model``) cloudiness parameter for each model spectrum.
+		- ``CtoO``: (if provided by ``model``) C/O ratio for each model spectrum.
+		
+	Author: Genaro Suárez
+	'''
+
 
 	out = {'spectra_name': spectra_name} # start dictionary with some parameters
 
