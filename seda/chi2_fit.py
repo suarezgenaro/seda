@@ -687,24 +687,14 @@ def chi2_fit(my_chi2):
 				'chi2_red_wl_fit': chi2_red_wl_fit, 'chi2_fit': chi2_fit, 'chi2_red_fit': chi2_red_fit, 'weight_fit': weight_fit}
 
 	# add more output parameters depending on the input information
-#	if (skip_convolution=='no'):
-#		#out_chi2['wl_array_model']= wl_array_model
-#		#out_chi2['flux_array_model'] = flux_array_model
-#		#out_chi2['wl_array_model_conv'] = wl_array_model_conv
-#		#out_chi2['flux_array_model_conv'] = flux_array_model_conv
-#		out_chi2['wl_array_model']= wl_array_model[:,wl_array_model[0,:]>0]
-#		out_chi2['flux_array_model'] = flux_array_model[:,wl_array_model[0,:]>0]
-#		out_chi2['wl_array_model_conv'] = wl_array_model_conv[:,wl_array_model[0,:]>0]
-#		out_chi2['flux_array_model_conv'] = flux_array_model_conv[:,wl_array_model[0,:]>0]
-#	if (skip_convolution=='yes') & (model_label=='best')): # when reading the best fits to the data when predetermined synthetic photometry is used
-#		out_chi2['wl_array_model_conv'] = wl_array_model_conv
-#		out_chi2['flux_array_model_conv'] = flux_array_model_conv
 	if fit_spectra: # when only spectra are used in the fit
-		#mask_no_null = wl_array_model_conv[0,:]!=0
-		#out_chi2['wl_array_model_conv'] = wl_array_model_conv[:,mask_no_null]
-		#out_chi2['flux_array_model_conv'] = flux_array_model_conv[:,mask_no_null]
 		out_chi2['wl_array_model_conv_resam'] = wl_array_model_conv_resam[:,ind_chi2] # only in the fitted regions
 		out_chi2['flux_array_model_conv_resam'] = flux_array_model_conv_resam[:,ind_chi2] # only in the fitted regions
+		#if N_spectra>1 : # when multiple spectra are provided the function returns flat arrays with the input wavelengths, fluxes, and flux errors used in the fit
+		# return observed fluxes within the fit ranges
+		out_chi2['wl_array_data'] = wl_spectra[ind_chi2]
+		out_chi2['flux_array_data'] = flux_spectra[ind_chi2]
+		out_chi2['eflux_array_data'] = eflux_spectra[ind_chi2]
 	if fit_photometry: # when photometry is used in the fit
 		out_chi2['lambda_eff_mean'] = lambda_eff_mean
 		out_chi2['width_eff_mean'] = width_eff_mean
@@ -719,11 +709,6 @@ def chi2_fit(my_chi2):
 		out_chi2['edistance'] = edistance
 		out_chi2['radius'] = radius
 		out_chi2['eradius'] = eradius
-	#if N_spectra>1 : # when multiple spectra are provided the function returns flat arrays with the input wavelengths, fluxes, and flux errors used in the fit
-	# return observed fluxes within the fit ranges
-	out_chi2['wl_array_data'] = wl_spectra[ind_chi2]
-	out_chi2['flux_array_data'] = flux_spectra[ind_chi2]
-	out_chi2['eflux_array_data'] = eflux_spectra[ind_chi2]
 
 	# obtain residuals in linear and logarithmic-scale for fluxes
 	flux_residuals = np.zeros((len(spectra_name), len(flux_spectra[ind_chi2])))
@@ -734,9 +719,6 @@ def chi2_fit(my_chi2):
 		logflux_residuals[i,mask_pos] = np.log10(out_chi2['flux_array_model_conv_resam'][i,:][mask_pos]) - np.log10(out_chi2['flux_array_data'][mask_pos])
 	out_chi2['flux_residuals'] = flux_residuals
 	out_chi2['logflux_residuals'] = logflux_residuals
-
-#	self.wl_array_model_conv_resam = out_chi2['wl_array_model_conv_resam']
-#	self.logflux_residuals = logflux_residuals
 
 	# separate physical parameters from each model spectrum name
 	out_separate_params = separate_params(spectra_name=spectra_name, model=model)
