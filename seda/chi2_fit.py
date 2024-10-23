@@ -64,6 +64,7 @@ def chi2_fit(my_chi2):
 			- ``logflux_residuals``: logarithm flux residual (in erg/cm2/s/A) between observed data and model spectra ``chi2_wl_range``.
 
 	Example:
+	--------
 	>>> import seda
 	>>> 
 	>>> # load input data
@@ -85,7 +86,8 @@ def chi2_fit(my_chi2):
 	>>> 
 	>>> # run chi-square fit
 	>>> out_chi2_fit = seda.chi2_fit(my_chi2=my_chi2)
-	--------
+
+    Author: Genaro Suárez
 	'''
 #	model+dynamic_sampling+'nested.pickle': results from the nested sampling provided by Dynesty
 #
