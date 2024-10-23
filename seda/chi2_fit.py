@@ -27,43 +27,43 @@ def chi2_fit(my_chi2):
 		spectrum name, chi square, reduced chi square, scaling, scaling error, extinction, extinction error, physical parameters from the models (e.g. Teff and logg), and iterations to minimize chi square.
 	- '``model``\_chi2\_minimization.pickle' : dictionary
 		Dictionary with the results from the chi square minimization with the following parameters:
-			- out_chi2['model']: atmospheric model chosen.
-			- out_chi2['spectra_name']: model spectra names.
-			- out_chi2['spectra_name_full']: model spectra names with full path.
-			- out_chi2['Teff_range']: input ``Teff_range``.
-			- out_chi2['logg_range']: input ``logg_range``.
-			- out_chi2['R']: input ``R``.
-			- out_chi2['lam_R']: input ``lam_R``.
-			- out_chi2['chi2_wl_range']: input ``chi2_wl_range``.
-			- out_chi2['N_rows_model']: maximum number of data points in original model spectra.
-			- out_chi2['out_lmfit']: output of the ``minner.minimize`` module that minimizes chi2.
-			- out_chi2['iterations_fit']: number of iterations to minimize chi-square.
-			- out_chi2['Av_fit']: visual extinction (in mag) that minimizes chi-square.
-			- out_chi2['eAv_fit']: visual extinction uncertainty (in mag).
-			- out_chi2['scaling_fit']: scaling factor that minimizes chi-square.
-			- out_chi2['escaling_fit']: scaling factor uncertainty.
-			- out_chi2['chi2_wl_fit']: chi-square as a function of wavelength.
-			- out_chi2['chi2_red_wl_fit']: reduced chi-square as a function of wavelength.
-			- out_chi2['chi2_fit']: total chi-square.
-			- out_chi2['chi2_red_fit']: total reduced chi-square.
-			- out_chi2['weight_fit']: weight given to each data point in the fit considering the equation chi2 = weight * (data-model)^2 / edata^2.
-			- out_chi2['wl_array_model_conv_resam']: (if ``fit_spectra='yes'``) wavelength (in um) of model resampled, convolved model.
-			- out_chi2['flux_array_model_conv_resam']: (if ``fit_spectra='yes'``) scaled fluxes (in erg/cm2/s/A) of resampled, convolved model spectra.
+			- out_chi2[``'model'``]: atmospheric model chosen.
+			- out_chi2[``'spectra_name'``]: model spectra names.
+			- out_chi2[``'spectra_name_full'``]: model spectra names with full path.
+			- out_chi2[``'Teff_range'``]: input ``Teff_range``.
+			- out_chi2[``'logg_range'``]: input ``logg_range``.
+			- out_chi2[``'R'``]: input ``R``.
+			- out_chi2[``'lam_R'``]: input ``lam_R``.
+			- out_chi2[``'chi2_wl_range'``]: input ``chi2_wl_range``.
+			- out_chi2[``'N_rows_model'``]: maximum number of data points in original model spectra.
+			- out_chi2[``'out_lmfit'``]: output of the ``minner.minimize`` module that minimizes chi2.
+			- out_chi2[``'iterations_fit'``]: number of iterations to minimize chi-square.
+			- out_chi2[``'Av_fit'``]: visual extinction (in mag) that minimizes chi-square.
+			- out_chi2[``'eAv_fit'``]: visual extinction uncertainty (in mag).
+			- out_chi2[``'scaling_fit'``]: scaling factor that minimizes chi-square.
+			- out_chi2[``'escaling_fit'``]: scaling factor uncertainty.
+			- out_chi2[``'chi2_wl_fit'``]: chi-square as a function of wavelength.
+			- out_chi2[``'chi2_red_wl_fit'``]: reduced chi-square as a function of wavelength.
+			- out_chi2[``'chi2_fit'``]: total chi-square.
+			- out_chi2[``'chi2_red_fit'``]: total reduced chi-square.
+			- out_chi2[``'weight_fit'``]: weight given to each data point in the fit considering the equation chi2 = weight * (data-model)^2 / edata^2.
+			- out_chi2[``'wl_array_model_conv_resam'``]: (if ``fit_spectra='yes'``) wavelength (in um) of model resampled, convolved model.
+			- out_chi2[``'flux_array_model_conv_resam'``]: (if ``fit_spectra='yes'``) scaled fluxes (in erg/cm2/s/A) of resampled, convolved model spectra.
 
-			- out_chi2['lambda_eff_mean']: mean effective wavelength (in um) of each photometric passband (when using photometry)
-			- out_chi2['width_eff_mean']: mean effective width (in um) of each photometric passband (when using photometry)
-			- out_chi2['f_phot']: fluxes (in erg/s/cm2/A) of input photometry (when using photometry)
-			- out_chi2['ef_phot']: flux uncertainties (in erg/s/cm2/A)
-			- out_chi2['phot_synt']: synthetic fluxes (in erg/s/cm2/A) from each model spectrum considering the photometric passbands (when using photometry)
-			- out_chi2['phot_synt_red']: synthetic fluxes (in erg/s/cm2/A) from each reddened model spectrum considering the photometric passbands (when using photometry)
+			- out_chi2[``'lambda_eff_mean'``]: mean effective wavelength (in um) of each photometric passband (when using photometry)
+			- out_chi2[``'width_eff_mean'``]: mean effective width (in um) of each photometric passband (when using photometry)
+			- out_chi2[``'f_phot'``]: fluxes (in erg/s/cm2/A) of input photometry (when using photometry)
+			- out_chi2[``'ef_phot'``]: flux uncertainties (in erg/s/cm2/A)
+			- out_chi2[``'phot_synt'``]: synthetic fluxes (in erg/s/cm2/A) from each model spectrum considering the photometric passbands (when using photometry)
+			- out_chi2[``'phot_synt_red'``]: synthetic fluxes (in erg/s/cm2/A) from each reddened model spectrum considering the photometric passbands (when using photometry)
 
-			- out_chi2['radius']: radius (in Rjup) corresponding to the scaling factor and input distance (calculated only when distance and edistance are provided)
-			- out_chi2['eradius']: radius uncertainty (in Rjup)
-			- out_chi2['wl_array_data']: 
-			- out_chi2['flux_array_data']: 
-			- out_chi2['eflux_array_data']: 
-			- out_chi2['flux_residuals']: linear of flux residual (in erg/cm2/s/A) between observed data and model spectra within the fit wavelength range
-			- out_chi2['logflux_residuals']: logarithm of flux residual (in erg/cm2/s/A) between observed data and model spectra within the fit wavelength range
+			- out_chi2[``'radius'``]: radius (in Rjup) corresponding to the scaling factor and input distance (calculated only when distance and edistance are provided)
+			- out_chi2[``'eradius'``]: radius uncertainty (in Rjup)
+			- out_chi2[``'wl_array_data'``]: 
+			- out_chi2[``'flux_array_data'``]: 
+			- out_chi2[``'eflux_array_data'``]: 
+			- out_chi2[``'flux_residuals'``]: linear of flux residual (in erg/cm2/s/A) between observed data and model spectra within the fit wavelength range
+			- out_chi2[``'logflux_residuals'``]: logarithm of flux residual (in erg/cm2/s/A) between observed data and model spectra within the fit wavelength range
 	'''
 #	model+dynamic_sampling+'nested.pickle': results from the nested sampling provided by Dynesty
 #
