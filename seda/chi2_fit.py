@@ -889,11 +889,11 @@ def separate_params(spectra_name, model):
 	'''
 	Description:
 	------------
-		Separate parameters from each model spectrum name.
+		Extract parameters from each model spectrum name.
 
 	Parameters:
 	-----------
-	- spectra_name : array
+	- spectra_name : array or list
 		Model spectra names.
 	- model : str
 		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
@@ -907,10 +907,26 @@ def separate_params(spectra_name, model):
 		- ``logKzz``: (if provided by ``model``) diffusion parameter for each model spectrum. 
 		- ``fsed``: (if provided by ``model``) cloudiness parameter for each model spectrum.
 		- ``CtoO``: (if provided by ``model``) C/O ratio for each model spectrum.
-		
+		- ``spectra_name`` : model spectra names.
+
+	Example:
+	--------
+	>>> import seda
+	>>>
+	>>> model = 'Sonora_Elf_Owl'
+	>>> spectra_name = np.array(['spectra_logzz_4.0_teff_750.0_grav_178.0_mh_0.0_co_1.0.nc', 
+	>>>                          'spectra_logzz_2.0_teff_800.0_grav_316.0_mh_0.0_co_1.0.nc'])
+	>>> seda.separate_params(spectra_name=spectra_name, model=model)
+	    {'spectra_name': array(['spectra_logzz_4.0_teff_750.0_grav_178.0_mh_0.0_co_1.0.nc',
+                                'spectra_logzz_2.0_teff_800.0_grav_316.0_mh_0.0_co_1.0.nc'],
+        'Teff': array([750., 800.]),
+        'logg': array([4.25042   , 4.49968708]),
+        'logKzz': array([4., 2.]),
+        'Z': array([0., 0.]),
+        'CtoO': array([1., 1.])}
+
 	Author: Genaro Suárez
 	'''
-
 
 	out = {'spectra_name': spectra_name} # start dictionary with some parameters
 
