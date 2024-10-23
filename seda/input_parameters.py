@@ -9,7 +9,7 @@ class InputData:
 	'''
 	Description:
 	------------
-		Define input data for SEDA
+		Define input data for SEDA.
 	
 	Parameters:
 	-----------
@@ -119,7 +119,7 @@ class ModelOptions:
 	'''
 	Description:
 	------------
-		Define model options for SEDA
+		Define model options for SEDA.
 
 	Parameters:
 	-----------
@@ -250,7 +250,7 @@ class Chi2Options:
 	'''
 	Description:
 	------------
-		Define chi2 fit options for SEDA
+		Define chi2 fit options for SEDA.
 
 	Parameters:
 	-----------

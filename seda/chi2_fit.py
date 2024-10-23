@@ -14,7 +14,7 @@ def chi2_fit(my_chi2):
 	'''
 	Description:
 	------------
-		Minimize the chi-square statistic to find the best model fits
+		Minimize the chi-square statistic to find the best model fits.
 
 	Parameters:
 	-----------
@@ -748,7 +748,7 @@ def select_model_spectra(Teff_range, logg_range, model, model_dir):
 	'''
 	Description:
 	------------
-		Select model spectra from the indicated models and meeting the parameters ranges 
+		Select model spectra from the indicated models and meeting the parameters ranges.
 
 	Parameters:
 	-----------
@@ -776,8 +776,8 @@ def select_model_spectra(Teff_range, logg_range, model, model_dir):
 	>>>              'my_path/output_700.0_800.0/'] # folders to seek model spectra
 	>>> Teff_range = np.array((700, 900)) # Teff range
 	>>> logg_range = np.array((4.0, 5.0)) # logg range
-	>>> out_select_model_spectra = seda.select_model_spectra(Teff_range=Teff_range, logg_range=logg_range,
-	>>>                                                      model=model, model_dir=model_dir)
+	>>> out = seda.select_model_spectra(Teff_range=Teff_range, logg_range=logg_range,
+	>>>                                 model=model, model_dir=model_dir)
 
 	Author: Genaro Suárez
 	'''
@@ -819,8 +819,24 @@ def select_model_spectra(Teff_range, logg_range, model, model_dir):
 	return out
 
 ##########################
-# number of data points in model spectra
 def Ndata_model_spectra(model):
+	'''
+	Description:
+	------------
+		Maximum number of data points in model spectra.
+
+	Parameters:
+	-----------
+	- model : str
+		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
+
+	Returns:
+	--------
+	- N_rows_model: int
+		Maximum number of model spectra.
+
+	Author: Genaro Suárez
+	'''
 
 	if (model == 'Sonora_Diamondback'):	N_rows_model = 385466 # number of rows in model spectra (all spectra have the same length)
 	if (model == 'Sonora_Elf_Owl'):	N_rows_model = 193132 # number of rows in model spectra (all spectra have the same length)
