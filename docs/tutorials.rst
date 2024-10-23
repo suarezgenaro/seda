@@ -8,3 +8,6 @@ Chi square fit of atmospheric models to an observed spectrum
    :maxdepth: 1
 
    notebooks/test_chi2_fit.ipynb
+
+Chi square fit of atmospheric models to observed photometry
+-----------------------------------------------------------
