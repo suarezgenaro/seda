@@ -744,14 +744,16 @@ def chi2_fit(my_chi2):
 	return out_chi2
 
 ##########################
-# select model spectra from the indicated models and meeting the parameters ranges 
 def select_model_spectra(Teff_range, logg_range, model, model_dir):
+	'''
+	Description:
+	------------
+		Select model spectra from the indicated models and meeting the parameters ranges 
 
 	'''
-	Output: dictionary
-		spectra_name_full : full path to each selected model spectrum
-		spectra_name : selected model spectra without full path
-	'''
+#	Output: dictionary
+#		spectra_name_full : full path to each selected model spectrum
+#		spectra_name : selected model spectra without full path
 
 	# to store files in model_dir
 	files = [] # with full path
