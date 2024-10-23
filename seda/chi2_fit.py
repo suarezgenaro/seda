@@ -91,7 +91,7 @@ def chi2_fit(my_chi2):
 #	>>> out_chi2_fit = seda.chi2_fit(my_chi2=my_chi2)
 #
 #    Author: Genaro Suárez
-	'''
+#	'''
 
 #	model+dynamic_sampling+'nested.pickle': results from the nested sampling provided by Dynesty
 #
