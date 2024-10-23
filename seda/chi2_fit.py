@@ -26,7 +26,7 @@ def chi2_fit(my_chi2):
 		Table with all fitted model spectra names sorted by chi square and including the information: 
 		spectrum name, chi square, reduced chi square, scaling, scaling error, extinction, extinction error, physical parameters from the models (e.g. Teff and logg), and iterations to minimize chi square.
 	- '``model``\_chi2\_minimization.pickle' : dictionary
-		Dictionary with the results from the chi square minimization with the following parameters:
+		Dictionary with the results from the chi-square minimization, namely:
 			- ``model``: atmospheric model chosen.
 			- ``spectra_name``: model spectra names.
 			- ``spectra_name_full``: model spectra names with full path.
@@ -62,6 +62,12 @@ def chi2_fit(my_chi2):
 			- ``eflux_array_data``: input observed flux errors for ``wl_array_data``.
 			- ``flux_residuals``: linear flux residual (in erg/cm2/s/A) between observed data and model spectra in ``chi2_wl_range``.
 			- ``logflux_residuals``: logarithm flux residual (in erg/cm2/s/A) between observed data and model spectra ``chi2_wl_range``.
+			- ``Teff``: effective temperature (in K) for each model spectrum from ``seda.separate_params``.
+			- ``logg``: surface gravity (log g) for each model spectrum from ``seda.separate_params``.
+			- ``Z``: metallicity (if provided by ``model``) for each model spectrum from ``seda.separate_params``.
+			- ``fsed``: cloudiness parameter (if provided by ``model``) for each model spectrum from ``seda.separate_params``.
+			- ``logKzz``: diffusion parameter (if provided by ``model``) for each model spectrum from ``seda.separate_params``.
+			- ``CtoO``: C/O ratio (if provided by ``model``) for each model spectrum from ``seda.separate_params``.
 
 	Example:
 	--------
@@ -90,13 +96,12 @@ def chi2_fit(my_chi2):
 	>>> 
 	>>> # run chi-square fit
 	>>> out_chi2_fit = seda.chi2_fit(my_chi2=my_chi2)
+	    Chi square fit ran successfully
 
 	Author: Genaro Suárez
 	'''
 #	model+dynamic_sampling+'nested.pickle': results from the nested sampling provided by Dynesty
 #
-#		out_chi2['Teff']: effective temperature (in K)
-#		out_chi2['logg']: surface gravity (log g)
 
 #		out_chi2['wl_array_model']: wavelengths (in um) of model spectra with their original-resolution 
 #		out_chi2['flux_array_model']: scaled fluxes (in erg/cm2/s/A) of original-resolution model spectra
