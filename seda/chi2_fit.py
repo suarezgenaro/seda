@@ -49,20 +49,28 @@ def chi2_fit(my_chi2):
 			- out_chi2['weight_fit']: weight given to each data point in the fit considering the equation chi2 = weight * (data-model)^2 / edata^2.
 			- out_chi2['wl_array_model_conv_resam']: (if ``fit_spectra='yes'``) wavelength (in um) of model resampled, convolved model.
 			- out_chi2['flux_array_model_conv_resam']: (if ``fit_spectra='yes'``) scaled fluxes (in erg/cm2/s/A) of resampled, convolved model spectra.
+
+			- out_chi2['lambda_eff_mean']: mean effective wavelength (in um) of each photometric passband (when using photometry)
+			- out_chi2['width_eff_mean']: mean effective width (in um) of each photometric passband (when using photometry)
+			- out_chi2['f_phot']: fluxes (in erg/s/cm2/A) of input photometry (when using photometry)
+			- out_chi2['ef_phot']: flux uncertainties (in erg/s/cm2/A)
+			- out_chi2['phot_synt']: synthetic fluxes (in erg/s/cm2/A) from each model spectrum considering the photometric passbands (when using photometry)
+			- out_chi2['phot_synt_red']: synthetic fluxes (in erg/s/cm2/A) from each reddened model spectrum considering the photometric passbands (when using photometry)
+
+			- out_chi2['radius']: radius (in Rjup) corresponding to the scaling factor and input distance (calculated only when distance and edistance are provided)
+			- out_chi2['eradius']: radius uncertainty (in Rjup)
+			- out_chi2['wl_array_data']: 
+			- out_chi2['flux_array_data']: 
+			- out_chi2['eflux_array_data']: 
+			- out_chi2['flux_residuals']: linear of flux residual (in erg/cm2/s/A) between observed data and model spectra within the fit wavelength range
+			- out_chi2['logflux_residuals']: logarithm of flux residual (in erg/cm2/s/A) between observed data and model spectra within the fit wavelength range
 	'''
 #	model+dynamic_sampling+'nested.pickle': results from the nested sampling provided by Dynesty
 #
 #								 namely iterations, scaling factor, extinction, and (reduced) chi square
 #		out_chi2['Teff']: effective temperature (in K)
 #		out_chi2['logg']: surface gravity (log g)
-#		out_chi2['radius']: radius (in Rjup) corresponding to the scaling factor and input distance (calculated only when distance and edistance are provided)
-#		out_chi2['eradius']: radius uncertainty (in Rjup)
-#		out_chi2['lambda_eff_mean']: mean effective wavelength (in um) of each photometric passband (when using photometry)
-#		out_chi2['width_eff_mean']: mean effective width (in um) of each photometric passband (when using photometry)
-#		out_chi2['f_phot']: fluxes (in erg/s/cm2/A) of input photometry (when using photometry)
-#		out_chi2['ef_phot']: flux uncertainties (in erg/s/cm2/A)
-#		out_chi2['phot_synt']: synthetic fluxes (in erg/s/cm2/A) from each model spectrum considering the photometric passbands (when using photometry)
-#		out_chi2['phot_synt_red']: synthetic fluxes (in erg/s/cm2/A) from each reddened model spectrum considering the photometric passbands (when using photometry)
+
 #		out_chi2['wl_array_model']: wavelengths (in um) of model spectra with their original-resolution 
 #		out_chi2['flux_array_model']: scaled fluxes (in erg/cm2/s/A) of original-resolution model spectra
 #		out_chi2['wl_array_model_conv']: wavelengths (in um) of convolved model spectra
@@ -70,8 +78,6 @@ def chi2_fit(my_chi2):
 #		out_chi2['flux_array_model_red']: scaled fluxes (in erg/cm2/s/A) of original-resolution reddened model spectra
 #		out_chi2['flux_array_model_conv_red']: scaled fluxes (in erg/cm2/s/A) of convolved reddened model spectra
 #		out_chi2['flux_array_model_conv_resam_red']: scaled fluxes (in erg/cm2/s/A) of resampled, convolved reddened model spectra
-#		out_chi2['flux_residuals']: linear of flux residual (in erg/cm2/s/A) between observed data and model spectra within the fit wavelength range
-#		out_chi2['logflux_residuals']: logarithm of flux residual (in erg/cm2/s/A) between observed data and model spectra within the fit wavelength range
 #
 #	EXAMPLES
 #	--------
@@ -795,7 +801,6 @@ def chi2_fit(my_chi2):
 		out_chi2['R_range'] = R_range
 		out_chi2['distance'] = distance
 		out_chi2['edistance'] = edistance
-		out_chi2['radius'] = radius
 		out_chi2['radius'] = radius
 		out_chi2['eradius'] = eradius
 	#if N_spectra>1 : # when multiple spectra are provided the function returns flat arrays with the input wavelengths, fluxes, and flux errors used in the fit
