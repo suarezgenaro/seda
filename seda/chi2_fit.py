@@ -47,14 +47,14 @@ def chi2_fit(my_chi2):
 			- ``chi2_fit``: total chi-square.
 			- ``chi2_red_fit``: total reduced chi-square.
 			- ``weight_fit``: weight given to each data point in the fit considering the equation chi2 = weight * (data-model)^2 / edata^2.
-			- ``wl_array_model_conv_resam``: (if ``fit_spectra='yes'``) wavelength (in um) of model resampled, convolved model.
-			- ``flux_array_model_conv_resam``: (if ``fit_spectra='yes'``) scaled fluxes (in erg/cm2/s/A) of resampled, convolved model spectra.
-			- ``lambda_eff_mean``: mean effective wavelength (in um) of each input photometric passband (if ``fit_photometry='yes'``).
-			- ``width_eff_mean``: mean effective width (in um) of each input photometric passband (if ``fit_photometry='yes'``).
-			- ``f_phot``: fluxes (in erg/s/cm2/A) of each input photometry (if ``fit_photometry='yes'``).
-			- ``ef_phot``: flux uncertainties (in erg/s/cm2/A) (if ``fit_photometry='yes'``).
-			- ``phot_synt``: synthetic fluxes (in erg/s/cm2/A) from each model spectrum considering the different filters (if ``fit_photometry='yes'``).
-			- ``phot_synt_red``: synthetic fluxes (in erg/s/cm2/A) from each reddened model spectrum considering the different filters (if ``fit_photometry='yes'``).
+			- ``wl_array_model_conv_resam``: (if ``fit_spectra``) wavelength (in um) of model resampled, convolved model.
+			- ``flux_array_model_conv_resam``: (if ``fit_spectra``) scaled fluxes (in erg/cm2/s/A) of resampled, convolved model spectra.
+			- ``lambda_eff_mean``: mean effective wavelength (in um) of each input photometric passband (if ``fit_photometry``).
+			- ``width_eff_mean``: mean effective width (in um) of each input photometric passband (if ``fit_photometry``).
+			- ``f_phot``: fluxes (in erg/s/cm2/A) of each input photometry (if ``fit_photometry``).
+			- ``ef_phot``: flux uncertainties (in erg/s/cm2/A) (if ``fit_photometry``).
+			- ``phot_synt``: synthetic fluxes (in erg/s/cm2/A) from each model spectrum considering the different filters (if ``fit_photometry``).
+			- ``phot_synt_red``: synthetic fluxes (in erg/s/cm2/A) from each reddened model spectrum considering the different filters (if ``fit_photometry``).
 			- ``radius``: radius (in Rjup) considering the ``scaling_fit`` and input ``distance`` (if ``distance`` is provided).
 			- ``eradius``: radius uncertainty (in Rjup) (if ``edistance`` is provided).
 			- ``wl_array_data``: input observed wavelengths within ``chi2_wl_range``.
