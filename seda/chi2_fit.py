@@ -750,10 +750,37 @@ def select_model_spectra(Teff_range, logg_range, model, model_dir):
 	------------
 		Select model spectra from the indicated models and meeting the parameters ranges 
 
+	Parameters:
+	-----------
+	- Teff_range : float array
+		Minimum and maximum Teff values to select a model grid subset (e.g., ``Teff_range = np.array([Teff_min, Teff_max])``)
+	- logg_range : float array
+		Minimum and maximum logg values to select a model grid subset
+	- model : str
+		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
+	- model_dir : str or list
+		Path to the directory (str or list) or directories (as a list) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
+		
+	Returns:
+	--------
+	Dictionary with the parameters:
+		- ``spectra_name``: selected model spectra names.
+		- ``spectra_name_full``: selected model spectra names with full path.
+
+	Example:
+	--------
+	>>> import seda
+	>>> 
+	>>> model = 'Sonora_Elf_Owl'
+	>>> model_dir = ['my_path/output_575.0_650.0/', 
+	>>>              'my_path/output_700.0_800.0/'] # folders to seek model spectra
+	>>> Teff_range = np.array((700, 900)) # Teff range
+	>>> logg_range = np.array((4.0, 5.0)) # logg range
+	>>> out_select_model_spectra = seda.select_model_spectra(Teff_range=Teff_range, logg_range=logg_range,
+	>>>                                                      model=model, model_dir=model_dir)
+
+	Author: Genaro Suárez
 	'''
-#	Output: dictionary
-#		spectra_name_full : full path to each selected model spectrum
-#		spectra_name : selected model spectra without full path
 
 	# to store files in model_dir
 	files = [] # with full path
