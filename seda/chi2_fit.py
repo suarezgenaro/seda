@@ -20,75 +20,77 @@ def chi2_fit(my_chi2):
 	-----------
 	- my_chi2 : return parameters from ``input_parameters.Chi2Options``, which also includes the parameters from ``input_parameters.InputData`` and ``input_parameters.ModelOptions``.
 
-	Returns:
-	--------
-	- '``model``\_chi2\_minimization.dat' : ascii table
-		Table with all fitted model spectra names sorted by chi square and including the information: 
-		spectrum name, chi square, reduced chi square, scaling, scaling error, extinction, extinction error, physical parameters from the models (e.g. Teff and logg), and iterations to minimize chi square.
-	- '``model``\_chi2\_minimization.pickle' : dictionary
-		Dictionary with the results from the chi square minimization with the following parameters:
-			- ``model``: atmospheric model chosen.
-			- ``spectra_name``: model spectra names.
-			- ``spectra_name_full``: model spectra names with full path.
-			- ``Teff_range``: input ``Teff_range``.
-			- ``logg_range``: input ``logg_range``.
-			- ``res``: input ``res``.
-			- ``lam_res``: input ``lam_res``.
-			- ``chi2_wl_range``: input ``chi2_wl_range``.
-			- ``N_rows_model``: maximum number of data points in original model spectra.
-			- ``out_lmfit``: output of the ``minner.minimize`` module that minimizes chi2.
-			- ``iterations_fit``: number of iterations to minimize chi-square.
-			- ``Av_fit``: visual extinction (in mag) that minimizes chi-square.
-			- ``eAv_fit``: visual extinction uncertainty (in mag).
-			- ``scaling_fit``: scaling factor that minimizes chi-square.
-			- ``escaling_fit``: scaling factor uncertainty.
-			- ``chi2_wl_fit``: chi-square as a function of wavelength.
-			- ``chi2_red_wl_fit``: reduced chi-square as a function of wavelength.
-			- ``chi2_fit``: total chi-square.
-			- ``chi2_red_fit``: total reduced chi-square.
-			- ``weight_fit``: weight given to each data point in the fit considering the equation chi2 = weight * (data-model)^2 / edata^2.
-			- ``wl_array_model_conv_resam``: (if ``fit_spectra``) wavelength (in um) of model resampled, convolved model.
-			- ``flux_array_model_conv_resam``: (if ``fit_spectra``) scaled fluxes (in erg/cm2/s/A) of resampled, convolved model spectra.
-			- ``lambda_eff_mean``: (if ``fit_photometry``) mean effective wavelength (in um) of each input photometric passband.
-			- ``width_eff_mean``: (if ``fit_photometry``) mean effective width (in um) of each input photometric passband.
-			- ``f_phot``: (if ``fit_photometry``) fluxes (in erg/s/cm2/A) of each input photometry.
-			- ``ef_phot``: (if ``fit_photometry``) flux uncertainties (in erg/s/cm2/A).
-			- ``phot_synt``: (if ``fit_photometry``) synthetic fluxes (in erg/s/cm2/A) from each model spectrum considering the different filters.
-			- ``phot_synt_red``: (if ``fit_photometry``) synthetic fluxes (in erg/s/cm2/A) from each reddened model spectrum considering the different filters.
-			- ``radius``: (if ``distance`` is provided) radius (in Rjup) considering the ``scaling_fit`` and input ``distance``.
-			- ``eradius``: (if ``edistance`` is provided) radius uncertainty (in Rjup).
-			- ``wl_array_data``: input observed wavelengths within ``chi2_wl_range``.
-			- ``flux_array_data``: input observed fluxes for ``wl_array_data``.
-			- ``eflux_array_data``: input observed flux errors for ``wl_array_data``.
-			- ``flux_residuals``: linear flux residual (in erg/cm2/s/A) between observed data and model spectra in ``chi2_wl_range``.
-			- ``logflux_residuals``: logarithm flux residual (in erg/cm2/s/A) between observed data and model spectra ``chi2_wl_range``.
-
-	Example:
-	--------
-	>>> import seda
-	>>> 
-	>>> # load input data
-	>>> wl_spectra = wl_input # in um
-	>>> flux_spectra = flux_input # in erg/cm^2/s/A
-	>>> eflux_spectra = eflux_input # in erg/cm^2/s/A
-	>>> my_data = seda.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, eflux_spectra=eflux_spectra)
-	>>> 
-	>>> # load model options
-	>>> model = 'Sonora_Elf_Owl'
-	>>> model_dir = ['my_path/output_575.0_650.0/', 'my_path/output_700.0_800.0/'] # folders to look for model spectra
-	>>> Teff_range = np.array((700, 900)) # Teff range
-	>>> logg_range = np.array((4.0, 5.0)) # logg range
-	>>> my_model = seda.ModelOptions(model=model, model_dir=model_dir, logg_range=logg_range, Teff_range=Teff_range)
-	>>> 
-	>>> # load chi-square options
-	>>> chi2_wl_range = np.array([value1, value2]) # to make the fit between value1 and value2
-	>>> my_chi2 = seda.Chi2FitOptions(my_data=my_data, my_model=my_model, chi2_wl_range=chi2_wl_range)
-	>>> 
-	>>> # run chi-square fit
-	>>> out_chi2_fit = seda.chi2_fit(my_chi2=my_chi2)
-
-    Author: Genaro Suárez
 	'''
+#	Returns:
+#	--------
+#	- '``model``\_chi2\_minimization.dat' : ascii table
+#		Table with all fitted model spectra names sorted by chi square and including the information: 
+#		spectrum name, chi square, reduced chi square, scaling, scaling error, extinction, extinction error, physical parameters from the models (e.g. Teff and logg), and iterations to minimize chi square.
+#	- '``model``\_chi2\_minimization.pickle' : dictionary
+#		Dictionary with the results from the chi square minimization with the following parameters:
+#			- ``model``: atmospheric model chosen.
+#			- ``spectra_name``: model spectra names.
+#			- ``spectra_name_full``: model spectra names with full path.
+#			- ``Teff_range``: input ``Teff_range``.
+#			- ``logg_range``: input ``logg_range``.
+#			- ``res``: input ``res``.
+#			- ``lam_res``: input ``lam_res``.
+#			- ``chi2_wl_range``: input ``chi2_wl_range``.
+#			- ``N_rows_model``: maximum number of data points in original model spectra.
+#			- ``out_lmfit``: output of the ``minner.minimize`` module that minimizes chi2.
+#			- ``iterations_fit``: number of iterations to minimize chi-square.
+#			- ``Av_fit``: visual extinction (in mag) that minimizes chi-square.
+#			- ``eAv_fit``: visual extinction uncertainty (in mag).
+#			- ``scaling_fit``: scaling factor that minimizes chi-square.
+#			- ``escaling_fit``: scaling factor uncertainty.
+#			- ``chi2_wl_fit``: chi-square as a function of wavelength.
+#			- ``chi2_red_wl_fit``: reduced chi-square as a function of wavelength.
+#			- ``chi2_fit``: total chi-square.
+#			- ``chi2_red_fit``: total reduced chi-square.
+#			- ``weight_fit``: weight given to each data point in the fit considering the equation chi2 = weight * (data-model)^2 / edata^2.
+#			- ``wl_array_model_conv_resam``: (if ``fit_spectra``) wavelength (in um) of model resampled, convolved model.
+#			- ``flux_array_model_conv_resam``: (if ``fit_spectra``) scaled fluxes (in erg/cm2/s/A) of resampled, convolved model spectra.
+#			- ``lambda_eff_mean``: (if ``fit_photometry``) mean effective wavelength (in um) of each input photometric passband.
+#			- ``width_eff_mean``: (if ``fit_photometry``) mean effective width (in um) of each input photometric passband.
+#			- ``f_phot``: (if ``fit_photometry``) fluxes (in erg/s/cm2/A) of each input photometry.
+#			- ``ef_phot``: (if ``fit_photometry``) flux uncertainties (in erg/s/cm2/A).
+#			- ``phot_synt``: (if ``fit_photometry``) synthetic fluxes (in erg/s/cm2/A) from each model spectrum considering the different filters.
+#			- ``phot_synt_red``: (if ``fit_photometry``) synthetic fluxes (in erg/s/cm2/A) from each reddened model spectrum considering the different filters.
+#			- ``radius``: (if ``distance`` is provided) radius (in Rjup) considering the ``scaling_fit`` and input ``distance``.
+#			- ``eradius``: (if ``edistance`` is provided) radius uncertainty (in Rjup).
+#			- ``wl_array_data``: input observed wavelengths within ``chi2_wl_range``.
+#			- ``flux_array_data``: input observed fluxes for ``wl_array_data``.
+#			- ``eflux_array_data``: input observed flux errors for ``wl_array_data``.
+#			- ``flux_residuals``: linear flux residual (in erg/cm2/s/A) between observed data and model spectra in ``chi2_wl_range``.
+#			- ``logflux_residuals``: logarithm flux residual (in erg/cm2/s/A) between observed data and model spectra ``chi2_wl_range``.
+#
+#	Example:
+#	--------
+#	>>> import seda
+#	>>> 
+#	>>> # load input data
+#	>>> wl_spectra = wl_input # in um
+#	>>> flux_spectra = flux_input # in erg/cm^2/s/A
+#	>>> eflux_spectra = eflux_input # in erg/cm^2/s/A
+#	>>> my_data = seda.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, eflux_spectra=eflux_spectra)
+#	>>> 
+#	>>> # load model options
+#	>>> model = 'Sonora_Elf_Owl'
+#	>>> model_dir = ['my_path/output_575.0_650.0/', 'my_path/output_700.0_800.0/'] # folders to look for model spectra
+#	>>> Teff_range = np.array((700, 900)) # Teff range
+#	>>> logg_range = np.array((4.0, 5.0)) # logg range
+#	>>> my_model = seda.ModelOptions(model=model, model_dir=model_dir, logg_range=logg_range, Teff_range=Teff_range)
+#	>>> 
+#	>>> # load chi-square options
+#	>>> chi2_wl_range = np.array([value1, value2]) # to make the fit between value1 and value2
+#	>>> my_chi2 = seda.Chi2FitOptions(my_data=my_data, my_model=my_model, chi2_wl_range=chi2_wl_range)
+#	>>> 
+#	>>> # run chi-square fit
+#	>>> out_chi2_fit = seda.chi2_fit(my_chi2=my_chi2)
+#
+#    Author: Genaro Suárez
+#	'''
+
 #	model+dynamic_sampling+'nested.pickle': results from the nested sampling provided by Dynesty
 #
 #		out_chi2['Teff']: effective temperature (in K)
