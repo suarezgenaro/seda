@@ -71,7 +71,8 @@ def chi2_fit(my_chi2):
 	>>> wl_spectra = wl_input # in um
 	>>> flux_spectra = flux_input # in erg/cm^2/s/A
 	>>> eflux_spectra = eflux_input # in erg/cm^2/s/A
-	>>> my_data = seda.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, eflux_spectra=eflux_spectra)
+	>>> my_data = seda.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, 
+	>>> 						 eflux_spectra=eflux_spectra)
 	>>> 
 	>>> # load model options
 	>>> model = 'Sonora_Elf_Owl'

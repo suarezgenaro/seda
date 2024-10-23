@@ -60,6 +60,8 @@ class InputData:
 	>>> lam_res = 2.0 # (um) reference wavelength for res
 	>>> my_data = seda.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, eflux_spectra=eflux_spectra, res=res, lam_res=lam_res)
 		Input data loaded successfully
+
+	Author: Genaro Suárez
 	'''
 
 	def __init__(self, 
@@ -217,6 +219,8 @@ class ModelOptions:
 	>>> logg_range = np.array((4.0, 5.0)) # logg range
 	>>> my_model = seda.ModelOptions(model=model, model_dir=model_dir, logg_range=logg_range, Teff_range=Teff_range)
 		Model options loaded successfully
+
+	Author: Genaro Suárez
 	'''
 
 	def __init__(self, model, model_dir, Teff_range, logg_range, R_range=None):
@@ -286,6 +290,8 @@ class Chi2Options:
 	>>> chi2_wl_range = np.array([value1, value2]) # to make the fit between value1 and value2
 	>>> my_chi2 = seda.Chi2FitOptions(my_data=my_data, my_model=my_model, chi2_wl_range=chi2_wl_range)
 		Chi2 fit options loaded successfully
+
+	Author: Genaro Suárez
 	'''
 
 	def __init__(self, my_data, my_model, 
