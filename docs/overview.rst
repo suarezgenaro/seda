@@ -7,9 +7,9 @@ Introduction
 ------------
 :math:`\texttt{SEDA}` (Spectral Energy Distribution Analyzer) is an open-source Python package for forward modeling analysis of brown dwarfs, giant exoplanets, and low-mass stars. 
 
-:math:`\texttt{SEDA}` allows:
+:math:`\texttt{SEDA}` tools allow to:
   - Convolve spectra to a desire resolution at a given wavelength.
-  - Derive synthetic phothometry for any `SVO filter IDs <>`_.
+  - Derive synthetic phothometry for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_.
   - 
 
 Overall, the code uses
