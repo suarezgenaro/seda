@@ -24,7 +24,8 @@ def chi2_fit(my_chi2):
 	--------
 	- '``model``\_chi2\_minimization.dat' : ascii table
 		Table with all fitted model spectra names sorted by chi square and including the information: 
-		spectrum name, chi square, reduced chi square, scaling, scaling error, extinction, extinction error, physical parameters from the models (e.g. Teff and logg), and iterations to minimize chi square.
+		spectrum name, chi square, reduced chi square, scaling, scaling error, extinction, extinction error, 
+		physical parameters from the models (e.g. Teff and logg), and iterations to minimize chi square.
 	- '``model``\_chi2\_minimization.pickle' : dictionary
 		Dictionary with the results from the chi-square minimization, namely:
 			- ``model``: atmospheric model chosen.
@@ -273,7 +274,6 @@ def chi2_fit(my_chi2):
 		# synthetic photometry from model spectra before reddening them
 		if (fit_photometry=='yes'): # only if there are observed magnitudes
 			## read filters' zero points
-			#filter_parms_file = '/home/gsuarez/TRABAJO/PDFs/Papers/data/Filter_Transmissions/filters_properties'
 			#filter_parms = ascii.read(filter_parms_file)
 			#f0_filt = filter_parms['f0(Jy)'] # in Jy
 			#ef0_filt = filter_parms['ef0(Jy)'] # in Jy
@@ -1071,8 +1071,24 @@ def separate_params(spectra_name, model):
 	return out
 
 ##########################
-# save table with model spectra names sorted by chi square along with the parameters from each spectrum
 def save_params(dict_for_table):
+	'''
+	Description:
+	------------
+		Table with model spectra names sorted by chi square along with the parameters for each spectrum.
+
+	Parameters:
+	-----------
+	- dict_for_table : dictionary
+		Dictionary with relevant parameters to be saved as ASCII table.
+
+	Returns:
+	--------
+	- '``model``\_chi2\_minimization.dat' : ascii table
+		Table with all fitted model spectra names sorted by chi square and including the information: 
+		spectrum name, chi square, reduced chi square, scaling, scaling error, extinction, extinction error, 
+		physical parameters from the models (e.g. Teff and logg), and iterations to minimize chi square.
+	'''
 
 	# separate parameters to be included in the table
 	model = dict_for_table['model']
