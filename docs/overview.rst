@@ -21,6 +21,12 @@ Atmospheric Models
     [M/H] = [-0.5, 0.5] (cgs) in steps of 0.5 \\
     fsed = 1, 2, 3, 4, 8, nc \\
 
+.. code-block:: console
+
+   Teff = [900, 2400] K in steps of 100 K
+   logg = [3.5, 5.5] in steps of 0.5
+
+
 
 - `Sonora Diamondback <https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract>`_ by `Morley et al (2024) <https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract>`_.
 - **Sonora Elf Owl** for `L-type <https://zenodo.org/records/10385987>`_, `T-type <https://zenodo.org/records/10385821>`_, and `Y-type <https://zenodo.org/records/10381250>`_ by `Mukherjee et al. (2024) <https://ui.adsabs.harvard.edu/abs/2024ApJ...963...73M/abstract>`_.
