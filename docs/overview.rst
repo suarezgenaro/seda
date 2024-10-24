@@ -13,3 +13,4 @@ Atmospheric Models
 - `LB23 <https://zenodo.org/records/7779180>`_ by `Lacy & Burrows (2023) <https://ui.adsabs.harvard.edu/abs/2023ApJ...950....8L/abstract>`_
 - `Sonora Cholla <https://zenodo.org/records/4450269>`_ by `Karalidi et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...923..269K/abstract>`_
 - `Sonora Bobcat <https://zenodo.org/records/5063476>`_ by `Marley et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...920...85M/abstract>`_
+- `ATMO 2020 <https://noctis.erc-atmo.eu/fsdownload/zyU96xA6o/phillips2020>`_ by `Phillips et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020A%26A...637A..38P/abstract>`_                                                                 
