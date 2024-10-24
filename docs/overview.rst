@@ -12,3 +12,4 @@ Atmospheric Models
 - **Sonora Elf Owl** for `L-type <https://zenodo.org/records/10385987>`_, `T-type <https://zenodo.org/records/10385821>`_, and `Y-type <https://zenodo.org/records/10381250>`_ by `Mukherjee et al. (2024) <https://ui.adsabs.harvard.edu/abs/2024ApJ...963...73M/abstract>`_ 
 - `LB23 <https://zenodo.org/records/7779180>`_ by `Lacy & Burrows (2023) <https://ui.adsabs.harvard.edu/abs/2023ApJ...950....8L/abstract>`_
 - `Sonora Cholla <https://zenodo.org/records/4450269>`_ by `Karalidi et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...923..269K/abstract>`_
+- `Sonora Bobcat <https://zenodo.org/records/5063476>`_ by `Marley et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...920...85M/abstract>`_
