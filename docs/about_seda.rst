@@ -1,7 +1,7 @@
 About SEDA
 ==========
 
-**The :math:`\texttt{SEDA}` release paper is** `Suárez et al. (2024, in prep.) <https:xxx>`__.
+**The SEDA release paper is** `Suárez et al. (2024, in prep.) <https:xxx>`__.
 
 .. note::
 
