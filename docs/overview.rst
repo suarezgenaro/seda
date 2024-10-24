@@ -16,11 +16,11 @@ Atmospheric Models
 
   .. code-block:: console
 
-    wavelength = [0.3, 250] um
-    Teff = [900, 2400] K in steps of 100 K
-    logg = [3.5, 5.5] in steps of 0.5
-    [M/H] = [-0.5, 0.5] (cgs) in steps of 0.5
-    fsed = 1, 2, 3, 4, 8, nc
+    - wavelength = [0.3, 250] um
+    - Teff = [900, 2400] K in steps of 100 K
+    - logg = [3.5, 5.5] in steps of 0.5
+    - [M/H] = [-0.5, 0.5] (cgs) in steps of 0.5
+    - fsed = 1, 2, 3, 4, 8, nc
 
 - **Sonora Elf Owl:**
 
@@ -39,42 +39,55 @@ Atmospheric Models
 
 - **Lacy & Burrows (2023):**
 
-  Cloudy (water clouds) atmospheric models with equilibrium and non-equilibrium chemistry for Y-dwarf atmospheres by `Lacy & Burrows (2023) <https://ui.adsabs.harvard.edu/abs/2023ApJ...950....8L/abstract>`_.
+  Cloudy (water clouds) atmospheric models with equilibrium and non-equilibrium chemistry for Y-dwarf atmospheres by `Lacy & Burrows (2023) <https://ui.adsabs.harvard.edu/abs/2023ApJ...950....8L/abstract>`_. The models include four grids: ClearEQ, ClearNEQ, CloudyEQ, and CloudyNEQ.
 
   Parameter coverage in common for all grids:
 
   .. code-block:: console
 
-    wavelength = [0.5, 300] um with 30,000 frequency points evenly spaced in ln(frequency)
-    R~4340 (average resolving power)
+    - wavelength = [0.5, 300] um with 30,000 frequency points evenly spaced in ln(frequency)
+    - R~4340 (average resolving power)
 
   Parameter coverage for cloudless models:
 
   .. code-block:: console
 
-    Teff = [200, 600] K in steps of 25 K
-    logg = [3.50, 5.00] in steps of 0.25 (g in cgs)
-    [M/H] = -0.5, 0.0, and 0.5 (Z/Z_sun = 0.316, 1.0, 3.16)
-    logKzz = 6 for non-equilibrium models
+    - Teff = [200, 600] K in steps of 25 K
+    - logg = [3.50, 5.00] in steps of 0.25 (g in cgs)
+    - [M/H] = -0.5, 0.0, and 0.5 (Z/Z_sun = 0.316, 1.0, 3.16)
+    - logKzz = 6 for non-equilibrium models
     
   Parameter coverage for cloudy models (there are some additional cloudy atmospheres extending to lower surface gravities and warmer temperatures in some combinations where convergence was easy): 
 
   .. code-block:: console
 
-    Teff = [200, 400] K (200-350 for Z/Z_sun=3.16) in steps of 25 K 
-    logg = [3.75, 5.00] in steps of 0.25 (g in cgs)
-    [M/H] = -0.5, 0.0, and 0.5 (Z/Z_sun = 0.316, 1.0, 3.16), but some Z/Z_sun=3.16 are missing
-    logKzz = 6 for non-equilibrium models
+    - Teff = [200, 400] K (200-350 for Z/Z_sun=3.16) in steps of 25 K 
+    - logg = [3.75, 5.00] in steps of 0.25 (g in cgs)
+    - [M/H] = -0.5, 0.0, and 0.5 (Z/Z_sun = 0.316, 1.0, 3.16), but some Z/Z_sun=3.16 are missing
+    - logKzz = 6 for non-equilibrium models
     
-  Extended models (additions to models in the paper)
+  Extended models (additions to models in the paper). This grid replaces the original one ("The original spectra had an inconsistent wavelength grid and was missing CO2, so new ones are really a replacement.")
 
   .. code-block:: console
     
-    Teff up to 800 K
-    Hmix (mixing length) = 1.0, 0.1, and 0.01
-    This grid replaces the original one ("The original spectra had an inconsistent wavelength grid and was missing CO2, so new ones are really a replacement.")
+    - Teff up to 800 K
+    - Hmix (mixing length) = 1.0, 0.1, and 0.01
 
+- **Sonora Cholla:**
 
+  Cloudless models with non-equilibrium chemistry due to different eddy diffusion parameters by `Karalidi et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...923..269K/abstract>`_.
+
+  Parameter coverage:
+
+  .. code-block:: console
+
+    - wavelength = [1, 250] um for Teff>=850 K (plus some with Teff=750 K)
+    - wavelength = [0.3, 250] um for Teff<800 K (plus 950K_1780g_logkzz2.spec)
+    - Teff = [500, 1300] K in steps of 50 K
+    - logg = [3.00, 5.50] in steps of 0.25 (g in cgs)
+    - log Kzz=2, 4, and 7
+
+    
 
 
 
