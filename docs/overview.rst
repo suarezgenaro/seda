@@ -9,7 +9,7 @@ Introduction
 
 :math:`\texttt{SEDA}` allows to:
   - Convolve spectra to a desire resolution at a given wavelength.
-  - Derive synthetic phothometry for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_.
+  - Derive synthetic phothometry from spectra for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_.
   - 
 
 Overall, the code uses
