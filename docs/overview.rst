@@ -5,14 +5,19 @@ Overview
 
 Introduction
 ------------
-:math:`\texttt{SEDA}` (Spectral Energy Distribution Analyzer) is an open-source Python package for forward modeling analysis of brown dwarfs, giant exoplanets, and low-mass stars. The code compares spectra and/or photometry to modern and widely used atmospheric models by using a Bayesian framework to sample posteriors. Alternatively, the code minimizes the chi-square statistic to find the best model fits.
+:math:`\texttt{SEDA}` (Spectral Energy Distribution Analyzer) is an open-source Python package for forward modeling analysis of brown dwarfs, giant exoplanets, and low-mass stars. 
 
 The code uses the `dynesty <https://ui.adsabs.harvard.edu/abs/2020MNRAS.493.3132S/abstract>`_ `dynamic nested sampling package <https://dynesty.readthedocs.io/en/stable/index.html>`_ to estimate Bayesian posteriors.
+
+:math:`\texttt{SEDA}` also uses the `LMFIT <https://ui.adsabs.harvard.edu/abs/2014zndo.....11813N/abstract>`_ `minimization python package <https://lmfit.github.io/lmfit-py/>`_ to find the best model fits from available atmospheric models.
+
 
 .. _models:
 
 Atmospheric Models
 ------------------
+
+:math:`\texttt{SEDA}` can use several modern and widely used atmospheric models, as indicated below. 
 
 Sonora Diamondback
 ++++++++++++++++++
