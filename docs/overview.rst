@@ -15,7 +15,7 @@ Atmospheric Models
 
   .. math::
 
-    wavelength = [0.3, 250] um
+    \lambda = [0.3, 250] $\mu$m \\
     Teff = [900, 2400] K in steps of 100 K
     logg = [3.5, 5.5] in steps of 0.5
     [M/H] = [-0.5, 0.5] (cgs) in steps of 0.5
