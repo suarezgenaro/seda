@@ -39,7 +39,12 @@ Atmospheric Models
 
 - **Lacy & Burrows (2023):**
 
-  Cloudy (water clouds) atmospheric models with equilibrium and non-equilibrium chemistry for Y-dwarf atmospheres by `Lacy & Burrows (2023) <https://ui.adsabs.harvard.edu/abs/2023ApJ...950....8L/abstract>`_. The models include four grids: ClearEQ, ClearNEQ, CloudyEQ, and CloudyNEQ.
+  Cloudy (water clouds) atmospheric models with equilibrium and non-equilibrium chemistry for Y-dwarf atmospheres by `Lacy & Burrows (2023) <https://ui.adsabs.harvard.edu/abs/2023ApJ...950....8L/abstract>`_. The models include four grids: 
+
+    - ClearEQ: cloudless models with equilibrium chemistry
+    - ClearNEQ: cloudless models with non-equilibrium chemistry
+    - CloudyEQ: cloudy models with equilibrium chemistry
+    - CloudyNEQ: cloudy models with non-equilibrium chemistry
 
   Parameter coverage in common for all grids:
 
@@ -106,9 +111,9 @@ Atmospheric Models
 
   Cloudless atmospheric models with chemical and non-chemical equilibrium by `Phillips et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020A%26A...637A..38P/abstract>`_. The models include three grids:
     
-    - 'ATMO2020_CEQ': cloudless models with equilibrium chemistry.
-    - 'ATMO2020_NEQ_weak': cloudless models with non-equilibrium chemistry due to weak vertical mixing (logKzz=4).
-    - 'ATMO2020_NEQ_strong': cloudless models with non-equilibrium chemistry due to strong vertical mixing (logKzz=6).
+    - ATMO2020_CEQ: cloudless models with equilibrium chemistry.
+    - ATMO2020_NEQ_weak: cloudless models with non-equilibrium chemistry due to weak vertical mixing (logKzz=4).
+    - ATMO2020_NEQ_strong: cloudless models with non-equilibrium chemistry due to strong vertical mixing (logKzz=6).
 
   Parameter coverage:
 
