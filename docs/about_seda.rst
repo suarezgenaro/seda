@@ -4,7 +4,7 @@ About SEDA
 Citation
 --------
 
-**The SEDA release paper is** `Suárez et al. (2024, in prep.) <https:xxx>`__. Please cite this reference if :math:`\texttt{SEDA}` has contributed to your research. Also make sure give credits to the models you use (see :ref:`models` :ref:`overview`) and other relevant python packages :math:`\texttt{SEDA}` uses.
+**The SEDA release paper is** `Suárez et al. (2024, in prep.) <https:xxx>`__. Please cite this reference if :math:`\texttt{SEDA}` has contributed to your research. Also make sure give credits to the models you use (see :ref:`models`) and other relevant python packages :math:`\texttt{SEDA}` uses.
 
 Contributing
 ------------
@@ -15,6 +15,7 @@ Contributing
 
 Questions and feedback
 ----------------------
+``SEDA`` was developed and is manintained by Genaro Suárez (gsuarez@amnh.org, gsuarez2405@gmail.com).
 
 FAQ
 ---
