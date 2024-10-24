@@ -21,5 +21,5 @@ Check out the content below for further information on how to install and use SE
    Overview <overview.rst>
    Tutorials <tutorials.rst>
    Github <https://github.com/suarezgenaro/seda>
-   SEDA API <api.rst>
+   API <api.rst>
    About SEDA <about_seda.rst>
