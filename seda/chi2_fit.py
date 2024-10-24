@@ -1075,19 +1075,28 @@ def save_params(dict_for_table):
 	'''
 	Description:
 	------------
-		Table with model spectra names sorted by chi square along with the parameters for each spectrum.
+		Create table with model spectra names sorted by chi square along with the parameters for each spectrum.
 
 	Parameters:
 	-----------
 	- dict_for_table : dictionary
-		Dictionary with relevant parameters to be saved as ASCII table.
+		Dictionary with the following parameters:
+			- ``spectra_name`` : spectrum name
+			- ``chi2_fit`` : chi-square
+			- ``chi2_red_fit`` : reduced chi-square
+			- ``scaling_fit`` : scaling factor 
+			- ``e_scaling_fit`` : scaling factor uncertainty
+			- ``Av_fit`` : extinction
+			- ``eAv_fit`` : extinction uncertainty
+			- ``params`` : fundamental parameters provided by ``model`` including Teff and logg.
+			- ``iterations_fit`` : iterations to minimize chi square.
 
 	Returns:
 	--------
 	- '``model``\_chi2\_minimization.dat' : ascii table
-		Table with all fitted model spectra names sorted by chi square and including the information: 
-		spectrum name, chi square, reduced chi square, scaling, scaling error, extinction, extinction error, 
-		physical parameters from the models (e.g. Teff and logg), and iterations to minimize chi square.
+		ASCII table with input parameters
+
+	Author: Genaro Suárez
 	'''
 
 	# separate parameters to be included in the table
