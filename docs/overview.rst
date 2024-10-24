@@ -11,7 +11,7 @@ Atmospheric Models
 Sonora Diamondback
 ++++++++++++++++++
 
-Cloudy (silicate clouds) atmospheric models assuming chemical equilibrium but considering the effect of both clouds and metallicity by `Morley et al (2024) <https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract>`_. Download the `Sonora Diamondback models <https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract>`_
+Cloudy (silicate clouds) atmospheric models assuming chemical equilibrium but considering the effect of both clouds and metallicity by `Morley et al (2024) <https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract>`_. Download the `Sonora Diamondback models <https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract>`_.
 
 Parameter coverage:
 
@@ -27,7 +27,7 @@ Parameter coverage:
 Sonora Elf Owl
 ++++++++++++++
 
-Models with atmospheric mixing and chemical disequilibrium with varying metallicity and C/O by `Mukherjee et al. (2024) <https://ui.adsabs.harvard.edu/abs/2024ApJ...963...73M/abstract>`_. Download the Sonora Elf Owl models for `L-type <https://zenodo.org/records/10385987>`_, `T-type <https://zenodo.org/records/10385821>`_, and `Y-type <https://zenodo.org/records/10381250>`_
+Models with atmospheric mixing and chemical disequilibrium with varying metallicity and C/O by `Mukherjee et al. (2024) <https://ui.adsabs.harvard.edu/abs/2024ApJ...963...73M/abstract>`_. Download the Sonora Elf Owl models for `L-type <https://zenodo.org/records/10385987>`_, `T-type <https://zenodo.org/records/10385821>`_, and `Y-type <https://zenodo.org/records/10381250>`_.
 
 Parameter coverage:
 
@@ -85,7 +85,7 @@ Extended models (additions to models in the paper). This grid replaces the origi
 Sonora Cholla
 +++++++++++++
 
-Cloudless models with non-equilibrium chemistry due to different eddy diffusion parameters by `Karalidi et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...923..269K/abstract>`_. Download the `Sonora Cholla models <https://zenodo.org/records/4450269>`_
+Cloudless models with non-equilibrium chemistry due to different eddy diffusion parameters by `Karalidi et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...923..269K/abstract>`_. Download the `Sonora Cholla models <https://zenodo.org/records/4450269>`_.
 
 Parameter coverage:
 
@@ -100,7 +100,7 @@ Parameter coverage:
 Sonora Bobcat
 +++++++++++++
 
-Cloudless models in chemical equilibrium by `Marley et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...920...85M/abstract>`_. Download the `Sonora Bobcat models <https://zenodo.org/records/5063476>`_
+Cloudless models in chemical equilibrium by `Marley et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...920...85M/abstract>`_. Download the `Sonora Bobcat models <https://zenodo.org/records/5063476>`_.
 
 Parameter coverage:
 
