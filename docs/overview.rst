@@ -12,11 +12,10 @@ Atmospheric Models
 
   Cloudy (silicate clouds) atmospheric models assuming chemical equilibrium but considering the effect of both clouds and metallicity by `Morley et al (2024) <https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract>`_.
   Parameter coverage:
-  * wavelength = [0.3, 250] um
 
-.. note::
+.. math::
 
-   The SEDA.
+  wavelength = [0.3, 250] um
 
 
 
