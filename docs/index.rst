@@ -18,7 +18,7 @@ Check out the content below for further information on how to install and use SE
 
 .. note::
 
-   The SEDA package is under active development. Help us improve SEDA by reporting issues to `this <https://github.com/suarezgenaro/seda>`__ GitHub repository.
+   The SEDA package is under active development. Help us improve SEDA by reporting issues to `this GitHub repository <https://github.com/suarezgenaro/seda>`__.
 
 
 .. toctree::
