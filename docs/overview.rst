@@ -7,6 +7,8 @@ Introduction
 ------------
 :math:`\texttt{SEDA}`
 
+.. _models:
+
 Atmospheric Models
 ------------------
 
