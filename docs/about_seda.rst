@@ -1,7 +1,7 @@
 About SEDA
 ==========
 
-**The *SEDA* release paper is**
+**The :math:`\texttt{SEDA}` release paper is**
 `here <https:xxx>`__.
 
 .. note::
