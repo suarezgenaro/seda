@@ -124,8 +124,33 @@ Atmospheric Models
     - logg = [2.5, 5.5] in steps of 0.5 (g in cgs)
     - logKzz = 0 (ATMO2020_CEQ), 4 (ATMO2020_NEQ_weak), and 6 (ATMO2020_NEQ_strong)
 
+- **BT-Settl:**
 
+  Cloudy models with non-equilibrium chemistry by `Allard et al. (2012) <https://ui.adsabs.harvard.edu/abs/2012RSPTA.370.2765A/abstract>`_.
 
+  Parameter coverage:
+
+  .. code-block:: console
+    
+    - wavelength = [1.e-4, 100] um
+    - Teff = [200, 4200] K (Teff<=450 K for only logg<=3.5) in steps varying from 25 K to 100 K
+    - logg = [2.0, 5.5] in steps of 0.5 (g in cgs)
+    - R = [100000, 500000] (the resolving power varies with wavelength)
+
+- **Saumon & Marley (2008):**
+
+  Cloudy models with equilibrium chemistry by `Saumon & Marley (2008) <https://ui.adsabs.harvard.edu/abs/2008ApJ...689.1327S>`_.
+
+  Parameter coverage:
+
+  .. code-block:: console
+
+    - wavelength = [0.4, 50] um
+    - Teff = [800, 2400] K in steps of 100 K
+    - logg = [3.0, 5.5] in steps of 0.5 (g in cgs)
+    - fsed = 1, 2, 3, 4
+    - R = [100000, 700000] (the resolving power varies with wavelength)
+    
 
 
 - `Sonora Diamondback <https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract>`_ by `Morley et al (2024) <https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract>`_.
