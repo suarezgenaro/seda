@@ -28,7 +28,7 @@ def chi2_fit(my_chi2):
 		physical parameters from the models (e.g. Teff and logg), and iterations to minimize chi square.
 	- '``model``\_chi2\_minimization.pickle' : dictionary
 		Dictionary with the results from the chi-square minimization, namely:
-			- ``model``: atmospheric model chosen.
+			- ``model``: selected atmospheric model.
 			- ``spectra_name``: model spectra names.
 			- ``spectra_name_full``: model spectra names with full path.
 			- ``Teff_range``: input ``Teff_range``.
@@ -1075,7 +1075,7 @@ def save_params(dict_for_table):
 	'''
 	Description:
 	------------
-		Create table with model spectra names sorted by chi square along with the parameters for each spectrum.
+		Create table with model spectra names sorted by chi square along with the relevant parameters.
 
 	Parameters:
 	-----------
@@ -1090,6 +1090,7 @@ def save_params(dict_for_table):
 			- ``eAv_fit`` : extinction uncertainty
 			- ``params`` : fundamental parameters provided by ``model`` including Teff and logg.
 			- ``iterations_fit`` : iterations to minimize chi square.
+			- ``model`` : selected atmospheric model.
 
 	Returns:
 	--------
