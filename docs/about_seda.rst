@@ -13,5 +13,9 @@ Questions and feedback
 ----------------------
 :math:`\texttt{SEDA}` was developed and is manintained by Genaro Suárez (gsuarez@amnh.org, gsuarez2405@gmail.com). Feel free to send an email with any suggestions, questions, and/or feedback you may have.
 
+Logo
+----
+Seda is a Spanish word that means silk, which motivates the :math:`\texttt{SEDA}` logo. It shows a silk cocoon (irregular grid the code can handle) wrapping some of the main molecules (water, methane, ammonia, and silicates) in the atmospheres of brown dwarfs and giant planets.
+
 FAQ
 ---
