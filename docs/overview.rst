@@ -10,7 +10,7 @@ Atmospheric Models
 
 - **Sonora Diamondback:**
 
-  Cloudy (silicate clouds) atmospheric models assuming chemical equilibrium but considering the effect of both clouds and metallicity by `Morley et al (2024) <https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract>`_.
+  Cloudy (silicate clouds) atmospheric models assuming chemical equilibrium but considering the effect of both clouds and metallicity by `Morley et al (2024) <https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract>`_. `Sonora Diamondback data <https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract>`_
 
   Parameter coverage:
 
@@ -24,7 +24,7 @@ Atmospheric Models
 
 - **Sonora Elf Owl:**
 
-  Models with atmospheric mixing and chemical disequilibrium with varying metallicity and C/O by `Mukherjee et al. (2024) <https://ui.adsabs.harvard.edu/abs/2024ApJ...963...73M/abstract>`_.
+  Models with atmospheric mixing and chemical disequilibrium with varying metallicity and C/O by `Mukherjee et al. (2024) <https://ui.adsabs.harvard.edu/abs/2024ApJ...963...73M/abstract>`_. Sonora Elf Owl for `L-type <https://zenodo.org/records/10385987>`_, `T-type <https://zenodo.org/records/10385821>`_, and `Y-type <https://zenodo.org/records/10381250>`_
 
   Parameter coverage:
 
@@ -39,7 +39,7 @@ Atmospheric Models
 
 - **Lacy & Burrows (2023):**
 
-  Cloudy (water clouds) atmospheric models with equilibrium and non-equilibrium chemistry for Y-dwarf atmospheres by `Lacy & Burrows (2023) <https://ui.adsabs.harvard.edu/abs/2023ApJ...950....8L/abstract>`_. The models include four grids: 
+  Cloudy (water clouds) atmospheric models with equilibrium and non-equilibrium chemistry for Y-dwarf atmospheres by `Lacy & Burrows (2023) <https://ui.adsabs.harvard.edu/abs/2023ApJ...950....8L/abstract>`_. `LB23 models <https://zenodo.org/records/7779180>`_. Extended models upon request to authors. The models include four grids: 
 
     - ClearEQ: cloudless models with equilibrium chemistry
     - ClearNEQ: cloudless models with non-equilibrium chemistry
@@ -80,7 +80,7 @@ Atmospheric Models
 
 - **Sonora Cholla:**
 
-  Cloudless models with non-equilibrium chemistry due to different eddy diffusion parameters by `Karalidi et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...923..269K/abstract>`_.
+  Cloudless models with non-equilibrium chemistry due to different eddy diffusion parameters by `Karalidi et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...923..269K/abstract>`_. `Sonora Cholla <https://zenodo.org/records/4450269>`_
 
   Parameter coverage:
 
@@ -94,7 +94,7 @@ Atmospheric Models
 
 - **Sonora Bobcat:**
 
-  Cloudless models in chemical equilibrium by `Marley et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...920...85M/abstract>`_.
+  Cloudless models in chemical equilibrium by `Marley et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...920...85M/abstract>`_. `Sonora Bobcat <https://zenodo.org/records/5063476>`_
   
   Parameter coverage:
 
@@ -109,7 +109,7 @@ Atmospheric Models
 
 - **ATMO 2020:**
 
-  Cloudless atmospheric models with chemical and non-chemical equilibrium by `Phillips et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020A%26A...637A..38P/abstract>`_. The models include three grids:
+  Cloudless atmospheric models with chemical and non-chemical equilibrium by `Phillips et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020A%26A...637A..38P/abstract>`_. `ATMO 2020 <https://noctis.erc-atmo.eu/fsdownload/zyU96xA6o/phillips2020>`_. The models include three grids:
     
     - ATMO2020_CEQ: cloudless models with equilibrium chemistry.
     - ATMO2020_NEQ_weak: cloudless models with non-equilibrium chemistry due to weak vertical mixing (logKzz=4).
@@ -126,7 +126,7 @@ Atmospheric Models
 
 - **BT-Settl:**
 
-  Cloudy models with non-equilibrium chemistry by `Allard et al. (2012) <https://ui.adsabs.harvard.edu/abs/2012RSPTA.370.2765A/abstract>`_.
+  Cloudy models with non-equilibrium chemistry by `Allard et al. (2012) <https://ui.adsabs.harvard.edu/abs/2012RSPTA.370.2765A/abstract>`_. `BT-Settl <http://phoenix.ens-lyon.fr/simulator/>`_.
 
   Parameter coverage:
 
@@ -139,7 +139,7 @@ Atmospheric Models
 
 - **Saumon & Marley (2008):**
 
-  Cloudy models with equilibrium chemistry by `Saumon & Marley (2008) <https://ui.adsabs.harvard.edu/abs/2008ApJ...689.1327S>`_.
+  Cloudy models with equilibrium chemistry by `Saumon & Marley (2008) <https://ui.adsabs.harvard.edu/abs/2008ApJ...689.1327S>`_. SM08 models upon request to authors.
 
   Parameter coverage:
 
@@ -150,14 +150,3 @@ Atmospheric Models
     - logg = [3.0, 5.5] in steps of 0.5 (g in cgs)
     - fsed = 1, 2, 3, 4
     - R = [100000, 700000] (the resolving power varies with wavelength)
-    
-
-
-- `Sonora Diamondback <https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract>`_ by `Morley et al (2024) <https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract>`_.
-- **Sonora Elf Owl** for `L-type <https://zenodo.org/records/10385987>`_, `T-type <https://zenodo.org/records/10385821>`_, and `Y-type <https://zenodo.org/records/10381250>`_ by `Mukherjee et al. (2024) <https://ui.adsabs.harvard.edu/abs/2024ApJ...963...73M/abstract>`_.
-- `LB23 <https://zenodo.org/records/7779180>`_ by `Lacy & Burrows (2023) <https://ui.adsabs.harvard.edu/abs/2023ApJ...950....8L/abstract>`_.
-- `Sonora Cholla <https://zenodo.org/records/4450269>`_ by `Karalidi et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...923..269K/abstract>`_.
-- `Sonora Bobcat <https://zenodo.org/records/5063476>`_ by `Marley et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...920...85M/abstract>`_.
-- `ATMO 2020 <https://noctis.erc-atmo.eu/fsdownload/zyU96xA6o/phillips2020>`_ by `Phillips et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020A%26A...637A..38P/abstract>`_.
-- `BT-Settl <http://phoenix.ens-lyon.fr/simulator/>`_ by `Allard et al. (2012) <https://ui.adsabs.harvard.edu/abs/2012RSPTA.370.2765A/abstract>`_.
-- `Saumon & Marley (2008) <https://ui.adsabs.harvard.edu/abs/2008ApJ...689.1327S>`_ (private communication with the authors for data).
