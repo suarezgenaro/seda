@@ -1075,7 +1075,7 @@ def save_params(dict_for_table):
 	'''
 	Description:
 	------------
-		Create table with model spectra names sorted by chi square along with the relevant parameters.
+		Create table with model spectra names sorted by chi square along with relevant parameters.
 
 	Parameters:
 	-----------
