@@ -8,6 +8,9 @@ Introduction
 Atmospheric Models
 ------------------
 
+Sonora Diamondback
+++++++++++++++++++
+
 - **Sonora Diamondback:**
 
   Cloudy (silicate clouds) atmospheric models assuming chemical equilibrium but considering the effect of both clouds and metallicity by `Morley et al (2024) <https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract>`_. Download the `Sonora Diamondback models <https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract>`_
