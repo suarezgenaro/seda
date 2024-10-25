@@ -23,6 +23,8 @@ SEDA tools
 :math:`\texttt{SEDA}` tools allow us to:
   - :meth:`~seda.utils.convolve_spectrum`: Convolve spectra to a desire resolution at a given wavelength.
   - :meth:`~seda.synthetic_photometry`: Derive synthetic phothometry from spectra for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_.
+  - :meth:`~seda.utils.read_model_spectrum`: Read atmospheric model spectrum with desired parameters available in the grid.
+  - :meth:`~seda.interpol_model`: Generate atmospheric model spectrum with desired parameters within the grid parameters using interpolation techniques.
 
 Overall, the code uses
   - `dynesty <https://dynesty.readthedocs.io/en/stable/index.html>`_ dynamic nested sampling package by `Speagle (2020) <https://ui.adsabs.harvard.edu/abs/2020MNRAS.493.3132S/abstract>`_ to estimate Bayesian posteriors.
