@@ -5,6 +5,8 @@ Attribution
 -----------
 **The SEDA release paper is** `Suárez et al. (2024, in prep.) <https:xxx>`__. Please cite this reference if :math:`\texttt{SEDA}` has contributed to your research. Also make sure to give credits to the models (see :ref:`models`) and other relevant python packages (e.g., see :ref:`introduction`) you use via :math:`\texttt{SEDA}`.
 
+:meth:`~seda.input_parameters.NestedSampler.ModelOptions`
+
 Contributing
 ------------
 The :math:`\texttt{SEDA}` package is under active development. Help us improve :math:`\texttt{SEDA}` by reporting `issues <https://github.com/suarezgenaro/seda/issues>`__ on the GitHub repository.
