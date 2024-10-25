@@ -3,17 +3,12 @@
 Overview
 ========
 
-.. _introduction:
-
-Introduction
-------------
 :math:`\texttt{SEDA}` (Spectral Energy Distribution Analyzer) is an open-source Python package for forward modeling analysis of brown dwarfs, giant exoplanets, and low-mass stars. 
 
 .. _seda_overview:
 
-SEDA Overview
-+++++++++++++
-The :math:`\texttt{SEDA}` package is organized as follow:
+:math:`\texttt{SEDA}` Overview
+------------------------------
   - :meth:`~seda.input_parameters`: to define all input parameters, namely input data, model options, chi-square options and/or bayes options.
   - :meth:`~seda.chi2_fit.chi2_fit`: to find the best model fits from :ref:`models` using `LMFIT <https://lmfit.github.io/lmfit-py/>`_ non-linear least-square minimization python package by `Newville et al. (2014) <https://ui.adsabs.harvard.edu/abs/2014zndo.....11813N/abstract>`_.
   - :meth:`~seda.bayes_fit`: to estimate Bayesian posteriors using `dynesty <https://dynesty.readthedocs.io/en/stable/index.html>`_ dynamic nested sampling package by `Speagle (2020) <https://ui.adsabs.harvard.edu/abs/2020MNRAS.493.3132S/abstract>`_.
@@ -23,11 +18,20 @@ The :math:`\texttt{SEDA}` package is organized as follow:
 .. _seda_tools:
 
 Main :math:`\texttt{SEDA}` tools
-++++++++++++++++++++++++++++++++
+--------------------------------
   - :meth:`~seda.utils.convolve_spectrum`: Convolve spectra to a desire resolution at a given wavelength.
   - :meth:`~seda.synthetic_photometry`: Derive synthetic phothometry from spectra for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_.
   - :meth:`~seda.utils.read_model_spectrum`: Read atmospheric model spectrum with desired parameters available in the grid.
   - :meth:`~seda.interpol_model`: Generate atmospheric model spectrum with desired parameters within the grid parameters using interpolation techniques.
+
+:math:`\texttt{SEDA}` Workflow
+------------------------------
+  - Download atmospheric models (see :ref:`models`).
+  - Load input data (:meth:`~seda.input_parameters.InputData`).
+  - Load model options (:meth:`~seda.input_parameters.ModelOptions`).
+  - Run chi-square minimization module ((:meth:`~seda.chi2_fit`)).
+  - Run bayes framework module (:meth:`~seda.bayes_fit`).
+  - Visualize the results (:meth:`~seda.plots`)
 
 .. _models:
 
