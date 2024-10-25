@@ -26,11 +26,6 @@ SEDA tools
   - :meth:`~seda.utils.read_model_spectrum`: Read atmospheric model spectrum with desired parameters available in the grid.
   - :meth:`~seda.interpol_model`: Generate atmospheric model spectrum with desired parameters within the grid parameters using interpolation techniques.
 
-Overall, the code uses
-  - `dynesty <https://dynesty.readthedocs.io/en/stable/index.html>`_ dynamic nested sampling package by `Speagle (2020) <https://ui.adsabs.harvard.edu/abs/2020MNRAS.493.3132S/abstract>`_ to estimate Bayesian posteriors.
-  - `LMFIT <https://lmfit.github.io/lmfit-py/>`_ non-linear least-square minimization python package by `Newville et al. (2014) <https://ui.adsabs.harvard.edu/abs/2014zndo.....11813N/abstract>`_ to find the best model fits from available atmospheric models.
-
-
 .. _models:
 
 Atmospheric Models
