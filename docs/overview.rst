@@ -29,12 +29,15 @@ Main :math:`\texttt{SEDA}` tools
   - Download atmospheric models (see :ref:`models`).
   - Load input data (:meth:`~seda.input_parameters.InputData`).
   - Load model options (:meth:`~seda.input_parameters.ModelOptions`).
+
   Option 1:
     - Load chi-square fit options (:meth:`~seda.input_parameters.Chi2Options`).
     - Run chi-square minimization module (:meth:`~seda.chi2_fit`).
+
   Option 2:
     - Load bayes fit options (:meth:`~seda.input_parameters.BayesOptions`).
     - Run bayes framework module (:meth:`~seda.bayes_fit`).
+
   - Visualize the results (:meth:`~seda.plots`)
 
 .. _models:
