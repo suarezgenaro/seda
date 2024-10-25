@@ -22,9 +22,8 @@ The :math:`\texttt{SEDA}` package is organized as follow:
 
 .. _seda_tools:
 
-SEDA tools
-++++++++++
-The main tools included in :math:`\texttt{SEDA}` are:
+Main :math:`\texttt{SEDA}` tools
+++++++++++++++++++++++++++++++++
   - :meth:`~seda.utils.convolve_spectrum`: Convolve spectra to a desire resolution at a given wavelength.
   - :meth:`~seda.synthetic_photometry`: Derive synthetic phothometry from spectra for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_.
   - :meth:`~seda.utils.read_model_spectrum`: Read atmospheric model spectrum with desired parameters available in the grid.
