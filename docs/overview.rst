@@ -26,9 +26,9 @@ Main :math:`\texttt{SEDA}` tools
 
 :math:`\texttt{SEDA}` Workflow
 ------------------------------
-  - Download atmospheric models (see :ref:`models`).
-  - Load input data (:meth:`~seda.input_parameters.InputData`).
-  - Load model options (:meth:`~seda.input_parameters.ModelOptions`).
+  #. Download atmospheric models (see :ref:`models`).
+  #. Load input data (:meth:`~seda.input_parameters.InputData`).
+  #. Load model options (:meth:`~seda.input_parameters.ModelOptions`).
 
   Option 1:
     - Load chi-square fit options (:meth:`~seda.input_parameters.Chi2Options`).
