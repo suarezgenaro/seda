@@ -9,13 +9,20 @@ Introduction
 ------------
 :math:`\texttt{SEDA}` (Spectral Energy Distribution Analyzer) is an open-source Python package for forward modeling analysis of brown dwarfs, giant exoplanets, and low-mass stars. 
 
-:math:`\texttt{SEDA}` main modules are: 
+SEDA Overview
++++++++++++++
+The :math:`\texttt{SEDA}` package is organized as follow:
+  - :meth:`~seda.input_parameters`: to define all input parameters, namely input data, model options, chi-square options and/or bayes options.
   - :meth:`~seda.chi2_fit.chi2_fit`: to find the best model fits from available atmospheric models using `LMFIT <https://lmfit.github.io/lmfit-py/>`_ non-linear least-square minimization python package by `Newville et al. (2014) <https://ui.adsabs.harvard.edu/abs/2014zndo.....11813N/abstract>`_.
   - :meth:`~seda.bayes_fit`: to estimate Bayesian posteriors using `dynesty <https://dynesty.readthedocs.io/en/stable/index.html>`_ dynamic nested sampling package by `Speagle (2020) <https://ui.adsabs.harvard.edu/abs/2020MNRAS.493.3132S/abstract>`_.
+  - :meth:`~seda.plots`: plotting functions.
+  - :meth:`~seda.utils`: additional useful function.
 
+SEDA tools
+++++++++++
 :math:`\texttt{SEDA}` tools allow us to:
   - :meth:`~seda.utils.convolve_spectrum`: Convolve spectra to a desire resolution at a given wavelength.
-  - Derive synthetic phothometry from spectra for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_.
+  - :meth:`~seda.synthetic_photometry`: Derive synthetic phothometry from spectra for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_.
 
 Overall, the code uses
   - `dynesty <https://dynesty.readthedocs.io/en/stable/index.html>`_ dynamic nested sampling package by `Speagle (2020) <https://ui.adsabs.harvard.edu/abs/2020MNRAS.493.3132S/abstract>`_ to estimate Bayesian posteriors.
