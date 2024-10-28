@@ -402,7 +402,8 @@ class Chi2Options:
 		self.N_datapoints = out_input_data_stats['N_datapoints']
 
 		# file name to save the chi2 results as a pickle
-		self.pickle_file = f'{model}_chi2_minimization.pickle'
+		self.pickle_filename = f'{model}_chi2_minimization.pickle'
+		self.table_filename = f'{model}_chi2_minimization.dat'
 
 		print('\nChi-square fit options loaded successfully')
 
@@ -509,7 +510,7 @@ class BayesOptions:
 		self.N_datapoints = out_input_data_stats['N_datapoints']
 
 		# file name to save the chi2 results as a pickle
-		self.pickle_file = f'{model}_nested_sampling.pickle'
+		self.pickle_filename = f'{model}_nested_sampling.pickle'
 
 		print('\nBayes fit options loaded successfully')
 

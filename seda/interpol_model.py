@@ -1,6 +1,7 @@
 from scipy.interpolate import RegularGridInterpolator
 import numpy as np
 from .utils import time_elapsed
+from .bayes_fit import *
 import time
 import os
 import xarray
@@ -118,13 +119,13 @@ def read_grid(model, Teff_range, logg_range, convolve=True, wl_range=None):
 	'''
 
 #	import seda as seda
-	import sampling as sampling
-	import seda_utils
+#	import sampling as sampling
+#	import seda_utils
 
 	print('\n   reading model grid...')
 
 	# all parameters's steps in the grid
-	out_grid_ranges = sampling.grid_ranges(model)
+	out_grid_ranges = grid_ranges(model)
 	
 	Teff_grid = out_grid_ranges['Teff']
 	logg_grid = out_grid_ranges['logg']

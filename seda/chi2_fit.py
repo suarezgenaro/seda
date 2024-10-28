@@ -141,7 +141,8 @@ def chi2(my_chi2):
 	wl_spectra_min = my_chi2.wl_spectra_min
 	wl_spectra_max = my_chi2.wl_spectra_max
 	N_datapoints = my_chi2.N_datapoints
-	pickle_file = my_chi2.pickle_file
+	pickle_filename = my_chi2.pickle_filename
+	table_filename = my_chi2.pickle_filename
 
 #	path_seda = os.path.dirname(__file__) # gets directory path of seda
 
@@ -728,7 +729,7 @@ def chi2(my_chi2):
 	# save some information
 	if (save_results=='yes'): # save table with model spectra sorted by chi square
 		# save output dictionary as pickle
-		with open(f'{model}_chi2_minimization.pickle', 'wb') as file:
+		with open(pickle_filename, 'wb') as file:
 			# serialize and write the variable to the file
 			pickle.dump(out_chi2, file)
 		print('      chi square minimization results saved successfully')
