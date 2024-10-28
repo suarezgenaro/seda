@@ -850,7 +850,7 @@ def Ndata_model_spectra(model):
 	return N_rows_model
 
 ##########################
-def chi_square(params, data_fit, edata_fit, model_fit, extinction_curve, weight_fit):
+def chi_square(params, data, edata, model, extinction_curve, weight):
 #	'''
 #	Description:
 #	------------
@@ -860,15 +860,15 @@ def chi_square(params, data_fit, edata_fit, model_fit, extinction_curve, weight_
 #	-----------
 #	- params : ''lmfit.parameter.Parameters''
 #		Parameters as ``Parameters()`` for fitting models to data using ``Minimizer``.
-#	- data_fit : array
+#	- data : array
 #		Input data (spectra and/or photometry) for the fit.
-#	- edata_fit : array
+#	- edata : array
 #		Input data uncertainties for the fit.
-#	- model_fit : array
+#	- model : array
 #		Model spectrum for the fit.
-#	- extinction_curve_fit : array, (0 when ``extinction_free_param=='no'``)
+#	- extinction_curve : array, (0 when ``extinction_free_param=='no'``)
 #		Extinction curve for wavelengths in the fit.
-#	- weight_fit: array
+#	- weight: array
 #		Weight given to each data point in the fit.
 #
 #	Returns:
