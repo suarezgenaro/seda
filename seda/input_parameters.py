@@ -9,7 +9,7 @@ class InputData:
 	'''
 	Description:
 	------------
-		Define input data for SEDA.
+		Define input data.
 	
 	Parameters:
 	-----------
@@ -17,15 +17,15 @@ class InputData:
 		Include (``'yes'``) or do not include (``'no'``) spectra.
 	- fit_photometry : {``True``, ``False``}, optional (default ``False``)
 		Include (``'yes'``) or do not include (``'no'``) photometry.
-	- wl_spectra : float array, optional (required if ``fit_spectra``)
+	- wl_spectra : float array or list, optional (required if ``fit_spectra``)
 		Wavelength in um of the spectrum or set of spectra for the fits. 
 		When providing more than one spectrum, verify that there is no overlap between the spectra. 
 		Provide the multiple spectra as a list (e.g., ``wl_spectra = []``, ``wl_spectra.append(spectrum_1)``, etc.).
 		The input list must have the spectra from shorter to longer wavelength coverage
-	- flux_spectra : float array, optional
+	- flux_spectra : float array or list, optional
 		Fluxes in erg/cm^2/s/A of the input spectrum or spectra.
 		Input list for multiple spectra (equivalent to wl_spectra).
-	- eflux_spectra : float array, optional
+	- eflux_spectra : float array or list, optional
 		Fluxes uncertainties in erg/cm^2/s/A of the input spectrum or spectra. 
 		Input multiple spectra as a list (equivalent to wl_spectra). 
 	- mag_phot : float array, optional (required if ``fit_photometry``)
@@ -119,7 +119,7 @@ class ModelOptions:
 	'''
 	Description:
 	------------
-		Define model options for SEDA.
+		Define model options.
 
 	Parameters:
 	-----------
@@ -250,17 +250,21 @@ class Chi2Options:
 	'''
 	Description:
 	------------
-		Define chi2 fit options for SEDA.
+		Define chi-square fit options.
 
 	Parameters:
 	-----------
-	- chi2_wl_range : float array, optional
+	- my_data : dictionary
+		Output dictionary with input data by ``input_parameters.InputData``
+	- my_model : dictionary
+		Output dictionary with model options by ``input_parameters.ModelOptions``
+	- fit_wl_range : float array, optional
 		Minimum and maximum wavelengths in microns where model spectra will be compared to the data. 
 		This parameter is used if ``fit_spectra`` but ignored if only ``fit_photometry``. 
-		Default values are the minimum and the maximum wavelengths of each input spectrum. E.g., ``chi2_wl_range = np.array([chi2_wl_min, chi2_wl_max]``)
+		Default values are the minimum and the maximum wavelengths of each input spectrum. E.g., ``fit_wl_range = np.array([chi2_wl_min, chi2_wl_max]``)
 	- model_wl_range : float array, optional
 		Minimum and maximum wavelength to cut model spectra (to make the code faster). 
-		Default values are the same as ``chi2_wl_range`` with a padding to avoid the point below.
+		Default values are the same as ``fit_wl_range`` with a padding to avoid the point below.
 		CAVEAT: the selected wavelength range of model spectra must cover the spectrophotometry used in the fit and a bit more (to avoid errors when resampling synthetic spectra using spectres)
 	- extinction_free_param : {``'yes'``, ``'no'``}, optional (default ``'no'``)
 		Extinction as a free parameter: 
@@ -283,23 +287,23 @@ class Chi2Options:
 
 	Returns:
 	--------
-	- Dictionary with all (provided and default) chi2 fit option parameters.
+	- Dictionary with all (provided and default) chi-square fit option parameters.
 
 	Example:
 	--------
 	>>> import seda
 	>>> 
 	>>> # input spectrum wl_input, flux_input, eflux_input
-	>>> chi2_wl_range = np.array([value1, value2]) # to make the fit between value1 and value2
+	>>> fit_wl_range = np.array([value1, value2]) # to make the fit between value1 and value2
 	>>> my_chi2 = seda.Chi2FitOptions(my_data=my_data, my_model=my_model, 
-	>>>                               chi2_wl_range=chi2_wl_range)
+	>>>                               fit_wl_range=fit_wl_range)
 	    Chi2 fit options loaded successfully
 
 	Author: Genaro Suárez
 	'''
 
 	def __init__(self, my_data, my_model, 
-		chi2_wl_range=None, model_wl_range=None, extinction_free_param='no', 
+		fit_wl_range=None, model_wl_range=None, extinction_free_param='no', 
 		scaling_free_param='yes', scaling=None, skip_convolution='no', 
 		avoid_IR_excess='no', IR_excess_limit=3, save_results='yes'):
 
@@ -338,57 +342,261 @@ class Chi2Options:
 		wl_spectra = my_data.wl_spectra
 		model = my_model.model
 
-		# define chi2_wl_range when not provided
-		if chi2_wl_range is None:
-			chi2_wl_range = np.zeros((N_spectra, 2)) # Nx2 array, N:number of spectra and 2 for the minimum and maximum values for each spectrum
-			for i in range(N_spectra):
-				chi2_wl_range[i,:] = np.array((wl_spectra[i].min(), wl_spectra[i].max()))
-		else: # chi2_wl_range is provided
-			if len(chi2_wl_range.shape)==1: chi2_wl_range = chi2_wl_range.reshape((1, 2)) # reshape chi2_wl_range array
+#		# define fit_wl_range when not provided
+#		if fit_wl_range is None:
+#			fit_wl_range = np.zeros((N_spectra, 2)) # Nx2 array, N:number of spectra and 2 for the minimum and maximum values for each spectrum
+#			for i in range(N_spectra):
+#				fit_wl_range[i,:] = np.array((wl_spectra[i].min(), wl_spectra[i].max()))
+#		else: # fit_wl_range is provided
+#			if len(fit_wl_range.shape)==1: fit_wl_range = fit_wl_range.reshape((1, 2)) # reshape fit_wl_range array
+#
+#		# model_wl_range
+#		if model_wl_range is None:
+#			model_wl_range = np.array((fit_wl_range.min()-0.1*fit_wl_range.min(), 
+#									   fit_wl_range.max()+0.1*fit_wl_range.max()
+#									   )) # add a pad to have enough spectral coverage in models for the fits
+#
+#		# when model_wl_range is given and is equal or narrower than fit_wl_range
+#		# add padding to model_wl_range to avoid problems with the spectres routine
+#		# first find the minimum and maximum wavelength from the input spectra
+#		min_tmp1 = min(wl_spectra[0])
+#		for i in range(N_spectra):
+#			min_tmp2 = min(wl_spectra[i])
+#			if min_tmp2<min_tmp1: 
+#				wl_spectra_min = min_tmp2
+#				min_tmp1 = min_tmp2
+#			else: 
+#				wl_spectra_min = min_tmp1
+#		max_tmp1 = max(wl_spectra[0])
+#		for i in range(N_spectra):
+#			max_tmp2 = max(wl_spectra[i])
+#			if max_tmp2>max_tmp1:
+#				wl_spectra_max = max_tmp2
+#				max_tmp1 = max_tmp2
+#			else:
+#				wl_spectra_max = max_tmp1
+#		
+#		if (model_wl_range.min()>=wl_spectra_min):
+#			model_wl_range[0] = wl_spectra_min-0.1*wl_spectra_min # add padding to shorter wavelengths
+#		if (model_wl_range.max()<=wl_spectra_max):
+#			model_wl_range[1] = wl_spectra_max+0.1*wl_spectra_max # add padding to longer wavelengths
+#
+#		# count the total number of data points in all input spectra
+#		N_datapoints = 0
+#		for i in range(N_spectra):
+#			N_datapoints  = N_datapoints + wl_spectra[i].size
 
-		# model_wl_range
-		if model_wl_range is None:
-			model_wl_range = np.array((chi2_wl_range.min()-0.1*chi2_wl_range.min(), 
-									   chi2_wl_range.max()+0.1*chi2_wl_range.max()
-									   )) # add a pad to have enough spectral coverage in models for the fits
+		# handle fit_wl_range
+		fit_wl_range = set_fit_wl_range(fit_wl_range=fit_wl_range, N_spectra=N_spectra, wl_spectra=wl_spectra)
 
-		# when model_wl_range is given and is equal or narrower than chi2_wl_range
-		# add padding to model_wl_range to avoid problems with the spectres routine
-		# first find the minimum and maximum wavelength from the input spectra
-		min_tmp1 = min(wl_spectra[0])
-		for i in range(N_spectra):
-			min_tmp2 = min(wl_spectra[i])
-			if min_tmp2<min_tmp1: 
-				wl_spectra_min = min_tmp2
-				min_tmp1 = min_tmp2
-			else: 
-				wl_spectra_min = min_tmp1
-		max_tmp1 = max(wl_spectra[0])
-		for i in range(N_spectra):
-			max_tmp2 = max(wl_spectra[i])
-			if max_tmp2>max_tmp1:
-				wl_spectra_max = max_tmp2
-				max_tmp1 = max_tmp2
-			else:
-				wl_spectra_max = max_tmp1
-		
-		if (model_wl_range.min()>=wl_spectra_min):
-			model_wl_range[0] = wl_spectra_min-0.1*wl_spectra_min # add padding to shorter wavelengths
-		if (model_wl_range.max()<=wl_spectra_max):
-			model_wl_range[1] = wl_spectra_max+0.1*wl_spectra_max # add padding to longer wavelengths
+		# handle model_wl_range
+		model_wl_range = set_model_wl_range(model_wl_range=model_wl_range, fit_wl_range=fit_wl_range, N_spectra=N_spectra, wl_spectra=wl_spectra)
 
-		# count the total number of data points in all input spectra
-		N_datapoints = 0
-		for i in range(N_spectra):
-			N_datapoints  = N_datapoints + wl_spectra[i].size
+		# number of data points in the input spectra
+		out_input_data_stats = input_data_stats(wl_spectra=wl_spectra, N_spectra=N_spectra)
 
-		self.chi2_wl_range = chi2_wl_range
+		self.fit_wl_range = fit_wl_range
 		self.model_wl_range = model_wl_range
-		self.wl_spectra_min = wl_spectra_min
-		self.wl_spectra_max = wl_spectra_max
-		self.N_datapoints = N_datapoints
+		self.wl_spectra_min = out_input_data_stats['wl_spectra_min']
+		self.wl_spectra_max = out_input_data_stats['wl_spectra_max']
+		self.N_datapoints = out_input_data_stats['N_datapoints']
 
 		# file name to save the chi2 results as a pickle
 		self.pickle_file = f'{model}_chi2_minimization.pickle'
 
 		print('\nChi-square fit options loaded successfully')
+
+#+++++++++++++++++++++++++++
+class BayesOptions:
+	'''
+	Description:
+	------------
+		Define Bayes fit options.
+
+	Parameters:
+	-----------
+	- my_data : dictionary
+		Output dictionary with input data by ``input_parameters.InputData``
+	- my_model : dictionary
+		Output dictionary with model options by ``input_parameters.ModelOptions``
+	- fit_wl_range : float array, optional
+		Minimum and maximum wavelengths in microns where model spectra will be compared to the data. 
+		This parameter is used if ``fit_spectra`` but ignored if only ``fit_photometry``. 
+		Default values are the minimum and the maximum wavelengths of each input spectrum. E.g., ``fit_wl_range = np.array([bayes_wl_min, bayes_wl_max]``)
+	- model_wl_range : float array, optional
+		Minimum and maximum wavelength to cut model spectra (to make the code faster). 
+		Default values are the same as ``fit_wl_range`` with a padding to avoid the point below.
+		CAVEAT: the selected wavelength range of model spectra must cover the spectrophotometry used in the fit and a bit more (to avoid errors when resampling synthetic spectra using spectres)
+	- logKzz_range: float array, optional
+		logKzz range for prior transformation. 
+		If not given, the full grid logKzz range (if in ``model``) will be considered, unless ``prior_chi2=True``. 
+	- Z_range : float array, optional
+		Z range for prior transformation. 
+		If not given, the full grid Z range (if in ``model``) will be considered, unless ``prior_chi2=True``. 
+	- CtoO_range : float array, optional
+		C/O range for prior transformation. 
+		If not given, the full grid C/O range (if in ``model``) will be considered, ``unless prior_chi2=True``. 
+	- prior_chi2 : {``True``, ``False``}, optional (default ``False``)
+		If ``True``, the parameters from the best chi-square fit by ``chi_fit`` will be used to define priors to estimate posteriors. 
+		If ``False``, the grid parameters and radius are constrained by the input ranges. 
+	- grid: dictionary, optional
+		Model grid (``'wavelength'`` and ``'flux'``) generated by ``utils.read_grid`` to interpolate model spectra. 
+		If not provided (default), then the grid is read. 
+		If provided, the code will skip reading the grid, which will save some time (a few minutes).
+	- dynamic_sampling: {``True``, ``False``}, optional (default ``True``). 
+		Consider dynamic (``'yes'``) or static (``'no'``) nested sampling. Read ``dynesty`` documentation for more info. 
+		Dynamic nested sampling is slower (~20-30%) than static nested sampling. 
+	- save_results: {``'yes'``, ``'no'``}, optional (default ``'yes'``)
+		Save (``'yes'``) or do not save (``'no'``)	``seda.bayes_fit`` results
+
+	Returns:
+	--------
+	- Dictionary with all (provided and default) Bayes fit option parameters.
+	'''
+
+	def __init__(self, my_data, my_model, fit_wl_range=None, model_wl_range=None, 
+		         logKzz_range=None, Z_range=None, CtoO_range=None, prior_chi2=False, 
+		         grid=None, dynamic_sampling=True, save_results='yes'):
+
+		self.logKzz_range = logKzz_range
+		self.Z_range = Z_range
+		self.CtoO_range = CtoO_range
+		self.prior_chi2 = prior_chi2
+		self.grid = grid
+		self.dynamic_sampling = dynamic_sampling
+		self.save_results = save_results
+
+		# read parameters from InputData
+		self.fit_spectra = my_data.fit_spectra
+		self.fit_photometry = my_data.fit_photometry
+		self.mag_phot = my_data.mag_phot
+		self.emag_phot = my_data.emag_phot
+		self.filter_phot = my_data.filter_phot
+		self.distance = my_data.distance
+		self.edistance = my_data.edistance
+		self.N_spectra = my_data.N_spectra
+		self.res = my_data.res
+		self.lam_res = my_data.lam_res
+		self.wl_spectra = my_data.wl_spectra
+		self.flux_spectra = my_data.flux_spectra
+		self.eflux_spectra = my_data.eflux_spectra
+
+		# read parameters from ModelOptions
+		self.model = my_model.model
+		self.Teff_range = my_model.Teff_range
+		self.logg_range = my_model.logg_range
+		self.R_range = my_model.R_range
+		self.model_dir = my_model.model_dir
+
+		# extract parameters for convenience
+		N_spectra = my_data.N_spectra
+		wl_spectra = my_data.wl_spectra
+		model = my_model.model
+
+		# handle fit_wl_range
+		fit_wl_range = set_fit_wl_range(fit_wl_range=fit_wl_range, N_spectra=N_spectra, wl_spectra=wl_spectra)
+
+		# handle model_wl_range
+		model_wl_range = set_model_wl_range(model_wl_range=model_wl_range, fit_wl_range=fit_wl_range, N_spectra=N_spectra, wl_spectra=wl_spectra)
+
+		# number of data points in the input spectra
+		out_input_data_stats = input_data_stats(wl_spectra=wl_spectra, N_spectra=N_spectra)
+
+		self.fit_wl_range = fit_wl_range
+		self.model_wl_range = model_wl_range
+		self.wl_spectra_min = out_input_data_stats['wl_spectra_min']
+		self.wl_spectra_max = out_input_data_stats['wl_spectra_max']
+		self.N_datapoints = out_input_data_stats['N_datapoints']
+
+		# file name to save the chi2 results as a pickle
+		self.pickle_file = f'{model}_nested_sampling.pickle'
+
+		print('\nBayes fit options loaded successfully')
+
+
+#+++++++++++++++++++++++++++
+# set wavelength range for the model comparison via chi-square or Bayes techniques
+def set_fit_wl_range(fit_wl_range, N_spectra, wl_spectra):
+
+	# define fit_wl_range when not provided
+	if fit_wl_range is None:
+		fit_wl_range = np.zeros((N_spectra, 2)) # Nx2 array, N:number of spectra and 2 for the minimum and maximum values for each spectrum
+		for i in range(N_spectra):
+			fit_wl_range[i,:] = np.array((wl_spectra[i].min(), wl_spectra[i].max()))
+	else: # fit_wl_range is provided
+		if len(fit_wl_range.shape)==1: fit_wl_range = fit_wl_range.reshape((1, 2)) # reshape fit_wl_range array
+
+	return fit_wl_range
+
+#+++++++++++++++++++++++++++
+# set wavelength range to cut models for comparisons via chi-square or Bayes techniques
+def set_model_wl_range(model_wl_range, fit_wl_range, N_spectra,  wl_spectra):
+
+	# define model_wl_range (if not provided) in terms of fit_wl_range
+	if model_wl_range is None:
+		model_wl_range = np.array((0.9*fit_wl_range.min(), 1.1*fit_wl_range.max())) # add padding to have enough spectral coverage in models
+
+	# when model_wl_range is given and is equal or narrower than fit_wl_range
+	# add padding to model_wl_range to avoid problems with the spectres routine
+	# first find the minimum and maximum wavelength from the input spectra
+#	min_tmp1 = min(wl_spectra[0])
+#	for i in range(N_spectra):
+#		min_tmp2 = min(wl_spectra[i])
+#		if min_tmp2<min_tmp1: 
+#			wl_spectra_min = min_tmp2
+#			min_tmp1 = min_tmp2
+#		else: 
+#			wl_spectra_min = min_tmp1
+#	max_tmp1 = max(wl_spectra[0])
+#	for i in range(N_spectra):
+#		max_tmp2 = max(wl_spectra[i])
+#		if max_tmp2>max_tmp1:
+#			wl_spectra_max = max_tmp2
+#			max_tmp1 = max_tmp2
+#		else:
+#			wl_spectra_max = max_tmp1
+#
+#	if (model_wl_range.min()>=wl_spectra_min):
+#		model_wl_range[0] = wl_spectra_min-0.1*wl_spectra_min # add padding to shorter wavelengths
+#	if (model_wl_range.max()<=wl_spectra_max):
+#		model_wl_range[1] = wl_spectra_max+0.1*wl_spectra_max # add padding to longer wavelengths
+
+	# it may need an update to work with multiple spectra
+	if (model_wl_range.min()>=fit_wl_range.min()):
+		model_wl_range[0] = 0.9*fit_wl_range.min() # add padding to shorter wavelengths
+	if (model_wl_range.max()<=fit_wl_range.max()):
+		model_wl_range[1] = 1.1*fit_wl_range.max() # add padding to longer wavelengths
+
+	return model_wl_range
+
+#+++++++++++++++++++++++++++
+# count the total number of data points in all input spectra
+def input_data_stats(wl_spectra, N_spectra):
+
+	# count the total number of data points in all input spectra
+	N_datapoints = 0
+	for i in range(N_spectra):
+		N_datapoints  = N_datapoints + wl_spectra[i].size
+
+
+	# minimum and maximum wavelength from the input spectra
+	min_tmp1 = min(wl_spectra[0])
+	for i in range(N_spectra):
+		min_tmp2 = min(wl_spectra[i])
+		if min_tmp2<min_tmp1: 
+			wl_spectra_min = min_tmp2
+			min_tmp1 = min_tmp2
+		else: 
+			wl_spectra_min = min_tmp1
+	max_tmp1 = max(wl_spectra[0])
+	for i in range(N_spectra):
+		max_tmp2 = max(wl_spectra[i])
+		if max_tmp2>max_tmp1:
+			wl_spectra_max = max_tmp2
+			max_tmp1 = max_tmp2
+		else:
+			wl_spectra_max = max_tmp1
+
+	out = {'N_datapoints': N_datapoints, 'wl_spectra_min': wl_spectra_min, 'wl_spectra_max': wl_spectra_max}
+
+	return out
