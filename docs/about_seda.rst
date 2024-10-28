@@ -11,7 +11,7 @@ The :math:`\texttt{SEDA}` package is under active development. Help us improve :
 
 Questions and feedback
 ----------------------
-:math:`\texttt{SEDA}` was developed and is manintained by Genaro Suárez (gsuarez@amnh.org, gsuarez2405@gmail.com). Please reach out with any suggestions, questions, and/or feedback.
+:math:`\texttt{SEDA}` was developed and is maintained by Genaro Suárez (gsuarez@amnh.org, gsuarez2405@gmail.com). Please reach out with any suggestions, questions, and/or feedback.
 
 Logo
 ----
