@@ -10,7 +10,7 @@ from astropy.table import vstack
 from lmfit import Minimizer, minimize, Parameters, report_fit # model fit for non-linear least-squares problems
 from sys import exit
 
-def chi2_fit(my_chi2):
+def chi2(my_chi2):
 	'''
 	Description:
 	------------
@@ -35,7 +35,7 @@ def chi2_fit(my_chi2):
 			- ``logg_range``: input ``logg_range``.
 			- ``res``: input ``res``.
 			- ``lam_res``: input ``lam_res``.
-			- ``chi2_wl_range``: input ``chi2_wl_range``.
+			- ``fit_wl_range``: input ``fit_wl_range``.
 			- ``N_rows_model``: maximum number of data points in original model spectra.
 			- ``out_lmfit``: output of the ``minner.minimize`` module that minimizes chi2.
 			- ``iterations_fit``: number of iterations to minimize chi-square.
@@ -59,11 +59,11 @@ def chi2_fit(my_chi2):
 			- ``phot_synt_red``: (if ``fit_photometry``) synthetic fluxes (in erg/s/cm2/A) from each reddened model spectrum considering the different filters.
 			- ``radius``: (if ``distance`` is provided) radius (in Rjup) considering the ``scaling_fit`` and input ``distance``.
 			- ``eradius``: (if ``edistance`` is provided) radius uncertainty (in Rjup).
-			- ``wl_array_data``: input observed wavelengths within ``chi2_wl_range``.
+			- ``wl_array_data``: input observed wavelengths within ``fit_wl_range``.
 			- ``flux_array_data``: input observed fluxes for ``wl_array_data``.
 			- ``eflux_array_data``: input observed flux errors for ``wl_array_data``.
-			- ``flux_residuals``: linear flux residual (in erg/cm2/s/A) between observed data and model spectra in ``chi2_wl_range``.
-			- ``logflux_residuals``: logarithm flux residual (in erg/cm2/s/A) between observed data and model spectra ``chi2_wl_range``.
+			- ``flux_residuals``: linear flux residual (in erg/cm2/s/A) between observed data and model spectra in ``fit_wl_range``.
+			- ``logflux_residuals``: logarithm flux residual (in erg/cm2/s/A) between observed data and model spectra ``fit_wl_range``.
 			- ``Teff``: effective temperature (in K) for each model spectrum.
 			- ``logg``: surface gravity (log g) for each model spectrum.
 			- ``Z``: (if provided by ``model``) metallicity for each model spectrum.
@@ -92,9 +92,9 @@ def chi2_fit(my_chi2):
 	>>>                              logg_range=logg_range, Teff_range=Teff_range)
 	>>> 
 	>>> # load chi-square options
-	>>> chi2_wl_range = np.array([value1, value2]) # to make the fit between value1 and value2
+	>>> fit_wl_range = np.array([value1, value2]) # to make the fit between value1 and value2
 	>>> my_chi2 = seda.Chi2FitOptions(my_data=my_data, my_model=my_model, 
-	>>>                               chi2_wl_range=chi2_wl_range)
+	>>>                               fit_wl_range=fit_wl_range)
 	>>> 
 	>>> # run chi-square fit
 	>>> out_chi2_fit = seda.chi2_fit(my_chi2=my_chi2)
@@ -104,7 +104,7 @@ def chi2_fit(my_chi2):
 	'''
 
 	ini_time_chi2 = time.time() # to estimate the time elapsed running chi2
-	print('\nRunning chi2 fitting...')
+	print('\nRunning chi-square fitting...')
 
 	# load input parameters
 	# all are stored in my_chi2 but were defined in different classes
@@ -136,14 +136,14 @@ def chi2_fit(my_chi2):
 	skip_convolution = my_chi2.skip_convolution
 	avoid_IR_excess = my_chi2.avoid_IR_excess
 	IR_excess_limit = my_chi2.IR_excess_limit
-	chi2_wl_range = my_chi2.chi2_wl_range
+	fit_wl_range = my_chi2.fit_wl_range
 	model_wl_range = my_chi2.model_wl_range
 	wl_spectra_min = my_chi2.wl_spectra_min
 	wl_spectra_max = my_chi2.wl_spectra_max
 	N_datapoints = my_chi2.N_datapoints
 	pickle_file = my_chi2.pickle_file
 
-	path_seda = os.path.dirname(__file__) # gets directory path of seda
+#	path_seda = os.path.dirname(__file__) # gets directory path of seda
 
 	# read additional packages depending on the input information
 	if (extinction_free_param=='yes'):
@@ -168,7 +168,7 @@ def chi2_fit(my_chi2):
 	#	# number of elements for the fit
 	#	total_N_fit = 0
 	#	for k in range(N_spectra): # for each input observed spectrum
-	#		mask = (wl_spectra[k]>=chi2_wl_range[k][0]) & (wl_spectra[k]<=chi2_wl_range[k][1])
+	#		mask = (wl_spectra[k]>=fit_wl_range[k][0]) & (wl_spectra[k]<=fit_wl_range[k][1])
 	#		total_N_fit += wl_spectra[k][mask].size
 
 	# when multiple spectra are provided, transform the input list with the spectra to arrays having the spectra next to each other
@@ -202,7 +202,7 @@ def chi2_fit(my_chi2):
 			eflux_spectra[i] = eflux_spectra[i][mask]
 	
 			#model_wl_range = np.array((model_wl_range[0], 15)) # range to cut model spectra up to 15 um (not necessary, it should works if it is up to longer wavelength)
-			if chi2_wl_range[i][1]>=15: chi2_wl_range[i][1] = 14.9
+			if fit_wl_range[i][1]>=15: fit_wl_range[i][1] = 14.9
 
 	# read the name of the spectra from the indicated models and meeting the parameters ranges 
 	out_select_model_spectra = select_model_spectra(Teff_range=Teff_range, logg_range=logg_range, model=model, model_dir=model_dir)
@@ -243,19 +243,19 @@ def chi2_fit(my_chi2):
 			# convolved spectra
 			wl_model_conv = wl_model # convolved spectrum have the same wavelength data points as the original spectrum
 			if N_spectra==1 : # when only one spectrum is provided
-				out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, lam_res=lam_res, res=res, disp_wl_range=chi2_wl_range[0])
+				out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, lam_res=lam_res, res=res, disp_wl_range=fit_wl_range[0])
 				flux_model_conv = out_convolve_spectrum['flux_conv']
 			if N_spectra>1 : # when multiple spectra are provided
 				flux_model_conv = np.zeros(wl_model.size) # to save convolved fluxes
 				for k in range(N_spectra): # for each input spectrum
 					if k==0: # for the first spectrum
-						mask_conv = (wl_model<=chi2_wl_range[k+1][0]) # from the minimum of the model wavelengths to the minimum of the second spectrum
+						mask_conv = (wl_model<=fit_wl_range[k+1][0]) # from the minimum of the model wavelengths to the minimum of the second spectrum
 					if ((k!=0) and (k!=N_spectra-1)): # for the spectra between the second and the second last ones
-						mask_conv = (wl_model>=chi2_wl_range[k][0]) & (wl_model<=chi2_wl_range[k+1][0]) # from the minimum of one spectrum to the minimum of the next spectrum
+						mask_conv = (wl_model>=fit_wl_range[k][0]) & (wl_model<=fit_wl_range[k+1][0]) # from the minimum of one spectrum to the minimum of the next spectrum
 					if k==N_spectra-1: # for the last spectrum
-						mask_conv = (wl_model>=chi2_wl_range[k][0]) # from the minimum of the last spectrum to the maximum of the model wavelengths
+						mask_conv = (wl_model>=fit_wl_range[k][0]) # from the minimum of the last spectrum to the maximum of the model wavelengths
 	
-					out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, lam_res=lam_res[k], res=res[k], disp_wl_range=chi2_wl_range[k,:], 
+					out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, lam_res=lam_res[k], res=res[k], disp_wl_range=fit_wl_range[k,:], 
 																		 convolve_wl_range=np.array((wl_model[mask_conv].min(), wl_model[mask_conv].max()))) # convolve model spectrum
 					flux_model_conv[mask_conv] = out_convolve_spectrum['flux_conv']
 
@@ -457,7 +457,7 @@ def chi2_fit(my_chi2):
 	
 		# select spectra data points to obtain chi2
 		if N_spectra==1 : # when only one spectrum is provided
-			ind_chi2 = np.where((wl_spectra>=chi2_wl_range[0][0]) & (wl_spectra<=chi2_wl_range[0][1]))[0]
+			ind_chi2 = np.where((wl_spectra>=fit_wl_range[0][0]) & (wl_spectra<=fit_wl_range[0][1]))[0]
 		if N_spectra>1 : # when multiple spectra are provided
 			# the desired data points for the fit are not necessary all the spectra data points 
 			ind_chi2 = np.full(wl_spectra.size, False, dtype=bool) # to save the indices with wavelengths within the ranges for the fit
@@ -465,7 +465,7 @@ def chi2_fit(my_chi2):
 			for k in range(N_spectra): # for each input observed spectrum
 				index_min = l
 				index_max = wl_spectra_list[k].size+l
-				mask = (wl_spectra[index_min:index_max]>=chi2_wl_range[k][0]) & (wl_spectra[index_min:index_max]<=chi2_wl_range[k][1]) # input wavelengths meeting the wavelength ranges for the fit
+				mask = (wl_spectra[index_min:index_max]>=fit_wl_range[k][0]) & (wl_spectra[index_min:index_max]<=fit_wl_range[k][1]) # input wavelengths meeting the wavelength ranges for the fit
 				ind_chi2[index_min:index_max][mask] = True # select the indices in the mask
 				l += wl_spectra_list[k].size
 
@@ -474,7 +474,7 @@ def chi2_fit(my_chi2):
 		# the lines below works well, but then it is necessary to modify the rest of code to use a ind_chi2 array that is a matrix rather than a vector
 		## select spectra data points to obtain chi2
 		#if N_spectra==1 : # when only one spectrum is provided
-		#	ind_chi2 = np.where((wl_spectra>=chi2_wl_range[0]) & (wl_spectra<=chi2_wl_range[1]))[0]
+		#	ind_chi2 = np.where((wl_spectra>=fit_wl_range[0]) & (wl_spectra<=fit_wl_range[1]))[0]
 		#if N_spectra>1 : # when multiple spectra are provided
 		#	# the desired data points for the fit are not necessary all the spectra data points 
 		#	ind_chi2 = np.full((len(spectra_name), wl_spectra.size), False, dtype=bool) # to save the indices with wavelengths within the ranges for the fit
@@ -486,12 +486,12 @@ def chi2_fit(my_chi2):
 
 		#			mask_nozero = flux_array_model_conv_resam[i,:]!=0 # non-zero fluxes in each convolved, resampled model spectrum
 		#			if (min(wl_spectra[index_min:index_max])<min(wl_array_model_conv_resam[i,:][mask_nozero])): # when a input spectrum has wavelength shorter than the minimum wavelength in each model spectrum
-		#				if (min(wl_array_model_conv_resam[i,:][mask_nozero]) < chi2_wl_range[k][0]): # when the minimum of the chi2_wl_range is longer than the minimum of the model spectrum
-		#					mask = (wl_spectra[index_min:index_max]>=chi2_wl_range[k][0]) & (wl_spectra[index_min:index_max]<=chi2_wl_range[k][1]) # indices from the array with all input wavelengths meeting the wavelength ranges for the fit
-		#				else: # when the minimum of the chi2_wl_range is shorter than the minimum of the model spectrum
-		#					mask = (wl_spectra[index_min:index_max]>=min(wl_array_model_conv_resam[i,:][mask_nozero])) & (wl_spectra[index_min:index_max]<=chi2_wl_range[k][1]) # indices from the array with all input wavelengths meeting the wavelength ranges for the fit
+		#				if (min(wl_array_model_conv_resam[i,:][mask_nozero]) < fit_wl_range[k][0]): # when the minimum of the fit_wl_range is longer than the minimum of the model spectrum
+		#					mask = (wl_spectra[index_min:index_max]>=fit_wl_range[k][0]) & (wl_spectra[index_min:index_max]<=fit_wl_range[k][1]) # indices from the array with all input wavelengths meeting the wavelength ranges for the fit
+		#				else: # when the minimum of the fit_wl_range is shorter than the minimum of the model spectrum
+		#					mask = (wl_spectra[index_min:index_max]>=min(wl_array_model_conv_resam[i,:][mask_nozero])) & (wl_spectra[index_min:index_max]<=fit_wl_range[k][1]) # indices from the array with all input wavelengths meeting the wavelength ranges for the fit
 		#			else: # when each input spectrum as full wavelength coverage by the model spectra
-		#				mask = (wl_spectra[index_min:index_max]>=chi2_wl_range[k][0]) & (wl_spectra[index_min:index_max]<=chi2_wl_range[k][1]) # indices from the array with all input wavelengths meeting the wavelength ranges for the fit
+		#				mask = (wl_spectra[index_min:index_max]>=fit_wl_range[k][0]) & (wl_spectra[index_min:index_max]<=fit_wl_range[k][1]) # indices from the array with all input wavelengths meeting the wavelength ranges for the fit
 		#			ind_chi2[i,index_min:index_max][mask] = True # select the indices in the mask
 		#			l += wl_spectra_list[k].size # to iterate to next input spectrum
 
@@ -533,15 +533,15 @@ def chi2_fit(my_chi2):
 			ext_spectra = np.concatenate((ext_F19_spectra, ext_G21_MWAvg_spectra))
 		# select spectra data points to obtain chi2
 		if N_spectra==1 : # when only one spectrum is provided
-			#ind_chi2_spec = np.where((wl_spectra>chi2_wl_range[0]) & (wl_spectra<chi2_wl_range[1]) & (flux_spectra>1))
-			ind_chi2_spec = np.where((wl_spectra>=chi2_wl_range[0]) & (wl_spectra<=chi2_wl_range[1]))[0]
+			#ind_chi2_spec = np.where((wl_spectra>fit_wl_range[0]) & (wl_spectra<fit_wl_range[1]) & (flux_spectra>1))
+			ind_chi2_spec = np.where((wl_spectra>=fit_wl_range[0]) & (wl_spectra<=fit_wl_range[1]))[0]
 		if N_spectra>1 : # when multiple spectra are provided
 			ind_chi2_spec = np.full(wl_spectra.size, False, dtype=bool) # to save the indices with wavelengths within the ranges for the fit
 			l = 0
 			for k in range(N_spectra): # for each input observed spectrum
 				index_min = l
 				index_max = wl_spectra_list[k].size+l
-				mask = (wl_spectra[index_min:index_max]>=chi2_wl_range[k][0]) & (wl_spectra[index_min:index_max]<=chi2_wl_range[k][1]) # indices from the array with all input wavelengths meeting the wavelength ranges for the fit
+				mask = (wl_spectra[index_min:index_max]>=fit_wl_range[k][0]) & (wl_spectra[index_min:index_max]<=fit_wl_range[k][1]) # indices from the array with all input wavelengths meeting the wavelength ranges for the fit
 				ind_chi2[index_min:index_max][mask] = True # select the indices in the mask
 				l += wl_spectra_list[k].size
 	
@@ -682,7 +682,7 @@ def chi2_fit(my_chi2):
 		eradius = eradius / 0.102763 # in Rjup
 
 	out_chi2 = {'model': model, 'spectra_name_full': spectra_name_full, 'spectra_name': spectra_name, 'Teff_range': Teff_range, 'logg_range': logg_range, 
-				'res': res, 'lam_res': lam_res, 'chi2_wl_range': chi2_wl_range, 'N_rows_model': N_rows_model, 'out_lmfit': out_lmfit, 'iterations_fit': iterations_fit, 
+				'res': res, 'lam_res': lam_res, 'fit_wl_range': fit_wl_range, 'N_rows_model': N_rows_model, 'out_lmfit': out_lmfit, 'iterations_fit': iterations_fit, 
 				'Av_fit': Av_fit, 'eAv_fit': eAv_fit, 'scaling_fit': scaling_fit, 'escaling_fit': escaling_fit, 'chi2_wl_fit': chi2_wl_fit, 
 				'chi2_red_wl_fit': chi2_red_wl_fit, 'chi2_fit': chi2_fit, 'chi2_red_fit': chi2_red_fit, 'weight_fit': weight_fit}
 
@@ -739,7 +739,7 @@ def chi2_fit(my_chi2):
 	print('\nChi square fit ran successfully')
 	fin_time_chi2 = time.time()
 	out_time_elapsed = time_elapsed(fin_time_chi2-ini_time_chi2)
-	print(f'   elapsed time running SEDA: {out_time_elapsed[0]} {out_time_elapsed[1]}')
+	print(f'   elapsed time running chi2_fit: {out_time_elapsed[0]} {out_time_elapsed[1]}')
 
 	return out_chi2
 
