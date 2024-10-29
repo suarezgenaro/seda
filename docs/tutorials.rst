@@ -25,3 +25,11 @@ Forward modeling of an observed spectrum using the Bayesian framework available 
    :maxdepth: 1
 
    notebooks/test_bayes_fit.ipynb
+
+TEST
+----
+
+.. toctree::
+   :maxdepth: 1
+
+   notebooks/test_bayes_fit.ipynb
