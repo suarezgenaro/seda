@@ -22,8 +22,8 @@ Main SEDA Tools
 :math:`\texttt{SEDA}` includes the following useful routines that can be used separately:
   - :meth:`~seda.utils.convolve_spectrum`: to convolve spectra to a desire resolution at a given wavelength.
   - :meth:`~seda.synthetic_photometry`: to calculate synthetic phothometry from spectra for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_.
-  - :meth:`~seda.utils.read_model_spectrum`: to read atmospheric model spectrum with desired parameters available in the grid.
-  - :meth:`~seda.interpol_model`: to generate atmospheric model spectrum with desired parameters within the grid parameters using interpolation techniques.
+  - :meth:`~seda.utils.read_model_spectrum`: to read a synthetic spectrum from the indicated atmospheric models.
+  - :meth:`~seda.interpol_model`: to generate a synthetic spectrum with any parameters (within the grid coverage) from the indicated atmospheric models using interpolation techniques.
 
 SEDA Workflow
 -------------
