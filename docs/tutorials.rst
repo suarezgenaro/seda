@@ -11,3 +11,11 @@ Chi square fit of atmospheric models to an observed spectrum
 
 Chi square fit of atmospheric models to observed photometry
 -----------------------------------------------------------
+
+Forward modeling of an observed spectrum using the Bayesian framework available in SEDA
+---------------------------------------------------------------------------------------
+
+.. toctree::
+   :maxdepth: 1
+
+   notebooks/bayes_chi2_fit.ipynb
