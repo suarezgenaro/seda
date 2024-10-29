@@ -256,13 +256,13 @@ class Chi2Options:
 	Parameters:
 	-----------
 	- my_data : dictionary
-		Output dictionary with input data by ``input_parameters.InputData``
+		Output dictionary by ``input_parameters.InputData`` with input data.
 	- my_model : dictionary
-		Output dictionary with model options by ``input_parameters.ModelOptions``
+		Output dictionary by ``input_parameters.ModelOptions`` with model options.
 	- fit_wl_range : float array, optional
 		Minimum and maximum wavelengths in microns where model spectra will be compared to the data. 
 		This parameter is used if ``fit_spectra`` but ignored if only ``fit_photometry``. 
-		Default values are the minimum and the maximum wavelengths of each input spectrum. E.g., ``fit_wl_range = np.array([chi2_wl_min, chi2_wl_max]``)
+		Default values are the minimum and the maximum wavelengths of each input spectrum. E.g., ``fit_wl_range = np.array([chi2_wl_min, chi2_wl_max])``. 
 	- model_wl_range : float array, optional
 		Minimum and maximum wavelength to cut model spectra (to make the code faster). 
 		Default values are the same as ``fit_wl_range`` with a padding to avoid the point below.
@@ -418,13 +418,13 @@ class BayesOptions:
 	Parameters:
 	-----------
 	- my_data : dictionary
-		Output dictionary with input data by ``input_parameters.InputData``
+		Output dictionary by ``input_parameters.InputData`` with input data.
 	- my_model : dictionary
-		Output dictionary with model options by ``input_parameters.ModelOptions``
+		Output dictionary by ``input_parameters.ModelOptions`` with model options.
 	- fit_wl_range : float array, optional
 		Minimum and maximum wavelengths in microns where model spectra will be compared to the data. 
 		This parameter is used if ``fit_spectra`` but ignored if only ``fit_photometry``. 
-		Default values are the minimum and the maximum wavelengths of each input spectrum. E.g., ``fit_wl_range = np.array([bayes_wl_min, bayes_wl_max]``)
+		Default values are the minimum and the maximum wavelengths of each input spectrum. E.g., ``fit_wl_range = np.array([bayes_wl_min, bayes_wl_max])``. 
 	- model_wl_range : float array, optional
 		Minimum and maximum wavelength to cut model spectra (to make the code faster). 
 		Default values are the same as ``fit_wl_range`` with a padding to avoid the point below.
@@ -456,6 +456,17 @@ class BayesOptions:
 	Returns:
 	--------
 	- Dictionary with all (provided and default) Bayes fit option parameters.
+
+	Example:
+	--------
+	>>> import seda
+	>>> 
+	>>> fit_wl_range = np.array([value1, value2]) # to make the fit between value1 and value2
+	>>> my_bayes = seda.Chi2FitOptions(my_data=my_data, my_model=my_model, 
+	>>>                               fit_wl_range=fit_wl_range)
+	    Bayes fit options loaded successfully
+
+	Author: Genaro Suárez
 	'''
 
 	def __init__(self, my_data, my_model, fit_wl_range=None, model_wl_range=None, 
