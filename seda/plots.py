@@ -119,9 +119,9 @@ def plot_chi2_fit(pickle_file, N_best_fits=1, ylog=True):
 			label_model = spectra_name_best[i][8:-3]
 		if model=='Sonora_Cholla':
 			label_model = spectra_name_best[i][:-5]
-		if model=='LB23_all':
+		if model=='LB23':
 			label_model = spectra_name_best[i][:-3]
-		if model=='ATMO2020_all':
+		if model=='ATMO2020':
 			label_model = spectra_name_best[i].split('spec_')[1][:-4]
 		if ((model=='ATMO2020_CEQ') | (model=='ATMO2020_NEQ_weak') | (model=='ATMO2020_NEQ_strong')):
 			label_model = spectra_name_best[i][5:-4]
@@ -236,9 +236,9 @@ def plot_chi2_red(pickle_file, N_best_fits=1):
 			plot_title = spectra_name_best[i][8:-3]
 		if model=='Sonora_Cholla':
 			plot_title = spectra_name_best[i][:-5]
-		if model=='LB23_all':
+		if model=='LB23':
 			plot_title = spectra_name_best[i][:-3]
-		if model=='ATMO2020_all':
+		if model=='ATMO2020':
 			plot_title = spectra_name_best[i].split('spec_')[1][:-4]
 		if ((model=='ATMO2020_CEQ') | (model=='ATMO2020_NEQ_weak') | (model=='ATMO2020_NEQ_strong')):
 			plot_title = spectra_name_best[i][5:-4]

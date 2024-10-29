@@ -230,8 +230,8 @@ class ModelOptions:
 	def __init__(self, model, model_dir, Teff_range, logg_range, R_range=None):
 
 		self.model = model
-		models_valid = ['Sonora_Diamondback', 'Sonora_Elf_Owl', 'LB23_all', 'Sonora_Cholla', 
-						'Sonora_Bobcat', 'ATMO2020_all', 'BT-Settl', 'SM08']
+		models_valid = ['Sonora_Diamondback', 'Sonora_Elf_Owl', 'LB23', 'Sonora_Cholla', 
+						'Sonora_Bobcat', 'ATMO2020', 'BT-Settl', 'SM08']
 		if model not in models_valid:
 			print(f'Models {model} are not recognized')
 			print(f'   the options are {models_valid}')
