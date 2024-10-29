@@ -448,6 +448,8 @@ class BayesOptions:
 	- dynamic_sampling: {``True``, ``False``}, optional (default ``True``). 
 		Consider dynamic (``'yes'``) or static (``'no'``) nested sampling. Read ``dynesty`` documentation for more info. 
 		Dynamic nested sampling is slower (~20-30%) than static nested sampling. 
+	- nlive: float, optional (default 500). 
+		Number of nested sampling live points. 
 	- save_results: {``'yes'``, ``'no'``}, optional (default ``'yes'``)
 		Save (``'yes'``) or do not save (``'no'``)	``seda.bayes_fit`` results
 
@@ -458,13 +460,14 @@ class BayesOptions:
 
 	def __init__(self, my_data, my_model, fit_wl_range=None, model_wl_range=None, 
 		         logKzz_range=None, Z_range=None, CtoO_range=None, prior_chi2=False, 
-		         grid=None, dynamic_sampling=True, save_results='yes'):
+		         grid=None, dynamic_sampling=True, nlive=500, save_results='yes'):
 
 		self.logKzz_range = logKzz_range
 		self.Z_range = Z_range
 		self.CtoO_range = CtoO_range
 		self.prior_chi2 = prior_chi2
 		self.dynamic_sampling = dynamic_sampling
+		self.nlive = nlive
 		self.save_results = save_results
 
 		# read parameters from InputData
@@ -576,6 +579,13 @@ class BayesOptions:
 		self.Z_range_prior = Z_range_prior
 		self.CtoO_range_prior = CtoO_range_prior
 		self.R_range_prior = R_range_prior
+
+		# define the dimensionality of our problem.
+		if distance is not None: # sample radius distribution
+			ndim = 6
+		else:
+			ndim = 5
+		self.ndim = ndim
 
 		# read model grid within the Teff and logg ranges
 		if grid is None: 

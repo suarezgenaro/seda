@@ -55,6 +55,8 @@ def bayes(my_bayes):
 	prior_chi2 = my_bayes.prior_chi2
 	grid = my_bayes.grid
 	dynamic_sampling = my_bayes.dynamic_sampling
+	ndim = my_bayes.ndim
+	nlive = my_bayes.nlive
 	wl_spectra_min = my_bayes.wl_spectra_min
 	wl_spectra_max = my_bayes.wl_spectra_max
 	N_datapoints = my_bayes.N_datapoints
@@ -148,14 +150,6 @@ def bayes(my_bayes):
 		lnlike = -0.5 * np.sum(residual2 + np.log(2*np.pi*eflux_spectra**2))
 
 		return lnlike
-
-	# Define the dimensionality of our problem.
-	if distance is not None: # sample radius distribution
-		ndim = 6
-	else:
-		ndim = 5
-
-	nlive = 500 #number of nested sampling live points	
 
 	print('\n   Starting dynesty...')
 	if dynamic_sampling:
