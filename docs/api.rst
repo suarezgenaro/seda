@@ -31,9 +31,10 @@ Chi2 Fit
 .. automodule:: seda.chi2_fit
     :members:
 
-
 Bayes Fit
 ---------
+.. automodule:: seda.bayes_fit
+    :members:
 
 Plots
 -----
