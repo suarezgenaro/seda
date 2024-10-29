@@ -7,8 +7,8 @@ Overview
 
 .. _seda_overview:
 
-:math:`\texttt{SEDA}` Overview
-------------------------------
+Principal :math:`\texttt{SEDA}` Modules
+---------------------------------------
   - :meth:`~seda.input_parameters`: to define all input parameters, namely input data, model options, chi-square options and/or bayes options.
   - :meth:`~seda.chi2_fit.chi2_fit`: to find the best model fits from :ref:`models` using `LMFIT <https://lmfit.github.io/lmfit-py/>`_ non-linear least-square minimization python package by `Newville et al. (2014) <https://ui.adsabs.harvard.edu/abs/2014zndo.....11813N/abstract>`_.
   - :meth:`~seda.bayes_fit`: to estimate Bayesian posteriors using `dynesty <https://dynesty.readthedocs.io/en/stable/index.html>`_ dynamic nested sampling package by `Speagle (2020) <https://ui.adsabs.harvard.edu/abs/2020MNRAS.493.3132S/abstract>`_.
@@ -19,6 +19,7 @@ Overview
 
 Main :math:`\texttt{SEDA}` tools
 --------------------------------
+:math:`\texttt{SEDA}` includes the following useful routines that can be used separately:
   - :meth:`~seda.utils.convolve_spectrum`: to convolve spectra to a desire resolution at a given wavelength.
   - :meth:`~seda.synthetic_photometry`: to calculate synthetic phothometry from spectra for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_.
   - :meth:`~seda.utils.read_model_spectrum`: to read atmospheric model spectrum with desired parameters available in the grid.
