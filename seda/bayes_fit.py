@@ -15,9 +15,44 @@ def bayes(my_bayes):
 
 	Parameters:
 	-----------
+	- my_bayes : return parameters from ``input_parameters.BayesOptions``, which also includes the parameters from ``input_parameters.InputData`` and ``input_parameters.ModelOptions``.
 
-	Returns: results by Dynesty
+	Returns:
+	--------
+	- '``model``\_nested\_sampling.pickle' : ``dynesty`` instance
+		Dynesty output, which is an initialized instance of the chosen sampler using ``dynamic_sampling`` in ``input_parameters.BayesOptions``.
 
+	Example:
+	--------
+	>>> import seda
+	>>> 
+	>>> # load input data
+	>>> wl_spectra = wl_input # in um
+	>>> flux_spectra = flux_input # in erg/cm^2/s/A
+	>>> eflux_spectra = eflux_input # in erg/cm^2/s/A
+	>>> my_data = seda.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, 
+	>>>                          eflux_spectra=eflux_spectra)
+	>>> 
+	>>> # load model options
+	>>> model = 'Sonora_Elf_Owl'
+	>>> model_dir = ['my_path/output_575.0_650.0/', 
+	>>>              'my_path/output_700.0_800.0/'] # folders to seek model spectra
+	>>> Teff_range = np.array((700, 900)) # Teff range in K
+	>>> logg_range = np.array((4.0, 5.0)) # logg range
+	>>> R_range = np.array((0.6, 1.0)) # R range in Rjup
+	>>> my_model = seda.ModelOptions(model=model, model_dir=model_dir, logg_range=logg_range, 
+	>>>                              Teff_range=Teff_range, R_range=R_range)
+	>>> 
+	>>> # load chi-square options
+	>>> fit_wl_range = np.array([value1, value2]) # to make the fit between value1 and value2
+	>>> my_bayes = seda.Chi2FitOptions(my_data=my_data, my_model=my_model, 
+	>>>                                fit_wl_range=fit_wl_range)
+	>>> 
+	>>> # run chi-square fit
+	>>> out_bayes = seda.bayes(my_bayes)
+	    nested sampling results saved successfully
+
+	Author: Genaro Suárez
 	'''
 
 	ini_time_bayes = time.time()

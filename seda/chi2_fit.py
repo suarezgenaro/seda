@@ -97,7 +97,7 @@ def chi2(my_chi2):
 	>>>                               fit_wl_range=fit_wl_range)
 	>>> 
 	>>> # run chi-square fit
-	>>> out_chi2_fit = seda.chi2_fit(my_chi2=my_chi2)
+	>>> out_chi2 = seda.chi2(my_chi2)
 	    Chi square fit ran successfully
 
 	Author: Genaro Suárez
