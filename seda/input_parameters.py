@@ -1,4 +1,5 @@
 import numpy as np
+from .utils import *
 from sys import exit
 
 print('\n    SEDA package imported')
@@ -463,7 +464,6 @@ class BayesOptions:
 		self.Z_range = Z_range
 		self.CtoO_range = CtoO_range
 		self.prior_chi2 = prior_chi2
-		self.grid = grid
 		self.dynamic_sampling = dynamic_sampling
 		self.save_results = save_results
 
@@ -493,6 +493,10 @@ class BayesOptions:
 		N_spectra = my_data.N_spectra
 		wl_spectra = my_data.wl_spectra
 		model = my_model.model
+		Teff_range = my_model.Teff_range
+		logg_range = my_model.logg_range
+		R_range = my_model.R_range
+		distance = my_data.distance
 
 		# handle fit_wl_range
 		fit_wl_range = set_fit_wl_range(fit_wl_range=fit_wl_range, N_spectra=N_spectra, wl_spectra=wl_spectra)
@@ -511,6 +515,74 @@ class BayesOptions:
 
 		# file name to save the chi2 results as a pickle
 		self.pickle_filename = f'{model}_nested_sampling.pickle'
+
+		# parameter ranges for the posteriors
+		if prior_chi2:
+			out_param_ranges_sampling = param_ranges_sampling(model)
+			Teff_range_prior = out_param_ranges_sampling['Teff_range_prior']
+			logg_range_prior = out_param_ranges_sampling['logg_range_prior']
+			logKzz_range_prior = out_param_ranges_sampling['logKzz_range_prior']
+			Z_range_prior = out_param_ranges_sampling['Z_range_prior']
+			CtoO_range_prior = out_param_ranges_sampling['CtoO_range_prior']
+		else:
+			# I AM HERE: SAMPLING DOESN'T WORK WITH ANY OF THE PARAMS DEFINITIONS BELOW. IT SAYS THERE IS SOMETHING OUT OF BOUNDS
+			# define priors from input parameters or grid ranges
+			if Teff_range is None: print('Please provide the Teff_range parameter'), exit()
+			if logg_range is None: print('Please provide the logg_range parameter'), exit()
+			Teff_range_prior = Teff_range
+			logg_range_prior = logg_range
+			out_grid_ranges = grid_ranges(model) # read grid ranges
+			if logKzz_range is not None: logKzz_range_prior = logKzz_range
+			else: logKzz_range_prior = np.array([out_grid_ranges['logKzz'].min(), out_grid_ranges['logKzz'].max()])
+			if Z_range is not None: Z_range_prior = Z_range
+			else: Z_range_prior = np.array([out_grid_ranges['Z'].min(), out_grid_ranges['Z'].max()])
+			if CtoO_range is not None: CtoO_range_prior = CtoO_range
+			else: CtoO_range_prior = np.array([out_grid_ranges['CtoO'].min(), out_grid_ranges['CtoO'].max()])
+
+			# TEST: give a padding on both edges of each parameter
+#			Teff_range_prior = np.array([1.05*Teff_range_prior[0], 0.95*Teff_range_prior[1]])
+#			logg_range_prior = np.array([1.05*logg_range_prior[0], 0.95*logg_range_prior[1]])
+#			logKzz_range_prior = np.array([1.05*logKzz_range_prior[0], 0.95*logKzz_range_prior[1]])
+#			Z_range_prior = np.array([1.05*Z_range_prior[0], 0.95*Z_range_prior[1]])
+#			CtoO_range_prior = np.array([1.05*CtoO_range_prior[0], 0.95*CtoO_range_prior[1]])
+
+#			# TEST: define ranges as lists as when prior_chi2 is True
+#			Teff_range_prior = [Teff_range[0], Teff_range[1]]
+#			logg_range_prior = [logg_range[0], logg_range[1]]
+#			out_grid_ranges = grid_ranges(model) # read grid ranges
+#			logKzz_range_prior = [out_grid_ranges['logKzz'].min(), out_grid_ranges['logKzz'].max()]
+#			Z_range_prior = [out_grid_ranges['Z'].min(), out_grid_ranges['Z'].max()]
+#			CtoO_range_prior = [out_grid_ranges['CtoO'].min(), out_grid_ranges['CtoO'].max()]
+
+#			Teff_range_prior = [525.0, 625.0]
+#			logg_range_prior = [3.4981880270062007, 3.9981880270062007]
+#			logKzz_range_prior = [2.5, 5.5]
+#			Z_range_prior = [-1.0, -0.75]
+#			CtoO_range_prior = [1.0, 2.0]
+#
+##			SOLUTION: CUT THE LOGG RANGE FROM THE RANGE 3.0-5.5 to 3.3-5.5. UNDERSTAND WHY 3.0 DOESN'T WORK BUT 3.3 DOES!!!!!!!!!!!!!!!!!
+#			Teff_range_prior = [300, 700]
+
+#			logg_range_prior = [3.3, 5.5]
+
+		#if distance_label=='yes':
+		if distance is not None:
+			if R_range is None: print('Please provide the R_range parameter'), exit()
+			R_range_prior = R_range
+
+		self.Teff_range_prior = Teff_range_prior
+		self.logg_range_prior = logg_range_prior
+		self.logKzz_range_prior = logKzz_range_prior
+		self.Z_range_prior = Z_range_prior
+		self.CtoO_range_prior = CtoO_range_prior
+		self.R_range_prior = R_range_prior
+
+		# read model grid within the Teff and logg ranges
+		if grid is None: 
+			if Teff_range is None: print('Please provide the Teff_range parameter'), exit()
+			if logg_range is None: print('Please provide the logg_range parameter'), exit()
+			grid = read_grid(model=model, Teff_range=Teff_range, logg_range=logg_range)
+		self.grid = grid
 
 		print('\nBayes fit options loaded successfully')
 

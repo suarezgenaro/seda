@@ -3,7 +3,7 @@
 import numpy as np
 from astropy.io import ascii
 from scipy.interpolate import RegularGridInterpolator
-from .bayes_fit import *
+#from .bayes_fit import *
 import time
 import os
 import xarray
@@ -317,7 +317,6 @@ def interpol_Sonora_Elf_Owl(Teff_interpol, logg_interpol, logKzz_interpol, Z_int
 ##################################################
 # to read the grid considering Teff and logg desired ranges
 def read_grid(model, Teff_range, logg_range, convolve=True, wl_range=None):
-#def read_grid(model, Teff_range, logg_range, convolve=True, lam_R=None, R=None):
 	'''
 	model : desired atmospheric model
 	Teff_range : float array, necessary when grid is not provided
@@ -328,14 +327,14 @@ def read_grid(model, Teff_range, logg_range, convolve=True, wl_range=None):
 		if T rue (default), the synthetic spectra will be convolved to the indicated R at lam_R
 	wl_range : float array (optional)
 		minimum and maximum wavelength values to read from model grid
-#	R : float, mandatory if convolve is True
-#		input spectra resolution (default R=100) at lam_R to smooth model spectra
-#	lam_R : float, mandatory if convolve is True
-#		wavelength reference (default 2 um) to estimate the spectral resolution of model spectra considering R
 
 	OUTPUT:
 		dictionary with the grid ('wavelength' and 'flux') for the parameters ('Teff', 'logg', 'logKzz', 'Z', and 'CtoO') within Teff_range and logg_range and all the values for the remaining parameters.
 	'''
+#	R : float, mandatory if convolve is True
+#		input spectra resolution (default R=100) at lam_R to smooth model spectra
+#	lam_R : float, mandatory if convolve is True
+#		wavelength reference (default 2 um) to estimate the spectral resolution of model spectra considering R
 
 	print('\n   reading model grid...')
 
@@ -444,5 +443,158 @@ def read_grid(model, Teff_range, logg_range, convolve=True, wl_range=None):
 	print(f'         elapsed time: {out_time_elapsed[0]} {out_time_elapsed[1]}')
 
 	out = {'wavelength': wl_grid, 'flux': flux_grid, 'Teff': Teff_grid, 'logg': logg_grid, 'logKzz': logKzz_grid, 'Z': Z_grid, 'CtoO': CtoO_grid}
+
+	return out
+
+##########################
+# get the parameter ranges and steps in each model grid
+def grid_ranges(model):
+	if (model=='Sonora_Elf_Owl'):
+		# Teff
+		Teff_range1 = np.arange(275., 600.+25, 25)
+		Teff_range2 = np.arange(650., 1000.+50, 50)
+		Teff_range3 = np.arange(1100., 2400.+100, 100)
+		Teff = np.concatenate((Teff_range1, Teff_range2, Teff_range3)) # K
+		# logg
+		logg = np.arange(3.25, 5.50+0.25, 0.25) # dex (g in cgs)
+		#logKzz
+		logKzz = np.array((2.0, 4.0, 7.0, 8.0, 9.0)) # dex (Kzz in cgs)
+		# Z or [M/H]
+		Z = np.array((-1.0, -0.5, 0.0, 0.5, 0.7, 1.0)) # cgs
+		# C/O ratio
+		CtoO = np.array((0.5, 1.0, 1.5, 2.5)) # relative to solar C/O
+
+	out = {'Teff': Teff, 'logg': logg, 'logKzz': logKzz, 'Z': Z, 'CtoO': CtoO}
+
+	return out
+
+##########################
+# tolerance around the best-fitting spectrum parameters to define the parameter ranges for posteriors
+def param_ranges_sampling(model):
+
+	# open results from the chi square analysis
+	with open(f'{model}_chi2_minimization.pickle', 'rb') as file:
+		# deserialize and retrieve the variable from the file
+		out_chi2 = pickle.load(file)
+
+	if (model=='Sonora_Elf_Owl'):
+		ind_best_fit = np.argsort(out_chi2['chi2_red_fit'])[:3] # index of the three best-fitting spectra
+		# median parameter values from the best-fitting models
+		Teff_chi2 = np.median(out_chi2['Teff'][ind_best_fit])
+		logg_chi2 = np.median(out_chi2['logg'][ind_best_fit])
+		logKzz_chi2 = np.median(out_chi2['logKzz'][ind_best_fit])
+		Z_chi2 = np.median(out_chi2['Z'][ind_best_fit])
+		CtoO_chi2 = np.median(out_chi2['CtoO'][ind_best_fit])
+
+		# whole grid parameter ranges to avoid trying to generate a spectrum out of the grid
+		out_grid_ranges = grid_ranges(model)
+
+		Teff_search = 50 # K (half of the biggest Teff step, which is 100 K)
+		logg_search = 0.25 # dex (half of the biggest logg step, which is 0.5)
+		logKzz_search = 1.5 # dex (half of the biggest logKzz step, which is 3)
+		Z_search = 0.25 # cgs (half of the biggest Z step, which is 0.5)
+		CtoO_search = 0.50 # relative to solar C/O (half of the biggest C/O step, which is 1.0)
+	
+		Teff_range_prior = [max(Teff_chi2-Teff_search, min(out_grid_ranges['Teff'])), 
+								min(Teff_chi2+Teff_search, max(out_grid_ranges['Teff']))]
+		logg_range_prior = [max(logg_chi2-logg_search, min(out_grid_ranges['logg'])), 
+								min(logg_chi2+logg_search, max(out_grid_ranges['logg']))]
+		logKzz_range_prior = [max(logKzz_chi2-logKzz_search, min(out_grid_ranges['logKzz'])), 
+								min(logKzz_chi2+logKzz_search, max(out_grid_ranges['logKzz']))]
+		Z_range_prior = [max(Z_chi2-Z_search, min(out_grid_ranges['Z'])), 
+								min(Z_chi2+Z_search, max(out_grid_ranges['Z']))]
+		CtoO_range_prior = [max(CtoO_chi2-CtoO_search, min(out_grid_ranges['CtoO'])), 
+								min(CtoO_chi2+CtoO_search, max(out_grid_ranges['CtoO']))]
+
+		out = {'Teff_range_prior': Teff_range_prior, 'logg_range_prior': logg_range_prior, 'logKzz_range_prior': logKzz_range_prior, 'Z_range_prior': Z_range_prior, 'CtoO_range_prior': CtoO_range_prior}
+
+	return out
+
+##########################
+# generate the synthetic spectrum with the posterior parameters
+def best_fit_sampling(wl_spectra, model, sampling_file, lam_res, res, distance=None, grid=None, save_spectrum=False):
+	'''
+	Output: dictionary
+		synthetic spectrum for the posterior parameters: i) with original resolution, ii) convolved to the compared observed spectra, and iii) scaled to the determined radius
+	'''
+
+	import sampling
+	import interpol_model
+	from spectres import spectres # resample spectra
+
+	# open results from sampling
+	with open(sampling_file, 'rb') as file:
+		dresults = pickle.load(file)
+
+	if model=='Sonora_Elf_Owl':
+		Teff_med = np.median(dresults.samples[:,0]) # Teff values
+		logg_med = np.median(dresults.samples[:,1]) # logg values
+		logKzz_med = np.median(dresults.samples[:,2]) # logKzz values
+		Z_med = np.median(dresults.samples[:,3]) # Z values
+		CtoO_med = np.median(dresults.samples[:,4]) # CtoO values
+		if distance is not None: R_med = np.median(dresults.samples[:,5]) # R values
+
+	# generate spectrum with the median parameter values
+	if grid is None:
+		# read grid around the median values	
+		# first define Teff and logg ranges around the median values
+		out_grid_ranges = sampling.grid_ranges(model)
+		
+		# find the grid point before and after a median value
+		def find_two_nearest(array, value):
+			diff = array - value
+			if any(array[diff<0]): near_1 = diff[diff<0].max()+value
+			else: near_1 = array.min()
+			if any(array[diff>0]): near_2 = diff[diff>0].min()+value
+			else: near_2 = array.max()
+
+			return np.array([near_1, near_2])
+
+		Teff_range = find_two_nearest(out_grid_ranges['Teff'], Teff_med)
+		logg_range = find_two_nearest(out_grid_ranges['logg'], logg_med)
+
+		# read grid
+		grid = interpol_model.read_grid(model=model, Teff_range=Teff_range, logg_range=logg_range)
+
+	# generate synthetic spectrum
+	syn_spectrum = interpol_model.interpol_Sonora_Elf_Owl(Teff_interpol=Teff_med, logg_interpol=logg_med, 
+														  logKzz_interpol=logKzz_med, Z_interpol=Z_med, CtoO_interpol=CtoO_med, grid=grid)
+	# convolve synthetic spectrum
+	out_convolve_spectrum = convolve_spectrum(wl=syn_spectrum['wavelength'], flux=syn_spectrum['flux'], lam_res=lam_res, res=res, 
+												   disp_wl_range=np.array([wl_spectra.min(), wl_spectra.max()]), 
+												   convolve_wl_range=np.array([0.99*wl_spectra.min(), 1.01*wl_spectra.max()])) # padding on both edges to avoid issues we using spectres
+
+	# scale synthetic spectrum
+	if distance is not None:
+		flux_scaled = scale_synthetic_spectrum(wl=syn_spectrum['wavelength'], flux=syn_spectrum['flux'], distance=distance, radius=R_med)
+		flux_conv_scaled = scale_synthetic_spectrum(wl=out_convolve_spectrum['wl_conv'], flux=out_convolve_spectrum['flux_conv'], distance=distance, radius=R_med)
+
+	# resample scaled synthetic spectra to the observed wavelengths
+	flux_conv_resam = spectres(wl_spectra, out_convolve_spectrum['wl_conv'], out_convolve_spectrum['flux_conv'])
+	if distance is not None:
+		flux_conv_scaled_resam = spectres(wl_spectra, out_convolve_spectrum['wl_conv'], flux_conv_scaled)
+
+	# save synthetic spectrum
+	if save_spectrum:
+		Teff_file = round(Teff_med, 1)
+		logg_file = round(logg_med, 2)
+		logKzz_file = round(logKzz_med,1)
+		Z_file = round(Z_med, 1)
+		CtoO_file = round(CtoO_med, 1)
+
+		out = open(f'Elf_Owl_Teff{Teff_file}_logg{logg_file}_logKzz{logKzz_file}_Z{Z_file}_CtoO{CtoO_file}.dat', 'w')
+		out.write('# wavelength(um) flux(erg/s/cm2/A)  \n')
+		for i in range(len(out_convolve_spectrum['wl_conv'])):
+			out.write('%11.7f %17.6E \n' %(out_convolve_spectrum['wl_conv'][i], out_convolve_spectrum['flux_conv'][i]))
+		out.close()
+		
+
+	# output dictionary
+	out = {'wl': syn_spectrum['wavelength'], 'flux': syn_spectrum['flux'], 'wl_conv': out_convolve_spectrum['wl_conv'], 
+		   'flux_conv': out_convolve_spectrum['flux_conv'], 'wl_conv_resam': wl_spectra, 'flux_conv_resam': flux_conv_resam}
+	if distance is not None:
+		out['flux_scaled'] = flux_scaled
+		out['flux_conv_scaled'] = flux_conv_scaled
+		out['flux_conv_scaled_resam'] = flux_conv_scaled_resam
 
 	return out
