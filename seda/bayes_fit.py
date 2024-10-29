@@ -91,6 +91,7 @@ def bayes(my_bayes):
 	print(f'      Z range = {Z_range_prior}')
 	print(f'      CtoO range = {CtoO_range_prior}')
 	if distance is not None: print(f'      R range = {R_range_prior}')
+	print('')
 
 	#------------------
 	def prior_transform(p):
@@ -170,10 +171,10 @@ def bayes(my_bayes):
 	with open(pickle_file, 'wb') as file:
 		# serialize and write the variable to the file
 		pickle.dump(results, file)
-	print('   nested sampling results saved successfully')
+	print('\n   nested sampling results saved successfully')
 
 	fin_time_bayes = time.time()
 	out_time_elapsed = time_elapsed(fin_time_bayes-ini_time_bayes)
-	print(f'   elapsed time running bayes_fit: {out_time_elapsed[0]} {out_time_elapsed[1]}')
+	print(f'\n   elapsed time running bayes_fit: {out_time_elapsed[0]} {out_time_elapsed[1]}')
 
 	return results
