@@ -17,13 +17,14 @@ Model Options
     :members:
 
 Chi2 Options
-++++++++++++++++
+++++++++++++
 .. autoclass:: seda.input_parameters.Chi2Options
     :members:
 
 Bayes Options
-+++++++++++++++++
-
++++++++++++++
+.. autoclass:: seda.input_parameters.BayesOptions
+    :members:
 
 Chi2 Fit
 --------
