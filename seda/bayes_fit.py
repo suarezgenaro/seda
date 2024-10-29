@@ -50,7 +50,7 @@ def bayes(my_bayes):
 	>>> 
 	>>> # run chi-square fit
 	>>> out_bayes = seda.bayes(my_bayes)
-	    nested sampling results saved successfully
+	    Nested sampling ran successfully
 
 	Author: Genaro Suárez
 	'''
@@ -206,8 +206,8 @@ def bayes(my_bayes):
 	with open(pickle_file, 'wb') as file:
 		# serialize and write the variable to the file
 		pickle.dump(results, file)
-	print('\n   nested sampling results saved successfully')
 
+	print('\nNested sampling ran successfully')
 	fin_time_bayes = time.time()
 	out_time_elapsed = time_elapsed(fin_time_bayes-ini_time_bayes)
 	print(f'\n   elapsed time running bayes_fit: {out_time_elapsed[0]} {out_time_elapsed[1]}')
