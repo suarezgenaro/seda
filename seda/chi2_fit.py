@@ -1,4 +1,5 @@
 import numpy as np
+from tqdm import tqdm
 import time
 import os
 #from subprocess import check_output # unlike os.system, check_output works in Windows as well
@@ -232,10 +233,13 @@ def chi2(my_chi2):
 		flux_array_model_conv = np.zeros((len(spectra_name), N_modelpoints))
 
 		# read model spectra to the required resolution
-		ini_time_model_conv = time.time() # to estimate the time elapsed doing the convolution
-		print(f'\n   {len(spectra_name)} model spectra to be convolved')
+		print(f'\n   convolving the {len(spectra_name)} selected model spectra...')
+
+		# Create a tqdm progress bar
+		progress_bar = tqdm(total=len(spectra_name), desc="Processing")
 		for i in range(len(spectra_name)):
-			print(f'      convolution {i+1}/{len(spectra_name)}')
+			# update the progress bar
+			progress_bar.update(1)		
 
 			out_read_model_spectrum = read_model_spectrum(spectra_name_full=spectra_name_full[i], model=model, model_wl_range=model_wl_range)
 			wl_model = out_read_model_spectrum['wl_model']
@@ -260,16 +264,14 @@ def chi2(my_chi2):
 																		 convolve_wl_range=np.array((wl_model[mask_conv].min(), wl_model[mask_conv].max()))) # convolve model spectrum
 					flux_model_conv[mask_conv] = out_convolve_spectrum['flux_conv']
 
-			if i==2:
-				fin_time_model_conv = time.time()
-				out_time_elapsed = time_elapsed(fin_time_model_conv-ini_time_model_conv)
-				print(f'      elapsed time convolving the first three spectra: {out_time_elapsed[0]} {out_time_elapsed[1]}')
-
 			# store wavelengths and fluxes for each synthetic spectrum
 			wl_array_model[i,:wl_model.size] = wl_model # original wavelengths
 			flux_array_model[i,:wl_model.size] = flux_model # original fluxes
 			wl_array_model_conv[i,:wl_model.size] = wl_model_conv # convolved wavelengths
 			flux_array_model_conv[i,:wl_model.size] = flux_model_conv # convolved fluxes
+
+		# Close the progress bar
+		progress_bar.close()
 
 		##################################################
 		# synthetic photometry from model spectra before reddening them
