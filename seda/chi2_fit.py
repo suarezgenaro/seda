@@ -1,15 +1,14 @@
 import numpy as np
-from tqdm.auto import tqdm
 import time
 import os
-#from subprocess import check_output # unlike os.system, check_output works in Windows as well
 import astropy.units as u
 import pickle
-from .utils import *
+from tqdm.auto import tqdm
 from astropy.io import ascii
 from astropy.table import vstack
 from lmfit import Minimizer, minimize, Parameters, report_fit # model fit for non-linear least-squares problems
 from sys import exit
+from .utils import *
 
 def chi2(my_chi2):
 	'''
