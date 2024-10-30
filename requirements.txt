@@ -6,5 +6,6 @@ matplotlib
 numpy 
 scipy
 spectres
+lmfit
 xarray
 # dust_extinction
