@@ -148,13 +148,13 @@ def plot_chi2_fit(pickle_file, N_best_fits=1, ylog=True):
 		ax[0].set_title('Sonora Diamondback Atmospheric Models')
 	if model=='Sonora_Elf_Owl':
 		ax[0].set_title('Sonora Elf Owl Atmospheric Models')
-	if model=='LB23_all':
+	if model=='LB23':
 		ax[0].set_title('Lacy & Burrows (2023) Atmospheric Models')
 	if model=='Sonora_Cholla':
 		ax[0].set_title('Sonora Cholla Atmospheric Models')
 	if model=='Sonora_Bobcat':
 		ax[0].set_title('Sonora Bobcat Atmospheric Models')
-	if model=='ATMO2020_all':
+	if model=='ATMO2020':
 		ax[0].set_title('ATMO 2020 Atmospheric Models')
 	if ((model=='ATMO2020_CEQ') & (model=='ATMO2020_NEQ_weak') & (model=='ATMO2020_NEQ_strong')):
 		ax[0].set_title('ATMO 2020 Atmospheric Models ('+model[9:]+')')

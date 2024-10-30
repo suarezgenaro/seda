@@ -4,6 +4,7 @@ import numpy as np
 from astropy.io import ascii
 from scipy.interpolate import RegularGridInterpolator
 #from .bayes_fit import *
+from .chi2_fit import *
 import time
 import os
 import xarray
@@ -88,6 +89,37 @@ def time_elapsed(time):
 	if (time>=3600): ftime, unit = np.round(time/3600.,1), 'hr' # s
 
 	return ftime, unit
+
+##########################
+def model_datapoints(model):
+	'''
+	Description:
+	------------
+		Maximum number of data points in model spectra.
+
+	Parameters:
+	-----------
+	- model : str
+		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
+
+	Returns:
+	--------
+	- N_modelpoints: int
+		Maximum number of model spectra.
+
+	Author: Genaro Suárez
+	'''
+
+	if (model == 'Sonora_Diamondback'):	N_modelpoints = 385466 # number of rows in model spectra (all spectra have the same length)
+	if (model == 'Sonora_Elf_Owl'):	N_modelpoints = 193132 # number of rows in model spectra (all spectra have the same length)
+	if (model == 'LB23'): N_modelpoints = 30000 # maximum number of rows in model spectra
+	if (model == 'Sonora_Cholla'): N_modelpoints = 110979 # maximum number of rows in spectra of the grid
+	if (model == 'Sonora_Bobcat'): N_modelpoints = 362000 # maximum number of rows in spectra of the grid
+	if (model == 'ATMO2020'): N_modelpoints = 5000 # maximum number of rows of the ATMO2020 model spectra
+	if (model == 'BT-Settl'): N_modelpoints = 1291340 # maximum number of rows of the BT-Settl model spectra
+	if (model == 'SM08'): N_modelpoints = 184663 # rows of the SM08 model spectra
+
+	return N_modelpoints
 
 ##########################
 # read spectra
@@ -192,7 +224,7 @@ def best_chi2_fits(pickle_file, N_best_fits=1):
 	model = out_chi2['model']
 	res = out_chi2['res']#[0] # resolution for the first input spectrum
 	lam_res = out_chi2['lam_res']#[0] # wavelength reference for the first input spectrum
-	N_rows_model = out_chi2['N_rows_model']
+	N_modelpoints = out_chi2['N_modelpoints']
 	fit_wl_range = out_chi2['fit_wl_range'][0] # for the first input spectrum
 	spectra_name_full = out_chi2['spectra_name_full']
 	spectra_name = out_chi2['spectra_name']
@@ -207,16 +239,16 @@ def best_chi2_fits(pickle_file, N_best_fits=1):
 	spectra_name_best = spectra_name[sort_ind][:N_best_fits]
 
 	# read best fits
-	wl_model = np.zeros((N_rows_model, N_best_fits))
-	flux_model = np.zeros((N_rows_model, N_best_fits))
+	wl_model = np.zeros((N_modelpoints, N_best_fits))
+	flux_model = np.zeros((N_modelpoints, N_best_fits))
 	for i in range(N_best_fits):
 		out_read_model_spectrum = read_model_spectrum(spectra_name_full_best[i], model)
 		wl_model[:,i] = out_read_model_spectrum['wl_model']
 		flux_model[:,i] = scaling_fit_best[i] * out_read_model_spectrum['flux_model'] # scaled fluxes
 
 	# convolve spectrum
-	wl_model_conv = np.zeros((N_rows_model, N_best_fits))
-	flux_model_conv = np.zeros((N_rows_model, N_best_fits))
+	wl_model_conv = np.zeros((N_modelpoints, N_best_fits))
+	flux_model_conv = np.zeros((N_modelpoints, N_best_fits))
 	for i in range(N_best_fits):
 		out_convolve_spectrum = convolve_spectrum(wl=wl_model[:,i], flux=flux_model[:,i], lam_res=lam_res, res=res, disp_wl_range=fit_wl_range)
 		wl_model_conv[:,i] = out_convolve_spectrum['wl_conv']
@@ -316,15 +348,18 @@ def interpol_Sonora_Elf_Owl(Teff_interpol, logg_interpol, logKzz_interpol, Z_int
 
 ##################################################
 # to read the grid considering Teff and logg desired ranges
-def read_grid(model, Teff_range, logg_range, convolve=True, wl_range=None):
+def read_grid_Sonora_Elf_Owl(model, model_dir, Teff_range, logg_range, convolve=True, wl_range=None):
 	'''
 	model : desired atmospheric model
+	model_dir : str or list
+		Path to the directory (str or list) or directories (as a list) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
+		Avoid using paths with null spaces. 
 	Teff_range : float array, necessary when grid is not provided
 		minimum and maximum Teff values to select a subsample of the model grid. Such subset will allow faster interpolation than when reading the whole grid.
 	logg_range : float array, necessary when grid is not provided
 		minimum and maximum Teff values to select a subsample of the model grid. Such subset will allow faster interpolation than when reading the whole grid.
 	convolve : bool
-		if T rue (default), the synthetic spectra will be convolved to the indicated R at lam_R
+		if True (default), the synthetic spectra will be convolved to the indicated ``res`` at ``lam_res``
 	wl_range : float array (optional)
 		minimum and maximum wavelength values to read from model grid
 
@@ -336,7 +371,12 @@ def read_grid(model, Teff_range, logg_range, convolve=True, wl_range=None):
 #	lam_R : float, mandatory if convolve is True
 #		wavelength reference (default 2 um) to estimate the spectral resolution of model spectra considering R
 
-	print('\n   reading model grid...')
+	print('\nreading model grid...')
+
+	# read models in the input folders
+	out_select_model_spectra = select_model_spectra(Teff_range=Teff_range, logg_range=logg_range, model=model, model_dir=model_dir)
+	spectra_name_full = out_select_model_spectra['spectra_name_full']
+	spectra_name = out_select_model_spectra['spectra_name']
 
 	# all parameters's steps in the grid
 	out_grid_ranges = grid_ranges(model)
@@ -356,19 +396,18 @@ def read_grid(model, Teff_range, logg_range, convolve=True, wl_range=None):
 	logg_grid = logg_grid[mask_logg]
 
 	# read the grid in the constrained ranges
-	# make N-D coordinate arrays
-	Teff_mesh, logg_mesh, logKzz_mesh, Z_mesh, CtoO_mesh = np.meshgrid(Teff_grid, logg_grid, logKzz_grid, Z_grid, CtoO_grid, indexing='ij', sparse=True)
 
-	path = '/home/gsuarez/TRABAJO/MODELS/atmosphere_models/'
-	spectra = 'Sonora_Elf_Owl/spectra/'
-	ini_time_interpol = time.time() # to estimate the time elapsed running interpol
-	
-	N_datapoints = 193132
-	flux_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), N_datapoints)) # to save the flux at each grid point
-	wl_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), N_datapoints)) # to save the wavelength at each grid point
+#	# make N-D coordinate arrays
+#	Teff_mesh, logg_mesh, logKzz_mesh, Z_mesh, CtoO_mesh = np.meshgrid(Teff_grid, logg_grid, logKzz_grid, Z_grid, CtoO_grid, indexing='ij', sparse=True)
+#
+	ini_time_grid = time.time() # to estimate the time elapsed reading the grid
+
+	N_modelpoints = model_datapoints(model)
+	flux_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), N_modelpoints)) # to save the flux at each grid point
+	wl_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), N_modelpoints)) # to save the wavelength at each grid point
 	
 	k = 0
-	for i_Teff in range(Teff_grid.size): # iterate Teff
+	for i_Teff in range(len(Teff_grid)): # iterate Teff
 		for i_logg in range(len(logg_grid)): # iterate logg
 			for i_logKzz in range(len(logKzz_grid)): # iterate logKzz
 				for i_Z in range(len(Z_grid)): # iterate Z
@@ -385,26 +424,15 @@ def read_grid(model, Teff_range, logg_range, convolve=True, wl_range=None):
 						if (logg_grid[i_logg]==5.00): g_grid = 1000.0
 						if (logg_grid[i_logg]==5.25): g_grid = 1780.0
 						if (logg_grid[i_logg]==5.50): g_grid = 3160.0
-						
-						# indicate the folder containing the spectra depending on the Teff value
-						if ((Teff_grid[i_Teff]>=275) & (Teff_grid[i_Teff]<=325)): folder='output_275.0_325.0/'
-						if ((Teff_grid[i_Teff]>=350) & (Teff_grid[i_Teff]<=400)): folder='output_350.0_400.0/'
-						if ((Teff_grid[i_Teff]>=425) & (Teff_grid[i_Teff]<=475)): folder='output_425.0_475.0/'
-						if ((Teff_grid[i_Teff]>=500) & (Teff_grid[i_Teff]<=550)): folder='output_500.0_550.0/'
-						if ((Teff_grid[i_Teff]>=575) & (Teff_grid[i_Teff]<=650)): folder='output_575.0_650.0/'
-						if ((Teff_grid[i_Teff]>=700) & (Teff_grid[i_Teff]<=800)): folder='output_700.0_800.0/'
-						if ((Teff_grid[i_Teff]>=850) & (Teff_grid[i_Teff]<=950)): folder='output_850.0_950.0/'
-						if ((Teff_grid[i_Teff]>=1000) & (Teff_grid[i_Teff]<=1200)): folder='output_1000.0_1200.0/'
-						if ((Teff_grid[i_Teff]>=1300) & (Teff_grid[i_Teff]<=1500)): folder='output_1300.0_1400.0/'
-						if ((Teff_grid[i_Teff]>=1600) & (Teff_grid[i_Teff]<=1800)): folder='output_1600.0_1800.0/'
-						if ((Teff_grid[i_Teff]>=1900) & (Teff_grid[i_Teff]<=2100)): folder='output_1900.0_2100.0/'
-						if ((Teff_grid[i_Teff]>=2200) & (Teff_grid[i_Teff]<=2400)): folder='output_2200.0_2400.0/'
-						
+
+						# name of spectrum with parameters in the iteration
 						spectrum_name = f'spectra_logzz_{logKzz_grid[i_logKzz]}_teff_{Teff_grid[i_Teff]}_grav_{g_grid}_mh_{Z_grid[i_Z]}_co_{CtoO_grid[i_CtoO]}.nc'
-						
-						if os.path.exists(path+spectra+folder+spectrum_name):
+						# look into the selected spectra to find the full path for the spectrum above
+						spectrum_name_full = [x for x in spectra_name_full if x.endswith(spectrum_name)][0]
+
+						if spectrum_name_full: # if there is a spectrum with the parameters in the iteration
 							# read spectrum from each combination of parameters
-							spec_model = xarray.open_dataset(path+spectra+folder+spectrum_name) # Sonora Elf Owl model spectra have NetCDF Data Format data
+							spec_model = xarray.open_dataset(spectrum_name_full) # Sonora Elf Owl model spectra have NetCDF Data Format data
 							wl_model = spec_model['wavelength'].data # um 
 							flux_model = spec_model['flux'].data # erg/s/cm^2/cm
 							flux_model = flux_model / 1.e8 # erg/s/cm^2/Angstrom
@@ -436,11 +464,11 @@ def read_grid(model, Teff_range, logg_range, convolve=True, wl_range=None):
 #	if wl_range is not None:
 #		mask = (wl_model>=wl_range[0]) & (wl_model<=wl_range[1])
 
-	fin_time_interpol = time.time()
-	time_interpol = fin_time_interpol-ini_time_interpol # in seconds
-	out_time_elapsed = time_elapsed(fin_time_interpol-ini_time_interpol)
-	print(f'      {k} spectra in memory to define a grid for interpolations')
-	print(f'         elapsed time: {out_time_elapsed[0]} {out_time_elapsed[1]}')
+	fin_time_grid = time.time()
+	time_grid = fin_time_grid-ini_time_grid # in seconds
+	out_time_elapsed = time_elapsed(fin_time_grid-ini_time_grid)
+	print(f'   {k} spectra in memory to define a grid for interpolations')
+	print(f'      elapsed time: {out_time_elapsed[0]} {out_time_elapsed[1]}')
 
 	out = {'wavelength': wl_grid, 'flux': flux_grid, 'Teff': Teff_grid, 'logg': logg_grid, 'logKzz': logKzz_grid, 'Z': Z_grid, 'CtoO': CtoO_grid}
 

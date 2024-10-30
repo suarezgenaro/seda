@@ -36,7 +36,7 @@ def chi2(my_chi2):
 			- ``res``: input ``res``.
 			- ``lam_res``: input ``lam_res``.
 			- ``fit_wl_range``: input ``fit_wl_range``.
-			- ``N_rows_model``: maximum number of data points in original model spectra.
+			- ``N_modelpoints``: maximum number of data points in original model spectra.
 			- ``out_lmfit``: output of the ``minner.minimize`` module that minimizes chi2.
 			- ``iterations_fit``: number of iterations to minimize chi-square.
 			- ``Av_fit``: visual extinction (in mag) that minimizes chi-square.
@@ -219,17 +219,17 @@ def chi2(my_chi2):
 			fil_phot[i] = filter_phot[i].split('_')[1]
 
 	# read the maximum number of data points in model spectra
-	N_rows_model = Ndata_model_spectra(model)
+	N_modelpoints = model_datapoints(model)
 
 	#+++++++++++++++++++++++++++++++++
 	if (skip_convolution=='no'): # it is possible to skip the convolution of model spectra (the slowest process in the code), 
 								 # only when comparing photometry and when synthetic magnitudes are precomputed
 		# array for model spectra
-		wl_array_model = np.zeros((len(spectra_name), N_rows_model))
-		flux_array_model = np.zeros((len(spectra_name), N_rows_model))
+		wl_array_model = np.zeros((len(spectra_name), N_modelpoints))
+		flux_array_model = np.zeros((len(spectra_name), N_modelpoints))
 		# array for convolved model spectra
-		wl_array_model_conv = np.zeros((len(spectra_name), N_rows_model))
-		flux_array_model_conv = np.zeros((len(spectra_name), N_rows_model))
+		wl_array_model_conv = np.zeros((len(spectra_name), N_modelpoints))
+		flux_array_model_conv = np.zeros((len(spectra_name), N_modelpoints))
 
 		# read model spectra to the required resolution
 		ini_time_model_conv = time.time() # to estimate the time elapsed doing the convolution
@@ -683,7 +683,7 @@ def chi2(my_chi2):
 		eradius = eradius / 0.102763 # in Rjup
 
 	out_chi2 = {'model': model, 'spectra_name_full': spectra_name_full, 'spectra_name': spectra_name, 'Teff_range': Teff_range, 'logg_range': logg_range, 
-				'res': res, 'lam_res': lam_res, 'fit_wl_range': fit_wl_range, 'N_rows_model': N_rows_model, 'out_lmfit': out_lmfit, 'iterations_fit': iterations_fit, 
+				'res': res, 'lam_res': lam_res, 'fit_wl_range': fit_wl_range, 'N_modelpoints': N_modelpoints, 'out_lmfit': out_lmfit, 'iterations_fit': iterations_fit, 
 				'Av_fit': Av_fit, 'eAv_fit': eAv_fit, 'scaling_fit': scaling_fit, 'escaling_fit': escaling_fit, 'chi2_wl_fit': chi2_wl_fit, 
 				'chi2_red_wl_fit': chi2_red_wl_fit, 'chi2_fit': chi2_fit, 'chi2_red_fit': chi2_red_fit, 'weight_fit': weight_fit}
 
@@ -788,16 +788,17 @@ def select_model_spectra(Teff_range, logg_range, model, model_dir):
 	files_short = [] # only spectra names
 	for i in range(len(model_dir)):
 		files_model_dir = os.listdir(model_dir[i])
+		files_model_dir.sort() # just to sort the files wrt their names
 		for file in files_model_dir:
 			files.append(model_dir[i]+file)
 			files_short.append(file)
 
-	# select spectra within the desired Teff and logg ranges
 	# read Teff and logg from each model spectrum
 	out_separate_params = separate_params(files_short, model)
 	spectra_name_Teff = out_separate_params['Teff']
 	spectra_name_logg = out_separate_params['logg']
 
+	# select spectra within the desired Teff and logg ranges
 	spectra_name_full = [] # full name with path
 	spectra_name = [] # only spectra names
 	for i in range(len(files)):
@@ -813,42 +814,11 @@ def select_model_spectra(Teff_range, logg_range, model, model_dir):
 	#--------------
 
 	if len(spectra_name_full)==0: print('   ERROR: NO SYNTHETIC SPECTRA IN THE INDICATED PARAMETER RANGES'), exit() # show up an error when there are no models in the indicated ranges
-	else: print(f'   {len(spectra_name)} model spectra will be compared')
+	else: print(f'   {len(spectra_name)} selected model spectra within the indicated Teff and logg ranges')
 
 	out = {'spectra_name_full': np.array(spectra_name_full), 'spectra_name': np.array(spectra_name)}
 
 	return out
-
-##########################
-def Ndata_model_spectra(model):
-	'''
-	Description:
-	------------
-		Maximum number of data points in model spectra.
-
-	Parameters:
-	-----------
-	- model : str
-		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
-
-	Returns:
-	--------
-	- N_rows_model: int
-		Maximum number of model spectra.
-
-	Author: Genaro Suárez
-	'''
-
-	if (model == 'Sonora_Diamondback'):	N_rows_model = 385466 # number of rows in model spectra (all spectra have the same length)
-	if (model == 'Sonora_Elf_Owl'):	N_rows_model = 193132 # number of rows in model spectra (all spectra have the same length)
-	if (model == 'LB23'): N_rows_model = 30000 # maximum number of rows in model spectra
-	if (model == 'Sonora_Cholla'): N_rows_model = 110979 # maximum number of rows in spectra of the grid
-	if (model == 'Sonora_Bobcat'): N_rows_model = 362000 # maximum number of rows in spectra of the grid
-	if (model == 'ATMO2020'): N_rows_model = 5000 # maximum number of rows of the ATMO2020 model spectra
-	if (model == 'BT-Settl'): N_rows_model = 1291340 # maximum number of rows of the BT-Settl model spectra
-	if (model == 'SM08'): N_rows_model = 184663 # rows of the SM08 model spectra
-
-	return N_rows_model
 
 ##########################
 def chi_square(params, data, edata, model, extinction_curve, weight):
@@ -962,7 +932,7 @@ def separate_params(spectra_name, model):
 			# Teff 
 			Teff_fit[i] = float(spectra_name[i].split('_')[4]) # in K
 			# logg
-			logg_fit[i] = np.log10(float(spectra_name[i].split('_')[6])) + 2 # g in cgs
+			logg_fit[i] = round_logg_point25(np.log10(float(spectra_name[i].split('_')[6])) + 2) # g in cgs
 			# logKzz
 			logKzz_fit[i] = float(spectra_name[i].split('_')[2]) # Kzz in cgs
 			# Z
@@ -1000,7 +970,7 @@ def separate_params(spectra_name, model):
 			# Teff 
 			Teff_fit[i] = float(spectra_name[i].split('_')[0][:-1]) 
 			# logg
-			logg_fit[i] = round(np.log10(float(spectra_name[i].split('_')[1][:-1])),1)+2
+			logg_fit[i] = round(np.log10(float(spectra_name[i].split('_')[1][:-1])),1) + 2
 			# logKzz
 			logKzz_fit[i] = float(spectra_name[i].split('_')[2].split('.')[0][-1])
 		out['Teff']= Teff_fit
@@ -1070,6 +1040,12 @@ def separate_params(spectra_name, model):
 		out['fsed']= fsed_fit
 
 	return out
+
+##########################
+# round logg to steps of 0.25
+def round_logg_point25(logg):
+	logg = round(logg*4.) / 4. 
+	return logg
 
 ##########################
 def save_params(dict_for_table):

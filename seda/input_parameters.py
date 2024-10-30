@@ -137,10 +137,10 @@ class ModelOptions:
 				Parameter coverage: 
 					- wavelength = [0.6, 15] um
 					- Teff = [275, 2400] K in steps: 25 K for 275-600 K, 50 K for 600-1000 K, and 100 K for 1000-2400 K
-					- logg = [3.25, 5.50] in steps of 0.25 dex
+					- logg = [3.25, 5.50] in steps of 0.25 dex plus logg=3.0 for Teff=[275-2000], logKzz=8, [M/H]=1.0, and C/O=1.0.
 					- logKzz = 2, 4, 7, 8, and 9 (Kzz in cm2/s)
-					- [M/H] = [-1.0, 1.0] (cgs) with values of -1.0, -0.5, +0.0, +0.5, +0.7, and +1.0
-					- C/O = [0.5, 2.5] with steps of 0.5 (relative to solar C/O, assumed as 0.458) (these are the values in the filenames). It corresponds to C/O=[0.22, 1.12] with values of 0.22, 0.458, 0.687, and 1.12 (e.g. 0.5 in the filename means 0.5*0.458=0.22)
+					- [M/H] = -1.0, -0.5, +0.0, +0.5, +0.7, and +1.0 (cgs)
+					- C/O = 0.5, 1.0, 1.5, and 2.5 (relative to solar C/O, assumed as 0.458) (these are the values in the filenames). It corresponds to C/O=[0.22, 1.12] with values of 0.22, 0.458, 0.687, and 1.12 (e.g. 0.5 in the filename means 0.5*0.458=0.22)
 			- ``'LB23'`` : cloudy (water clouds) atmospheric models with equilibrium and non-equilibrium chemistry for Y-dwarf atmospheres by Lacy & Burrows (2023).
 				Parameter coverage in common for all grids:
 					- wavelength = [0.5, 300] um with 30,000 frequency points evenly spaced in ln(frequency)
@@ -243,6 +243,9 @@ class ModelOptions:
 		# when only one directory with models is given
 		if not isinstance(model_dir, list): model_dir = [model_dir]
 		self.model_dir = model_dir
+
+		# get number of model data points
+		self.N_modelpoints = model_datapoints(model)
 
 		print('\nModel options loaded successfully')
 
@@ -502,11 +505,13 @@ class BayesOptions:
 		self.logg_range = my_model.logg_range
 		self.R_range = my_model.R_range
 		self.model_dir = my_model.model_dir
+		self.N_modelpoints = my_model.N_modelpoints
 
 		# extract parameters for convenience
 		N_spectra = my_data.N_spectra
 		wl_spectra = my_data.wl_spectra
 		model = my_model.model
+		model_dir = my_model.model_dir
 		Teff_range = my_model.Teff_range
 		logg_range = my_model.logg_range
 		R_range = my_model.R_range
@@ -602,7 +607,8 @@ class BayesOptions:
 		if grid is None: 
 			if Teff_range is None: print('Please provide the Teff_range parameter'), exit()
 			if logg_range is None: print('Please provide the logg_range parameter'), exit()
-			grid = read_grid(model=model, Teff_range=Teff_range, logg_range=logg_range)
+			if model=='Sonora_Elf_Owl':
+				grid = read_grid_Sonora_Elf_Owl(model=model, model_dir=model_dir, Teff_range=Teff_range, logg_range=logg_range)
 		self.grid = grid
 
 		print('\nBayes fit options loaded successfully')
