@@ -1,5 +1,5 @@
 import numpy as np
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import time
 import os
 #from subprocess import check_output # unlike os.system, check_output works in Windows as well
@@ -233,10 +233,9 @@ def chi2(my_chi2):
 		flux_array_model_conv = np.zeros((len(spectra_name), N_modelpoints))
 
 		# read model spectra to the required resolution
-		print(f'\n   convolving the {len(spectra_name)} selected model spectra...')
-
+		#print(f'\n   convolving the {len(spectra_name)} selected model spectra...')
 		# Create a tqdm progress bar
-		progress_bar = tqdm(total=len(spectra_name), desc="Processing")
+		progress_bar = tqdm(total=len(spectra_name), desc='Convolving the spectra')
 		for i in range(len(spectra_name)):
 			# update the progress bar
 			progress_bar.update(1)		
@@ -816,7 +815,7 @@ def select_model_spectra(Teff_range, logg_range, model, model_dir):
 	#--------------
 
 	if len(spectra_name_full)==0: print('   ERROR: NO SYNTHETIC SPECTRA IN THE INDICATED PARAMETER RANGES'), exit() # show up an error when there are no models in the indicated ranges
-	else: print(f'   {len(spectra_name)} selected model spectra within the indicated Teff and logg ranges')
+	else: print(f'   {len(spectra_name)} model spectra selected within the indicated Teff and logg ranges')
 
 	out = {'spectra_name_full': np.array(spectra_name_full), 'spectra_name': np.array(spectra_name)}
 
