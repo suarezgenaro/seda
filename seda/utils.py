@@ -703,7 +703,7 @@ def select_model_spectra(Teff_range, logg_range, model, model_dir):
 	#--------------
 
 	if len(spectra_name_full)==0: print('   ERROR: NO SYNTHETIC SPECTRA IN THE INDICATED PARAMETER RANGES'), exit() # show up an error when there are no models in the indicated ranges
-	else: print(f'\n   {len(spectra_name)} model spectra selected with Teff=[{Teff_range[0]}, {Teff_range[1]}] and logg=[{logg_range[0]}, {logg_range[1]}]')
+	else: print(f'\n      {len(spectra_name)} model spectra selected with Teff=[{Teff_range[0]}, {Teff_range[1]}] and logg=[{logg_range[0]}, {logg_range[1]}]')
 
 	out = {'spectra_name_full': np.array(spectra_name_full), 'spectra_name': np.array(spectra_name)}
 

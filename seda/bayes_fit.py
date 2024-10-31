@@ -56,7 +56,7 @@ def bayes(my_bayes):
 	'''
 
 	ini_time_bayes = time.time()
-	print('\nEstimate Bayesian posteriors')
+	print('\n   Estimate Bayesian posteriors')
 
 	# load input parameters
 	# all are stored in my_chi2 but were defined in different classes
@@ -119,13 +119,13 @@ def bayes(my_bayes):
 		eflux_spectra[l:wl_spectra_list[k].size+l] = eflux_spectra_list[k] # add flux errors of each input spectrum
 		l += wl_spectra_list[k].size # counter to indicate the minimum index
 
-	print(f'\n   Uniform priors:')
-	print(f'      Teff range = {Teff_range_prior}')
-	print(f'      logg range = {logg_range_prior}')
-	print(f'      logKzz range = {logKzz_range_prior}')
-	print(f'      Z range = {Z_range_prior}')
-	print(f'      CtoO range = {CtoO_range_prior}')
-	if distance is not None: print(f'      R range = {R_range_prior}')
+	print(f'\n      Uniform priors:')
+	print(f'         Teff range = {Teff_range_prior}')
+	print(f'         logg range = {logg_range_prior}')
+	print(f'         logKzz range = {logKzz_range_prior}')
+	print(f'         Z range = {Z_range_prior}')
+	print(f'         CtoO range = {CtoO_range_prior}')
+	if distance is not None: print(f'         R range = {R_range_prior}')
 	print('')
 
 	#------------------
@@ -207,9 +207,9 @@ def bayes(my_bayes):
 		# serialize and write the variable to the file
 		pickle.dump(results, file)
 
-	print('\nNested sampling ran successfully')
+	print('\n   Nested sampling ran successfully')
 	fin_time_bayes = time.time()
 	out_time_elapsed = time_elapsed(fin_time_bayes-ini_time_bayes)
-	print(f'\n   elapsed time running bayes_fit: {out_time_elapsed[0]} {out_time_elapsed[1]}')
+	print(f'\n      elapsed time running bayes_fit: {out_time_elapsed[0]} {out_time_elapsed[1]}')
 
 	return results

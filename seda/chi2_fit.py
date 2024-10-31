@@ -104,7 +104,7 @@ def chi2(my_chi2):
 	'''
 
 	ini_time_chi2 = time.time() # to estimate the time elapsed running chi2
-	print('\nRunning chi-square fitting...')
+	print('\n   Running chi-square fitting...')
 
 	# load input parameters
 	# all are stored in my_chi2 but were defined in different classes
@@ -749,10 +749,10 @@ def chi2(my_chi2):
 		# save table with model spectra names sorted by chi square along with the parameters from each spectrum
 		out_save_params = save_params(dict_for_table=out_chi2)
 
-	print('\nChi square fit ran successfully')
+	print('\n   Chi square fit ran successfully')
 	fin_time_chi2 = time.time()
 	out_time_elapsed = time_elapsed(fin_time_chi2-ini_time_chi2)
-	print(f'   elapsed time running chi2_fit: {out_time_elapsed[0]} {out_time_elapsed[1]}')
+	print(f'      elapsed time running chi2_fit: {out_time_elapsed[0]} {out_time_elapsed[1]}')
 
 	return out_chi2
 
