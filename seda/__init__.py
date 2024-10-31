@@ -1,5 +1,5 @@
 from .input_parameters import *
-from .bayes_fit import *
-from .chi2_fit import *
 from .plots import *
 from .utils import *
+from .chi2_fit import *
+from .bayes_fit import *

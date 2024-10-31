@@ -1,13 +1,12 @@
 # Useful function for SEDA
 
 import numpy as np
-from astropy.io import ascii
-from scipy.interpolate import RegularGridInterpolator
-#from .bayes_fit import *
-from .chi2_fit import *
 import time
 import os
 import xarray
+from astropy.io import ascii
+from scipy.interpolate import RegularGridInterpolator
+from tqdm.auto import tqdm
 from sys import exit
 
 ##########################
@@ -91,11 +90,11 @@ def time_elapsed(time):
 	return ftime, unit
 
 ##########################
-def model_datapoints(model):
+def model_points(model):
 	'''
 	Description:
 	------------
-		Maximum number of data points in model spectra.
+		Maximum number of data points in the model spectra.
 
 	Parameters:
 	-----------
@@ -105,7 +104,7 @@ def model_datapoints(model):
 	Returns:
 	--------
 	- N_modelpoints: int
-		Maximum number of model spectra.
+		Maximum number of data points in the model spectra.
 
 	Author: Genaro Suárez
 	'''
@@ -371,7 +370,7 @@ def read_grid_Sonora_Elf_Owl(model, model_dir, Teff_range, logg_range, convolve=
 #	lam_R : float, mandatory if convolve is True
 #		wavelength reference (default 2 um) to estimate the spectral resolution of model spectra considering R
 
-	print('\nreading model grid...')
+#	print('\nreading model grid...')
 
 	# read models in the input folders
 	out_select_model_spectra = select_model_spectra(Teff_range=Teff_range, logg_range=logg_range, model=model, model_dir=model_dir)
@@ -402,16 +401,21 @@ def read_grid_Sonora_Elf_Owl(model, model_dir, Teff_range, logg_range, convolve=
 #
 	ini_time_grid = time.time() # to estimate the time elapsed reading the grid
 
-	N_modelpoints = model_datapoints(model)
+	N_modelpoints = model_points(model)
 	flux_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), N_modelpoints)) # to save the flux at each grid point
 	wl_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), N_modelpoints)) # to save the wavelength at each grid point
 	
+	# create a tqdm progress bar
+	grid_bar = tqdm(total=len(spectra_name), desc='Making a grid with the model spectra')
 	k = 0
 	for i_Teff in range(len(Teff_grid)): # iterate Teff
 		for i_logg in range(len(logg_grid)): # iterate logg
 			for i_logKzz in range(len(logKzz_grid)): # iterate logKzz
 				for i_Z in range(len(Z_grid)): # iterate Z
 					for i_CtoO in range(len(CtoO_grid)): # iterate C/O ration
+						# update the progress bar
+						grid_bar.update(1)
+
 						# read the spectrum for each parameter combination
 						# file name uses g instead of logg
 						if (logg_grid[i_logg]==3.25): g_grid = 17.0
@@ -459,6 +463,8 @@ def read_grid_Sonora_Elf_Owl(model, model_dir, Teff_range, logg_range, convolve=
 						else:
 						    print(f'There is no spectrum: {spectrum_name}') # no spectrum with that name
 						k += 1
+	# close the progress bar
+	grid_bar.close()
 
 #	# cut the synthetic models
 #	if wl_range is not None:
@@ -467,8 +473,8 @@ def read_grid_Sonora_Elf_Owl(model, model_dir, Teff_range, logg_range, convolve=
 	fin_time_grid = time.time()
 	time_grid = fin_time_grid-ini_time_grid # in seconds
 	out_time_elapsed = time_elapsed(fin_time_grid-ini_time_grid)
-	print(f'   {k} spectra in memory to define a grid for interpolations')
-	print(f'      elapsed time: {out_time_elapsed[0]} {out_time_elapsed[1]}')
+#	print(f'   {k} spectra in memory to define a grid for interpolations')
+#	print(f'      elapsed time: {out_time_elapsed[0]} {out_time_elapsed[1]}')
 
 	out = {'wavelength': wl_grid, 'flux': flux_grid, 'Teff': Teff_grid, 'logg': logg_grid, 'logKzz': logKzz_grid, 'Z': Z_grid, 'CtoO': CtoO_grid}
 
@@ -626,3 +632,273 @@ def best_fit_sampling(wl_spectra, model, sampling_file, lam_res, res, distance=N
 		out['flux_conv_scaled_resam'] = flux_conv_scaled_resam
 
 	return out
+
+##########################
+def select_model_spectra(Teff_range, logg_range, model, model_dir):
+	'''
+	Description:
+	------------
+		Select model spectra from the indicated models and meeting the parameters ranges.
+
+	Parameters:
+	-----------
+	- Teff_range : float array
+		Minimum and maximum Teff values to select a model grid subset (e.g., ``Teff_range = np.array([Teff_min, Teff_max])``)
+	- logg_range : float array
+		Minimum and maximum logg values to select a model grid subset
+	- model : str
+		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
+	- model_dir : str or list
+		Path to the directory (str or list) or directories (as a list) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
+		
+	Returns:
+	--------
+	Dictionary with the parameters:
+		- ``spectra_name``: selected model spectra names.
+		- ``spectra_name_full``: selected model spectra names with full path.
+
+	Example:
+	--------
+	>>> import seda
+	>>> 
+	>>> model = 'Sonora_Elf_Owl'
+	>>> model_dir = ['my_path/output_575.0_650.0/', 
+	>>>              'my_path/output_700.0_800.0/'] # folders to seek model spectra
+	>>> Teff_range = np.array((700, 900)) # Teff range
+	>>> logg_range = np.array((4.0, 5.0)) # logg range
+	>>> out = seda.select_model_spectra(Teff_range=Teff_range, logg_range=logg_range,
+	>>>                                 model=model, model_dir=model_dir)
+
+	Author: Genaro Suárez
+	'''
+
+	# to store files in model_dir
+	files = [] # with full path
+	files_short = [] # only spectra names
+	for i in range(len(model_dir)):
+		files_model_dir = os.listdir(model_dir[i])
+		files_model_dir.sort() # just to sort the files wrt their names
+		for file in files_model_dir:
+			files.append(model_dir[i]+file)
+			files_short.append(file)
+
+	# read Teff and logg from each model spectrum
+	out_separate_params = separate_params(files_short, model)
+	spectra_name_Teff = out_separate_params['Teff']
+	spectra_name_logg = out_separate_params['logg']
+
+	# select spectra within the desired Teff and logg ranges
+	spectra_name_full = [] # full name with path
+	spectra_name = [] # only spectra names
+	for i in range(len(files)):
+		if ((spectra_name_Teff[i]>=Teff_range[0]) & (spectra_name_Teff[i]<=Teff_range[1]) & 
+			(spectra_name_logg[i]>=logg_range[0]) & (spectra_name_logg[i]<=logg_range[1])): # spectrum with Teff and logg within the indicated ranges
+			spectra_name_full.append(files[i]) # keep only spectra within the Teff and logg ranges
+			spectra_name.append(files_short[i]) # keep only spectra within the Teff and logg ranges
+
+	#--------------
+	# TEST to fit only a few model spectra
+	#spectra_name = spectra_name[:2]
+	#spectra_name_full = spectra_name_full[:2]
+	#--------------
+
+	if len(spectra_name_full)==0: print('   ERROR: NO SYNTHETIC SPECTRA IN THE INDICATED PARAMETER RANGES'), exit() # show up an error when there are no models in the indicated ranges
+	else: print(f'\n   {len(spectra_name)} model spectra selected with Teff=[{Teff_range[0]}, {Teff_range[1]}] and logg=[{logg_range[0]}, {logg_range[1]}]')
+
+	out = {'spectra_name_full': np.array(spectra_name_full), 'spectra_name': np.array(spectra_name)}
+
+	return out
+
+##########################
+# separate parameters from each model spectrum name
+def separate_params(spectra_name, model):
+	'''
+	Description:
+	------------
+		Extract parameters from each model spectrum name.
+
+	Parameters:
+	-----------
+	- spectra_name : array or list
+		Model spectra names.
+	- model : str
+		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
+
+	Returns:
+	--------
+	Dictionary with parameters for each model spectrum.
+		- ``Teff``: effective temperature (in K) for each model spectrum.
+		- ``logg``: surface gravity (log g) for each model spectrum.
+		- ``Z``: (if provided by ``model``) metallicity for each model spectrum.
+		- ``logKzz``: (if provided by ``model``) diffusion parameter for each model spectrum. 
+		- ``fsed``: (if provided by ``model``) cloudiness parameter for each model spectrum.
+		- ``CtoO``: (if provided by ``model``) C/O ratio for each model spectrum.
+		- ``spectra_name`` : model spectra names.
+
+	Example:
+	--------
+	>>> import seda
+	>>>
+	>>> model = 'Sonora_Elf_Owl'
+	>>> spectra_name = np.array(['spectra_logzz_4.0_teff_750.0_grav_178.0_mh_0.0_co_1.0.nc', 
+	>>>                          'spectra_logzz_2.0_teff_800.0_grav_316.0_mh_0.0_co_1.0.nc'])
+	>>> seda.separate_params(spectra_name=spectra_name, model=model)
+	    {'spectra_name': array(['spectra_logzz_4.0_teff_750.0_grav_178.0_mh_0.0_co_1.0.nc',
+	                            'spectra_logzz_2.0_teff_800.0_grav_316.0_mh_0.0_co_1.0.nc'],
+	    'Teff': array([750., 800.]),
+	    'logg': array([4.25042   , 4.49968708]),
+	    'logKzz': array([4., 2.]),
+	    'Z': array([0., 0.]),
+	    'CtoO': array([1., 1.])}
+
+	Author: Genaro Suárez
+	'''
+
+	out = {'spectra_name': spectra_name} # start dictionary with some parameters
+
+	# get parameters from model spectra names
+	if (model == 'Sonora_Diamondback'):
+		Teff_fit = np.zeros(len(spectra_name))
+		logg_fit = np.zeros(len(spectra_name))
+		Z_fit = np.zeros(len(spectra_name))
+		fsed_fit = np.zeros(len(spectra_name))
+		for i in range(len(spectra_name)):
+			# Teff 
+			Teff_fit[i] = float(spectra_name[i].split('g')[0][1:]) # in K
+			# logg
+			logg_fit[i] = round(np.log10(float(spectra_name[i].split('g')[1].split('_')[0][:-2])),1) + 2 # g in cgs
+			# Z
+			Z_fit[i] = float(spectra_name[i].split('_')[1][1:])
+			# fsed
+			fsed = spectra_name[i].split('_')[0][-1:]
+			if fsed=='c': fsed_fit[i] = 99 # 99 to indicate nc (no clouds)
+			if fsed!='c': fsed_fit[i] = float(fsed)
+		out['Teff']= Teff_fit
+		out['logg']= logg_fit
+		out['Z']= Z_fit
+		out['fsed']= fsed_fit
+	if (model == 'Sonora_Elf_Owl'):
+		Teff_fit = np.zeros(len(spectra_name))
+		logg_fit = np.zeros(len(spectra_name))
+		logKzz_fit = np.zeros(len(spectra_name))
+		Z_fit = np.zeros(len(spectra_name))
+		CtoO_fit = np.zeros(len(spectra_name))
+		for i in range(len(spectra_name)):
+			# Teff 
+			Teff_fit[i] = float(spectra_name[i].split('_')[4]) # in K
+			# logg
+			logg_fit[i] = round_logg_point25(np.log10(float(spectra_name[i].split('_')[6])) + 2) # g in cgs
+			# logKzz
+			logKzz_fit[i] = float(spectra_name[i].split('_')[2]) # Kzz in cgs
+			# Z
+			Z_fit[i] = float(spectra_name[i].split('_')[8]) # in cgs
+			# C/O
+			CtoO_fit[i] = float(spectra_name[i].split('_')[10][:-3])
+		out['Teff']= Teff_fit
+		out['logg']= logg_fit
+		out['logKzz']= logKzz_fit
+		out['Z']= Z_fit
+		out['CtoO']= CtoO_fit
+	if (model == 'LB23'):
+		Teff_fit = np.zeros(len(spectra_name))
+		logg_fit = np.zeros(len(spectra_name))
+		Z_fit = np.zeros(len(spectra_name))
+		logKzz_fit = np.zeros(len(spectra_name))
+		for i in range(len(spectra_name)):
+			# Teff 
+			Teff_fit[i] = float(spectra_name[i].split('_')[0][1:]) # K
+			# logg
+			logg_fit[i] = float(spectra_name[i].split('_')[1][1:]) # logg
+			# Z (metallicity)
+			Z_fit[i] = float(spectra_name[i].split('_')[2][1:])
+			# Kzz (radiative zone)
+			logKzz_fit[i] = np.log10(float(spectra_name[i].split('CDIFF')[1].split('_')[0])) # in cgs units
+		out['Teff']= Teff_fit
+		out['logg']= logg_fit
+		out['logKzz']= logKzz_fit
+		out['Z']= Z_fit
+	if (model == 'Sonora_Cholla'):
+		Teff_fit = np.zeros(len(spectra_name))
+		logg_fit = np.zeros(len(spectra_name))
+		logKzz_fit = np.zeros(len(spectra_name))
+		for i in range(len(spectra_name)):
+			# Teff 
+			Teff_fit[i] = float(spectra_name[i].split('_')[0][:-1]) 
+			# logg
+			logg_fit[i] = round(np.log10(float(spectra_name[i].split('_')[1][:-1])),1) + 2
+			# logKzz
+			logKzz_fit[i] = float(spectra_name[i].split('_')[2].split('.')[0][-1])
+		out['Teff']= Teff_fit
+		out['logg']= logg_fit
+		out['logKzz']= logKzz_fit
+	if (model == 'Sonora_Bobcat'):
+		Teff_fit = np.zeros(len(spectra_name))
+		logg_fit = np.zeros(len(spectra_name))
+		Z_fit = np.zeros(len(spectra_name))
+		CtoO_fit = np.zeros(len(spectra_name))
+		for i in range(len(spectra_name)):
+			# Teff 
+			Teff_fit[i] = float(spectra_name[i].split('_')[1].split('g')[0][1:])
+			# logg
+			logg_fit[i] = round(np.log10(float(spectra_name[i].split('_')[1].split('g')[1][:-2])),2) + 2
+			# Z
+			Z_fit[i] = float(spectra_name[i].split('_')[2][1:])
+			# C/O
+			if (len(spectra_name[i].split('_'))==4): # when the spectrum file name includes the C/O
+				CtoO_fit[i] = float(spectra_name[i].split('_')[3][2:])
+			if (len(spectra_name[i].split('_'))==3): # when the spectrum file name does not include the C/O
+				CtoO_fit[i] = 1.0
+		out['Teff']= Teff_fit
+		out['logg']= logg_fit
+		out['Z']= Z_fit
+		out['CtoO']= CtoO_fit
+	if (model == 'ATMO2020'):
+		Teff_fit = np.zeros(len(spectra_name))
+		logg_fit = np.zeros(len(spectra_name))
+		logKzz_fit = np.zeros(len(spectra_name))
+		for i in range(len(spectra_name)):
+			# Teff 
+			Teff_fit[i] = float(spectra_name[i].split('spec_')[1].split('_')[0][1:])
+			# logg
+			logg_fit[i] = float(spectra_name[i].split('spec_')[1].split('_')[1][2:])
+			# logKzz
+			if (spectra_name[i].split('spec_')[1].split('lg')[1][4:-4]=='NEQ_weak'): # when the grid is NEQ_weak
+				logKzz_fit[i] = 4
+			if (spectra_name[i].split('spec_')[1].split('lg')[1][4:-4]=='NEQ_strong'): # when the grid is NEQ_strong
+				logKzz_fit[i] = 6
+		out['Teff']= Teff_fit
+		out['logg']= logg_fit
+		out['logKzz']= logKzz_fit
+	if (model == 'BT-Settl'):
+		Teff_fit = np.zeros(len(spectra_name))
+		logg_fit = np.zeros(len(spectra_name))
+		for i in range(len(spectra_name)):
+			# Teff 
+			Teff_fit[i] = float(spectra_name[i].split('-')[0][3:]) * 100 # K
+			# logg
+			logg_fit[i] = float(spectra_name[i].split('-')[1]) # g in cm/s^2
+		out['Teff']= Teff_fit
+		out['logg']= logg_fit
+	if (model == 'SM08'):
+		Teff_fit = np.zeros(len(spectra_name))
+		logg_fit = np.zeros(len(spectra_name))
+		fsed_fit = np.zeros(len(spectra_name))
+		for i in range(len(spectra_name)):
+			# Teff 
+			Teff_fit[i] = float(spectra_name[i].split('_')[1].split('g')[0][1:])
+			# logg
+			logg_fit[i] = np.log10(float(spectra_name[i].split('_')[1].split('g')[1].split('f')[0])) + 2 # g in cm/s^2
+			# fsed
+			fsed_fit[i] = float(spectra_name[i].split('_')[1].split('g')[1].split('f')[1])
+		out['Teff']= Teff_fit
+		out['logg']= logg_fit
+		out['fsed']= fsed_fit
+
+	return out
+
+##########################
+# round logg to steps of 0.25
+def round_logg_point25(logg):
+	logg = round(logg*4.) / 4. 
+	return logg
+
