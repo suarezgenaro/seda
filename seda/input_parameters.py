@@ -113,7 +113,7 @@ class InputData:
 		self.flux_spectra = flux_spectra
 		self.eflux_spectra = eflux_spectra
 
-		print('\nInput data loaded successfully')
+		print('\n   Input data loaded successfully')
 
 #+++++++++++++++++++++++++++
 class ModelOptions:
@@ -249,7 +249,7 @@ class ModelOptions:
 		# get number of model data points
 		self.N_modelpoints = model_points(model)
 
-		print('\nModel options loaded successfully')
+		print('\n   Model options loaded successfully')
 
 #+++++++++++++++++++++++++++
 class Chi2Options:
@@ -412,7 +412,7 @@ class Chi2Options:
 		self.pickle_filename = f'{model}_chi2_minimization.pickle'
 		self.table_filename = f'{model}_chi2_minimization.dat'
 
-		print('\nChi-square fit options loaded successfully')
+		print('\n   Chi-square fit options loaded successfully')
 
 #+++++++++++++++++++++++++++
 class BayesOptions:
@@ -614,7 +614,7 @@ class BayesOptions:
 				grid = read_grid_Sonora_Elf_Owl(model=model, model_dir=model_dir, Teff_range=Teff_range, logg_range=logg_range)
 		self.grid = grid
 
-		print('\nBayes fit options loaded successfully')
+		print('\n   Bayes fit options loaded successfully')
 
 
 #+++++++++++++++++++++++++++
