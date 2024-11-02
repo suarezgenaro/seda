@@ -15,7 +15,7 @@ def convolve_spectrum(wl, flux, res, lam_res, eflux=None, disp_wl_range=None, co
 	'''
 	Description:
 	------------
-		Convolve spectra to a given resolution.
+		Convolve a spectrum to a given resolution.
 
 	Parameters:
 	-----------
@@ -661,7 +661,7 @@ def select_model_spectra(Teff_range, logg_range, model, model_dir):
 	'''
 	Description:
 	------------
-		Select model spectra from the indicated models and meeting the parameters ranges.
+		Select model spectra from the indicated models and meeting given parameters ranges.
 
 	Parameters:
 	-----------
@@ -738,7 +738,7 @@ def separate_params(spectra_name, model):
 	'''
 	Description:
 	------------
-		Extract parameters from each model spectrum name.
+		Extract parameters from the file names for model spectra.
 
 	Parameters:
 	-----------
