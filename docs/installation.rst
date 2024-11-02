@@ -4,6 +4,13 @@ Installation and Dependencies
 Installation
 ------------
 
+We recommend to make a conda environment to install :math:`\texttt{SEDA}` using Python 3.11 (most recent security version):
+
+.. code-block:: console
+
+    $ conda create -n env_seda python=3.11
+    $ conda activate env_seda
+
 Installation of :math:`\texttt{SEDA}` via GitHub:
 
 .. code-block:: console
