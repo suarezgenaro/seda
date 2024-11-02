@@ -36,8 +36,10 @@ Bayes Fit
 .. automodule:: seda.bayes_fit
     :members:
 
-Plots
------
-
 Utils
+-----
+.. automodule:: seda.utils
+    :members:
+
+Plots
 -----
