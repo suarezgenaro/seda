@@ -11,33 +11,56 @@ from sys import exit
 
 ##########################
 # convolve a spectrum to a desired resolution at a given wavelength
-def convolve_spectrum(wl, flux, lam_res, res, eflux=None, disp_wl_range=None, convolve_wl_range=None):
+def convolve_spectrum(wl, flux, res, lam_res, eflux=None, disp_wl_range=None, convolve_wl_range=None):
 	'''
-	wl : float array
-		wavelength (any length units) for the spectrum
-	flux : float array
-		fluxes (any flux units) for the spectrum
-	flux : float array, optional
-		error fluxes (any flux units) for the spectrum
-	lam_res : scalar
-		wavelength reference to estimate the spectral resolution of the input spectrum
-	res : scalar
-		resolution at lam_res to smooth the spectrum
-	disp_wl_range : float array, optional
-		wavelength range (minimum and maximum) to calculate the median wavelength dispersion of the input spectrum
-		default values are the minimum and maximum wavelengths of wl
-	convolve_wl_range : float array, optional
-		wavelength range where the input spectrum will be convolved
-		default values are the minimum and maximum wavelengths of wl
+	Description:
+	------------
+		Convolve spectra to a given resolution.
 
-	Returns
-	------
-	out : dictionary
-		dictionary with the convolved spectrum
-		out['wl_conv'] : wavelengths for the convolved spectrum (equal to input wavelengths within convolve_wl_range)
-		out['flux_conv'] : convolved fluxes
-		out['eflux_conv'] : convolved flux errors, if input flux errors are provided
+	Parameters:
+	-----------
+	- wl : float array
+		Wavelength (any length units) for the spectrum.
+	- flux : float array
+		Fluxes (any flux units) for the spectrum.
+	- eflux : float array, optional
+		Flux uncertainties (any flux units) for the spectrum.
+	- res : float
+		Spectral resolution at ``lam_res`` of input spectra to smooth model spectra.
+	- lam_res : float
+		Wavelength of reference at which ``res`` is given.
+	- disp_wl_range : float array, optional
+		Minimum and maximum wavelengths (same units as ``wl``) to compute the median wavelength dispersion of the input spectrum.
+		Default values are the minimum and maximum wavelengths in ``wl``.
+	- convolve_wl_range : float array, optional
+		Minimum and maximum wavelengths (same units as ``wl``) to convolve the input spectrum.
+		Default values are the minimum and maximum wavelengths in ``wl``.
 
+	Returns:
+	--------
+	Dictionary with the convolved spectrum: 
+		- ``'wl_conv'`` : wavelengths for the convolved spectrum (equal to input ``wl`` within ``convolve_wl_range``). 
+		- ``'flux_conv'`` : convolved fluxes.
+		- ``'eflux_conv'`` : convolved flux errors (if ``eflux`` is provided).
+
+	Example:
+	--------
+	>>> import seda
+	>>> from astropy.io import ascii
+	>>> 
+	>>> # read sample spectrum
+	>>> file = '../docs/notebooks/data/IRTF_SpeX_0415-0935.dat'
+	>>> spectrum = ascii.read(file)
+	>>> wl = spectrum['wl(um)'] # um 
+	>>> flux = spectrum['flux(erg/s/cm2/A)'] # erg/s/cm2/A
+	>>> eflux = spectrum['eflux(erg/s/cm2/A)'] # erg/s/cm2/A
+	>>> # desired resolution
+	>>> res, lam_res = 50, 1 # resolution of 50 at 2 um
+	>>>
+	>>> out_convolve_spectrum = seda.convolve_spectrum(wl=wl, flux=flux, eflux=eflux, 
+	>>>                                                res=res, lam_res=lam_res)
+
+	Author: Genaro Suárez
 	'''
 
 	from astropy.convolution import Gaussian1DKernel, convolve # kernel to convolve spectra
@@ -67,12 +90,12 @@ def convolve_spectrum(wl, flux, lam_res, res, eflux=None, disp_wl_range=None, co
 ##########################
 # scale model spectrum when distance and radius are known
 def scale_synthetic_spectrum(wl, flux, distance, radius):
-	'''
-	radius: float
-		radius in Rjup
-	distance: float
-		distance in pc
-	'''
+#	'''
+#	radius: float
+#		radius in Rjup
+#	distance: float
+#		distance in pc
+#	'''
 	scaling = ((radius*6.991e4) / (distance*3.086e13))**2 # scaling = (R/d)^2
 	flux_scaled = scaling*flux
 	return flux_scaled
@@ -80,9 +103,9 @@ def scale_synthetic_spectrum(wl, flux, distance, radius):
 ##########################
 # convert time elapsed running a function into an adequate unit
 def time_elapsed(time):
-	'''
-	time: time in seconds
-	'''
+#	'''
+#	time: time in seconds
+#	'''
 	if (time<60): ftime, unit = np.round(time), 's' # s
 	if ((time>=60) & (time<3600)): ftime, unit = np.round(time/60.,1), 'min' # s
 	if (time>=3600): ftime, unit = np.round(time/3600.,1), 'hr' # s
@@ -209,10 +232,10 @@ def read_model_spectrum(spectra_name_full, model, model_wl_range=None):
 ##########################
 # read best-fitting model
 def best_chi2_fits(pickle_file, N_best_fits=1):
-	'''
-	chi2_minimization_pickle_file: pickle file from chi2.py
-	N_best_fits: int with the number (default 1) of best model fits to be read
-	'''
+#	'''
+#	chi2_minimization_pickle_file: pickle file from chi2.py
+#	N_best_fits: int with the number (default 1) of best model fits to be read
+#	'''
 
 	import pickle
 
@@ -261,20 +284,20 @@ def best_chi2_fits(pickle_file, N_best_fits=1):
 ##################################################
 # function to obtain a model spectrum with any combination of parameters within the model grid
 def interpol_Sonora_Elf_Owl(Teff_interpol, logg_interpol, logKzz_interpol, Z_interpol, CtoO_interpol, grid=None, Teff_range=None, logg_range=None, save_spectrum=False):
-	'''
-	Teff_interpol: (float) temperature of the interpolated synthetic spectrum (275<=Teff(K)<=2400)
-	logg_interpol: (float) logg of the interpolated synthetic spectrum (3.25<=logg<=5.5)
-	logKzz_interpol: (float) logKzz of the interpolated synthetic spectrum (2<=logKzz(cgs)<=9)
-	Z_interpol: (float) Z of the interpolated synthetic spectrum (-1.0<=[M/H](cgs)<=1.0)
-	CtoO_interpol: (float) C/O of the interpolated synthetic spectrum (0.5<=C/O<=2.5)
-	grid: float array, optional
-		model grid (synthetic spectra) to be used to generate the desired spectrum
-		this is the output of the read_grid definition, which is a dictionary with two variables (wavelength and flux) for each parameters' combination
-	Teff_range: float array, necessary when grid is not provided
-		minimum and maximum Teff values to select a subsample of the model grid. Such subset will allow faster interpolation than when reading the whole grid.
-	logg_range: float array, necessary when grid is not provided
-		minimum and maximum Teff values to select a subsample of the model grid. Such subset will allow faster interpolation than when reading the whole grid.
-	'''
+#	'''
+#	Teff_interpol: (float) temperature of the interpolated synthetic spectrum (275<=Teff(K)<=2400)
+#	logg_interpol: (float) logg of the interpolated synthetic spectrum (3.25<=logg<=5.5)
+#	logKzz_interpol: (float) logKzz of the interpolated synthetic spectrum (2<=logKzz(cgs)<=9)
+#	Z_interpol: (float) Z of the interpolated synthetic spectrum (-1.0<=[M/H](cgs)<=1.0)
+#	CtoO_interpol: (float) C/O of the interpolated synthetic spectrum (0.5<=C/O<=2.5)
+#	grid: float array, optional
+#		model grid (synthetic spectra) to be used to generate the desired spectrum
+#		this is the output of the read_grid definition, which is a dictionary with two variables (wavelength and flux) for each parameters' combination
+#	Teff_range: float array, necessary when grid is not provided
+#		minimum and maximum Teff values to select a subsample of the model grid. Such subset will allow faster interpolation than when reading the whole grid.
+#	logg_range: float array, necessary when grid is not provided
+#		minimum and maximum Teff values to select a subsample of the model grid. Such subset will allow faster interpolation than when reading the whole grid.
+#	'''
 
 	if (grid is None): # read model grid when not provided
 		if (Teff_range is None): exit('missing Teff range to read a model grid subset')
@@ -348,23 +371,23 @@ def interpol_Sonora_Elf_Owl(Teff_interpol, logg_interpol, logKzz_interpol, Z_int
 ##################################################
 # to read the grid considering Teff and logg desired ranges
 def read_grid_Sonora_Elf_Owl(model, model_dir, Teff_range, logg_range, convolve=True, wl_range=None):
-	'''
-	model : desired atmospheric model
-	model_dir : str or list
-		Path to the directory (str or list) or directories (as a list) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
-		Avoid using paths with null spaces. 
-	Teff_range : float array, necessary when grid is not provided
-		minimum and maximum Teff values to select a subsample of the model grid. Such subset will allow faster interpolation than when reading the whole grid.
-	logg_range : float array, necessary when grid is not provided
-		minimum and maximum Teff values to select a subsample of the model grid. Such subset will allow faster interpolation than when reading the whole grid.
-	convolve : bool
-		if True (default), the synthetic spectra will be convolved to the indicated ``res`` at ``lam_res``
-	wl_range : float array (optional)
-		minimum and maximum wavelength values to read from model grid
-
-	OUTPUT:
-		dictionary with the grid ('wavelength' and 'flux') for the parameters ('Teff', 'logg', 'logKzz', 'Z', and 'CtoO') within Teff_range and logg_range and all the values for the remaining parameters.
-	'''
+#	'''
+#	model : desired atmospheric model
+#	model_dir : str or list
+#		Path to the directory (str or list) or directories (as a list) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
+#		Avoid using paths with null spaces. 
+#	Teff_range : float array, necessary when grid is not provided
+#		minimum and maximum Teff values to select a subsample of the model grid. Such subset will allow faster interpolation than when reading the whole grid.
+#	logg_range : float array, necessary when grid is not provided
+#		minimum and maximum Teff values to select a subsample of the model grid. Such subset will allow faster interpolation than when reading the whole grid.
+#	convolve : bool
+#		if True (default), the synthetic spectra will be convolved to the indicated ``res`` at ``lam_res``
+#	wl_range : float array (optional)
+#		minimum and maximum wavelength values to read from model grid
+#
+#	OUTPUT:
+#		dictionary with the grid ('wavelength' and 'flux') for the parameters ('Teff', 'logg', 'logKzz', 'Z', and 'CtoO') within Teff_range and logg_range and all the values for the remaining parameters.
+#	'''
 #	R : float, mandatory if convolve is True
 #		input spectra resolution (default R=100) at lam_R to smooth model spectra
 #	lam_R : float, mandatory if convolve is True
@@ -547,10 +570,10 @@ def param_ranges_sampling(model):
 ##########################
 # generate the synthetic spectrum with the posterior parameters
 def best_fit_sampling(wl_spectra, model, sampling_file, lam_res, res, distance=None, grid=None, save_spectrum=False):
-	'''
-	Output: dictionary
-		synthetic spectrum for the posterior parameters: i) with original resolution, ii) convolved to the compared observed spectra, and iii) scaled to the determined radius
-	'''
+#	'''
+#	Output: dictionary
+#		synthetic spectrum for the posterior parameters: i) with original resolution, ii) convolved to the compared observed spectra, and iii) scaled to the determined radius
+#	'''
 
 	import sampling
 	import interpol_model

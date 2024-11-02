@@ -110,7 +110,7 @@ def plot_chi2_fit(pickle_file, N_best_fits=1, ylog=True):
 	#ax[0].plot(wl_spectra, flux_spectra*(1e4*wl_spectra), color='black', linewidth=1.0, label='Observed spectra') # in erg/s/cm2
 	ax[0].plot(wl_spectra, flux_spectra, color='black', linewidth=1.0, label='Observed spectra') # in erg/s/cm2
 
-	# plot best fits
+# plot best fits
 	for i in range(N_best_fits):
 		if model=='Sonora_Diamondback':
 			#label_model = spectra_name_best[i][:-15] # for model files on dropbox via a private link

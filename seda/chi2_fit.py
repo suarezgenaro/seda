@@ -48,7 +48,7 @@ def chi2(my_chi2):
 			- ``chi2_fit``: total chi-square.
 			- ``chi2_red_fit``: total reduced chi-square.
 			- ``weight_fit``: weight given to each data point in the fit considering the equation chi2 = weight * (data-model)^2 / edata^2.
-			- ``wl_array_model_conv_resam``: (if ``fit_spectra``) wavelength (in um) of model resampled, convolved model.
+			- ``wl_array_model_conv_resam``: (if ``fit_spectra``) wavelength (in um) of resampled, convolved model spectra.
 			- ``flux_array_model_conv_resam``: (if ``fit_spectra``) scaled, resampled, convolved model spectra (in erg/cm2/s/A).
 			- ``flux_array_model_conv_resam_red``: (if ``fit_spectra``) scaled, resampled, convolved, reddened model spectra (in erg/cm2/s/A).
 			- ``lambda_eff_mean``: (if ``fit_photometry``) mean effective wavelength (in um) of each input photometric passband.
