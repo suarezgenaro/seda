@@ -209,7 +209,6 @@ def bayes(my_bayes):
 
 	print('\n   Nested sampling ran successfully')
 	fin_time_bayes = time.time()
-	out_time_elapsed = time_elapsed(fin_time_bayes-ini_time_bayes)
-	print(f'\n      elapsed time running bayes_fit: {out_time_elapsed[0]} {out_time_elapsed[1]}')
+	print_time(fin_time_bayes-ini_time_bayes)
 
 	return results

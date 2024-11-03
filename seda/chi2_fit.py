@@ -3,6 +3,7 @@ import time
 import os
 import astropy.units as u
 import pickle
+from spectres import spectres
 from tqdm.auto import tqdm
 from astropy.io import ascii
 from astropy.table import vstack
@@ -151,9 +152,6 @@ def chi2(my_chi2):
 	if (extinction_free_param=='yes'):
 		from dust_extinction.parameter_averages import F19 # extinction curve from Fitzpatrick et al. (2019)
 		from dust_extinction.averages import G21_MWAvg # Gordon et al. (2021) Milky Way Average Extinction Curve (Rv=3.17)
-	if (skip_convolution=='no'): 
-		from spectres import spectres # resample spectra
-#		from astropy.convolution import Gaussian1DKernel, convolve # kernel to convolve spectra
 
 	# total number of data points
 	if N_spectra>1 : # when multiple spectra are provided
@@ -751,8 +749,7 @@ def chi2(my_chi2):
 
 	print('\n   Chi square fit ran successfully')
 	fin_time_chi2 = time.time()
-	out_time_elapsed = time_elapsed(fin_time_chi2-ini_time_chi2)
-	print(f'      elapsed time running chi2_fit: {out_time_elapsed[0]} {out_time_elapsed[1]}')
+	print_time(fin_time_chi2-ini_time_chi2)
 
 	return out_chi2
 

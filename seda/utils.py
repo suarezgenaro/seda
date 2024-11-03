@@ -1,22 +1,22 @@
-# Useful function for SEDA
-
 import numpy as np
 import time
 import os
 import xarray
+import pickle
+from spectres import spectres
 from astropy.io import ascii
 from scipy.interpolate import RegularGridInterpolator
 from tqdm.auto import tqdm
 from astropy import units as u
+from astropy.convolution import Gaussian1DKernel, convolve
 from sys import exit
 
 ##########################
-# convolve a spectrum to a desired resolution at a given wavelength
 def convolve_spectrum(wl, flux, res, lam_res, eflux=None, disp_wl_range=None, convolve_wl_range=None):
 	'''
 	Description:
 	------------
-		Convolve a spectrum to a given resolution.
+		Convolve a spectrum to a desired resolution at a given wavelength.
 
 	Parameters:
 	-----------
@@ -64,8 +64,6 @@ def convolve_spectrum(wl, flux, res, lam_res, eflux=None, disp_wl_range=None, co
 	Author: Genaro Suárez
 	'''
 
-	from astropy.convolution import Gaussian1DKernel, convolve # kernel to convolve spectra
-
 	if (disp_wl_range is None): disp_wl_range = np.array((wl.min(), wl.max())) # define disp_wl_range if not provided
 	if (convolve_wl_range is None): convolve_wl_range = np.array((wl.min(), wl.max())) # define convolve_wl_range if not provided
 
@@ -89,12 +87,11 @@ def convolve_spectrum(wl, flux, res, lam_res, eflux=None, disp_wl_range=None, co
 	return out
 
 ##########################
-# scale model spectrum when distance and radius are known
 def scale_synthetic_spectrum(wl, flux, distance, radius):
 	'''
 	Description:
 	------------
-	Scale model spectrum when radius and distance is known.
+		scale model spectrum when distance and radius are known.
 
 	Parameters:
 	-----------
@@ -125,7 +122,7 @@ def print_time(time):
 	'''
 	Description:
 	------------
-	Print a time in suitable units.
+		Print a time in suitable units.
 
 	Parameters:
 	-----------
@@ -135,13 +132,15 @@ def print_time(time):
 	Returns:
 	--------
 	Print time in seconds, minutes, or hours as appropriate.
+
+	Author: Genaro Suárez
 	'''
 
 	if time<60: ftime, unit = np.round(time), 's' # s
 	elif time<3600: ftime, unit = np.round(time/60.,1), 'min' # s
 	else: ftime, unit = np.round(time/3600.,1), 'hr' # s
 
-	print(f'      total elapsed time: {ftime} {unit}')
+	print(f'      elapsed time: {ftime} {unit}')
 
 ##########################
 def model_points(model):
@@ -175,8 +174,29 @@ def model_points(model):
 	return N_modelpoints
 
 ##########################
-# read spectra
 def read_model_spectrum(spectra_name_full, model, model_wl_range=None):
+	'''
+	Description:
+	------------
+		Read indicated model spectra.
+
+	Parameters:
+	-----------
+	- model : str
+		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
+	- model_dir : str or list
+		Path to the directory (str or list) or directories (as a list) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
+	- model_wl_range : float array, optional
+		Minimum and maximum wavelength to cut model spectra.
+
+	Returns:
+	--------
+	Dictionary with model spectra:
+		- ``'wl_model'`` : wavelengths in microns
+		- ``'flux_model'`` : fluxes in erg/s/cm2/A
+
+	Author: Genaro Suárez
+	'''
 
 	# read model spectra files
 	if (model == 'Sonora_Diamondback'):
@@ -187,7 +207,6 @@ def read_model_spectrum(spectra_name_full, model, model_wl_range=None):
 		flux_model = spec_model['col2'] # W/m2/m
 		flux_model = flux_model * 0.1 / 1.e6 # erg/cm2/s/A
 	if (model == 'Sonora_Elf_Owl'):
-		import xarray
 		spec_model = xarray.open_dataset(spectra_name_full) # Sonora Elf Owl model spectra have NetCDF Data Format data
 		wl_model = spec_model['wavelength'].data # um
 		flux_model = spec_model['flux'].data # erg/s/cm^2/cm
@@ -263,12 +282,12 @@ def read_model_spectrum(spectra_name_full, model, model_wl_range=None):
 ##########################
 # read best-fitting model
 def best_chi2_fits(pickle_file, N_best_fits=1):
+	'''
+	'''
 #	'''
 #	chi2_minimization_pickle_file: pickle file from chi2.py
 #	N_best_fits: int with the number (default 1) of best model fits to be read
 #	'''
-
-	import pickle
 
 	# open results from the chi square analysis
 	with open(pickle_file, 'rb') as file:
@@ -315,6 +334,8 @@ def best_chi2_fits(pickle_file, N_best_fits=1):
 ##################################################
 # function to obtain a model spectrum with any combination of parameters within the model grid
 def interpol_Sonora_Elf_Owl(Teff_interpol, logg_interpol, logKzz_interpol, Z_interpol, CtoO_interpol, grid=None, Teff_range=None, logg_range=None, save_spectrum=False):
+	'''
+	'''
 #	'''
 #	Teff_interpol: (float) temperature of the interpolated synthetic spectrum (275<=Teff(K)<=2400)
 #	logg_interpol: (float) logg of the interpolated synthetic spectrum (3.25<=logg<=5.5)
@@ -402,6 +423,8 @@ def interpol_Sonora_Elf_Owl(Teff_interpol, logg_interpol, logKzz_interpol, Z_int
 ##################################################
 # to read the grid considering Teff and logg desired ranges
 def read_grid_Sonora_Elf_Owl(model, model_dir, Teff_range, logg_range, convolve=True, wl_range=None):
+	'''
+	'''
 #	'''
 #	model : desired atmospheric model
 #	model_dir : str or list
@@ -534,6 +557,9 @@ def read_grid_Sonora_Elf_Owl(model, model_dir, Teff_range, logg_range, convolve=
 ##########################
 # get the parameter ranges and steps in each model grid
 def grid_ranges(model):
+	'''
+	'''
+
 	if (model=='Sonora_Elf_Owl'):
 		# Teff
 		Teff_range1 = np.arange(275., 600.+25, 25)
@@ -556,6 +582,8 @@ def grid_ranges(model):
 ##########################
 # tolerance around the best-fitting spectrum parameters to define the parameter ranges for posteriors
 def param_ranges_sampling(model):
+	'''
+	'''
 
 	# open results from the chi square analysis
 	with open(f'{model}_chi2_minimization.pickle', 'rb') as file:
@@ -598,14 +626,12 @@ def param_ranges_sampling(model):
 ##########################
 # generate the synthetic spectrum with the posterior parameters
 def best_fit_sampling(wl_spectra, model, sampling_file, lam_res, res, distance=None, grid=None, save_spectrum=False):
+	'''
+	'''
 #	'''
 #	Output: dictionary
 #		synthetic spectrum for the posterior parameters: i) with original resolution, ii) convolved to the compared observed spectra, and iii) scaled to the determined radius
 #	'''
-
-	import sampling
-	import interpol_model
-	from spectres import spectres # resample spectra
 
 	# open results from sampling
 	with open(sampling_file, 'rb') as file:
@@ -952,4 +978,3 @@ def separate_params(spectra_name, model):
 def round_logg_point25(logg):
 	logg = round(logg*4.) / 4. 
 	return logg
-
