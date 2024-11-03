@@ -90,12 +90,23 @@ def convolve_spectrum(wl, flux, res, lam_res, eflux=None, disp_wl_range=None, co
 ##########################
 # scale model spectrum when distance and radius are known
 def scale_synthetic_spectrum(wl, flux, distance, radius):
-#	'''
-#	radius: float
-#		radius in Rjup
-#	distance: float
-#		distance in pc
-#	'''
+	'''
+	Description:
+	------------
+		Scale model spectrum when radius and distance is known.
+
+	Parameters:
+	-----------
+	- radius: float
+		Radius in Rjup.
+	- distance: float
+		Distance in pc.
+
+	Returns:
+	--------
+	Scaled fluxes.
+
+	'''
 	scaling = ((radius*6.991e4) / (distance*3.086e13))**2 # scaling = (R/d)^2
 	flux_scaled = scaling*flux
 	return flux_scaled
