@@ -7,6 +7,7 @@ import xarray
 from astropy.io import ascii
 from scipy.interpolate import RegularGridInterpolator
 from tqdm.auto import tqdm
+from astropy import units as u
 from sys import exit
 
 ##########################
@@ -93,10 +94,14 @@ def scale_synthetic_spectrum(wl, flux, distance, radius):
 	'''
 	Description:
 	------------
-		Scale model spectrum when radius and distance is known.
+	Scale model spectrum when radius and distance is known.
 
 	Parameters:
 	-----------
+	- wl : float array
+		Wavelength (any length units) for the spectrum.
+	- flux : float array
+		Fluxes (any flux units) for the spectrum.
 	- radius: float
 		Radius in Rjup.
 	- distance: float
@@ -107,21 +112,36 @@ def scale_synthetic_spectrum(wl, flux, distance, radius):
 	Scaled fluxes.
 
 	'''
-	scaling = ((radius*6.991e4) / (distance*3.086e13))**2 # scaling = (R/d)^2
+
+	distance_km = distance*u.parsec.to(u.km) # distance in km
+	radius_km = radius*u.R_jup.to(u.km) # radius in km
+	scaling = (radius_km/distance_km)**2 # scaling = (R/d)^2
 	flux_scaled = scaling*flux
+
 	return flux_scaled
 
 ##########################
-# convert time elapsed running a function into an adequate unit
-def time_elapsed(time):
-#	'''
-#	time: time in seconds
-#	'''
-	if (time<60): ftime, unit = np.round(time), 's' # s
-	if ((time>=60) & (time<3600)): ftime, unit = np.round(time/60.,1), 'min' # s
-	if (time>=3600): ftime, unit = np.round(time/3600.,1), 'hr' # s
+def print_time(time):
+	'''
+	Description:
+	------------
+	Print a time in suitable units.
 
-	return ftime, unit
+	Parameters:
+	-----------
+	- time: float
+		Time in seconds.
+
+	Returns:
+	--------
+	Print time in seconds, minutes, or hours as appropriate.
+	'''
+
+	if time<60: ftime, unit = np.round(time), 's' # s
+	elif time<3600: ftime, unit = np.round(time/60.,1), 'min' # s
+	else: ftime, unit = np.round(time/3600.,1), 'hr' # s
+
+	print(f'      total elapsed time: {ftime} {unit}')
 
 ##########################
 def model_points(model):
@@ -505,10 +525,7 @@ def read_grid_Sonora_Elf_Owl(model, model_dir, Teff_range, logg_range, convolve=
 #		mask = (wl_model>=wl_range[0]) & (wl_model<=wl_range[1])
 
 	fin_time_grid = time.time()
-	time_grid = fin_time_grid-ini_time_grid # in seconds
-	out_time_elapsed = time_elapsed(fin_time_grid-ini_time_grid)
-#	print(f'   {k} spectra in memory to define a grid for interpolations')
-#	print(f'      elapsed time: {out_time_elapsed[0]} {out_time_elapsed[1]}')
+	print_time(fin_time_grid-ini_time_grid)
 
 	out = {'wavelength': wl_grid, 'flux': flux_grid, 'Teff': Teff_grid, 'logg': logg_grid, 'logKzz': logKzz_grid, 'Z': Z_grid, 'CtoO': CtoO_grid}
 
