@@ -30,6 +30,7 @@ Included in the `Ananconda <https://docs.continuum.io/>`_ installation:
 * `matplotlib <http://matplotlib.org/>`_
 * `numpy <http://www.numpy.org/>`_
 * `scipy <https://www.scipy.org/>`_
+* `specutils <https://pypi.org/project/specutils/>`_
 
 External packages that must be installed separately (using ``pip``):
 
@@ -44,7 +45,7 @@ These packages can be installed using ``pip``:
 
 .. code-block:: console
 
-    $ pip install astropy matplotlib numy scipy
+    $ pip install astropy matplotlib numy scipy specutils
     $ pip install corner dynesty lmfit spectres tqdm xarray
 
 :math:`\texttt{SEDA}` has been tested in Python 3.9, 3.10, and 3.11 security versions as of Nov. 2024.
