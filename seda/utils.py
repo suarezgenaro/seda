@@ -8,6 +8,7 @@ from astropy.io import ascii
 from scipy.interpolate import RegularGridInterpolator
 from tqdm.auto import tqdm
 from astropy import units as u
+from specutils.utils.wcs_utils import vac_to_air
 from astropy.convolution import Gaussian1DKernel, convolve
 from sys import exit
 
@@ -201,16 +202,16 @@ def read_model_spectrum(spectra_name_full, model, model_wl_range=None):
 	# read model spectra files
 	if (model == 'Sonora_Diamondback'):
 		spec_model = ascii.read(spectra_name_full, data_start=3, format='no_header')
-		wl_model = spec_model['col1'] # um (in vacuum?)
-		wl_model = (wl_model*1e4) / (1.0 + 2.735182e-4 + 131.4182/(wl_model*1e4)**2 + 2.76249e8/(wl_model*1e4)**4) # wavelength (in A) in the air
-		wl_model = wl_model/1e4 # in um
-		flux_model = spec_model['col2'] # W/m2/m
-		flux_model = flux_model * 0.1 / 1.e6 # erg/cm2/s/A
+		wl_model = spec_model['col1'] * u.micron # um (in vacuum?)
+		wl_model = vac_to_air(wl_model).value # um in the air
+		flux_model = spec_model['col2'] * u.W/u.m**2/u.m # W/m2/m
+		flux_model = flux_model.to(u.erg/u.s/u.cm**2/u.angstrom).value # erg/s/cm2/A
 	if (model == 'Sonora_Elf_Owl'):
 		spec_model = xarray.open_dataset(spectra_name_full) # Sonora Elf Owl model spectra have NetCDF Data Format data
-		wl_model = spec_model['wavelength'].data # um
-		flux_model = spec_model['flux'].data # erg/s/cm^2/cm
-		flux_model = flux_model / 1.e8 # erg/s/cm2/A
+		wl_model = spec_model['wavelength'].data * u.micron # um
+		wl_model = wl_model.value
+		flux_model = spec_model['flux'].data * u.erg/u.s/u.cm**2/u.cm # erg/s/cm2/cm
+		flux_model = flux_model.to(u.erg/u.s/u.cm**2/u.angstrom).value # erg/s/cm2/A
 	if (model == 'LB23'):
 		spec_model = ascii.read(spectra_name_full)
 		wl_model = spec_model['LAMBDA(mic)'] # micron
@@ -225,44 +226,36 @@ def read_model_spectrum(spectra_name_full, model, model_wl_range=None):
 		flux_model = flux_LB23 # erg/s/cm2/A
 	if (model == 'Sonora_Cholla'):
 		spec_model = ascii.read(spectra_name_full, data_start=2, format='no_header')
-		wl_model = spec_model['col1'] # um
-		wl_model = (wl_model*1e4) / (1.0 + 2.735182e-4 + 131.4182/(wl_model*1e4)**2 + 2.76249e8/(wl_model*1e4)**4) # wavelength (in A) in the air
-		wl_model = wl_model/1e4 # in um
-		flux_model = spec_model['col2'] # W/m2/m
-		flux_model = flux_model * 0.1 / 1.e6 # erg/s/cm/A
+		wl_model = spec_model['col1'] * u.micron # um (in vacuum?)
+		wl_model = vac_to_air(wl_model).value # um in the air
+		flux_model = spec_model['col2'] * u.W/u.m**2/u.m # W/m2/m
+		flux_model = flux_model.to(u.erg/u.s/u.cm**2/u.angstrom).value # erg/s/cm2/A
 	if (model == 'Sonora_Bobcat'):
 		spec_model = ascii.read(spectra_name_full, data_start=2, format='no_header')
-		wl_model = spec_model['col1'] # um 
-		wl_model = (wl_model*1e4) / (1.0 + 2.735182e-4 + 131.4182/(wl_model*1e4)**2 + 2.76249e8/(wl_model*1e4)**4) # wavelength (in A) in the air
-		wl_model = wl_model/1e4 # in um
-		flux_model = spec_model['col2'] # erg/cm^2/s/Hz (to an unknown distance)
-		# convert flux to wavelength dependence
-		flux_model = flux_model * (3e2/((wl_model*1e-4)**2)) # erg/s/cm2/A (to an unknown distance)
+		wl_model = spec_model['col1'] * u.micron # um (in vacuum?)
+		wl_model = vac_to_air(wl_model).value # um in the air
+		flux_model = spec_model['col2'] * u.erg/u.s/u.cm**2/u.Hz # erg/s/cm2/Hz
+		flux_model = flux_model.to(u.erg/u.s/u.cm**2/u.angstrom, equivalencies=u.spectral_density( wl_model * u.micron)).value # erg/s/cm2/A
 	if (model == 'ATMO2020'):
 		spec_model = ascii.read(spectra_name_full, format='no_header')
-		wl_model = spec_model['col1']*1e4 # A
-		wl_model = wl_model / (1.0 + 2.735182e-4 + 131.4182/wl_model**2 + 2.76249e8/wl_model**4) # wavelength (in A) in the air
-		wl_model = wl_model/1e4 # in um
-		flux_model = spec_model['col2'] # W/m2/micron
-		flux_model = flux_model * 0.1 # erg/s/cm2/A
+		wl_model = spec_model['col1'] * u.micron # um (in vacuum)
+		wl_model = vac_to_air(wl_model).value # um in the air
+		flux_model = spec_model['col2'] * u.W/u.m**2/u.micron # W/m2/micron
+		flux_model = flux_model.to(u.erg/u.s/u.cm**2/u.angstrom).value # erg/s/cm2/A
 	if (model == 'BT-Settl'):
 		spec_model = ascii.read(spectra_name_full, format='no_header')
-		wl_model = spec_model['col1'] # in A (in vacuum)
-		wl_model = wl_model / (1.0 + 2.735182e-4 + 131.4182/wl_model**2 + 2.76249e8/wl_model**4) # wavelength (in A) in the air
-		wl_model = wl_model/1e4
-		flux_model = spec_model['col2'] # erg/cm^2/s/Hz (to an unknown distance). 10**(F_lam + DF) to convert to erg/s/cm**2/A
-		# convert flux to erg/s/cm**2/A
+		wl_model = (spec_model['col1']*u.angstrom).to(u.micron) # um (in vacuum)
+		wl_model = vac_to_air(wl_model).value # um in the air
+		flux_model = spec_model['col2'] * u.erg/u.s/u.cm**2/u.Hz # erg/s/cm2/Hz (to an unknown distance). 10**(F_lam + DF) to convert to erg/s/cm2/A
 		DF= -8.0
-		flux_model = 10**(flux_model + DF) # erg/s/cm2/A
+		flux_model = 10**(flux_model.value + DF) # erg/s/cm2/A
 	if (model == 'SM08'):
 		spec_model = ascii.read(spectra_name_full, data_start=2, format='no_header')
-		wl_model = spec_model['col1'] # um (in air the alkali lines and in vacuum the rest of the spectra)
-		# convert to air 
-		#wl_model = (wl_model*1e4) / (1.0 + 2.735182e-4 + 131.4182/(wl_model*1e4)**2 + 2.76249e8/(wl_model*1e4)**4) # wavelength (in A) in the air
-		#wl_model = wl_model/1e4
-		flux_model = spec_model['col2'] # erg/cm^2/s/Hz (to an unknown distance)
-		# convert flux to wavelength dependence
-		flux_model = flux_model * (3e2/((wl_model*1e-4)**2)) # erg/s/cm2/A (to an unknown distance)
+		wl_model = spec_model['col1'] * u.micron # um (in air the alkali lines and in vacuum the rest of the spectra)
+		#wl_model = vac_to_air(wl_model).value # um in the air
+		wl_model = wl_model.value # um
+		flux_model = spec_model['col2'] * u.erg/u.s/u.cm**2/u.Hz # erg/s/cm2/Hz (to an unknown distance)
+		flux_model = flux_model.to(u.erg/u.s/u.cm**2/u.angstrom, equivalencies=u.spectral_density( wl_model * u.micron)).value # erg/s/cm2/A
 
 	# sort the array. For BT-Settl is recommended by Allard in her webpage and some models are sorted from higher to smaller wavelengths.
 	sort_index = np.argsort(wl_model)
@@ -513,11 +506,10 @@ def read_grid_Sonora_Elf_Owl(model, model_dir, Teff_range, logg_range, convolve=
 
 						if spectrum_name_full: # if there is a spectrum with the parameters in the iteration
 							# read spectrum from each combination of parameters
-							spec_model = xarray.open_dataset(spectrum_name_full) # Sonora Elf Owl model spectra have NetCDF Data Format data
-							wl_model = spec_model['wavelength'].data # um 
-							flux_model = spec_model['flux'].data # erg/s/cm^2/cm
-							flux_model = flux_model / 1.e8 # erg/s/cm^2/Angstrom
-				
+							out_read_model_spectrum = read_model_spectrum(spectra_name_full=spectrum_name_full, model=model)
+							wl_model = out_read_model_spectrum['wl_model'] # in um
+							flux_model = out_read_model_spectrum['flux_model'] # in erg/s/cm2/A
+							
 #							# resample convolved model to the wavelength data points in the observed spectra
 #							if convolve:
 #								out_convolve_spectrum = seda_utils.convolve_spectrum(wl=wl_model, flux=flux_model, lam_R=lam_R, R=R)

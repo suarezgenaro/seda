@@ -166,7 +166,7 @@ def bayes(my_bayes):
 
 		# scaled model spectrum
 		if distance is not None:
-			scaling = ((R*6.991e4) / (distance*3.086e13))**2 # scaling = (R/d)^2
+			scaling = (((R*u.R_jup).to(u.km) / (distance*u.pc).to(u.km))**2).value # scaling = (R/d)^2
 		else:
 			scaling = np.sum(flux_spectra*flux_model/eflux_spectra**2) / np.sum(flux_model**2/eflux_spectra**2) # scaling that minimizes chi2
 		flux_model = scaling*flux_model

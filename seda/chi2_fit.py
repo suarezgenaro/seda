@@ -684,13 +684,14 @@ def chi2(my_chi2):
 	chi2_bar.close()
 	
 	# radius from the scaling factor and cloud distance
-	if (distance!=None): # derive radius only if a distance is provided
-		radius = np.sqrt(scaling_fit) * distance*3.086e13 # in km
-		eradius = radius * np.sqrt((edistance/distance)**2 + (escaling_fit/(2*scaling_fit))**2)
-		radius = radius / 695510. # in Rsun
-		eradius = eradius / 695510. # in Rsun
-		radius = radius / 0.102763 # in Rjup
-		eradius = eradius / 0.102763 # in Rjup
+	if distance!=None: # derive radius only if a distance is provided
+		distance_km = (distance*u.parsec).to(u.km) # distance in km
+		radius_km = np.sqrt(scaling_fit) * distance_km # in km
+		radius = radius_km.to(u.R_jup).value
+		if edistance!=None: # obtain radius error only if a distance error is provided
+			edistance_km = (edistance*u.parsec).to(u.km) # distance error in km
+			eradius_km = radius_km * np.sqrt((edistance_km/distance_km)**2 + (escaling_fit/(2*scaling_fit))**2) # in km
+			eradius = eradius_km.to(u.R_jup).value
 
 	out_chi2 = {'model': model, 'spectra_name_full': spectra_name_full, 'spectra_name': spectra_name, 'Teff_range': Teff_range, 'logg_range': logg_range, 
 				'res': res, 'lam_res': lam_res, 'fit_wl_range': fit_wl_range, 'N_modelpoints': N_modelpoints, 'out_lmfit': out_lmfit, 'iterations_fit': iterations_fit, 
@@ -714,12 +715,13 @@ def chi2(my_chi2):
 		out_chi2['phot_synt'] = phot_synt
 		if (extinction_free_param=='yes'):
 			out_chi2['phot_synt_red'] = phot_synt_red
-	if (distance!=None): # when a radius was obtained
+	if distance!=None: # when a radius was obtained
 		out_chi2['R_range'] = R_range
 		out_chi2['distance'] = distance
 		out_chi2['edistance'] = edistance
 		out_chi2['radius'] = radius
-		out_chi2['eradius'] = eradius
+		if edistance!=None:
+			out_chi2['eradius'] = eradius
 
 	# obtain residuals in linear and logarithmic-scale for fluxes
 	flux_residuals = np.zeros((len(spectra_name), len(flux_spectra[ind_chi2])))
