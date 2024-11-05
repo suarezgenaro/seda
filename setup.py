@@ -13,6 +13,6 @@ setup(name='seda',
       url='https://github.com/suarezgenaro/seda',
       license='MIT',
       packages=['seda'],
-      install_requires=['astropy','corner','dynesty','lmfit','matplotlib','numpy','scipy','specutils','spectres','xarray'], 
+      install_requires=['astropy','corner','dynesty','lmfit','matplotlib','numpy','scipy','specutils','spectres','tqdm','xarray'], 
       zip_safe=False,
       include_package_data=True)
