@@ -182,7 +182,7 @@ Parameter coverage:
 
 .. code-block:: console
   
-  - wavelength = [1.e-4, 100] um
+  - wavelength = [1.e-4, 1000] um
   - Teff = [200, 4200] K (Teff<=450 K for only logg<=3.5) in steps varying from 25 K to 100 K
   - logg = [2.0, 5.5] in steps of 0.5 (g in cgs)
   - R = [100000, 500000] (the resolving power varies with wavelength)
