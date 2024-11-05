@@ -5,6 +5,7 @@ lmfit
 matplotlib
 numpy 
 scipy
+specutils
 spectres
 tqdm
 xarray
