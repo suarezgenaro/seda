@@ -265,11 +265,11 @@ class Chi2Options:
 	- my_model : dictionary
 		Output dictionary by ``input_parameters.ModelOptions`` with model options.
 	- fit_wl_range : float array, optional
-		Minimum and maximum wavelengths in microns where model spectra will be compared to the data. 
+		Minimum and maximum wavelengths (in microns) where model spectra will be compared to the data. 
 		This parameter is used if ``fit_spectra`` but ignored if only ``fit_photometry``. 
 		Default values are the minimum and the maximum wavelengths of each input spectrum. E.g., ``fit_wl_range = np.array([chi2_wl_min, chi2_wl_max])``. 
 	- model_wl_range : float array, optional
-		Minimum and maximum wavelength to cut model spectra (to make the code faster). 
+		Minimum and maximum wavelength (in microns) to cut model spectra (to make the code faster). 
 		Default values are the same as ``fit_wl_range`` with a padding to avoid the point below.
 		CAVEAT: the selected wavelength range of model spectra must cover the spectrophotometry used in the fit and a bit more (to avoid errors when resampling synthetic spectra using spectres)
 	- extinction_free_param : {``'yes'``, ``'no'``}, optional (default ``'no'``)
@@ -428,11 +428,11 @@ class BayesOptions:
 	- my_model : dictionary
 		Output dictionary by ``input_parameters.ModelOptions`` with model options.
 	- fit_wl_range : float array, optional
-		Minimum and maximum wavelengths in microns where model spectra will be compared to the data. 
+		Minimum and maximum wavelengths (in microns) where model spectra will be compared to the data. 
 		This parameter is used if ``fit_spectra`` but ignored if only ``fit_photometry``. 
 		Default values are the minimum and the maximum wavelengths of each input spectrum. E.g., ``fit_wl_range = np.array([bayes_wl_min, bayes_wl_max])``. 
 	- model_wl_range : float array, optional
-		Minimum and maximum wavelength to cut model spectra (to make the code faster). 
+		Minimum and maximum wavelength (in microns) to cut model spectra (to make the code faster). 
 		Default values are the same as ``fit_wl_range`` with a padding to avoid the point below.
 		CAVEAT: the selected wavelength range of model spectra must cover the spectrophotometry used in the fit and a bit more (to avoid errors when resampling synthetic spectra using spectres)
 	- logKzz_range: float array, optional

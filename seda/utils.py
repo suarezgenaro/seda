@@ -179,20 +179,20 @@ def read_model_spectrum(spectra_name_full, model, model_wl_range=None):
 	'''
 	Description:
 	------------
-		Read indicated model spectra.
+		Read a desired model spectrum.
 
 	Parameters:
 	-----------
 	- model : str
 		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
-	- model_dir : str or list
-		Path to the directory (str or list) or directories (as a list) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
+	- spectra_name_full: str
+		Spectrum file name with full path.
 	- model_wl_range : float array, optional
-		Minimum and maximum wavelength to cut model spectra.
+		Minimum and maximum wavelength (in microns) to cut the model spectrum.
 
 	Returns:
 	--------
-	Dictionary with model spectra:
+	Dictionary with model spectrum:
 		- ``'wl_model'`` : wavelengths in microns
 		- ``'flux_model'`` : fluxes in erg/s/cm2/A
 
@@ -273,14 +273,31 @@ def read_model_spectrum(spectra_name_full, model, model_wl_range=None):
 	return out
 
 ##########################
-# read best-fitting model
 def best_chi2_fits(pickle_file, N_best_fits=1):
 	'''
+	Description:
+	------------
+		Read best-fitting model spectra from the chi-square minimization.
+
+	Parameters:
+	-----------
+	- '``model``\_chi2\_minimization.pickle' : dictionary
+		Dictionary with the results from the chi-square minimization by ``chi2_fit.chi2``.
+	- N_best_fits : int, optional (default 1)
+		Number of best model fits to be read.
+
+	Returns:
+	--------
+	Dictionary with model spectra:
+		-``'spectra_name_best'``: name of model spectrum
+		-``'chi2_red_fit_best'``: reduced chi-square
+		-``'wl_model'``: wavelength (in um) of original model spectra.
+		-``'flux_model'``: fluxes (in erg/s/cm2/A) of original model spectra.
+		-``'wl_model_conv'``: wavelength (in um) of convolved model spectra using ``res`` and ``lam_res`` in the input dictionary.
+		-``'flux_model_conv'``: fluxes (in erg/s/cm2/A) of convolved model spectra.
+
+	Author: Genaro Suárez
 	'''
-#	'''
-#	chi2_minimization_pickle_file: pickle file from chi2.py
-#	N_best_fits: int with the number (default 1) of best model fits to be read
-#	'''
 
 	# open results from the chi square analysis
 	with open(pickle_file, 'rb') as file:
