@@ -667,18 +667,50 @@ def grid_ranges(model):
 	return out
 
 ##########################
-# tolerance around the best-fitting spectrum parameters to define the parameter ranges for posteriors
-def param_ranges_sampling(model):
+def param_ranges_sampling(model, pickle_file, N_best_fits=3):
 	'''
+	Description:
+	------------
+		Tolerance around the parameters for the best-fitting spectra to define the parameter ranges to estimate posteriors.
+
+	Parameters:
+	-----------
+	- model : str
+		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
+	- '``model``\_chi2\_minimization.pickle' : dictionary
+		Dictionary with the results from the chi-square minimization by ``chi2_fit.chi2``.
+	- N_best_fits : int, optional (default 3)
+		Number of best model fits to be read.
+
+	Returns:
+	--------
+	Dictionary with parameter ranges around the parameters of the best model fits. It considers half of the biggest step for each parameter around the median parameters from the best ``N_best_fits`` model fits.
+		``'Teff_range'`` : effective temperature range.
+		``'logg_range'`` : surface gravity (logg) range.
+		``'logKzz_range'`` : (if provided by ``model``) diffusion parameter (logKzz) range.
+		``'Z_range'`` : (if provided by ``model``) metallicity range.
+		``'CtoO_range'`` : (if provided by ``model``) C/O ratio range.
+
+	Example:
+	--------
+	>>> import seda
+	>>>
+	>>> # models
+	>>> model = 'Sonora_Elf_Owl'
+	>>> # pickle file
+	>>> pickle_file = model+'_chi2_minimization.pickle'
+	>>> # read parameters' tolerance around the best model fits
+	>>> out_param_ranges_sampling = param_ranges_sampling(model=model, pickle_file=pickle_file)
+
+	Author: Genaro Suárez
 	'''
 
 	# open results from the chi square analysis
-	with open(f'{model}_chi2_minimization.pickle', 'rb') as file:
-		# deserialize and retrieve the variable from the file
+	with open(pickle_file, 'rb') as file:
 		out_chi2 = pickle.load(file)
 
 	if (model=='Sonora_Elf_Owl'):
-		ind_best_fit = np.argsort(out_chi2['chi2_red_fit'])[:3] # index of the three best-fitting spectra
+		ind_best_fit = np.argsort(out_chi2['chi2_red_fit'])[:N_best_fits] # index of the three best-fitting spectra
 		# median parameter values from the best-fitting models
 		Teff_chi2 = np.median(out_chi2['Teff'][ind_best_fit])
 		logg_chi2 = np.median(out_chi2['logg'][ind_best_fit])
@@ -689,12 +721,14 @@ def param_ranges_sampling(model):
 		# whole grid parameter ranges to avoid trying to generate a spectrum out of the grid
 		out_grid_ranges = grid_ranges(model)
 
-		Teff_search = 50 # K (half of the biggest Teff step, which is 100 K)
-		logg_search = 0.25 # dex (half of the biggest logg step, which is 0.5)
-		logKzz_search = 1.5 # dex (half of the biggest logKzz step, which is 3)
-		Z_search = 0.25 # cgs (half of the biggest Z step, which is 0.5)
-		CtoO_search = 0.50 # relative to solar C/O (half of the biggest C/O step, which is 1.0)
+		# define the search tolerance for each parameter
+		Teff_search = (out_grid_ranges['Teff'][1:]-out_grid_ranges['Teff'][:-1]).max() / 2. # K (half of the biggest Teff step)
+		logg_search = (out_grid_ranges['logg'][1:]-out_grid_ranges['logg'][:-1]).max() / 2. # dex (half of the biggest logg step)
+		logKzz_search = (out_grid_ranges['logKzz'][1:]-out_grid_ranges['logKzz'][:-1]).max() / 2. # dex (half of the biggest logKzz step)
+		Z_search = (out_grid_ranges['Z'][1:]-out_grid_ranges['Z'][:-1]).max() / 2. # cgs (half of the biggest Z step)
+		CtoO_search = (out_grid_ranges['CtoO'][1:]-out_grid_ranges['CtoO'][:-1]).max() / 2. # relative to solar C/O (half of the biggest C/O step)
 	
+		# define the parameter ranges around the median from the best model fits
 		Teff_range_prior = [max(Teff_chi2-Teff_search, min(out_grid_ranges['Teff'])), 
 								min(Teff_chi2+Teff_search, max(out_grid_ranges['Teff']))]
 		logg_range_prior = [max(logg_chi2-logg_search, min(out_grid_ranges['logg'])), 
