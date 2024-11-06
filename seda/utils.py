@@ -378,8 +378,8 @@ def generate_model_spectrum(Teff, logg, logKzz, Z, CtoO, grid=None, model=None, 
 	Returns:
 	--------
 	Dictionary with generated model spectrum:
-		- ``'wavelength'``: wavelength in microns for the generated spectrum.
-		- ``'flux'``: flux in erg/s/cm2/A for the generated spectrum.
+		- ``'wavelength'``: wavelengths in microns for the generated spectrum.
+		- ``'flux'``: fluxes in erg/s/cm2/A for the generated spectrum.
 		- ``'params'``: input parameters ``Teff``, ``logg``, ``logKzz``, ``Z``, and ``CtoO`` used to generate the spectrum.
 
 	Example:
@@ -399,8 +399,9 @@ def generate_model_spectrum(Teff, logg, logKzz, Z, CtoO, grid=None, model=None, 
 	>>> logg_range = np.array([4.0, 4.5])
 	>>>
 	>>> # generate model spectrum
-	>>> out = seda.generate_model_spectrum(model=model, model_dir=model_dir, Teff=Teff, logg=logg, logKzz=logKzz, 
-	>>>                                    Z=Z, CtoO=CtoO, Teff_range=Teff_range, logg_range=logg_range)
+	>>> out = seda.generate_model_spectrum(model=model, model_dir=model_dir, Teff=Teff, 
+	>>>                                    logg=logg, logKzz=logKzz, Z=Z, CtoO=CtoO, 
+	>>>                                    Teff_range=Teff_range, logg_range=logg_range)
 
 	Author: Genaro Suárez
 	'''
@@ -452,33 +453,61 @@ def generate_model_spectrum(Teff, logg, logKzz, Z, CtoO, grid=None, model=None, 
 	return out
 
 ##################################################
-# to read the grid considering Teff and logg desired ranges
-def read_grid(model, model_dir, Teff_range, logg_range, convolve=True, wl_range=None):
+def read_grid(model, model_dir, Teff_range, logg_range, convolve=False, wl_range=None):
 	'''
-	'''
-#	'''
-#	model : desired atmospheric model
-#	model_dir : str or list
-#		Path to the directory (str or list) or directories (as a list) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
-#		Avoid using paths with null spaces. 
-#	Teff_range : float array, necessary when grid is not provided
-#		minimum and maximum Teff values to select a subsample of the model grid. Such subset will allow faster interpolation than when reading the whole grid.
-#	logg_range : float array, necessary when grid is not provided
-#		minimum and maximum Teff values to select a subsample of the model grid. Such subset will allow faster interpolation than when reading the whole grid.
-#	convolve : bool
-#		if True (default), the synthetic spectra will be convolved to the indicated ``res`` at ``lam_res``
-#	wl_range : float array (optional)
-#		minimum and maximum wavelength values to read from model grid
-#
-#	OUTPUT:
-#		dictionary with the grid ('wavelength' and 'flux') for the parameters ('Teff', 'logg', 'logKzz', 'Z', and 'CtoO') within Teff_range and logg_range and all the values for the remaining parameters.
-#	'''
-#	R : float, mandatory if convolve is True
-#		input spectra resolution (default R=100) at lam_R to smooth model spectra
-#	lam_R : float, mandatory if convolve is True
-#		wavelength reference (default 2 um) to estimate the spectral resolution of model spectra considering R
+	Description:
+	------------
+		Read a model grid constrained by input parameters.
 
-#	print('\nreading model grid...')
+	Parameters:
+	-----------
+	- model : str
+		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
+	- model_dir : str or list
+		Path to the directory (str or list) or directories (as a list) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
+	- Teff_range : float array
+		Minimum and maximum Teff values to select a model grid subset (e.g., ``Teff_range = np.array([Teff_min, Teff_max])``).
+	- logg_range : float array
+		Minimum and maximum logg values to select a model grid subset.
+	- convolve: {``True``, ``False``}, optional (default ``False``)
+		Convolve (``'yes'``) or do not convolve (``'no'``) the model grid spectra to the indicated ``res`` at ``lam_res``.
+	- res : float, optional (required is ``convolve``).
+		Spectral resolution at ``lam_res`` to smooth model spectra.
+	- lam_res : float, optional (required is ``convolve``).
+		Wavelength of reference for ``res``.
+	- wl_range : float array (optional)
+		Minimum and maximum wavelengths in microns to cut model spectra.
+
+	Returns:
+	--------
+	Dictionary with the model grid:
+		- ``'wavelength'`` : wavelengths in microns for the model spectra in the grid.
+		- ``'flux'`` : fluxes in erg/s/cm2/A for the model spectra in the grid.
+		- ``'Teff'`` : Effective temperature at each grid point.
+		- ``'logg'`` : Surface gravity (logg) at each grid point.
+		- ``'logKzz'`` : Diffusion parameter (logKzz) at each grid point.
+		- ``'Z'`` : Metallicity at each grid point.
+		- ``'CtoO'`` : C/O ratio at each grid point.
+
+	Example:
+	--------
+	>>> import seda
+	>>>
+	>>> # models
+	>>> model = 'Sonora_Elf_Owl'
+	>>> model_dir = ['my_path/Sonora_Elf_Owl/spectra/output_700.0_800.0/',
+	>>>              'mt_path/Sonora_Elf_Owl/spectra/output_850.0_950.0/']
+	>>> 
+	>>> # Teff and logg ranges to read the model grid
+	>>> Teff_range = np.array([750, 800])
+	>>> logg_range = np.array([4.0, 4.5])
+	>>>
+	>>> # read the grid
+	>>> out_read_grid = seda.read_grid(model=model, model_dir=model_dir, 
+	>>>                                Teff_range=Teff_range, logg_range=logg_range)
+
+	Author: Genaro Suárez
+	'''
 
 	# read models in the input folders
 	out_select_model_spectra = select_model_spectra(Teff_range=Teff_range, logg_range=logg_range, model=model, model_dir=model_dir)
@@ -514,7 +543,7 @@ def read_grid(model, model_dir, Teff_range, logg_range, convolve=True, wl_range=
 	wl_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), N_modelpoints)) # to save the wavelength at each grid point
 	
 	# create a tqdm progress bar
-	grid_bar = tqdm(total=len(spectra_name), desc='Making a grid with the model spectra')
+	grid_bar = tqdm(total=len(spectra_name), desc='Reading model grid')
 	k = 0
 	for i_Teff in range(len(Teff_grid)): # iterate Teff
 		for i_logg in range(len(logg_grid)): # iterate logg
