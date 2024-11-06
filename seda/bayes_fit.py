@@ -150,19 +150,18 @@ def bayes(my_bayes):
 			Teff, logg, logKzz, Z, CtoO = p
 
 		# generate model with the parameters
-		out_interpol_model = interpol_Sonora_Elf_Owl(Teff_interpol=Teff, logg_interpol=logg, logKzz_interpol=logKzz, 
-																	Z_interpol=Z, CtoO_interpol=CtoO, grid=grid)
+		out_generate_model_spectrum = generate_model_spectrum(Teff=Teff, logg=logg, logKzz=logKzz, Z=Z, CtoO=CtoO, grid=grid)
 
 		# convolve synthetic spectrum
-		out_convolve_spectrum = convolve_spectrum(wl=out_interpol_model['wavelength'], flux=out_interpol_model['flux'], lam_res=lam_res, res=res, 
-												  disp_wl_range=np.array([wl_spectra_min, wl_spectra_max]), 
+		out_convolve_spectrum = convolve_spectrum(wl=out_generate_model_spectrum['wavelength'], flux=out_generate_model_spectrum['flux'], 
+												  lam_res=lam_res, res=res, disp_wl_range=np.array([wl_spectra_min, wl_spectra_max]), 
 												  convolve_wl_range=np.array([0.99*wl_spectra_min, 1.01*wl_spectra_max])) # padding on both edges to avoid issues we using spectres
 
 		# resample the convolved model spectrum to the wavelength data points in the observed spectra
 		flux_model = spectres(wl_spectra, out_convolve_spectrum['wl_conv'], out_convolve_spectrum['flux_conv'])
 	
 #		# resample model to the wavelength datapoints in the observed spectrum
-#		flux_model = spectres(wl_spectra, out_interpol_model['wavelength'], out_interpol_model['flux'])#, verbose=False,fill=np.nan)
+#		flux_model = spectres(wl_spectra, out_generate_model_spectrum['wavelength'], out_generate_model_spectrum['flux'])#, verbose=False,fill=np.nan)
 
 		# scaled model spectrum
 		if distance is not None:
