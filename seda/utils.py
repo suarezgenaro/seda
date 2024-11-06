@@ -389,7 +389,7 @@ def generate_model_spectrum(Teff, logg, logKzz, Z, CtoO, grid=None, model=None, 
 	>>> # models
 	>>> model = 'Sonora_Elf_Owl'
 	>>> model_dir = ['my_path/Sonora_Elf_Owl/spectra/output_700.0_800.0/',
-	>>>              'mt_path/Sonora_Elf_Owl/spectra/output_850.0_950.0/']
+	>>>              'my_path/Sonora_Elf_Owl/spectra/output_850.0_950.0/']
 	>>> 
 	>>> # parameters to generate a model spectrum
 	>>> Teff, logg, logKzz, Z, CtoO = 765, 4.15, 5.2, 0.2, 1.2
@@ -471,9 +471,9 @@ def read_grid(model, model_dir, Teff_range, logg_range, convolve=False, wl_range
 		Minimum and maximum logg values to select a model grid subset.
 	- convolve: {``True``, ``False``}, optional (default ``False``)
 		Convolve (``'yes'``) or do not convolve (``'no'``) the model grid spectra to the indicated ``res`` at ``lam_res``.
-	- res : float, optional (required is ``convolve``).
+	- res : float, optional (required if ``convolve``).
 		Spectral resolution at ``lam_res`` to smooth model spectra.
-	- lam_res : float, optional (required is ``convolve``).
+	- lam_res : float, optional (required if ``convolve``).
 		Wavelength of reference for ``res``.
 	- wl_range : float array (optional)
 		Minimum and maximum wavelengths in microns to cut model spectra.
@@ -496,7 +496,7 @@ def read_grid(model, model_dir, Teff_range, logg_range, convolve=False, wl_range
 	>>> # models
 	>>> model = 'Sonora_Elf_Owl'
 	>>> model_dir = ['my_path/Sonora_Elf_Owl/spectra/output_700.0_800.0/',
-	>>>              'mt_path/Sonora_Elf_Owl/spectra/output_850.0_950.0/']
+	>>>              'my_path/Sonora_Elf_Owl/spectra/output_850.0_950.0/']
 	>>> 
 	>>> # Teff and logg ranges to read the model grid
 	>>> Teff_range = np.array([750, 800])
@@ -614,9 +614,37 @@ def read_grid(model, model_dir, Teff_range, logg_range, convolve=False, wl_range
 	return out
 
 ##########################
-# get the parameter ranges and steps in each model grid
 def grid_ranges(model):
 	'''
+	Description:
+	------------
+		Read coverage of parameters in a model grid.
+
+	Parameters:
+	-----------
+	- model : str
+		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
+
+	Returns:
+	--------
+	Dictionary with model parameter coverage:
+		- ``'Teff'`` : effective temperature.
+		- ``'logg'`` : surface gravity (logg).
+		- ``'logKzz'`` : (if provided by ``model``) diffusion parameter (logKzz).
+		- ``'Z'`` : (if provided by ``model``) metallicity at each grid point.
+		- ``'CtoO'`` : (if provided by ``model``) C/O ratio at each grid point.
+
+	Example:
+	--------
+	>>> import seda
+	>>>
+	>>> # models
+	>>> model = 'Sonora_Elf_Owl'
+	>>>
+	>>> # read model parameters
+	>>> out_grid_ranges = seda.grid_ranges(model)
+
+	Author: Genaro Suárez
 	'''
 
 	if (model=='Sonora_Elf_Owl'):
