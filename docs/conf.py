@@ -37,10 +37,7 @@ templates_path = ['_templates']
 
 # replace "view page source" with "edit on github" in Read The Docs theme
 html_context = {
-  'display_github': True,
-  #'github_user': 'buskill',
-  #'github_repo': 'buskill-app',
-  #'github_version': 'master/docs/',  
+  'display_github': True,  
   'github_user': 'suarezgenaro',
   'github_repo': 'seda',
   'github_version': 'main/docs/',
