@@ -43,7 +43,7 @@ html_context = {
   #'github_version': 'master/docs/',  
   'github_user': 'suarezgenaro',
   'github_repo': 'seda',
-  'github_version': 'master',
+  #'github_version': 'master',
 }
 
 # -- Options for HTML output
