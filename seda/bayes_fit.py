@@ -15,12 +15,14 @@ def bayes(my_bayes):
 
 	Parameters:
 	-----------
-	- my_bayes : return parameters from ``input_parameters.BayesOptions``, which also includes the parameters from ``input_parameters.InputData`` and ``input_parameters.ModelOptions``.
+	- my_bayes : dictionary with returned parameters from ``input_parameters.BayesOptions``, which also includes the parameters from ``input_parameters.InputData`` and ``input_parameters.ModelOptions``.
 
 	Returns:
 	--------
-	- '``model``\_nested\_sampling.pickle' : ``dynesty`` instance
-		Dynesty output, which is an initialized instance of the chosen sampler using ``dynamic_sampling`` in ``input_parameters.BayesOptions``.
+	- '``model``\_bayesian\_sampling.pickle' : dictionary
+		Dictionary with: 
+			- 'my_bayes' input dictionary
+			- Dynesty output, which is an initialized instance of the chosen sampler using ``dynamic_sampling`` in ``input_parameters.BayesOptions``.
 
 	Example:
 	--------
@@ -87,7 +89,7 @@ def bayes(my_bayes):
 	logKzz_range = my_bayes.logKzz_range
 	Z_range = my_bayes.Z_range
 	CtoO_range = my_bayes.CtoO_range
-	prior_chi2 = my_bayes.prior_chi2
+	chi2_pickle_file = my_bayes.chi2_pickle_file
 	grid = my_bayes.grid
 	dynamic_sampling = my_bayes.dynamic_sampling
 	ndim = my_bayes.ndim
@@ -95,7 +97,7 @@ def bayes(my_bayes):
 	wl_spectra_min = my_bayes.wl_spectra_min
 	wl_spectra_max = my_bayes.wl_spectra_max
 	N_datapoints = my_bayes.N_datapoints
-	pickle_file = my_bayes.pickle_filename
+	bayes_pickle_file = my_bayes.bayes_pickle_file
 	Teff_range_prior = my_bayes.Teff_range_prior
 	logg_range_prior = my_bayes.logg_range_prior
 	logKzz_range_prior = my_bayes.logKzz_range_prior
@@ -169,7 +171,7 @@ def bayes(my_bayes):
 		else:
 			scaling = np.sum(flux_spectra*flux_model/eflux_spectra**2) / np.sum(flux_model**2/eflux_spectra**2) # scaling that minimizes chi2
 		flux_model = scaling*flux_model
-	
+
 		return flux_model # return scaled, convolved, resampled fluxes for the model with the above parameters
 
 	#------------------
@@ -192,22 +194,27 @@ def bayes(my_bayes):
 		sampler = dynesty.DynamicNestedSampler(loglike, prior_transform, ndim, nlive=nlive)
 		sampler.run_nested()
 		results = sampler.results
-#		results_file = f'{model}_dynamic_nested.pickle'
 
 	if not dynamic_sampling:
 		# 'static' nested sampling
 		sampler = dynesty.NestedSampler(loglike, prior_transform, ndim, nlive=nlive)
 		sampler.run_nested()
 		results = sampler.results
-#		results_file = f'{model}_static_nested.pickle'
 
-	# save nested sampling result as pickle
-	with open(pickle_file, 'wb') as file:
-		# serialize and write the variable to the file
-		pickle.dump(results, file)
+	# output dictionary
+	# remove model grid from my_bayes dictionary to have a lighter output file
+	del my_bayes.grid
+	out_bayes = {'my_bayes': my_bayes, 'out_dynesty': results}
 
-	print('\n   Nested sampling ran successfully')
+	# save output dictionary
+	if save_results:
+		with open(bayes_pickle_file, 'wb') as file:
+			# serialize and write the variable to the file
+			pickle.dump(out_bayes, file)
+		print('      Bayesian sampling results saved successfully')
+
+	print('\n   Bayesian sampling ran successfully')
 	fin_time_bayes = time.time()
 	print_time(fin_time_bayes-ini_time_bayes)
 
-	return results
+	return out_bayes

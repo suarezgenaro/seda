@@ -143,8 +143,8 @@ def chi2(my_chi2):
 	wl_spectra_min = my_chi2.wl_spectra_min
 	wl_spectra_max = my_chi2.wl_spectra_max
 	N_datapoints = my_chi2.N_datapoints
-	pickle_filename = my_chi2.pickle_filename
-	table_filename = my_chi2.pickle_filename
+	chi2_pickle_file = my_chi2.chi2_pickle_file
+	chi2_table_file = my_chi2.chi2_pickle_file
 
 #	path_seda = os.path.dirname(__file__) # gets directory path of seda
 
@@ -693,10 +693,14 @@ def chi2(my_chi2):
 			eradius_km = radius_km * np.sqrt((edistance_km/distance_km)**2 + (escaling_fit/(2*scaling_fit))**2) # in km
 			eradius = eradius_km.to(u.R_jup).value
 
-	out_chi2 = {'model': model, 'spectra_name_full': spectra_name_full, 'spectra_name': spectra_name, 'Teff_range': Teff_range, 'logg_range': logg_range, 
-				'res': res, 'lam_res': lam_res, 'fit_wl_range': fit_wl_range, 'N_modelpoints': N_modelpoints, 'out_lmfit': out_lmfit, 'iterations_fit': iterations_fit, 
-				'Av_fit': Av_fit, 'eAv_fit': eAv_fit, 'scaling_fit': scaling_fit, 'escaling_fit': escaling_fit, 'chi2_wl_fit': chi2_wl_fit, 
-				'chi2_red_wl_fit': chi2_red_wl_fit, 'chi2_fit': chi2_fit, 'chi2_red_fit': chi2_red_fit, 'weight_fit': weight_fit}
+	
+	# output dictionary
+	out_chi2 = {'my_chi2': my_chi2}
+	# add more elements to the dictionary
+	out_chi2.update({'model': model, 'spectra_name_full': spectra_name_full, 'spectra_name': spectra_name, 'Teff_range': Teff_range, 'logg_range': logg_range, 
+ 				     'res': res, 'lam_res': lam_res, 'fit_wl_range': fit_wl_range, 'N_modelpoints': N_modelpoints, 'out_lmfit': out_lmfit, 'iterations_fit': iterations_fit, 
+				     'Av_fit': Av_fit, 'eAv_fit': eAv_fit, 'scaling_fit': scaling_fit, 'escaling_fit': escaling_fit, 'chi2_wl_fit': chi2_wl_fit, 
+				     'chi2_red_wl_fit': chi2_red_wl_fit, 'chi2_fit': chi2_fit, 'chi2_red_fit': chi2_red_fit, 'weight_fit': weight_fit})
 
 	# add more output parameters depending on the input information
 	if fit_spectra: # when only spectra are used in the fit
@@ -739,12 +743,12 @@ def chi2(my_chi2):
 	out_chi2.update(out_separate_params)
 
 	# save some information
-	if (save_results=='yes'): # save table with model spectra sorted by chi square
+	if save_results: # save table with model spectra sorted by chi square
 		# save output dictionary as pickle
-		with open(pickle_filename, 'wb') as file:
+		with open(chi2_pickle_file, 'wb') as file:
 			# serialize and write the variable to the file
 			pickle.dump(out_chi2, file)
-		print('      chi square minimization results saved successfully')
+		print('      chi-square minimization results saved successfully')
 
 		# save table with model spectra names sorted by chi square along with the parameters from each spectrum
 		out_save_params = save_params(dict_for_table=out_chi2)
