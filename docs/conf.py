@@ -35,15 +35,15 @@ intersphinx_disabled_domains = ['std']
 
 templates_path = ['_templates']
 
-# direct top right corner on readthedocs to the github repository
+# replace "view page source" with "edit on github" in Read The Docs theme
 html_context = {
   'display_github': True,
-  'github_user': 'buskill',
-  'github_repo': 'buskill-app',
-  'github_version': 'master/docs/',  
-#  'github_user': 'suarezgenaro',
-#  'github_repo': 'seda',
-#  'github_version': 'master/',
+  #'github_user': 'buskill',
+  #'github_repo': 'buskill-app',
+  #'github_version': 'master/docs/',  
+  'github_user': 'suarezgenaro',
+  'github_repo': 'seda',
+  'github_version': 'master',
 }
 
 # -- Options for HTML output
