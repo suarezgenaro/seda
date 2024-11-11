@@ -40,6 +40,7 @@ html_context = {
   'display_github': True,
   'github_user': 'suarezgenaro',
   'github_repo': 'seda',
+  'github_version': 'master/',
 }
 
 # -- Options for HTML output
