@@ -35,6 +35,14 @@ intersphinx_disabled_domains = ['std']
 
 templates_path = ['_templates']
 
+# direct top right corner on readthedocs to the github repository
+html_context = {
+  'display_github': True,
+  'github_user': 'buskill',
+  'github_repo': 'buskill-app',
+  'github_version': 'master/docs/',
+}
+
 # -- Options for HTML output
 
 html_theme = 'sphinx_rtd_theme'
