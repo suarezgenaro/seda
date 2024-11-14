@@ -52,7 +52,7 @@ def bayes(my_bayes):
 	>>> 
 	>>> # run chi-square fit
 	>>> out_bayes = seda.bayes(my_bayes)
-	    Nested sampling ran successfully
+	    Bayesian sampling ran successfully
 
 	Author: Genaro Suárez
 	'''
@@ -110,7 +110,7 @@ def bayes(my_bayes):
 	wl_spectra_list = wl_spectra
 	flux_spectra_list = flux_spectra
 	eflux_spectra_list = eflux_spectra
-	
+
 	wl_spectra = np.zeros(N_datapoints) # flat array with all wavelengths of input spectra
 	flux_spectra = np.zeros(N_datapoints) # flat array with all fluxes of input spectra
 	eflux_spectra = np.zeros(N_datapoints) # flat array with all flux errors of input spectra
@@ -151,20 +151,14 @@ def bayes(my_bayes):
 		else:
 			Teff, logg, logKzz, Z, CtoO = p
 
-		# generate model with the parameters
+		# generate model with the parameters (the model will have the resolution and wavelength data points as the observation)
 		out_generate_model_spectrum = generate_model_spectrum(Teff=Teff, logg=logg, logKzz=logKzz, Z=Z, CtoO=CtoO, grid=grid)
 
-		# convolve synthetic spectrum
-		out_convolve_spectrum = convolve_spectrum(wl=out_generate_model_spectrum['wavelength'], flux=out_generate_model_spectrum['flux'], 
-												  lam_res=lam_res, res=res, disp_wl_range=np.array([wl_spectra_min, wl_spectra_max]), 
-												  convolve_wl_range=np.array([0.99*wl_spectra_min, 1.01*wl_spectra_max])) # padding on both edges to avoid issues we using spectres
+#		# resample the convolved model spectrum to the wavelength data points in the observed spectra
+#		flux_model = spectres(wl_spectra, out_generate_model_spectrum['wavelength'], out_generate_model_spectrum['flux'])
 
-		# resample the convolved model spectrum to the wavelength data points in the observed spectra
-		flux_model = spectres(wl_spectra, out_convolve_spectrum['wl_conv'], out_convolve_spectrum['flux_conv'])
+		flux_model = out_generate_model_spectrum['flux']
 	
-#		# resample model to the wavelength datapoints in the observed spectrum
-#		flux_model = spectres(wl_spectra, out_generate_model_spectrum['wavelength'], out_generate_model_spectrum['flux'])#, verbose=False,fill=np.nan)
-
 		# scaled model spectrum
 		if distance is not None:
 			scaling = (((R*u.R_jup).to(u.km) / (distance*u.pc).to(u.km))**2).value # scaling = (R/d)^2

@@ -195,6 +195,7 @@ def read_model_spectrum(spectra_name_full, model, model_wl_range=None):
 	Dictionary with model spectrum:
 		- ``'wl_model'`` : wavelengths in microns
 		- ``'flux_model'`` : fluxes in erg/s/cm2/A
+		- ``'flux_model_Jy'`` : fluxes in Jy
 
 	Author: Genaro Suárez
 	'''
@@ -255,7 +256,7 @@ def read_model_spectrum(spectra_name_full, model, model_wl_range=None):
 		#wl_model = vac_to_air(wl_model).value # um in the air
 		wl_model = wl_model.value # um
 		flux_model = spec_model['col2'] * u.erg/u.s/u.cm**2/u.Hz # erg/s/cm2/Hz (to an unknown distance)
-		flux_model = flux_model.to(u.erg/u.s/u.cm**2/u.angstrom, equivalencies=u.spectral_density( wl_model * u.micron)).value # erg/s/cm2/A
+		flux_model = flux_model.to(u.erg/u.s/u.cm**2/u.angstrom, equivalencies=u.spectral_density(wl_model*u.micron)).value # erg/s/cm2/A
 
 	# sort the array. For BT-Settl is recommended by Allard in her webpage and some models are sorted from higher to smaller wavelengths.
 	sort_index = np.argsort(wl_model)
@@ -268,7 +269,10 @@ def read_model_spectrum(spectra_name_full, model, model_wl_range=None):
 		wl_model = wl_model[ind]
 		flux_model = flux_model[ind]
 
-	out = {'wl_model': wl_model, 'flux_model': flux_model}
+	# obtain fluxes in Jy
+	flux_model_Jy = (flux_model*u.erg/u.s/u.cm**2/u.angstrom).to(u.Jy, equivalencies=u.spectral_density(wl_model*u.micron)).value
+
+	out = {'wl_model': wl_model, 'flux_model': flux_model, 'flux_model_Jy': flux_model_Jy}
 
 	return out
 
@@ -452,7 +456,7 @@ def generate_model_spectrum(Teff, logg, logKzz, Z, CtoO, grid=None, model=None, 
 	return out
 
 ##################################################
-def read_grid(model, model_dir, Teff_range, logg_range, convolve=False, wl_range=None):
+def read_grid(model, model_dir, Teff_range, logg_range, convolve=False, model_wl_range=None, fit_wl_range=None, res=100, lam_res=2, wl_resample=None):
 	'''
 	Description:
 	------------
@@ -474,8 +478,16 @@ def read_grid(model, model_dir, Teff_range, logg_range, convolve=False, wl_range
 		Spectral resolution at ``lam_res`` to smooth model spectra.
 	- lam_res : float, optional (required if ``convolve``).
 		Wavelength of reference for ``res``.
-	- wl_range : float array (optional)
+	- model_wl_range : float array (optional)
 		Minimum and maximum wavelengths in microns to cut model spectra.
+	- fit_wl_range : float array, optional
+		Minimum and maximum wavelengths in microns to resample model spectra to the observed spectrum.
+	- res : float, optional (default res=100)
+		Spectral resolution at ``lam_res`` of input spectra to smooth model spectra.
+	- lam_res : float, optional (default 2 um) 
+		Wavelength of reference at which ``res`` is given.
+	- wl_resample : float array or list, optional
+		wavelength data points to resample the grid
 
 	Returns:
 	--------
@@ -508,10 +520,16 @@ def read_grid(model, model_dir, Teff_range, logg_range, convolve=False, wl_range
 	Author: Genaro Suárez
 	'''
 
+	ini_time_grid = time.time() # to estimate the time elapsed reading the grid
+
 	# read models in the input folders
 	out_select_model_spectra = select_model_spectra(Teff_range=Teff_range, logg_range=logg_range, model=model, model_dir=model_dir)
 	spectra_name_full = out_select_model_spectra['spectra_name_full']
 	spectra_name = out_select_model_spectra['spectra_name']
+
+	# set model_wl_range in case wl_resample is given
+	if wl_resample is not None:
+		model_wl_range = set_model_wl_range(model_wl_range=model_wl_range, fit_wl_range=fit_wl_range)
 
 	# all parameters's steps in the grid
 	out_grid_ranges = grid_ranges(model)
@@ -530,19 +548,30 @@ def read_grid(model, model_dir, Teff_range, logg_range, convolve=False, wl_range
 	Teff_grid = Teff_grid[mask_Teff]
 	logg_grid = logg_grid[mask_logg]
 
-	# read the grid in the constrained ranges
-
-#	# make N-D coordinate arrays
-#	Teff_mesh, logg_mesh, logKzz_mesh, Z_mesh, CtoO_mesh = np.meshgrid(Teff_grid, logg_grid, logKzz_grid, Z_grid, CtoO_grid, indexing='ij', sparse=True)
-#
-	ini_time_grid = time.time() # to estimate the time elapsed reading the grid
-
-	N_modelpoints = model_points(model)
-	flux_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), N_modelpoints)) # to save the flux at each grid point
-	wl_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), N_modelpoints)) # to save the wavelength at each grid point
+#	# define arrays to save the model grid
+#	if wl_resample is not None: 
+#		flux_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), len(wl_resample))) # to save the flux at each grid point
+#		wl_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), len(wl_resample))) # to save the wavelength at each grid point
+#		
+#	else:
+#		N_modelpoints = model_points(model)
+#		flux_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), N_modelpoints)) # to save the flux at each grid point
+#		wl_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), N_modelpoints)) # to save the wavelength at each grid point
 	
 	# create a tqdm progress bar
-	grid_bar = tqdm(total=len(spectra_name), desc='Reading model grid')
+	if convolve:
+		if wl_resample is not None:
+			desc = 'Reading, convolving, and resampling model grid'
+		else:
+			desc = 'Reading and convolving model grid'
+	else:
+		if wl_resample is not None:
+			desc = 'Reading and resampling model grid'
+		else:
+			desc = 'Reading model grid'
+	grid_bar = tqdm(total=len(spectra_name), desc=desc)
+
+	# read the grid in the constrained ranges
 	k = 0
 	for i_Teff in range(len(Teff_grid)): # iterate Teff
 		for i_logg in range(len(logg_grid)): # iterate logg
@@ -572,20 +601,33 @@ def read_grid(model, model_dir, Teff_range, logg_range, convolve=False, wl_range
 
 						if spectrum_name_full: # if there is a spectrum with the parameters in the iteration
 							# read spectrum from each combination of parameters
-							out_read_model_spectrum = read_model_spectrum(spectra_name_full=spectrum_name_full, model=model)
+							out_read_model_spectrum = read_model_spectrum(spectra_name_full=spectrum_name_full, model=model, model_wl_range=model_wl_range)
 							wl_model = out_read_model_spectrum['wl_model'] # in um
 							flux_model = out_read_model_spectrum['flux_model'] # in erg/s/cm2/A
 							
-#							# resample convolved model to the wavelength data points in the observed spectra
-#							if convolve:
-#								out_convolve_spectrum = seda_utils.convolve_spectrum(wl=wl_model, flux=flux_model, lam_R=lam_R, R=R)
-#								wl_model = out_convolve_spectrum['wl_conv']
-#								flux_model = out_convolve_spectrum['flux_conv']
+							# convolve model spectrum to the resolution of the input observed spectra
+							if convolve:
+								out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, res=res, lam_res=lam_res)
+								wl_model = out_convolve_spectrum['wl_conv']
+								flux_model = out_convolve_spectrum['flux_conv']
+
+							# resample convolved model spectrum to the wavelength data points in the observed spectra
+							if wl_resample is not None:
+								flux_model = spectres(wl_resample, wl_model, flux_model)
+								wl_model = wl_resample
 
 							# save flux at each combination
-							flux_grid[i_Teff, i_logg, i_logKzz, i_Z, i_CtoO, :] = flux_model
-							wl_grid[i_Teff, i_logg, i_logKzz, i_Z, i_CtoO, :] = wl_model
-                            # as wavelength is the same for all spectra, there is not need to save the wavelength of each spectrum
+							if i_Teff==0 and i_logg==0 and i_logKzz==0 and i_Z==0 and i_CtoO==0:
+								# define arrays to save the model grid
+								flux_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), len(wl_model))) # to save the flux at each grid point
+								wl_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), len(wl_model))) # to save the wavelength at each grid point
+
+								# save first read model spectrum
+								flux_grid[i_Teff, i_logg, i_logKzz, i_Z, i_CtoO, :len(wl_model)] = flux_model
+								wl_grid[i_Teff, i_logg, i_logKzz, i_Z, i_CtoO, :len(wl_model)] = wl_model
+							else:
+								flux_grid[i_Teff, i_logg, i_logKzz, i_Z, i_CtoO, :len(wl_model)] = flux_model
+								wl_grid[i_Teff, i_logg, i_logKzz, i_Z, i_CtoO, :len(wl_model)] = wl_model
 						
 							#print(len(wl_model))
 							## measure the resolution of each model spectrum
@@ -600,10 +642,6 @@ def read_grid(model, model_dir, Teff_range, logg_range, convolve=False, wl_range
 						k += 1
 	# close the progress bar
 	grid_bar.close()
-
-#	# cut the synthetic models
-#	if wl_range is not None:
-#		mask = (wl_model>=wl_range[0]) & (wl_model<=wl_range[1])
 
 	fin_time_grid = time.time()
 	print_time(fin_time_grid-ini_time_grid)
@@ -1159,6 +1197,62 @@ def separate_params(spectra_name, model):
 		out['fsed']= fsed_fit
 
 	return out
+
+#+++++++++++++++++++++++++++
+# set wavelength range for the model comparison via chi-square or Bayes techniques
+def set_fit_wl_range(fit_wl_range, N_spectra, wl_spectra):
+
+	# define fit_wl_range when not provided
+	if fit_wl_range is None:
+		fit_wl_range = np.zeros((N_spectra, 2)) # Nx2 array, N:number of spectra and 2 for the minimum and maximum values for each spectrum
+		for i in range(N_spectra):
+			fit_wl_range[i,:] = np.array((wl_spectra[i].min(), wl_spectra[i].max()))
+	else: # fit_wl_range is provided
+		if len(fit_wl_range.shape)==1: fit_wl_range = fit_wl_range.reshape((1, 2)) # reshape fit_wl_range array
+
+	return fit_wl_range
+
+#+++++++++++++++++++++++++++
+# set wavelength range to cut models for comparisons via chi-square or Bayes techniques
+#def set_model_wl_range(model_wl_range, fit_wl_range, N_spectra,  wl_spectra):
+def set_model_wl_range(model_wl_range, fit_wl_range):
+
+	# define model_wl_range (if not provided) in terms of fit_wl_range
+	if model_wl_range is None:
+		model_wl_range = np.array((0.9*fit_wl_range.min(), 1.1*fit_wl_range.max())) # add padding to have enough spectral coverage in models
+
+	# when model_wl_range is given and is equal or narrower than fit_wl_range
+	# add padding to model_wl_range to avoid problems with the spectres routine
+	# first find the minimum and maximum wavelength from the input spectra
+#	min_tmp1 = min(wl_spectra[0])
+#	for i in range(N_spectra):
+#		min_tmp2 = min(wl_spectra[i])
+#		if min_tmp2<min_tmp1: 
+#			wl_spectra_min = min_tmp2
+#			min_tmp1 = min_tmp2
+#		else: 
+#			wl_spectra_min = min_tmp1
+#	max_tmp1 = max(wl_spectra[0])
+#	for i in range(N_spectra):
+#		max_tmp2 = max(wl_spectra[i])
+#		if max_tmp2>max_tmp1:
+#			wl_spectra_max = max_tmp2
+#			max_tmp1 = max_tmp2
+#		else:
+#			wl_spectra_max = max_tmp1
+#
+#	if (model_wl_range.min()>=wl_spectra_min):
+#		model_wl_range[0] = wl_spectra_min-0.1*wl_spectra_min # add padding to shorter wavelengths
+#	if (model_wl_range.max()<=wl_spectra_max):
+#		model_wl_range[1] = wl_spectra_max+0.1*wl_spectra_max # add padding to longer wavelengths
+
+	# it may need an update to work with multiple spectra
+	if (model_wl_range.min()>=fit_wl_range.min()):
+		model_wl_range[0] = 0.9*fit_wl_range.min() # add padding to shorter wavelengths
+	if (model_wl_range.max()<=fit_wl_range.max()):
+		model_wl_range[1] = 1.1*fit_wl_range.max() # add padding to longer wavelengths
+
+	return model_wl_range
 
 ##########################
 # round logg to steps of 0.25

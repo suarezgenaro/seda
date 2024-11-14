@@ -397,7 +397,7 @@ class Chi2Options:
 		fit_wl_range = set_fit_wl_range(fit_wl_range=fit_wl_range, N_spectra=N_spectra, wl_spectra=wl_spectra)
 
 		# handle model_wl_range
-		model_wl_range = set_model_wl_range(model_wl_range=model_wl_range, fit_wl_range=fit_wl_range, N_spectra=N_spectra, wl_spectra=wl_spectra)
+		model_wl_range = set_model_wl_range(model_wl_range=model_wl_range, fit_wl_range=fit_wl_range)
 
 		# number of data points in the input spectra
 		out_input_data_stats = input_data_stats(wl_spectra=wl_spectra, N_spectra=N_spectra)
@@ -514,18 +514,20 @@ class BayesOptions:
 		# extract parameters for convenience
 		N_spectra = my_data.N_spectra
 		wl_spectra = my_data.wl_spectra
+		distance = my_data.distance
+		res = my_data.res
+		lam_res = my_data.lam_res
 		model = my_model.model
 		model_dir = my_model.model_dir
 		Teff_range = my_model.Teff_range
 		logg_range = my_model.logg_range
 		R_range = my_model.R_range
-		distance = my_data.distance
 
 		# handle fit_wl_range
 		fit_wl_range = set_fit_wl_range(fit_wl_range=fit_wl_range, N_spectra=N_spectra, wl_spectra=wl_spectra)
 
 		# handle model_wl_range
-		model_wl_range = set_model_wl_range(model_wl_range=model_wl_range, fit_wl_range=fit_wl_range, N_spectra=N_spectra, wl_spectra=wl_spectra)
+		model_wl_range = set_model_wl_range(model_wl_range=model_wl_range, fit_wl_range=fit_wl_range)
 
 		# number of data points in the input spectra
 		out_input_data_stats = input_data_stats(wl_spectra=wl_spectra, N_spectra=N_spectra)
@@ -609,69 +611,15 @@ class BayesOptions:
 
 		# read model grid within the Teff and logg ranges
 		if grid is None: 
-			if Teff_range is None: print('Please provide the Teff_range parameter'), exit()
-			if logg_range is None: print('Please provide the logg_range parameter'), exit()
-			if model=='Sonora_Elf_Owl':
-				grid = read_grid(model=model, model_dir=model_dir, Teff_range=Teff_range, logg_range=logg_range)
+			for i in range(N_spectra):
+				if Teff_range is None: print('Please provide the Teff_range parameter'), exit()
+				if logg_range is None: print('Please provide the logg_range parameter'), exit()
+				if model=='Sonora_Elf_Owl':
+					grid = read_grid(model=model, model_dir=model_dir, Teff_range=Teff_range, logg_range=logg_range, 
+					                 convolve=True, res=res, lam_res=lam_res, model_wl_range=model_wl_range, fit_wl_range=fit_wl_range, wl_resample=wl_spectra[i])
 		self.grid = grid
 
 		print('\n   Bayes fit options loaded successfully')
-
-
-#+++++++++++++++++++++++++++
-# set wavelength range for the model comparison via chi-square or Bayes techniques
-def set_fit_wl_range(fit_wl_range, N_spectra, wl_spectra):
-
-	# define fit_wl_range when not provided
-	if fit_wl_range is None:
-		fit_wl_range = np.zeros((N_spectra, 2)) # Nx2 array, N:number of spectra and 2 for the minimum and maximum values for each spectrum
-		for i in range(N_spectra):
-			fit_wl_range[i,:] = np.array((wl_spectra[i].min(), wl_spectra[i].max()))
-	else: # fit_wl_range is provided
-		if len(fit_wl_range.shape)==1: fit_wl_range = fit_wl_range.reshape((1, 2)) # reshape fit_wl_range array
-
-	return fit_wl_range
-
-#+++++++++++++++++++++++++++
-# set wavelength range to cut models for comparisons via chi-square or Bayes techniques
-def set_model_wl_range(model_wl_range, fit_wl_range, N_spectra,  wl_spectra):
-
-	# define model_wl_range (if not provided) in terms of fit_wl_range
-	if model_wl_range is None:
-		model_wl_range = np.array((0.9*fit_wl_range.min(), 1.1*fit_wl_range.max())) # add padding to have enough spectral coverage in models
-
-	# when model_wl_range is given and is equal or narrower than fit_wl_range
-	# add padding to model_wl_range to avoid problems with the spectres routine
-	# first find the minimum and maximum wavelength from the input spectra
-#	min_tmp1 = min(wl_spectra[0])
-#	for i in range(N_spectra):
-#		min_tmp2 = min(wl_spectra[i])
-#		if min_tmp2<min_tmp1: 
-#			wl_spectra_min = min_tmp2
-#			min_tmp1 = min_tmp2
-#		else: 
-#			wl_spectra_min = min_tmp1
-#	max_tmp1 = max(wl_spectra[0])
-#	for i in range(N_spectra):
-#		max_tmp2 = max(wl_spectra[i])
-#		if max_tmp2>max_tmp1:
-#			wl_spectra_max = max_tmp2
-#			max_tmp1 = max_tmp2
-#		else:
-#			wl_spectra_max = max_tmp1
-#
-#	if (model_wl_range.min()>=wl_spectra_min):
-#		model_wl_range[0] = wl_spectra_min-0.1*wl_spectra_min # add padding to shorter wavelengths
-#	if (model_wl_range.max()<=wl_spectra_max):
-#		model_wl_range[1] = wl_spectra_max+0.1*wl_spectra_max # add padding to longer wavelengths
-
-	# it may need an update to work with multiple spectra
-	if (model_wl_range.min()>=fit_wl_range.min()):
-		model_wl_range[0] = 0.9*fit_wl_range.min() # add padding to shorter wavelengths
-	if (model_wl_range.max()<=fit_wl_range.max()):
-		model_wl_range[1] = 1.1*fit_wl_range.max() # add padding to longer wavelengths
-
-	return model_wl_range
 
 #+++++++++++++++++++++++++++
 # count the total number of data points in all input spectra
@@ -681,7 +629,6 @@ def input_data_stats(wl_spectra, N_spectra):
 	N_datapoints = 0
 	for i in range(N_spectra):
 		N_datapoints  = N_datapoints + wl_spectra[i].size
-
 
 	# minimum and maximum wavelength from the input spectra
 	min_tmp1 = min(wl_spectra[0])
