@@ -205,7 +205,7 @@ def chi2(my_chi2):
 			if fit_wl_range[i][1]>=15: fit_wl_range[i][1] = 14.9
 
 	# read the name of the spectra from the indicated models and meeting the parameters ranges 
-	out_select_model_spectra = select_model_spectra(Teff_range=Teff_range, logg_range=logg_range, model=model, model_dir=model_dir)
+	out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir, Teff_range=Teff_range, logg_range=logg_range)
 	spectra_name_full = out_select_model_spectra['spectra_name_full']
 	spectra_name = out_select_model_spectra['spectra_name']
 	

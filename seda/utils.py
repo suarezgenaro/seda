@@ -523,7 +523,7 @@ def read_grid(model, model_dir, Teff_range, logg_range, convolve=False, model_wl
 	ini_time_grid = time.time() # to estimate the time elapsed reading the grid
 
 	# read models in the input folders
-	out_select_model_spectra = select_model_spectra(Teff_range=Teff_range, logg_range=logg_range, model=model, model_dir=model_dir)
+	out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir, Teff_range=Teff_range, logg_range=logg_range)
 	spectra_name_full = out_select_model_spectra['spectra_name_full']
 	spectra_name = out_select_model_spectra['spectra_name']
 
@@ -936,7 +936,7 @@ def best_bayesian_fit(bayes_pickle_file, grid=None, save_spectrum=False):
 	return out
 
 ##########################
-def select_model_spectra(Teff_range, logg_range, model, model_dir):
+def select_model_spectra(model, model_dir, Teff_range=None, logg_range=None, Z_range=None, logKzz_range=None, CtoO_range=None, fsed_range=None):
 	'''
 	Description:
 	------------
@@ -944,14 +944,28 @@ def select_model_spectra(Teff_range, logg_range, model, model_dir):
 
 	Parameters:
 	-----------
-	- Teff_range : float array
-		Minimum and maximum Teff values to select a model grid subset (e.g., ``Teff_range = np.array([Teff_min, Teff_max])``)
-	- logg_range : float array
-		Minimum and maximum logg values to select a model grid subset
 	- model : str
 		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
 	- model_dir : str or list
 		Path to the directory (str or list) or directories (as a list) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
+	- Teff_range : float array, optional
+		Minimum and maximum Teff values to select a model grid subset (e.g., ``Teff_range = np.array([Teff_min, Teff_max])``).
+		If not provided, the full Teff range in ``model_dir`` is considered.
+	- logg_range : float array, optional
+		Minimum and maximum logg values to select a model grid subset.
+		If not provided, the full logg range in ``model_dir`` is considered.
+	- Z_range : float array, optional
+		Minimum and maximum metallicity values to select a model grid subset.
+		If not provided, the full Z range in ``model_dir`` is considered, if available in ``model``.
+	- logKzz_range : float array, optional
+		Minimum and maximum diffusion parameter values to select a model grid subset.
+		If not provided, the full logKzz range in ``model_dir`` is considered, if available in ``model``.
+	- CtoO_range : float array, optional
+		Minimum and maximum C/O ratio values to select a model grid subset.
+		If not provided, the full C/O ratio range in ``model_dir`` is considered, if available in ``model``.
+	- fsed_range : float array, optional
+		Minimum and maximum cloudiness parameter values to select a model grid subset.
+		If not provided, the full fsed range in ``model_dir`` is considered, if available in ``model``.
 		
 	Returns:
 	--------
@@ -968,8 +982,8 @@ def select_model_spectra(Teff_range, logg_range, model, model_dir):
 	>>>              'my_path/output_700.0_800.0/'] # folders to seek model spectra
 	>>> Teff_range = np.array((700, 900)) # Teff range
 	>>> logg_range = np.array((4.0, 5.0)) # logg range
-	>>> out = seda.select_model_spectra(Teff_range=Teff_range, logg_range=logg_range,
-	>>>                                 model=model, model_dir=model_dir)
+	>>> out = seda.select_model_spectra(model=model, model_dir=model_dir,
+	>>>                                 Teff_range=Teff_range, logg_range=logg_range)
 
 	Author: Genaro Suárez
 	'''
@@ -986,17 +1000,37 @@ def select_model_spectra(Teff_range, logg_range, model, model_dir):
 
 	# read Teff and logg from each model spectrum
 	out_separate_params = separate_params(files_short, model)
-	spectra_name_Teff = out_separate_params['Teff']
-	spectra_name_logg = out_separate_params['logg']
+#	spectra_name_Teff = out_separate_params['Teff']
+#	spectra_name_logg = out_separate_params['logg']
 
 	# select spectra within the desired Teff and logg ranges
 	spectra_name_full = [] # full name with path
 	spectra_name = [] # only spectra names
+#	for i in range(len(files)):
+#		if ((spectra_name_Teff[i]>=Teff_range[0]) & (spectra_name_Teff[i]<=Teff_range[1]) & 
+#			(spectra_name_logg[i]>=logg_range[0]) & (spectra_name_logg[i]<=logg_range[1])): # spectrum with Teff and logg within the indicated ranges
+#			spectra_name_full.append(files[i]) # keep only spectra within the Teff and logg ranges
+#			spectra_name.append(files_short[i]) # keep only spectra within the Teff and logg ranges
+
 	for i in range(len(files)):
-		if ((spectra_name_Teff[i]>=Teff_range[0]) & (spectra_name_Teff[i]<=Teff_range[1]) & 
-			(spectra_name_logg[i]>=logg_range[0]) & (spectra_name_logg[i]<=logg_range[1])): # spectrum with Teff and logg within the indicated ranges
-			spectra_name_full.append(files[i]) # keep only spectra within the Teff and logg ranges
-			spectra_name.append(files_short[i]) # keep only spectra within the Teff and logg ranges
+		mask = True
+		if ('Teff' in out_separate_params) and (Teff_range is not None):
+			if not Teff_range[0] <= out_separate_params['Teff'][i] <= Teff_range[1]: mask = False
+		if ('logg' in out_separate_params) and (logg_range is not None):
+			if not logg_range[0] <= out_separate_params['logg'][i] <= logg_range[1]: mask = False
+		if ('Z' in out_separate_params) and (Z_range is not None):
+			if not Z_range[0] <= out_separate_params['Z'][i] <= Z_range[1]: mask = False
+		if ('logKzz' in out_separate_params) and (logKzz_range is not None):
+			if not logKzz_range[0] <= out_separate_params['logKzz'][i] <= logKzz_range[1]: mask = False
+		if ('CtoO' in out_separate_params) and (CtoO_range is not None):
+			if not CtoO_range[0] <= out_separate_params['CtoO'][i] <= CtoO_range[1]: mask = False
+		if ('fsed' in out_separate_params) and (fsed_range is not None):
+			if not fsed_range[0] <= out_separate_params['fsed'][i] <= fsed_range[1]: mask = False
+
+		if mask:
+			spectra_name_full.append(files[i]) # keep only spectra within the input parameter ranges
+			spectra_name.append(files_short[i]) # keep only spectra within the input parameter ranges
+
 
 	#--------------
 	# TEST to fit only a few model spectra
@@ -1005,7 +1039,15 @@ def select_model_spectra(Teff_range, logg_range, model, model_dir):
 	#--------------
 
 	if len(spectra_name_full)==0: print('   ERROR: NO SYNTHETIC SPECTRA IN THE INDICATED PARAMETER RANGES'), exit() # show up an error when there are no models in the indicated ranges
-	else: print(f'\n      {len(spectra_name)} model spectra selected with Teff=[{Teff_range[0]}, {Teff_range[1]}] and logg=[{logg_range[0]}, {logg_range[1]}]')
+#	else: print(f'\n      {len(spectra_name)} model spectra selected with Teff=[{Teff_range[0]}, {Teff_range[1]}] and logg=[{logg_range[0]}, {logg_range[1]}]')
+	else: 
+		print(f'\n      {len(spectra_name)} model spectra selected with:')
+		if ('Teff' in out_separate_params) and (Teff_range is not None): print(f'         Teff=[{Teff_range[0]}, {Teff_range[1]}]')
+		if ('logg' in out_separate_params) and (logg_range is not None): print(f'         logg=[{logg_range[0]}, {logg_range[1]}]')
+		if ('Z' in out_separate_params) and (Z_range is not None): print(f'         Z=[{Z_range[0]}, {Z_range[1]}]')
+		if ('logKzz' in out_separate_params) and (logKzz_range is not None): print(f'         logKzz=[{logKzz_range[0]}, {logKzz_range[1]}]')
+		if ('CtoO' in out_separate_params) and (CtoO_range is not None): print(f'         CtoO=[{CtoO_range[0]}, {CtoO_range[1]}]')
+		if ('fsed' in out_separate_params) and (fsed_range is not None): print(f'         fsed=[{fsed_range[0]}, {fsed_range[1]}]')
 
 	out = {'spectra_name_full': np.array(spectra_name_full), 'spectra_name': np.array(spectra_name)}
 
@@ -1022,7 +1064,7 @@ def separate_params(spectra_name, model):
 	Parameters:
 	-----------
 	- spectra_name : array or list
-		Model spectra names.
+		Model spectra names (without full path).
 	- model : str
 		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
 
