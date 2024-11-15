@@ -66,11 +66,9 @@ class InputData:
 	Author: Genaro Suárez
 	'''
 
-	def __init__(self, 
-		fit_spectra=True, fit_photometry=False, 
-		wl_spectra=None, flux_spectra=None, eflux_spectra=None, 
-		mag_phot=None, emag_phot=None, filter_phot=None,
-		res=100, lam_res=2, distance=None, edistance=None):	
+	def __init__(self, fit_spectra=True, fit_photometry=False, wl_spectra=None, 
+	    flux_spectra=None, eflux_spectra=None, mag_phot=None, emag_phot=None, 
+	    filter_phot=None, res=100, lam_res=2, distance=None, edistance=None):	
 
 		self.fit_spectra = fit_spectra
 		self.fit_photometry = fit_photometry
@@ -200,10 +198,24 @@ class ModelOptions:
 	- model_dir : str or list
 		Path to the directory (str or list) or directories (as a list) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
 		Avoid using paths with null spaces. 
-	- Teff_range : float array
+	- Teff_range : float array, optional
 		Minimum and maximum Teff values to select a model grid subset (e.g., ``Teff_range = np.array([Teff_min, Teff_max])``).
-	- logg_range : float array
+		If not provided, the full Teff range in ``model_dir`` is considered.
+	- logg_range : float array, optional
 		Minimum and maximum logg values to select a model grid subset.
+		If not provided, the full logg range in ``model_dir`` is considered.
+	- Z_range : float array, optional
+		Minimum and maximum metallicity values to select a model grid subset.
+		If not provided, the full Z range in ``model_dir`` is considered, if available in ``model``.
+	- logKzz_range : float array, optional
+		Minimum and maximum diffusion parameter values to select a model grid subset.
+		If not provided, the full logKzz range in ``model_dir`` is considered, if available in ``model``.
+	- CtoO_range : float array, optional
+		Minimum and maximum C/O ratio values to select a model grid subset.
+		If not provided, the full C/O ratio range in ``model_dir`` is considered, if available in ``model``.
+	- fsed_range : float array, optional
+		Minimum and maximum cloudiness parameter values to select a model grid subset.
+		If not provided, the full fsed range in ``model_dir`` is considered, if available in ``model``.
 	- R_range: float array, optional (used in ``bayes_fit``)
 		Minimum and maximum radius values to sample the posterior for radius. It requires the parameter ``distance`` in `input_parameters.InputData`.
 
@@ -229,7 +241,8 @@ class ModelOptions:
 	Author: Genaro Suárez
 	'''
 
-	def __init__(self, model, model_dir, Teff_range, logg_range, R_range=None):
+	def __init__(self, model, model_dir, R_range=None, Teff_range=None, logg_range=None, Z_range=None, 
+                 logKzz_range=None, CtoO_range=None, fsed_range=None):
 
 		self.model = model
 		models_valid = ['Sonora_Diamondback', 'Sonora_Elf_Owl', 'LB23', 'Sonora_Cholla', 
@@ -238,9 +251,13 @@ class ModelOptions:
 			print(f'Models {model} are not recognized')
 			print(f'   the options are {models_valid}')
 			exit()
+		self.R_range = R_range
 		self.Teff_range = Teff_range
 		self.logg_range = logg_range
-		self.R_range = R_range
+		self.Z_range = Z_range
+		self.logKzz_range = logKzz_range
+		self.CtoO_range = CtoO_range
+		self.fsed_range = fsed_range
 
 		# when only one directory with models is given
 		if not isinstance(model_dir, list): model_dir = [model_dir]
@@ -338,12 +355,16 @@ class Chi2Options:
 
 		# read parameters from ModelOptions
 		self.model = my_model.model
+		self.R_range = my_model.R_range
 		self.Teff_range = my_model.Teff_range
 		self.logg_range = my_model.logg_range
-		self.R_range = my_model.R_range
+		self.Z_range = my_model.Z_range
+		self.logKzz_range = my_model.logKzz_range
+		self.CtoO_range = my_model.CtoO_range
+		self.fsed_range = my_model.fsed_range
 		self.model_dir = my_model.model_dir
 		self.N_modelpoints = my_model.N_modelpoints
-		
+
 		# extract parameters for convenience
 		N_spectra = my_data.N_spectra
 		wl_spectra = my_data.wl_spectra
@@ -505,9 +526,13 @@ class BayesOptions:
 
 		# read parameters from ModelOptions
 		self.model = my_model.model
+		self.R_range = my_model.R_range
 		self.Teff_range = my_model.Teff_range
 		self.logg_range = my_model.logg_range
-		self.R_range = my_model.R_range
+		self.Z_range = my_model.Z_range
+		self.logKzz_range = my_model.logKzz_range
+		self.CtoO_range = my_model.CtoO_range
+		self.fsed_range = my_model.fsed_range
 		self.model_dir = my_model.model_dir
 		self.N_modelpoints = my_model.N_modelpoints
 
@@ -519,9 +544,13 @@ class BayesOptions:
 		lam_res = my_data.lam_res
 		model = my_model.model
 		model_dir = my_model.model_dir
+		R_range = my_model.R_range
 		Teff_range = my_model.Teff_range
 		logg_range = my_model.logg_range
-		R_range = my_model.R_range
+		Z_range = my_model.Z_range
+		logKzz_range = my_model.logKzz_range
+		CtoO_range = my_model.CtoO_range
+		fsed_range = my_model.fsed_range
 
 		# handle fit_wl_range
 		fit_wl_range = set_fit_wl_range(fit_wl_range=fit_wl_range, N_spectra=N_spectra, wl_spectra=wl_spectra)

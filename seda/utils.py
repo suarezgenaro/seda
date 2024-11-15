@@ -936,7 +936,8 @@ def best_bayesian_fit(bayes_pickle_file, grid=None, save_spectrum=False):
 	return out
 
 ##########################
-def select_model_spectra(model, model_dir, Teff_range=None, logg_range=None, Z_range=None, logKzz_range=None, CtoO_range=None, fsed_range=None):
+def select_model_spectra(model, model_dir, Teff_range=None, logg_range=None, Z_range=None, 
+                         logKzz_range=None, CtoO_range=None, fsed_range=None):
 	'''
 	Description:
 	------------
@@ -999,19 +1000,11 @@ def select_model_spectra(model, model_dir, Teff_range=None, logg_range=None, Z_r
 			files_short.append(file)
 
 	# read Teff and logg from each model spectrum
-	out_separate_params = separate_params(files_short, model)
-#	spectra_name_Teff = out_separate_params['Teff']
-#	spectra_name_logg = out_separate_params['logg']
+	out_separate_params = separate_params(model=model, spectra_name=files_short)
 
 	# select spectra within the desired Teff and logg ranges
 	spectra_name_full = [] # full name with path
 	spectra_name = [] # only spectra names
-#	for i in range(len(files)):
-#		if ((spectra_name_Teff[i]>=Teff_range[0]) & (spectra_name_Teff[i]<=Teff_range[1]) & 
-#			(spectra_name_logg[i]>=logg_range[0]) & (spectra_name_logg[i]<=logg_range[1])): # spectrum with Teff and logg within the indicated ranges
-#			spectra_name_full.append(files[i]) # keep only spectra within the Teff and logg ranges
-#			spectra_name.append(files_short[i]) # keep only spectra within the Teff and logg ranges
-
 	for i in range(len(files)):
 		mask = True
 		if ('Teff' in out_separate_params) and (Teff_range is not None):
@@ -1055,7 +1048,7 @@ def select_model_spectra(model, model_dir, Teff_range=None, logg_range=None, Z_r
 
 ##########################
 # separate parameters from each model spectrum name
-def separate_params(spectra_name, model):
+def separate_params(model, spectra_name):
 	'''
 	Description:
 	------------
@@ -1063,10 +1056,10 @@ def separate_params(spectra_name, model):
 
 	Parameters:
 	-----------
-	- spectra_name : array or list
-		Model spectra names (without full path).
 	- model : str
 		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
+	- spectra_name : array or list
+		Model spectra names (without full path).
 
 	Returns:
 	--------
@@ -1075,7 +1068,7 @@ def separate_params(spectra_name, model):
 		- ``logg``: surface gravity (log g) for each model spectrum.
 		- ``Z``: (if provided by ``model``) metallicity for each model spectrum.
 		- ``logKzz``: (if provided by ``model``) diffusion parameter for each model spectrum. 
-		- ``fsed``: (if provided by ``model``) cloudiness parameter for each model spectrum.
+		- ``fsed``: (if provided by ``model``) cloudiness parameter for each model spectrum (models with nc or no clouds are assigned a value of 99).
 		- ``CtoO``: (if provided by ``model``) C/O ratio for each model spectrum.
 		- ``spectra_name`` : model spectra names.
 

@@ -126,9 +126,13 @@ def chi2(my_chi2):
 	# from ModelOptions
 	model = my_chi2.model
 	model_dir = my_chi2.model_dir
+	R_range = my_chi2.R_range
 	Teff_range = my_chi2.Teff_range
 	logg_range = my_chi2.logg_range
-	R_range = my_chi2.R_range
+	Z_range = my_chi2.Z_range
+	logKzz_range = my_chi2.logKzz_range
+	CtoO_range = my_chi2.CtoO_range
+	fsed_range = my_chi2.fsed_range
 	N_modelpoints = my_chi2.N_modelpoints
 	# from Chi2Options
 	save_results = my_chi2.save_results
@@ -205,7 +209,8 @@ def chi2(my_chi2):
 			if fit_wl_range[i][1]>=15: fit_wl_range[i][1] = 14.9
 
 	# read the name of the spectra from the indicated models and meeting the parameters ranges 
-	out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir, Teff_range=Teff_range, logg_range=logg_range)
+	out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir, Teff_range=Teff_range, logg_range=logg_range, Z_range=Z_range, 
+	                                                logKzz_range=logKzz_range, CtoO_range=CtoO_range, fsed_range=fsed_range)
 	spectra_name_full = out_select_model_spectra['spectra_name_full']
 	spectra_name = out_select_model_spectra['spectra_name']
 	
@@ -738,7 +743,7 @@ def chi2(my_chi2):
 	out_chi2['logflux_residuals'] = logflux_residuals
 
 	# separate physical parameters from each model spectrum name
-	out_separate_params = separate_params(spectra_name=spectra_name, model=model)
+	out_separate_params = separate_params(model=model, spectra_name=spectra_name)
 	# add model spectra parameters to the output dictionary
 	out_chi2.update(out_separate_params)
 
