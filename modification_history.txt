@@ -1,10 +1,20 @@
 MODIFICATION HISTORY
 
 ------------
+2024/11/21
+Genaro Suárez
+	The code removes input spectra data points with nan values, masked column values, and/or negative fluxes.
+
+------------
+2024/09/28
+Genaro Suárez
+	Started Github repository and readthedocs
+
+------------
 2024/05/18
 Genaro Suárez
-	Organized the code as a python package 
-	Used classes
+	Organized the code as a python package
+	Implementation of classes
 
 ------------
 2024/06/18

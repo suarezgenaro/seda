@@ -619,10 +619,9 @@ def chi2(my_chi2):
 			extinction_curve_fit = 0
 
 		# minimize chi square
-		minner = Minimizer(chi_square, params, fcn_args=(data_fit, edata_fit, model_fit[i,:], extinction_curve_fit, weight_fit))
+		minner = Minimizer(residuals_for_chi2, params, fcn_args=(data_fit, edata_fit, model_fit[i,:], extinction_curve_fit, weight_fit))
 
 		out_lmfit = minner.minimize(method='leastsq') # 'leastsq': Levenberg-Marquardt (default)
-		#print(out_lmfit. redchi, out_lmfit. bic)
 		iterations_fit[i] = out_lmfit.nfev # number of function evaluations in the fit
 		Av_fit[i] = out_lmfit.params['extinction'].value
 		eAv_fit[i] = out_lmfit.params['extinction'].stderr # half the difference between the 15.8 and 84.2 percentiles of the PDF
@@ -765,7 +764,7 @@ def chi2(my_chi2):
 	return out_chi2
 
 ##########################
-def chi_square(params, data, edata, model, extinction_curve, weight):
+def residuals_for_chi2(params, data, edata, model, extinction_curve, weight):
 #	'''
 #	Description:
 #	------------
@@ -796,7 +795,7 @@ def chi_square(params, data, edata, model, extinction_curve, weight):
 	extinction = params['extinction']
 	scaling = params['scaling']
 	model_red = 10**(-extinction*extinction_curve/2.5) * scaling * model
-	return np.sqrt(weight/np.mean(weight))*(data-model_red) / edata # consider that the square of this equation will be used in the fit
+	return np.sqrt(weight/np.mean(weight)) * (data-model_red)/edata # the square of this equation will be minimized by minner.minimize
 
 ##########################
 def save_params(dict_for_table):

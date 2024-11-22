@@ -4,12 +4,13 @@ import os
 import xarray
 import pickle
 from spectres import spectres
+from astropy import units as u
 from astropy.io import ascii
+from astropy.table import Column, MaskedColumn
+from astropy.convolution import Gaussian1DKernel, convolve
 from scipy.interpolate import RegularGridInterpolator
 from tqdm.auto import tqdm
-from astropy import units as u
 from specutils.utils.wcs_utils import vac_to_air
-from astropy.convolution import Gaussian1DKernel, convolve
 from sys import exit
 
 ##########################
@@ -65,6 +66,11 @@ def convolve_spectrum(wl, flux, res, lam_res, eflux=None, disp_wl_range=None, co
 	Author: Genaro Suárez
 	'''
 
+	# convert input spectrum into numpy arrays if astropy
+	wl = astropy_to_numpy(wl)
+	flux = astropy_to_numpy(flux)
+	eflux = astropy_to_numpy(eflux)
+
 	if (disp_wl_range is None): disp_wl_range = np.array((wl.min(), wl.max())) # define disp_wl_range if not provided
 	if (convolve_wl_range is None): convolve_wl_range = np.array((wl.min(), wl.max())) # define convolve_wl_range if not provided
 
@@ -73,7 +79,11 @@ def convolve_spectrum(wl, flux, res, lam_res, eflux=None, disp_wl_range=None, co
 
 	# define a Gaussian for convolution
 	mask_fit = (wl>=disp_wl_range[0]) & (wl<=disp_wl_range[1]) # mask to obtain the median wavelength dispersion
-	stddev = (lam_res/res)*(1./np.median(wl_bin[mask_fit]))/2.36 # stddev is given in pixels
+	stddev = (lam_res/res)*(1./np.median(wl_bin[mask_fit]))/ (2.*np.sqrt(2*np.log(2))) # stddev is given in pixels
+	if stddev<1: 
+		print('   Warning: the input spectrum may have a resolution smaller than the desired one.')
+		print('            the spectrum will be convolved but will be essentially the same.')
+
 	gauss = Gaussian1DKernel(stddev=stddev)
 
 	mask_conv = (wl>=convolve_wl_range[0]) & (wl<=convolve_wl_range[1]) # range to convolve the spectrum
@@ -293,12 +303,13 @@ def best_chi2_fits(chi2_pickle_file, N_best_fits=1):
 	Returns:
 	--------
 	Dictionary with model spectra:
-		- ``'spectra_name_best'``: name of model spectrum
-		- ``'chi2_red_fit_best'``: reduced chi-square
-		- ``'wl_model'``: wavelength (in um) of original model spectra.
-		- ``'flux_model'``: fluxes (in erg/s/cm2/A) of original model spectra.
-		- ``'wl_model_conv'``: wavelength (in um) of convolved model spectra using ``res`` and ``lam_res`` in the input dictionary.
-		- ``'flux_model_conv'``: fluxes (in erg/s/cm2/A) of convolved model spectra.
+		- ``'spectra_name_best'`` : name of model spectrum
+		- ``'chi2_red_fit_best'`` : reduced chi-square
+		- ``'wl_model'`` : wavelength (in um) of original model spectra.
+		- ``'flux_model'`` : fluxes (in erg/s/cm2/A) of original model spectra.
+		- ``'wl_model_conv'`` : wavelength (in um) of convolved model spectra using ``res`` and ``lam_res`` in the input dictionary.
+		- ``'flux_model_conv'`` : fluxes (in erg/s/cm2/A) of convolved model spectra.
+		- ``'parameters'`` : physical parameters for each spectrum as provided by ``utils.separate_params``, namely ``Teff``, ``logg``, ``Z``, ``logKzz``, ``fsed``, and ``CtoO``, if provided by ``model``.
 
 	Author: Genaro Suárez
 	'''
@@ -323,6 +334,9 @@ def best_chi2_fits(chi2_pickle_file, N_best_fits=1):
 	spectra_name_full_best = spectra_name_full[sort_ind][:N_best_fits]
 	spectra_name_best = spectra_name[sort_ind][:N_best_fits]
 
+	# read parameters from file name for the best fits
+	out_separate_params = separate_params(model=model, spectra_name=spectra_name_best)
+
 	# read best fits
 	wl_model = np.zeros((N_modelpoints, N_best_fits))
 	flux_model = np.zeros((N_modelpoints, N_best_fits))
@@ -341,6 +355,7 @@ def best_chi2_fits(chi2_pickle_file, N_best_fits=1):
 
 	out = {'spectra_name_best': spectra_name_best, 'chi2_red_fit_best': chi2_red_fit_best, 'wl_model': wl_model, 
 		   'flux_model': flux_model, 'wl_model_conv': wl_model_conv, 'flux_model_conv': flux_model_conv}
+	out['parameters'] = out_separate_params
 
 	return out
 
@@ -1047,7 +1062,6 @@ def select_model_spectra(model, model_dir, Teff_range=None, logg_range=None, Z_r
 	return out
 
 ##########################
-# separate parameters from each model spectrum name
 def separate_params(model, spectra_name):
 	'''
 	Description:
@@ -1288,6 +1302,21 @@ def set_model_wl_range(model_wl_range, fit_wl_range):
 		model_wl_range[1] = 1.1*fit_wl_range.max() # add padding to longer wavelengths
 
 	return model_wl_range
+
+##########################
+# convert an astropy array into a numpy array
+def astropy_to_numpy(x):
+	# if the variable is an astropy Column
+	if isinstance(x, Column):
+		if isinstance(x, MaskedColumn): # if MaskedColumn
+			x = x.filled(np.nan) # fill masked values with nan
+			x = x.data
+		else: # if Column
+			x = x.data
+	# if the variable is an astropy Quantity (with units)
+	if isinstance(x, u.Quantity): x = x.value
+
+	return x
 
 ##########################
 # round logg to steps of 0.25

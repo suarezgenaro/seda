@@ -98,12 +98,23 @@ class InputData:
 			if not isinstance(eflux_spectra, list): eflux_spectra = [eflux_spectra]
 
 		# handle input parameters
+		# convert input spectra to numpy arrays, if they are astropy
+		for i in range(N_spectra):
+			wl_spectra[i] = astropy_to_numpy(wl_spectra[i])
+			flux_spectra[i] = astropy_to_numpy(flux_spectra[i])
+			eflux_spectra[i] = astropy_to_numpy(eflux_spectra[i])
 		# remove NaN values
 		for i in range(N_spectra):
 			mask_nonan = (~np.isnan(wl_spectra[i])) & (~np.isnan(flux_spectra[i])) & (~np.isnan(eflux_spectra[i]))
 			wl_spectra[i] = wl_spectra[i][mask_nonan]
 			flux_spectra[i] = flux_spectra[i][mask_nonan]
 			eflux_spectra[i] = eflux_spectra[i][mask_nonan]
+		# remove negative fluxes
+		for i in range(N_spectra):
+			mask_noneg = flux_spectra[i]>0
+			wl_spectra[i] = wl_spectra[i][mask_noneg]
+			flux_spectra[i] = flux_spectra[i][mask_noneg]
+			eflux_spectra[i] = eflux_spectra[i][mask_noneg]
 
 		self.res = res
 		self.lam_res = lam_res
