@@ -451,7 +451,7 @@ class BayesOptions:
 	'''
 	Description:
 	------------
-		Define Bayes fit options.
+		Define Bayesian sampling options.
 
 	Parameters:
 	-----------
