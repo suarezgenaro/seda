@@ -337,7 +337,8 @@ def plot_bayes_fit(bayes_pickle_file, ylog=True, out_file=None, save=True):
 	return
 
 ##########################
-def plot_model_coverage(model, model_dir, xparam, yparam):
+def plot_model_coverage(model, model_dir, xparam, yparam, xparam_range=None, yparam_range=None, 
+	                    xlog=False, ylog=False, out_file=None, save=True):
 	'''
 	Description:
 	------------
@@ -353,6 +354,19 @@ def plot_model_coverage(model, model_dir, xparam, yparam):
 		Parameter in ``model`` to be plotted in the horizontal axis. `input_parameters.ModelOptions`` provides more details about available parameters for ``model``.
 	- yparam : str
 		Parameter in ``model`` to be plotted in the vertical axis. `input_parameters.ModelOptions`` provides more details about available parameters for ``model``.
+	- xparam_range : list or array
+		Range in the plot for ``xparam``.
+	- yparam_range : list or array
+		Range in the plot for ``yparam``.
+	- xlog : {``True``, ``False``}, optional (default ``False``)
+		Use logarithmic (``True``) or linear (``False``) scale to plot the horizontal axis.
+	- ylog : {``True``, ``False``}, optional (default ``False``)
+		Use logarithmic (``True``) or linear (``False``) scale to plot the vertical axis.
+	- out_file : str, optional
+		File name to save the figure (it can include a path e.g. my_path/figure.pdf). Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
+		Default name is '{model}_{xparam}_{yparam}.pdf', where ``model`` is read from ``chi2_pickle_file``.
+	- save : {``True``, ``False``}, optional (default ``True``)
+		Save (``'True'``) or do not save (``'False'``) the resulting figure.
 
 	Returns:
 	--------
@@ -386,11 +400,21 @@ def plot_model_coverage(model, model_dir, xparam, yparam):
 
 	ax.xaxis.set_minor_locator(AutoMinorLocator())
 	ax.yaxis.set_minor_locator(AutoMinorLocator())
+	if xparam_range is not None: ax.set_xlim(xparam_range[0], xparam_range[1])
+	if yparam_range is not None: ax.set_ylim(yparam_range[0], yparam_range[1])
+	if xlog: ax.set_xscale('log')
+	if ylog: ax.set_yscale('log')
 	plt.grid(True, which='both', color='gainsboro', alpha=0.5)
 
 	plt.xlabel(xparam)
 	plt.ylabel(yparam)
 	plt.title(f'{model_name(model)} Atmospheric Models')
+
+	if save:
+		if out_file is None: plt.savefig(f'{model}_{xparam}_{yparam}.pdf', bbox_inches='tight')
+		else: plt.savefig(out_file, bbox_inches='tight')
+	plt.show()
+	plt.close()
 
 ##########################
 # get proper model name from the model parameter
