@@ -1,6 +1,11 @@
 MODIFICATION HISTORY
 
 ------------
+2024/11/24
+Genaro Suárez
+	Made function to plot model grid parameters to inspect their coverage.
+
+------------
 2024/11/23
 Genaro Suárez
 	Available function to convert apparent fluxes into absolute fluxes.

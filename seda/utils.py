@@ -720,6 +720,9 @@ def grid_ranges(model):
 		# C/O ratio
 		CtoO = np.array((0.5, 1.0, 1.5, 2.5)) # relative to solar C/O
 
+#	if (model=='ATMO2020'):
+
+
 	out = {'Teff': Teff, 'logg': logg, 'logKzz': logKzz, 'Z': Z, 'CtoO': CtoO}
 
 	return out
@@ -1009,6 +1012,9 @@ def select_model_spectra(model, model_dir, Teff_range=None, logg_range=None, Z_r
 
 	Author: Genaro Suárez
 	'''
+
+	# make sure model_dir is a list
+	if isinstance(model_dir, str): model_dir = [model_dir]
 
 	# to store files in model_dir
 	files = [] # with full path
@@ -1381,7 +1387,7 @@ def app_to_abs_flux(flux, distance, eflux=0, edistance=0):
 	out['distance'] = distance
 	if edistance!=0:
 		out['edistance'] = edistance
-		out['eflux_abs'] = eflux_abs # if eflux_abs was store above it would replace without issues
+		out['eflux_abs'] = eflux_abs # if eflux_abs was stored above it would replace it without issues
 	    
 	return out
 

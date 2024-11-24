@@ -23,7 +23,7 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True, out_file=None, sav
 	- ylog : {``True``, ``False``}, optional (default ``True``)
 		Use logarithmic (``True``) or linear (``False``) scale to plot fluxes and residuals.
 	- out_file : str, optional
-		File name to save the figure. Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
+		File name to save the figure (it can include a path e.g. my_path/figure.pdf). Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
 		Default name is 'SED_{``model``}_chi2.pdf', where ``model`` is read from ``chi2_pickle_file``.
 	- save : {``True``, ``False``}, optional (default ``True``)
 		Save (``'True'``) or do not save (``'False'``) the resulting figure.
@@ -91,22 +91,9 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True, out_file=None, sav
 	ax[0].plot(wl_spectra, flux_spectra, color='black', linewidth=1.0, label='Observed spectra') # in erg/s/cm2
 
 	# plot best fits
+	label_model = spectra_name_short(model=model, spectra_name=spectra_name_best) # short name for spectra to keep only relevant info
 	for i in range(N_best_fits):
-		if model=='Sonora_Diamondback':
-			label_model = spectra_name_best[i][:-5] # for models on Zenodo
-		if model=='Sonora_Elf_Owl':
-			label_model = spectra_name_best[i][8:-3]
-		if model=='Sonora_Cholla':
-			label_model = spectra_name_best[i][:-5]
-		if model=='LB23':
-			label_model = spectra_name_best[i][:-3]
-		if model=='ATMO2020':
-			label_model = spectra_name_best[i].split('spec_')[1][:-4]
-		if model=='BT-Settl':
-			label_model = spectra_name_best[i][:-16]
-		if model=='SM08':
-			label_model = spectra_name_best[i][3:]
-		label = label_model+r' ($\chi^2_\nu=$'+str(round(chi2_red_fit_best[i],1))+')'
+		label = label_model[i]+r' ($\chi^2_\nu=$'+str(round(chi2_red_fit_best[i],1))+')'
 		mask = (wl_model_conv[:,i]>wl_array_model_conv_resam.min()) & (wl_model_conv[:,i]<wl_array_model_conv_resam.max())
 		ax[0].plot(wl_model_conv[:,i][mask], flux_model_conv[mask][:,i], '--', linewidth=1.0, label=label) # in erg/s/cm2
 
@@ -120,22 +107,7 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True, out_file=None, sav
 		plt.xscale('log')
 		ax[0].xaxis.set_major_formatter(StrMethodFormatter('{x:.0f}'))
 	ax[0].set_ylabel(r'$F_\lambda\ ($erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)', size=12)
-	if model=='Sonora_Diamondback':
-		ax[0].set_title('Sonora Diamondback Atmospheric Models')
-	if model=='Sonora_Elf_Owl':
-		ax[0].set_title('Sonora Elf Owl Atmospheric Models')
-	if model=='LB23':
-		ax[0].set_title('Lacy & Burrows (2023) Atmospheric Models')
-	if model=='Sonora_Cholla':
-		ax[0].set_title('Sonora Cholla Atmospheric Models')
-	if model=='Sonora_Bobcat':
-		ax[0].set_title('Sonora Bobcat Atmospheric Models')
-	if model=='ATMO2020':
-		ax[0].set_title('ATMO 2020 Atmospheric Models')
-	if model=='BT-Settl':
-		ax[0].set_title('BT-Settl Atmospheric Models')
-	if model=='SM08':
-		ax[0].set_title('Saumon & Marley (2008) Atmospheric Models')
+	ax[0].set_title(f'{model_name(model)} Atmospheric Models')
 
 	#------------------------
 	# residuals
@@ -173,7 +145,7 @@ def plot_chi2_red(chi2_pickle_file, N_best_fits=1, out_file=None, save=True):
 	N_best_fits: int 
 		Number (default 1) of best model fits for plotting.
 	out_file : str, optional
-		File name to save the figure. Note: use file formats (pdf, eps, or ps). Image formats do not work because the figure is saved in several pages, according to ``N_best_fits``.
+		File name to save the figure (it can include a path e.g. my_path/figure.pdf). Note: use file formats (pdf, eps, or ps). Image formats do not work because the figure is saved in several pages, according to ``N_best_fits``.
 		Default name is 'SED_{``model``}_chi2.pdf', where ``model`` is read from ``chi2_pickle_file``.
 	save : {``True``, ``False``}, optional (default ``True``)
 		Save (``'True'``) or do not save (``'False'``) the resulting figure.
@@ -213,6 +185,7 @@ def plot_chi2_red(chi2_pickle_file, N_best_fits=1, out_file=None, save=True):
 		if out_file is None: pdf_pages = PdfPages('chi2_'+model+'.pdf') # name of the pdf
 		else: pdf_pages = PdfPages(out_file) # name of the pdf
 
+	plot_title = spectra_name_short(model=model, spectra_name=spectra_name_best) # short name for spectra to keep only relevant info
 	for i in range(N_best_fits): 
 		fig, ax = plt.subplots()
 	
@@ -228,21 +201,7 @@ def plot_chi2_red(chi2_pickle_file, N_best_fits=1, out_file=None, save=True):
 		plt.grid(True, which='both', color='gainsboro', alpha=0.5)
 		plt.xlabel(r'$\lambda$ ($\mu$m)', size=12)
 		plt.ylabel(r'$\chi^2_r$', size=12)
-		if model=='Sonora_Diamondback':
-			plot_title = spectra_name_best[i][:-15]
-		if model=='Sonora_Elf_Owl':
-			plot_title = spectra_name_best[i][8:-3]
-		if model=='Sonora_Cholla':
-			plot_title = spectra_name_best[i][:-5]
-		if model=='LB23':
-			plot_title = spectra_name_best[i][:-3]
-		if model=='ATMO2020':
-			plot_title = spectra_name_best[i].split('spec_')[1][:-4]
-		if model=='BT-Settl':
-			plot_title = spectra_name_best[i][:-16]
-		if model=='SM08':
-			plot_title = spectra_name_best[i][3:]
-		plt.title(plot_title)
+		plt.title(plot_title[i])
 	
 		if save:
 			pdf_pages.savefig(fig, bbox_inches='tight')
@@ -267,7 +226,7 @@ def plot_bayes_fit(bayes_pickle_file, ylog=True, out_file=None, save=True):
 	- ylog : {``True``, ``False``}, optional (default ``True``)
 		Use logarithmic (``True``) or linear (``False``) scale to plot fluxes and residuals.
 	- out_file : str, optional
-		File name to save the figure. Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
+		File name to save the figure (it can include a path e.g. my_path/figure.pdf). Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
 		Default name is 'SED_{``model``}_bayes.pdf', where ``model`` is read from ``bayes_pickle_file``.
 	- save : {``True``, ``False``}, optional (default ``True``)
 		Save (``'True'``) or do not save (``'False'``) the resulting figure.
@@ -353,22 +312,7 @@ def plot_bayes_fit(bayes_pickle_file, ylog=True, out_file=None, save=True):
 		plt.xscale('log')
 		ax[0].xaxis.set_major_formatter(StrMethodFormatter('{x:.0f}'))
 	ax[0].set_ylabel(r'$F_\lambda\ ($erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)', size=12)
-	if model=='Sonora_Diamondback':
-		ax[0].set_title('Sonora Diamondback Atmospheric Models')
-	if model=='Sonora_Elf_Owl':
-		ax[0].set_title('Sonora Elf Owl Atmospheric Models')
-	if model=='LB23':
-		ax[0].set_title('Lacy & Burrows (2023) Atmospheric Models')
-	if model=='Sonora_Cholla':
-		ax[0].set_title('Sonora Cholla Atmospheric Models')
-	if model=='Sonora_Bobcat':
-		ax[0].set_title('Sonora Bobcat Atmospheric Models')
-	if model=='ATMO2020':
-		ax[0].set_title('ATMO 2020 Atmospheric Models')
-	if model=='BT-Settl':
-		ax[0].set_title('BT-Settl Atmospheric Models')
-	if model=='SM08':
-		ax[0].set_title('Saumon & Marley (2008) Atmospheric Models')
+	ax[0].set_title(f'{model_name(model)} Atmospheric Models')
 
 	#------------------------
 	# residuals
@@ -391,3 +335,90 @@ def plot_bayes_fit(bayes_pickle_file, ylog=True, out_file=None, save=True):
 	plt.close()
 
 	return
+
+##########################
+def plot_model_coverage(model, model_dir, xparam, yparam):
+	'''
+	Description:
+	------------
+		Plot model grid coverage for two desired parameters.
+
+	Parameters:
+	-----------
+	- model : str
+		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
+	- model_dir : str or list, optional
+		Path to the directory (str or list) or directories (as a list) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
+	- xparam : str
+		Parameter in ``model`` to be plotted in the horizontal axis. `input_parameters.ModelOptions`` provides more details about available parameters for ``model``.
+	- yparam : str
+		Parameter in ``model`` to be plotted in the vertical axis. `input_parameters.ModelOptions`` provides more details about available parameters for ``model``.
+
+	Returns:
+	--------
+	Plot of ``yparam`` versus ``xparam`` for ``model``.
+
+	Example:
+	--------
+	>>> import seda
+	>>> 
+	>>> # plot logg vs. Teff for the ATMO 2020 models
+	>>> model = 'ATMO2020'
+	>>> model_dir = ['my_path/CEQ_spectra/', 
+	>>>              'my_path/NEQ_weak_spectra/', 
+	>>>              'my_path/NEQ_strong_spectra/']
+	>>> seda.plot_chi2_fit(model=model, model_dir=model_dir, xparam='Teff', yparam='logg')
+
+	Author: Genaro Suárez
+	'''
+
+	# get spectra names from the input directories
+	out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir)
+	# separate parameters for the spectra
+	out_separate_params = separate_params(model=model, spectra_name=out_select_model_spectra['spectra_name'])
+
+	# make plot of y_param against x_param
+	#------------------------
+	# initialize plot for best fits and residuals
+	fig, ax = plt.subplots()
+
+	plt.scatter(out_separate_params[xparam], out_separate_params[yparam], s=5, zorder=3)
+
+	ax.xaxis.set_minor_locator(AutoMinorLocator())
+	ax.yaxis.set_minor_locator(AutoMinorLocator())
+	plt.grid(True, which='both', color='gainsboro', alpha=0.5)
+
+	plt.xlabel(xparam)
+	plt.ylabel(yparam)
+	plt.title(f'{model_name(model)} Atmospheric Models')
+
+##########################
+# get proper model name from the model parameter
+def model_name(model):
+	
+	if model=='Sonora_Diamondback': name = 'Sonora Diamondback'
+	if model=='Sonora_Elf_Owl': name = 'Sonora Elf Owl'
+	if model=='LB23': name = 'Lacy & Burrows (2023)'
+	if model=='Sonora_Cholla': name = 'Sonora Cholla'
+	if model=='Sonora_Bobcat': name = 'Sonora Bobcat'
+	if model=='ATMO2020': name = 'ATMO 2020'
+	if model=='BT-Settl': name = 'BT-Settl'
+	if model=='SM08': name = 'Saumon & Marley (2008)'
+
+	return name
+
+##########################
+# short model spectrum name from file name
+def spectra_name_short(model, spectra_name):
+	
+	short_name = []
+	for spectrum_name in spectra_name:
+		if model=='Sonora_Diamondback': short_name.append(spectrum_name[:-5])
+		if model=='Sonora_Elf_Owl': short_name.append(spectrum_name[8:-3])
+		if model=='Sonora_Cholla': short_name.append(spectrum_name[:-5])
+		if model=='LB23': short_name.append(spectrum_name[:-3])
+		if model=='ATMO2020': short_name.append(spectrum_name.split('spec_')[1][:-4])
+		if model=='BT-Settl': short_name.append(spectrum_name[:-16])
+		if model=='SM08': short_name.append(spectrum_name[3:])
+
+	return short_name
