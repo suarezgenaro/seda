@@ -1330,7 +1330,7 @@ def app_to_abs_flux(flux, distance, eflux=0, edistance=0):
 	--------
 	- Dictionary with absolute fluxes and input parameters:
 		- ``'flux_abs'`` : absolute fluxes in the same units as the input fluxes.
-		- ``'eflux_abs'`` : (if ``eflux`` or ``edistance`` are provided) absolute flux uncertainties.
+		- ``'eflux_abs'`` : (if ``eflux`` or ``edistance`` is provided) absolute flux uncertainties.
 		- ``'flux_app'`` : input apparent fluxes.
 		- ``'eflux_app'`` : (if provided) input apparent flux errors.
 		- ``'distance'`` : input distance.
