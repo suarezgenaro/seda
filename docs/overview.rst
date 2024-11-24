@@ -13,7 +13,7 @@ Principal SEDA Modules
   - :meth:`~seda.chi2_fit`: to find the best model fits from :ref:`models` using `LMFIT <https://lmfit.github.io/lmfit-py/>`_ non-linear least-square minimization python package by `Newville et al. (2014) <https://ui.adsabs.harvard.edu/abs/2014zndo.....11813N/abstract>`_.
   - :meth:`~seda.bayes_fit`: to estimate Bayesian posteriors using `dynesty <https://dynesty.readthedocs.io/en/stable/index.html>`_ dynamic nested sampling package by `Speagle (2020) <https://ui.adsabs.harvard.edu/abs/2020MNRAS.493.3132S/abstract>`_.
   - :meth:`~seda.plots`: plotting functions.
-  - :meth:`~seda.utils`: additional useful functions.
+  - :meth:`~seda.utils`: additional useful functions (see :ref:`seda_tools`).
 
 .. _seda_tools:
 
