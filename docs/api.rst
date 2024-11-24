@@ -16,23 +16,23 @@ Model Options
 .. autoclass:: seda.input_parameters.ModelOptions
     :members:
 
-Chi2 Options
-++++++++++++
+Chi-square Options
+++++++++++++++++++
 .. autoclass:: seda.input_parameters.Chi2Options
     :members:
 
-Bayes Options
-+++++++++++++
+Bayesian Options
+++++++++++++++++
 .. autoclass:: seda.input_parameters.BayesOptions
     :members:
 
-Chi2 Fit
---------
+Chi-square Fit
+--------------
 .. automodule:: seda.chi2_fit
     :members:
 
-Bayes Fit
----------
+Bayesian Sampling
+-----------------
 .. automodule:: seda.bayes_fit
     :members:
 
