@@ -1318,23 +1318,23 @@ def app_to_abs_flux(flux, distance, eflux=0, edistance=0):
 	Parameters:
 	-----------
 	- flux : float array or float
-		Fluxes (any flux units) for the spectrum.
+		Fluxes (in any flux units).
 	- distance : float
 		Target distance (in pc).
 	- eflux : float array or float, optional
-		Flux uncertainties (any flux units) for the spectrum.
+		Flux uncertainties (in any flux units).
 	- edistance : float, optional
 		Distance error (in pc).
 
 	Returns:
 	--------
-	- Dictionary with absolute fluxes as well as input parameters:
-		- ``'flux_abs'`` : absolute fluxes in input fluxes units.
+	- Dictionary with absolute fluxes and input parameters:
+		- ``'flux_abs'`` : absolute fluxes in the same units as the input fluxes.
 		- ``'eflux_abs'`` : (if ``eflux`` or ``edistance`` are provided) absolute flux uncertainties.
 		- ``'flux_app'`` : input apparent fluxes.
-		- ``'eflux_app'`` : input apparent flux errors.
+		- ``'eflux_app'`` : (if provided) input apparent flux errors.
 		- ``'distance'`` : input distance.
-		- ``'edistance'`` : input distance error.
+		- ``'edistance'`` : (if provided) input distance error.
 
 	Example:
 	--------
