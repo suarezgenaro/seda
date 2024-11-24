@@ -20,8 +20,8 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True, out_file=None, sav
 		File name with the pickle file with results from the chi-square minimization.
 	- N_best_fits : int 
 		Number (default 1) of best model fits for plotting.
-	- ylog : boolen, optional
-		Use logarithmic (``True``) or linear (``False``) scale plot fluxes and residuals.
+	- ylog : {``True``, ``False``}, optional (default ``True``)
+		Use logarithmic (``True``) or linear (``False``) scale to plot fluxes and residuals.
 	- out_file : str, optional
 		File name to save the figure. Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
 		Default name is 'SED_{``model``}_chi2.pdf', where ``model`` is read from ``chi2_pickle_file``.
@@ -263,9 +263,9 @@ def plot_bayes_fit(bayes_pickle_file, ylog=True, out_file=None, save=True):
 	Parameters:
 	-----------
 	- bayes_pickle_file : str
-		file name with the pickle file with results from the Bayesian sampling.
-	- ylog: boolen, optional
-		use logarithmic (``True``) or linear (``False``) scale plot fluxes and residuals.
+		File name with the pickle file with results from the Bayesian sampling.
+	- ylog : {``True``, ``False``}, optional (default ``True``)
+		Use logarithmic (``True``) or linear (``False``) scale to plot fluxes and residuals.
 	- out_file : str, optional
 		File name to save the figure. Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
 		Default name is 'SED_{``model``}_bayes.pdf', where ``model`` is read from ``bayes_pickle_file``.
