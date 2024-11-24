@@ -43,3 +43,5 @@ Utils
 
 Plots
 -----
+.. automodule:: seda.plots
+    :members:
