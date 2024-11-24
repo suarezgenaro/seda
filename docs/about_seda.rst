@@ -19,3 +19,12 @@ Seda is a Spanish word that means silk, which motivates the :math:`\texttt{SEDA}
 
 FAQs
 ----
+**Why after cloning SEDA to get an updated version my notebook still reads the old version?**
+
+Try:
+  - Restarting your notebook.
+  - Make sure you open your notebook on seda environment.
+
+**Is there a way to run the code faster, specially the convolution of model spectra?**
+
+The convolution of high-resolution model spectra indeed takes up most of the runtime. You can constrain the ranges of the model free parameters to convolve only a grid subset with relevant model spectra for your target (see :meth:`~seda.input_parameters.ModelOptions`). As suggested in this `issue <https://github.com/suarezgenaro/seda/issues/14>`, we will add an option to save convolved spectra so they can be recycled to expedite the forward modeling of additional data with a similar resolution.
