@@ -1,28 +1,46 @@
 import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter, AutoMinorLocator, StrMethodFormatter, NullFormatter
-from sys import exit
 import importlib
 import pickle
 import numpy as np
+from matplotlib.ticker import MultipleLocator, FormatStrFormatter, AutoMinorLocator, StrMethodFormatter, NullFormatter
+from matplotlib.backends.backend_pdf import PdfPages # plot several pages in a single pdf
+from sys import exit
 from .utils import *
 
 ##########################
-# plot SED and best model fits from the chi-square minimization
 def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True, out_file=None, save=True):
 	'''
-	Parameters
-	----------
-	chi2_pickle_file : str
-		File name with the pickle file with chi2 results.
-	N_best_fits : int 
+	Description:
+	------------
+		Plot spectra with the best model fits from the chi-square minimization.
+
+	Parameters:
+	-----------
+	- chi2_pickle_file : str
+		File name with the pickle file with results from the chi-square minimization.
+	- N_best_fits : int 
 		Number (default 1) of best model fits for plotting.
-	ylog : boolen, optional
+	- ylog : boolen, optional
 		Use logarithmic (``True``) or linear (``False``) scale plot fluxes and residuals.
-	out_file : str, optional
+	- out_file : str, optional
 		File name to save the figure. Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
 		Default name is 'SED_{``model``}_chi2.pdf', where ``model`` is read from ``chi2_pickle_file``.
-	save : {``True``, ``False``}, optional (default ``True``)
+	- save : {``True``, ``False``}, optional (default ``True``)
 		Save (``'True'``) or do not save (``'False'``) the resulting figure.
+
+	Returns:
+	--------
+	Plot of the spectra and best model fits from the chi-square minimization that will be stored if ``save`` with the name ``out_file``.
+
+	Example:
+	--------
+	>>> import seda
+	>>> 
+	>>> # plot and save the best three model fits from the model comparison to the ATMO 2020 models
+	>>> # 'ATMO2020_chi2_minimization.pickle' is the output by ``chi2_fit.chi2``.
+	>>> seda.plot_chi2_fit(chi2_pickle_file='ATMO2020_chi2_minimization.pickle', N_best_fits=3)
+
+	Author: Genaro Suárez
 	'''
 
 	# read best fits
@@ -68,16 +86,13 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True, out_file=None, sav
 	mask = flux_spectra-eflux_spectra>0.1*flux_spectra.min() # to avoid very small flux-eflux values
 	wl_region = np.append(wl_spectra[mask], np.flip(wl_spectra[mask]))
 	flux_region = np.append(flux_spectra[mask]-eflux_spectra[mask], np.flip(flux_spectra[mask]+eflux_spectra[mask]))
-	#ax[0].fill(wl_region, flux_region*(1e4*wl_region), facecolor='black', edgecolor='white', linewidth=1, alpha=0.30, zorder=2) # in erg/s/cm2
 	ax[0].fill(wl_region, flux_region, facecolor='black', edgecolor='white', linewidth=1, alpha=0.30, zorder=2) # in erg/s/cm2
 	# plot observed spectra
-	#ax[0].plot(wl_spectra, flux_spectra*(1e4*wl_spectra), color='black', linewidth=1.0, label='Observed spectra') # in erg/s/cm2
 	ax[0].plot(wl_spectra, flux_spectra, color='black', linewidth=1.0, label='Observed spectra') # in erg/s/cm2
 
 	# plot best fits
 	for i in range(N_best_fits):
 		if model=='Sonora_Diamondback':
-			#label_model = spectra_name_best[i][:-15] # for model files on dropbox via a private link
 			label_model = spectra_name_best[i][:-5] # for models on Zenodo
 		if model=='Sonora_Elf_Owl':
 			label_model = spectra_name_best[i][8:-3]
@@ -87,15 +102,12 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True, out_file=None, sav
 			label_model = spectra_name_best[i][:-3]
 		if model=='ATMO2020':
 			label_model = spectra_name_best[i].split('spec_')[1][:-4]
-		if ((model=='ATMO2020_CEQ') | (model=='ATMO2020_NEQ_weak') | (model=='ATMO2020_NEQ_strong')):
-			label_model = spectra_name_best[i][5:-4]
 		if model=='BT-Settl':
 			label_model = spectra_name_best[i][:-16]
 		if model=='SM08':
 			label_model = spectra_name_best[i][3:]
 		label = label_model+r' ($\chi^2_\nu=$'+str(round(chi2_red_fit_best[i],1))+')'
 		mask = (wl_model_conv[:,i]>wl_array_model_conv_resam.min()) & (wl_model_conv[:,i]<wl_array_model_conv_resam.max())
-		#ax[0].plot(wl_model_conv[:,i][mask], flux_model_conv[mask][:,i]*(1e4*wl_model_conv[mask][:,i]), '--', linewidth=1.0, label=label) # in erg/s/cm2
 		ax[0].plot(wl_model_conv[:,i][mask], flux_model_conv[mask][:,i], '--', linewidth=1.0, label=label) # in erg/s/cm2
 
 	if ylog: ax[0].set_yscale('log')
@@ -120,8 +132,6 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True, out_file=None, sav
 		ax[0].set_title('Sonora Bobcat Atmospheric Models')
 	if model=='ATMO2020':
 		ax[0].set_title('ATMO 2020 Atmospheric Models')
-	if ((model=='ATMO2020_CEQ') & (model=='ATMO2020_NEQ_weak') & (model=='ATMO2020_NEQ_strong')):
-		ax[0].set_title('ATMO 2020 Atmospheric Models ('+model[9:]+')')
 	if model=='BT-Settl':
 		ax[0].set_title('BT-Settl Atmospheric Models')
 	if model=='SM08':
@@ -150,11 +160,14 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True, out_file=None, sav
 	return
 
 ##########################
-# plot for reduced chi square
 def plot_chi2_red(chi2_pickle_file, N_best_fits=1, out_file=None, save=True):
 	'''
-	Parameters
-	----------
+	Description:
+	------------
+		Plot reduced chi square as a function of wavelength for the best model fits form the chi-square minimization.
+
+	Parameters:
+	-----------
 	chi2_pickle_file : str
 		File name with the pickle file with chi2 results.
 	N_best_fits: int 
@@ -164,9 +177,21 @@ def plot_chi2_red(chi2_pickle_file, N_best_fits=1, out_file=None, save=True):
 		Default name is 'SED_{``model``}_chi2.pdf', where ``model`` is read from ``chi2_pickle_file``.
 	save : {``True``, ``False``}, optional (default ``True``)
 		Save (``'True'``) or do not save (``'False'``) the resulting figure.
-	'''
 
-	from matplotlib.backends.backend_pdf import PdfPages # plot several pages in a single pdf
+	Returns:
+	--------
+	Plot of reduced chi-square against wavelength for the best model fits indicated by ``N_best_fits`` that will be stored if ``save`` with the name ``out_file``.
+
+	Example:
+	--------
+	>>> import seda
+	>>> 
+	>>> # plot and save the best three model fits from the model comparison to the ATMO 2020 models
+	>>> # 'ATMO2020_chi2_minimization.pickle' is the output by ``chi2_fit.chi2``.
+	>>> seda.plot_chi2_red(chi2_pickle_file='ATMO2020_chi2_minimization.pickle', N_best_fits=3)
+
+	Author: Genaro Suárez
+	'''
 
 	# open results from the chi square analysis
 	with open(chi2_pickle_file, 'rb') as file:
@@ -213,8 +238,6 @@ def plot_chi2_red(chi2_pickle_file, N_best_fits=1, out_file=None, save=True):
 			plot_title = spectra_name_best[i][:-3]
 		if model=='ATMO2020':
 			plot_title = spectra_name_best[i].split('spec_')[1][:-4]
-		if ((model=='ATMO2020_CEQ') | (model=='ATMO2020_NEQ_weak') | (model=='ATMO2020_NEQ_strong')):
-			plot_title = spectra_name_best[i][5:-4]
 		if model=='BT-Settl':
 			plot_title = spectra_name_best[i][:-16]
 		if model=='SM08':
@@ -231,15 +254,37 @@ def plot_chi2_red(chi2_pickle_file, N_best_fits=1, out_file=None, save=True):
 	plt.close('all')
 
 ##########################
-# plot SED and best model fit from the Bayesian sampling
-def plot_bayes_fit(bayes_pickle_file, ylog=True):
+def plot_bayes_fit(bayes_pickle_file, ylog=True, out_file=None, save=True):
 	'''
-	Parameters
-	----------
-	bayes_pickle_file : str
-		file name with the pickle file with bayes results
-	ylog: boolen, optional
+	Description:
+	------------
+		Plot the spectra and best model fit from the Bayesian sampling.
+
+	Parameters:
+	-----------
+	- bayes_pickle_file : str
+		file name with the pickle file with results from the Bayesian sampling.
+	- ylog: boolen, optional
 		use logarithmic (``True``) or linear (``False``) scale plot fluxes and residuals.
+	- out_file : str, optional
+		File name to save the figure. Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
+		Default name is 'SED_{``model``}_bayes.pdf', where ``model`` is read from ``bayes_pickle_file``.
+	- save : {``True``, ``False``}, optional (default ``True``)
+		Save (``'True'``) or do not save (``'False'``) the resulting figure.
+
+	Returns:
+	--------
+	Plot of the spectra and best model fit from the Bayesian sampling that will be stored if ``save`` with the name ``out_file``.
+
+	Example:
+	--------
+	>>> import seda
+	>>> 
+	>>> # plot and save the best model fit from the Bayesian sampling to Sonora Elf Owl models
+	>>> # 'Sonora_Elf_Owl_bayesian_sampling.pickle' is the output by ``bayes_fit.bayes``.
+	>>> seda.plot_bayes_fit(bayes_pickle_file='Sonora_Elf_Owl_bayesian_sampling.pickle')
+
+	Author: Genaro Suárez
 	'''
 
 	# open results from sampling
@@ -320,8 +365,6 @@ def plot_bayes_fit(bayes_pickle_file, ylog=True):
 		ax[0].set_title('Sonora Bobcat Atmospheric Models')
 	if model=='ATMO2020':
 		ax[0].set_title('ATMO 2020 Atmospheric Models')
-	if ((model=='ATMO2020_CEQ') & (model=='ATMO2020_NEQ_weak') & (model=='ATMO2020_NEQ_strong')):
-		ax[0].set_title('ATMO 2020 Atmospheric Models ('+model[9:]+')')
 	if model=='BT-Settl':
 		ax[0].set_title('BT-Settl Atmospheric Models')
 	if model=='SM08':
@@ -341,7 +384,9 @@ def plot_bayes_fit(bayes_pickle_file, ylog=True):
 	if ylog: ax[1].set_ylabel(r'$\Delta (\log F_\lambda$)', size=12)
 	if not ylog: ax[1].set_ylabel(r'$\Delta (F_\lambda$)', size=12)
 
-	plt.savefig('SED_'+model+'_bayes.pdf', bbox_inches='tight')
+	if save:
+		if out_file is None: plt.savefig('SED_'+model+'_bayes.pdf', bbox_inches='tight')
+		else: plt.savefig(out_file, bbox_inches='tight')
 	plt.show()
 	plt.close()
 
