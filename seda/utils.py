@@ -1313,7 +1313,7 @@ def app_to_abs_flux(flux, distance, eflux=0, edistance=0):
 	'''
 	Description:
 	------------
-		Convert apparent fluxes into absolute fluxes
+		Convert apparent fluxes into absolute fluxes.
 
 	Parameters:
 	-----------
