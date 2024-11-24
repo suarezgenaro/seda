@@ -15,16 +15,6 @@ Principal SEDA Modules
   - :meth:`~seda.plots`: plotting functions.
   - :meth:`~seda.utils`: additional useful functions (see :ref:`seda_tools`).
 
-.. _seda_tools:
-
-Main SEDA Tools
----------------
-:math:`\texttt{SEDA}` includes several useful routines that can be used separately:
-  - :meth:`~seda.utils.convolve_spectrum`: to convolve spectra to a desire resolution at a given wavelength.
-  - :meth:`~seda.synthetic_photometry`: to calculate synthetic phothometry from spectra for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_.
-  - :meth:`~seda.utils.read_model_spectrum`: to read a synthetic spectrum from the indicated atmospheric models.
-  - :meth:`~seda.interpol_model`: to generate a synthetic spectrum with any parameters (within the grid coverage) from the indicated atmospheric models using interpolation techniques.
-
 SEDA Workflow
 -------------
   - Download atmospheric models (see :ref:`models`).
@@ -42,6 +32,19 @@ SEDA Workflow
     - Run Bayesian framework module (:meth:`~seda.bayes_fit`).
 
   - Visualize the results (:meth:`~seda.plots`)
+
+.. _seda_tools:
+
+Main SEDA Tools
+---------------
+:math:`\texttt{SEDA}` includes several useful functions that can be used separately:
+  - :meth:`~seda.utils.convolve_spectrum`: to convolve spectra to a desired resolution at a given wavelength.
+  - :meth:`~seda.synthetic_photometry`: to calculate synthetic phothometry from spectra for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_.
+  - :meth:`~seda.utils.read_model_spectrum`: to read a synthetic spectrum from :ref:`models`.
+  - :meth:`~seda.utils.generate_model_spectrum`: to generate a synthetic spectrum with any parameters (within the grid coverage) from the indicated atmospheric models using interpolation techniques.
+  - :meth:`~seda.utils.app_to_abs_flux`: to convert apparent fluxes into absolute fluxes considering a distance.
+  - :meth:`~seda.utils.separate_params`: to extract parameters from model spectra file names.
+  - :meth:`~seda.plots.plot_model_coverage`: to visualize the coverage of free parameters in :ref:`models`.
 
 .. _models:
 
