@@ -17,7 +17,7 @@ Principal SEDA Modules
 
 SEDA Workflow
 -------------
-  - Download atmospheric models (see :ref:`models`).
+  - Download any :ref:`models`.
   - Load input data (:meth:`~seda.input_parameters.InputData`).
   - Load model options (:meth:`~seda.input_parameters.ModelOptions`).
 
