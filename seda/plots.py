@@ -8,16 +8,21 @@ from .utils import *
 
 ##########################
 # plot SED and best model fits from the chi-square minimization
-def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True):
+def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True, out_file=None, save=True):
 	'''
 	Parameters
 	----------
 	chi2_pickle_file : str
-		file name with the pickle file with chi2 results
-	N_best_fits: int 
-		number (default 1) of best model fits for plotting
-	ylog: boolen, optional
-		use logarithmic (``True``) or linear (``False``) scale plot fluxes and residuals.
+		File name with the pickle file with chi2 results.
+	N_best_fits : int 
+		Number (default 1) of best model fits for plotting.
+	ylog : boolen, optional
+		Use logarithmic (``True``) or linear (``False``) scale plot fluxes and residuals.
+	out_file : str, optional
+		File name to save the figure. Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
+		Default name is 'SED_{``model``}_chi2.pdf', where ``model`` is read from ``chi2_pickle_file``.
+	save : {``True``, ``False``}, optional (default ``True``)
+		Save (``'True'``) or do not save (``'False'``) the resulting figure.
 	'''
 
 	# read best fits
@@ -136,7 +141,9 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True):
 	if ylog: ax[1].set_ylabel(r'$\Delta (\log F_\lambda$)', size=12)
 	if not ylog: ax[1].set_ylabel(r'$\Delta (F_\lambda$)', size=12)
 
-	plt.savefig('SED_'+out_chi2['model']+'_chi2.pdf', bbox_inches='tight')
+	if save:
+		if out_file is None: plt.savefig('SED_'+out_chi2['model']+'_chi2.pdf', bbox_inches='tight')
+		else: plt.savefig(out_file, bbox_inches='tight')
 	plt.show()
 	plt.close()
 
@@ -144,14 +151,19 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True):
 
 ##########################
 # plot for reduced chi square
-def plot_chi2_red(chi2_pickle_file, N_best_fits=1):
+def plot_chi2_red(chi2_pickle_file, N_best_fits=1, out_file=None, save=True):
 	'''
 	Parameters
 	----------
 	chi2_pickle_file : str
-		file name with the pickle file with chi2 results
+		File name with the pickle file with chi2 results.
 	N_best_fits: int 
-		number (default 1) of best model fits for plotting
+		Number (default 1) of best model fits for plotting.
+	out_file : str, optional
+		File name to save the figure. Note: use file formats (pdf, eps, or ps). Image formats do not work because the figure is saved in several pages, according to ``N_best_fits``.
+		Default name is 'SED_{``model``}_chi2.pdf', where ``model`` is read from ``chi2_pickle_file``.
+	save : {``True``, ``False``}, optional (default ``True``)
+		Save (``'True'``) or do not save (``'False'``) the resulting figure.
 	'''
 
 	from matplotlib.backends.backend_pdf import PdfPages # plot several pages in a single pdf
@@ -172,7 +184,9 @@ def plot_chi2_red(chi2_pickle_file, N_best_fits=1):
 	chi2_red_wl_fit_best = chi2_red_wl_fit[sort_ind][:N_best_fits,:]
 	spectra_name_best = spectra_name[sort_ind][:N_best_fits]
 
-	pdf_pages = PdfPages('chi2_'+model+'.pdf') # name of the pdf
+	if save:
+		if out_file is None: pdf_pages = PdfPages('chi2_'+model+'.pdf') # name of the pdf
+		else: pdf_pages = PdfPages(out_file) # name of the pdf
 
 	for i in range(N_best_fits): 
 		fig, ax = plt.subplots()
@@ -207,10 +221,13 @@ def plot_chi2_red(chi2_pickle_file, N_best_fits=1):
 			plot_title = spectra_name_best[i][3:]
 		plt.title(plot_title)
 	
-		pdf_pages.savefig(fig, bbox_inches='tight')
+		if save:
+			pdf_pages.savefig(fig, bbox_inches='tight')
 		plt.show()
 #		plt.cla()
-	pdf_pages.close()
+
+	if save:
+		pdf_pages.close()
 	plt.close('all')
 
 ##########################

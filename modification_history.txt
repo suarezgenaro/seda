@@ -1,6 +1,11 @@
 MODIFICATION HISTORY
 
 ------------
+2024/11/23
+Genaro Suárez
+	Available function to convert apparent fluxes into absolute fluxes.
+
+------------
 2024/11/21
 Genaro Suárez
 	The code removes input spectra data points with nan values, masked column values, and/or negative fluxes.

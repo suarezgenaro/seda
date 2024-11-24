@@ -41,9 +41,9 @@ class InputData:
 	- lam_res : float, optional (default 2 um) 
 		Wavelength of reference at which ``res`` is given.
 	- distance : float, optional
-		Target distance (in pc) used to derive radius from the scaling factor
+		Target distance (in pc) used to derive radius from the scaling factor.
 	- edistance : float, optional
-		Distance error (in pc)
+		Distance error (in pc).
 
 	Returns:
 	--------
