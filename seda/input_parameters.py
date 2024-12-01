@@ -233,6 +233,8 @@ class ModelOptions:
 		Directory path to store convolved model spectra. 
 		If not provided (default), the convolved spectra will not be saved. 
 		If the directory does not exist, it will be created. Otherwise, the spectra will be added to the existing folder.
+		The convolved spectra will keep the same original names along with the ``res`` and ``lam_res`` parameters, e.g. 'original_spectrum_name_R100at1um.nc' for ``res``=100 and ``lam_res``=1.
+		They will be saved as netCDF with xarray (it produces lighter files compared to normal ASCII files).
 
 	Returns:
 	--------
