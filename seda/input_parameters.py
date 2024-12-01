@@ -233,8 +233,10 @@ class ModelOptions:
 		Directory path to store convolved model spectra. 
 		If not provided (default), the convolved spectra will not be saved. 
 		If the directory does not exist, it will be created. Otherwise, the spectra will be added to the existing folder.
-		The convolved spectra will keep the same original names along with the ``res`` and ``lam_res`` parameters, e.g. 'original_spectrum_name_R100at1um.nc' for ``res``=100 and ``lam_res``=1.
-		They will be saved as netCDF with xarray (it produces lighter files compared to normal ASCII files).
+	- skip_convolution : {``True``, ``False``}, optional (default ``True``)
+		Convolution of model spectra (the slowest process in the code) can (``True``) or cannot (``False``) be avoided. 
+		Once the code has be run and the convolved spectra were stored in ``path_save_spectra_conv``, the convolved grid can be reused for other input data with the same resolution as the convolved spectra.
+		If 'True', ``model_dir`` should include the previously convolved spectra for ``res`` at ``lam_res`` in ``input_parameters.InputData``. 
 
 	Returns:
 	--------
