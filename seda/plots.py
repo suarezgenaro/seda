@@ -8,7 +8,7 @@ from sys import exit
 from .utils import *
 
 ##########################
-def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True, out_file=None, save=True):
+def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True, ori_res=False, model_dir_ori=None, out_file=None, save=True):
 	'''
 	Description:
 	------------
@@ -22,6 +22,11 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True, out_file=None, sav
 		Number (default 1) of best model fits for plotting.
 	- ylog : {``True``, ``False``}, optional (default ``True``)
 		Use logarithmic (``True``) or linear (``False``) scale to plot fluxes and residuals.
+	- ori_res : {``True``, ``False``}, optional (default ``False``)
+		Plot (``True``) or do not include (``False``) model spectra with the original resolution.
+	- model_dir_ori : str, list, or array
+		Path to the directory (str, list, or array) or directories (as a list or array) containing the model spectra with the original resolution.
+		This parameter is needed to plot the original resolution spectra (if ``ori_res`` is True) when `chi2_fit.chi2` was run skipping the model spectra convolution (if `skip_convolution`` is True).
 	- out_file : str, optional
 		File name to save the figure (it can include a path e.g. my_path/figure.pdf). Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
 		Default name is 'SED_{``model``}_chi2.pdf', where ``model`` is read from ``chi2_pickle_file``.
@@ -44,11 +49,12 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True, out_file=None, sav
 	'''
 
 	# read best fits
-	out_best_chi2_fits = best_chi2_fits(chi2_pickle_file=chi2_pickle_file, N_best_fits=N_best_fits)
+	out_best_chi2_fits = best_chi2_fits(chi2_pickle_file=chi2_pickle_file, N_best_fits=N_best_fits, model_dir_ori=model_dir_ori, ori_res=ori_res)
 	spectra_name_best = out_best_chi2_fits['spectra_name_best']
 	chi2_red_fit_best = out_best_chi2_fits['chi2_red_fit_best']
-	wl_model = out_best_chi2_fits['wl_model']
-	flux_model = out_best_chi2_fits['flux_model']
+	if ori_res:
+		wl_model = out_best_chi2_fits['wl_model']
+		flux_model = out_best_chi2_fits['flux_model']
 	wl_model_conv = out_best_chi2_fits['wl_model_conv']
 	flux_model_conv = out_best_chi2_fits['flux_model_conv']
 
@@ -86,16 +92,22 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True, out_file=None, sav
 	mask = flux_spectra-eflux_spectra>0.1*flux_spectra.min() # to avoid very small flux-eflux values
 	wl_region = np.append(wl_spectra[mask], np.flip(wl_spectra[mask]))
 	flux_region = np.append(flux_spectra[mask]-eflux_spectra[mask], np.flip(flux_spectra[mask]+eflux_spectra[mask]))
-	ax[0].fill(wl_region, flux_region, facecolor='black', edgecolor='white', linewidth=1, alpha=0.30, zorder=2) # in erg/s/cm2
+	ax[0].fill(wl_region, flux_region, facecolor='black', edgecolor='white', linewidth=1, alpha=0.30, zorder=3) # in erg/s/cm2
 	# plot observed spectra
-	ax[0].plot(wl_spectra, flux_spectra, color='black', linewidth=1.0, label='Observed spectra') # in erg/s/cm2
+	ax[0].plot(wl_spectra, flux_spectra, color='black', linewidth=1.0, label='Observed spectra', zorder=3) # in erg/s/cm2
 
-	# plot best fits
+	# plot best fits (original resolution spectra)
+	if ori_res: # plot model spectra with the original resolution
+		for i in range(N_best_fits):
+			mask = (wl_model[i,:]>wl_array_model_conv_resam.min()) & (wl_model[i,:]<wl_array_model_conv_resam.max())
+			ax[0].plot(wl_model[i,:][mask], flux_model[i,:][mask], linewidth=0.1, color='silver', zorder=2, alpha=0.5) # in erg/s/cm2
+
+	# plot best fits (convolved spectra)
 	label_model = spectra_name_short(model=model, spectra_name=spectra_name_best) # short name for spectra to keep only relevant info
 	for i in range(N_best_fits):
 		label = label_model[i]+r' ($\chi^2_\nu=$'+str(round(chi2_red_fit_best[i],1))+')'
-		mask = (wl_model_conv[:,i]>wl_array_model_conv_resam.min()) & (wl_model_conv[:,i]<wl_array_model_conv_resam.max())
-		ax[0].plot(wl_model_conv[:,i][mask], flux_model_conv[mask][:,i], '--', linewidth=1.0, label=label) # in erg/s/cm2
+		mask = (wl_model_conv[i,:]>wl_array_model_conv_resam.min()) & (wl_model_conv[i,:]<wl_array_model_conv_resam.max())
+		ax[0].plot(wl_model_conv[i,:][mask], flux_model_conv[i,:][mask], '--', linewidth=1.0, label=label) # in erg/s/cm2
 
 	if ylog: ax[0].set_yscale('log')
 	ax[0].legend(loc='best', prop={'size': 6}, handlelength=1.5, handletextpad=0.5, labelspacing=0.5) 
@@ -370,7 +382,7 @@ def plot_model_coverage(model, model_dir, xparam, yparam, xparam_range=None, ypa
 
 	Returns:
 	--------
-	Plot of ``yparam`` versus ``xparam`` for ``model``.
+	Plot of ``yparam`` versus ``xparam`` for ``model`` that will be stored if ``save`` with the name ``out_file``.
 
 	Example:
 	--------
@@ -385,11 +397,15 @@ def plot_model_coverage(model, model_dir, xparam, yparam, xparam_range=None, ypa
 
 	Author: Genaro Suárez
 	'''
-
 	# get spectra names from the input directories
 	out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir)
 	# separate parameters for the spectra
 	out_separate_params = separate_params(model=model, spectra_name=out_select_model_spectra['spectra_name'])
+	del out_separate_params['spectra_name'] # only keep the free parameters in the dictionary
+
+	# verify that xparam and yparam are valid parameters
+	if xparam not in out_separate_params: raise Exception(f'{xparam} is not in {model}. Valid parameters: {out_separate_params.keys()}')
+	if yparam not in out_separate_params: raise Exception(f'{yparam} is not in {model}. Valid parameters: {out_separate_params.keys()}')
 
 	# make plot of y_param against x_param
 	#------------------------
@@ -402,8 +418,12 @@ def plot_model_coverage(model, model_dir, xparam, yparam, xparam_range=None, ypa
 	ax.yaxis.set_minor_locator(AutoMinorLocator())
 	if xparam_range is not None: ax.set_xlim(xparam_range[0], xparam_range[1])
 	if yparam_range is not None: ax.set_ylim(yparam_range[0], yparam_range[1])
-	if xlog: ax.set_xscale('log')
-	if ylog: ax.set_yscale('log')
+	if xlog: 
+		ax.set_xscale('log')
+		ax.xaxis.set_major_formatter(StrMethodFormatter('{x:.0f}'))
+	if ylog: 
+		ax.set_yscale('log')
+		ax.yaxis.set_major_formatter(StrMethodFormatter('{x:.0f}'))
 	plt.grid(True, which='both', color='gainsboro', alpha=0.5)
 
 	plt.xlabel(xparam)

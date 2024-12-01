@@ -15,9 +15,9 @@ class InputData:
 	Parameters:
 	-----------
 	- fit_spectra : {``True``, ``False``}, optional (default ``True``)
-		Include (``'yes'``) or do not include (``'no'``) spectra.
+		Include (``True``) or do not include (``False``) spectra.
 	- fit_photometry : {``True``, ``False``}, optional (default ``False``)
-		Include (``'yes'``) or do not include (``'no'``) photometry.
+		Include (``True``) or do not include (``False``) photometry.
 	- wl_spectra : float array or list, optional (required if ``fit_spectra``)
 		Wavelength in um of the spectrum or set of spectra for the fits. 
 		When providing more than one spectrum, verify that there is no overlap between the spectra. 
@@ -196,7 +196,7 @@ class ModelOptions:
 			- ``'BT-Settl'`` : cloudy models with non-equilibrium chemistry by Allard et al. (2012).
 				Parameter coverage: 
 					- wavelength = [1.e-4, 1000] um
-					- Teff = [200, 4200] K (Teff<=450 K for only logg<=3.5) in steps varying from 25 K to 100 K
+					- Teff = [200, 7000] K (Teff<=450 K for only logg<=3.5) in steps varying from 20 K to 100 K
 					- logg = [2.0, 5.5] in steps of 0.5 (g in cgs)
 					- R = [100000, 500000] (the resolving power varies with wavelength)
 			- ``'SM08'`` : cloudy models with equilibrium chemistry by Saumon & Marley (2008).
@@ -206,9 +206,9 @@ class ModelOptions:
 					- logg = [3.0, 5.5] in steps of 0.5 (g in cgs)
 					- fsed = 1, 2, 3, 4
 					- R = [100000, 700000] (the resolving power varies with wavelength)
-	- model_dir : str or list
-		Path to the directory (str or list) or directories (as a list) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
-		Avoid using paths with null spaces. 
+	- model_dir : str, list, or array
+		Path to the directory (str, list, or array) or directories (as a list or array) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
+		Avoid using paths with null spaces. Caveat: the directories must contain only the spectra.
 	- Teff_range : float array, optional
 		Minimum and maximum Teff values to select a model grid subset (e.g., ``Teff_range = np.array([Teff_min, Teff_max])``).
 		If not provided, the full Teff range in ``model_dir`` is considered.
@@ -229,6 +229,16 @@ class ModelOptions:
 		If not provided, the full fsed range in ``model_dir`` is considered, if available in ``model``.
 	- R_range: float array, optional (used in ``bayes_fit``)
 		Minimum and maximum radius values to sample the posterior for radius. It requires the parameter ``distance`` in `input_parameters.InputData`.
+	- path_save_spectra_conv: str, optional
+		Directory path to store convolved model spectra. 
+		If not provided (default), the convolved spectra will not be saved. 
+		If the directory does not exist, it will be created. Otherwise, the spectra will be added to the existing folder.
+		The convolved spectra will keep the same original names along with the ``res`` and ``lam_res`` parameters, e.g. original_spectrum_name_R100at1um.nc for ``res``=100 and ``lam_res``=1.
+		They will be saved as netCDF with xarray (it produces lighter files compared to normal ASCII files).
+	- skip_convolution : {``True``, ``False``}, optional (default ``True``)
+		Convolution of model spectra (the slowest process in the code) can (``True``) or cannot (``False``) be avoided. 
+		Once the code has be run and the convolved spectra were stored in ``path_save_spectra_conv``, the convolved grid can be reused for other input data with the same resolution as the convolved spectra.
+		If 'True', ``model_dir`` should include the previously convolved spectra for ``res`` at ``lam_res`` in ``input_parameters.InputData``. 
 
 	Returns:
 	--------
@@ -252,16 +262,14 @@ class ModelOptions:
 	Author: Genaro Suárez
 	'''
 
-	def __init__(self, model, model_dir, R_range=None, Teff_range=None, logg_range=None, Z_range=None, 
-                 logKzz_range=None, CtoO_range=None, fsed_range=None):
+	def __init__(self, model, model_dir, R_range=None, Teff_range=None, logg_range=None, 
+	             Z_range=None, logKzz_range=None, CtoO_range=None, fsed_range=None, 
+	             path_save_spectra_conv=None, skip_convolution=False):
 
 		self.model = model
 		models_valid = ['Sonora_Diamondback', 'Sonora_Elf_Owl', 'LB23', 'Sonora_Cholla', 
 						'Sonora_Bobcat', 'ATMO2020', 'BT-Settl', 'SM08']
-		if model not in models_valid:
-			print(f'Models {model} are not recognized')
-			print(f'   the options are {models_valid}')
-			exit()
+		if model not in models_valid: raise Exception(f'Models {model} are not recognized. The options are: \n          {models_valid}')
 		self.R_range = R_range
 		self.Teff_range = Teff_range
 		self.logg_range = logg_range
@@ -269,6 +277,8 @@ class ModelOptions:
 		self.logKzz_range = logKzz_range
 		self.CtoO_range = CtoO_range
 		self.fsed_range = fsed_range
+		self.path_save_spectra_conv = path_save_spectra_conv
+		self.skip_convolution = skip_convolution
 
 		# when only one directory with models is given
 		if not isinstance(model_dir, list): model_dir = [model_dir]
@@ -338,14 +348,14 @@ class Chi2Options:
 
 	def __init__(self, my_data, my_model, 
 		fit_wl_range=None, model_wl_range=None, extinction_free_param='no', 
-		scaling_free_param='yes', scaling=None, skip_convolution='no', 
+		scaling_free_param='yes', scaling=None, #skip_convolution='no', 
 		avoid_IR_excess='no', IR_excess_limit=3, save_results=True):
 
 		self.save_results = save_results
 		self.scaling_free_param = scaling_free_param
 		self.scaling = scaling
 		self.extinction_free_param = extinction_free_param
-		self.skip_convolution = skip_convolution
+#		self.skip_convolution = skip_convolution
 		self.avoid_IR_excess = avoid_IR_excess
 		self.IR_excess_limit = IR_excess_limit
 
@@ -373,6 +383,9 @@ class Chi2Options:
 		self.logKzz_range = my_model.logKzz_range
 		self.CtoO_range = my_model.CtoO_range
 		self.fsed_range = my_model.fsed_range
+#		self.save_convolved_spectra = my_model.save_convolved_spectra
+		self.path_save_spectra_conv = my_model.path_save_spectra_conv
+		self.skip_convolution = my_model.skip_convolution
 		self.model_dir = my_model.model_dir
 		self.N_modelpoints = my_model.N_modelpoints
 
@@ -485,7 +498,7 @@ class BayesOptions:
 		If not provided (default), then the grid is read (``model``, ``model_dir``, ``Teff_range`` and ``logg_range`` must be provided). 
 		If provided, the code will skip reading the grid, which will save some time (a few minutes).
 	- dynamic_sampling: {``True``, ``False``}, optional (default ``True``). 
-		Consider dynamic (``'yes'``) or static (``'no'``) nested sampling. Read ``dynesty`` documentation for more info. 
+		Consider dynamic (``True``) or static (``False``) nested sampling. Read ``dynesty`` documentation for more info. 
 		Dynamic nested sampling is slower (~20-30%) than static nested sampling. 
 	- nlive: float, optional (default 500). 
 		Number of nested sampling live points. 

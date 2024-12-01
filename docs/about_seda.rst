@@ -22,7 +22,7 @@ FAQs
 **Why after cloning SEDA to get an updated version my notebook still reads the old version?**
 
 Try the following suggestions:
-  - Restarting your notebook.
+  - Restart your notebook.
   - Make sure you open your notebook on the seda environment.
 
 **Is there a way to run the code faster, specially the convolution of model spectra?**

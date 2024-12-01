@@ -133,13 +133,16 @@ def chi2(my_chi2):
 	logKzz_range = my_chi2.logKzz_range
 	CtoO_range = my_chi2.CtoO_range
 	fsed_range = my_chi2.fsed_range
+#	save_convolved_spectra = my_chi2.save_convolved_spectra
+	path_save_spectra_conv = my_chi2.path_save_spectra_conv
+	skip_convolution = my_chi2.skip_convolution
 	N_modelpoints = my_chi2.N_modelpoints
 	# from Chi2Options
 	save_results = my_chi2.save_results
 	scaling_free_param = my_chi2.scaling_free_param
 	scaling = my_chi2.scaling
 	extinction_free_param = my_chi2.extinction_free_param
-	skip_convolution = my_chi2.skip_convolution
+#	skip_convolution = my_chi2.skip_convolution
 	avoid_IR_excess = my_chi2.avoid_IR_excess
 	IR_excess_limit = my_chi2.IR_excess_limit
 	fit_wl_range = my_chi2.fit_wl_range
@@ -213,6 +216,7 @@ def chi2(my_chi2):
 	                                                logKzz_range=logKzz_range, CtoO_range=CtoO_range, fsed_range=fsed_range)
 	spectra_name_full = out_select_model_spectra['spectra_name_full']
 	spectra_name = out_select_model_spectra['spectra_name']
+	N_model_spectra = len(spectra_name) # number of selected model spectra
 	
 	# separate catalog and filter name from the input filter_phot array
 	if (fit_photometry=='yes'):
@@ -223,181 +227,196 @@ def chi2(my_chi2):
 			fil_phot[i] = filter_phot[i].split('_')[1]
 
 	#+++++++++++++++++++++++++++++++++
-	if (skip_convolution=='no'): # it is possible to skip the convolution of model spectra (the slowest process in the code), 
-								 # only when comparing photometry and when synthetic magnitudes are precomputed
-		# array for model spectra
-		wl_array_model = np.zeros((len(spectra_name), N_modelpoints))
-		flux_array_model = np.zeros((len(spectra_name), N_modelpoints))
-		# array for convolved model spectra
-		wl_array_model_conv = np.zeros((len(spectra_name), N_modelpoints))
-		flux_array_model_conv = np.zeros((len(spectra_name), N_modelpoints))
+	# array for model spectra
+	wl_array_model = np.zeros((len(spectra_name), N_modelpoints))
+	flux_array_model = np.zeros((len(spectra_name), N_modelpoints))
+	# array for convolved model spectra
+	wl_array_model_conv = np.zeros((len(spectra_name), N_modelpoints))
+	flux_array_model_conv = np.zeros((len(spectra_name), N_modelpoints))
 
-		# convolve model spectra to the required resolution
-		# create a tqdm progress bar
-		convolving_bar = tqdm(total=len(spectra_name), desc='Convolving the spectra')
-		for i in range(len(spectra_name)):
-			# update the progress bar
-			convolving_bar.update(1)
-
+	# convolve model spectra to the required resolution
+#	if not skip_convolution:
+	# create a tqdm progress bar
+	convolving_bar = tqdm(total=len(spectra_name), desc='Convolving the spectra')
+	for i in range(len(spectra_name)):
+		# update the progress bar
+		convolving_bar.update(1)
+	
+		if not skip_convolution: # read original model spectra
 			out_read_model_spectrum = read_model_spectrum(spectra_name_full=spectra_name_full[i], model=model, model_wl_range=model_wl_range)
-			wl_model = out_read_model_spectrum['wl_model']
-			flux_model = out_read_model_spectrum['flux_model']
-
-			# convolved spectra
-			wl_model_conv = wl_model # convolved spectrum have the same wavelength data points as the original spectrum
-			if N_spectra==1 : # when only one spectrum is provided
-				out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, lam_res=lam_res, res=res, disp_wl_range=fit_wl_range[0])
+			wl_model = out_read_model_spectrum['wl_model'] # um
+			flux_model = out_read_model_spectrum['flux_model'] # erg/s/cm2/A
+		else: # read read precomputed convolved spectra
+			out_read_model_spectrum_conv = read_model_spectrum_conv(spectra_name_full[i])
+			wl_model = out_read_model_spectrum_conv['wl_model'] # um
+			flux_model = out_read_model_spectrum_conv['flux_model'] # erg/s/cm2/A
+	
+		# convolved spectra
+		wl_model_conv = wl_model # convolved spectrum have the same wavelength data points as the original spectrum
+		if N_spectra==1 : # when only one spectrum is provided
+			if not skip_convolution:
+				if path_save_spectra_conv is None: # do not save the convolved spectrum
+					out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, lam_res=lam_res, res=res, disp_wl_range=fit_wl_range[0])
+				else: # save convolved spectrum
+					if not os.path.exists(path_save_spectra_conv): os.makedirs(path_save_spectra_conv) # make directory (if not existing) to store convolved spectra
+					out_file = path_save_spectra_conv+spectra_name[i]+f'_R{res[0]}at{lam_res[0]}um.nc'
+					out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, lam_res=lam_res, res=res, disp_wl_range=fit_wl_range[0], out_file=out_file)
 				flux_model_conv = out_convolve_spectrum['flux_conv']
-			if N_spectra>1 : # when multiple spectra are provided
-				flux_model_conv = np.zeros(wl_model.size) # to save convolved fluxes
-				for k in range(N_spectra): # for each input spectrum
-					if k==0: # for the first spectrum
-						mask_conv = (wl_model<=fit_wl_range[k+1][0]) # from the minimum of the model wavelengths to the minimum of the second spectrum
-					if ((k!=0) and (k!=N_spectra-1)): # for the spectra between the second and the second last ones
-						mask_conv = (wl_model>=fit_wl_range[k][0]) & (wl_model<=fit_wl_range[k+1][0]) # from the minimum of one spectrum to the minimum of the next spectrum
-					if k==N_spectra-1: # for the last spectrum
-						mask_conv = (wl_model>=fit_wl_range[k][0]) # from the minimum of the last spectrum to the maximum of the model wavelengths
+			else: # get precomputed convolved spectrum
+				flux_model_conv = flux_model
+				
+		if N_spectra>1 : # when multiple spectra are provided
+			flux_model_conv = np.zeros(wl_model.size) # to save convolved fluxes
+			for k in range(N_spectra): # for each input spectrum
+				if k==0: # for the first spectrum
+					mask_conv = (wl_model<=fit_wl_range[k+1][0]) # from the minimum of the model wavelengths to the minimum of the second spectrum
+				if ((k!=0) and (k!=N_spectra-1)): # for the spectra between the second and the second last ones
+					mask_conv = (wl_model>=fit_wl_range[k][0]) & (wl_model<=fit_wl_range[k+1][0]) # from the minimum of one spectrum to the minimum of the next spectrum
+				if k==N_spectra-1: # for the last spectrum
+					mask_conv = (wl_model>=fit_wl_range[k][0]) # from the minimum of the last spectrum to the maximum of the model wavelengths
 	
-					out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, lam_res=lam_res[k], res=res[k], disp_wl_range=fit_wl_range[k,:], 
-																		 convolve_wl_range=np.array((wl_model[mask_conv].min(), wl_model[mask_conv].max()))) # convolve model spectrum
-					flux_model_conv[mask_conv] = out_convolve_spectrum['flux_conv']
+				out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, lam_res=lam_res[k], res=res[k], disp_wl_range=fit_wl_range[k,:], 
+																	 convolve_wl_range=np.array((wl_model[mask_conv].min(), wl_model[mask_conv].max()))) # convolve model spectrum
+				flux_model_conv[mask_conv] = out_convolve_spectrum['flux_conv']
+	
+		# store wavelengths and fluxes for each synthetic spectrum
+		wl_array_model[i,:wl_model.size] = wl_model # original wavelengths
+		flux_array_model[i,:wl_model.size] = flux_model # original fluxes
+		wl_array_model_conv[i,:wl_model.size] = wl_model_conv # convolved wavelengths
+		flux_array_model_conv[i,:wl_model.size] = flux_model_conv # convolved fluxes
+	
+	# close the progress bar
+	convolving_bar.close()
 
-			# store wavelengths and fluxes for each synthetic spectrum
-			wl_array_model[i,:wl_model.size] = wl_model # original wavelengths
-			flux_array_model[i,:wl_model.size] = flux_model # original fluxes
-			wl_array_model_conv[i,:wl_model.size] = wl_model_conv # convolved wavelengths
-			flux_array_model_conv[i,:wl_model.size] = flux_model_conv # convolved fluxes
-
-		# close the progress bar
-		convolving_bar.close()
-
-		##################################################
-		# synthetic photometry from model spectra before reddening them
-		if (fit_photometry=='yes'): # only if there are observed magnitudes
-			## read filters' zero points
-			#filter_parms = ascii.read(filter_parms_file)
-			#f0_filt = filter_parms['f0(Jy)'] # in Jy
-			#ef0_filt = filter_parms['ef0(Jy)'] # in Jy
-			#ref_filt = filter_parms['ref']
-			phot_synt = np.zeros((len(spectra_name), filter_phot.size)) # array to save synthetic photometry in erg/s/cm2/A
-			lambda_eff = np.zeros((len(spectra_name), filter_phot.size)) # to save the effective wavelength of each filter from every synthetic spectrum
-			lambda_mean = np.zeros((len(spectra_name), filter_phot.size)) # to save the mean wavelength of each filter from every synthetic spectrum
-			width_eff = np.zeros((len(spectra_name), filter_phot.size)) # to save the effective width of each filter from every synthetic spectrum
-			f0_phot = np.zeros(filter_phot.size) # to save the zero flux of each filter
-			ef0_phot = np.zeros(filter_phot.size) # to save the error of the zero flux of each filter
-			for i in range(len(spectra_name)):
-				# synthetic photometry from the model spectra in the filters with magnitudes
-				for k in range(len(fil_phot)):
-					if ((sur_phot[k]=='Gaia') & (fil_phot[k]=='BP')): 
-						filter_response = ascii.read(path_seda+'/aux/filter_transmissions/GAIA_GAIA3.Gbp.dat')
-						f0_phot[k] = 3552.01 # Jy
-						ef0_phot[k] = 0.0 # Jy
-					filter_response_wl = filter_response['col1'] / 1e4 # in um
-					filter_response_flux = filter_response['col2']
-	
-					# wavelength dispersion of model spectra in the wavelength range of the filter
-					#if (wl_array_model[i,:].max()>=filter_response_wl.max()): # when the synthetic spectrum covers the whole filter passband
-					ind_model_filter_response = np.where((wl_array_model[i,:]>=filter_response_wl.min()) & (wl_array_model[i,:]<=filter_response_wl.max()))[0]
-					wl_model_filter_response = wl_array_model[i,ind_model_filter_response] # wavelength of the model in the filter passband
-					flux_model_filter_response = flux_array_model[i,ind_model_filter_response] # fluxes of the model in the filter passband
-			
-					wl_dis_model_filter_response = wl_model_filter_response[1:] - wl_model_filter_response[:-1] # dispersion of model spectra (um)
-					if (ind_model_filter_response.size>0): # when cropped model spectra cover the photometric passbands
-						wl_dis_model_filter_response = np.insert(wl_dis_model_filter_response, wl_dis_model_filter_response.size, wl_dis_model_filter_response[-1]) # add an element equal to the last row to keep the same shape as the wl_model array
-			
-						# synthetic photometry for each filter
-						# interpolate the model spectrum wavelength points into the filter response
-						# (the result is the same if the filter response wavelength points are interpolated into the model spectra; see test below)
-						filter_response_flux_int = np.interp(wl_model_filter_response, filter_response_wl, filter_response_flux) # filter response for the wavelength resolution of the model spectra (dimensionless)
-						
-						# normalize the response curve (it was dimensionless but now it has 1/um units)
-						filter_response_flux_int_norm = filter_response_flux_int / sum(filter_response_flux_int*wl_dis_model_filter_response) # 1/um
-						
-						# synthetic flux density
-						phot_synt[i,k] = sum(flux_model_filter_response*filter_response_flux_int_norm*wl_dis_model_filter_response) # erg/s/cm2/A (but on the surface of a dwarf, not considering the distance to the target)
-			
-						# compute the effective wavelength and effective width of each filter
-						lambda_eff[i,k] = sum(wl_model_filter_response*filter_response_flux_int*flux_model_filter_response*wl_dis_model_filter_response) / sum(filter_response_flux_int*flux_model_filter_response*wl_dis_model_filter_response) # um
-						lambda_mean[i,k] = sum(wl_model_filter_response*filter_response_flux_int*wl_dis_model_filter_response) / sum(filter_response_flux_int*wl_dis_model_filter_response) # um
-						width_eff[i,k] = sum(filter_response_flux_int*wl_dis_model_filter_response) / filter_response_flux_int.max() # um
-			
-						##----------------------------
-						## test
-						## wavelength dispersion of the filter response
-						#wl_dis_filter_response = filter_response_wl[1:] - filter_response_wl[:-1]
-						#wl_dis_filter_response = np.insert(wl_dis_filter_response, wl_dis_filter_response.size, wl_dis_filter_response[-1]) # add an element equal to the last row to keep the same shape as the wl_model array
-			
-						## synthetic photometry for each filter
-						## interpolate the filter response wavelength points into the model spectrum
-						#flux_model_filter_response_int = np.interp(filter_response_wl, wl_model_filter_response, flux_model_filter_response) # model spectrum for the wavelength points of the filter response (dimensionless)
-			
-						## normalize the response curve (it was dimensionless but now it has 1/um units)
-						#filter_response_flux_norm = filter_response_flux / sum(filter_response_flux*wl_dis_filter_response) # 1/um
-			
-						## synthetic flux density
-						##print('\n',phot_synt[i,k])
-						#phot_synt[i,k] = sum(flux_model_filter_response_int*filter_response_flux_norm*wl_dis_filter_response) # erg/s/cm2/A (but on the surface of a dwarf, not considering the distance to the target)
-						##print(phot_synt[i,k])
-			
-						## compute the effective wavelength and effective width of each filter
-						#lambda_eff[i,k] = sum(filter_response_wl*filter_response_flux*flux_model_filter_response_int*wl_dis_filter_response) / sum(filter_response_flux*flux_model_filter_response_int*wl_dis_filter_response) # um
-						#lambda_mean[i,k] = sum(filter_response_wl*filter_response_flux*wl_dis_filter_response) / sum(filter_response_flux*wl_dis_filter_response) # um
-						#width_eff[i,k] = sum(filter_response_flux*wl_dis_filter_response) / filter_response_flux.max() # um
-						##----------------------------
-	
-	# when synthetic magnitudes are already obtained
-	if (skip_convolution=='yes'): # it makes the code much faster when comparing photometry only, because synthetic magnitudes are already obtained for the filter of interest
-		print('\n'+str(len(spectra_name))+' model spectra to be compared')
-		# read synthetic magnitudes from all BT-Settl synthetic spectra considering select filters
-		phot_synt = np.zeros((len(spectra_name), len(fil_phot)))
-		lambda_eff = np.zeros((len(spectra_name), len(fil_phot)))
-		width_eff = np.zeros((len(spectra_name), len(fil_phot)))
-		f0_phot = np.zeros(len(fil_phot)) # to save the zero flux of each filter
-		ef0_phot = np.zeros(len(fil_phot)) # to save the error of the zero flux of each filter
-		N = 10000
-		if (model_label=='best'):
-			wl_array_model_conv = np.zeros((len(spectra_name), N))
-			flux_array_model_conv = np.zeros((len(spectra_name), N))
-		for i in range(len(spectra_name)):
-			for j in range(mag_phot.size):
-				phot_synt[i,j] = np.loadtxt(path_seda+'/aux/synthetic_photometry/'+model+'/synthetic_photometry/'+spectra_name[i]+'_synthetic_photometry_'+sur_phot[j]+'_'+fil_phot[j])
-				lambda_eff[i,j] = np.loadtxt(path_seda+'/aux/synthetic_photometry/'+model+'/filter_params/'+spectra_name[i]+'_lambda_eff_'+sur_phot[j]+'_'+fil_phot[j])
-				width_eff[i,j] = np.loadtxt(path_seda+'/aux/synthetic_photometry/'+model+'/filter_params/'+spectra_name[i]+'_width_eff_'+sur_phot[j]+'_'+fil_phot[j])
-				if (i==0):
-					f0_phot[j] = np.loadtxt(path_seda+'/aux/synthetic_photometry/'+model+'/filter_params/f0_phot_'+sur_phot[j]+'_'+fil_phot[j])
-					ef0_phot[j] = np.loadtxt(path_seda+'/aux/synthetic_photometry/'+model+'/filter_params/ef0_phot_'+sur_phot[j]+'_'+fil_phot[j])
-			if (model_label=='best'): # to avoid reading the convolved spectra when all the selected grid (model_label=='all') is considered
-				wl_array_model_conv_all = np.loadtxt(path_seda+'/aux/synthetic_photometry/'+model+'/convolved_spectra/'+spectra_name[i]+'_wl_convolved.dat')
-				flux_array_model_conv_all = np.loadtxt(path_seda+'/aux/synthetic_photometry/'+model+'/convolved_spectra/'+spectra_name[i]+'_flux_convolved.dat')
-
-				# cut the convolved model spectra to the range of the plot
-				ind = np.where((wl_array_model_conv_all>=(model_wl_range[0])) & (wl_array_model_conv_all<=model_wl_range[1]))
-				wl_array_model_conv[i,ind] = wl_array_model_conv_all[ind]
-				flux_array_model_conv[i,ind] = flux_array_model_conv_all[ind]
-	
-	# mean effective wavelength and mean effective (half) width
-	if (fit_photometry=='yes'): # only if there are observed magnitudes
-		lambda_eff_mean = np.zeros(len(mag_phot))
-		width_eff_mean = np.zeros(len(mag_phot))
-		for i in range(len(mag_phot)):
-			lambda_eff_mean[i] = np.mean(lambda_eff[:,i])
-			width_eff_mean[i] = np.mean(width_eff[:,i])
-	#		if (lambda_eff[lambda_eff[:,i]>0,i].size > 0): # only when synthetic photometry was derived
-	#			lambda_eff_mean[i] = np.mean(lambda_eff[lambda_eff[:,i]>0,i]) # exclude spectra for which no values were estimated because the spectra do not cover entirely the filter passband
-	#			width_eff_mean[i] = np.mean(width_eff[width_eff[:,i]>0,i]) # exclude spectra for which no values were estimated because the spectra do not cover entirely the filter passband
-	## remove filter parameters for the passband without synthetic photometry
-	#lambda_eff_mean = lambda_eff_mean[lambda_eff_mean>0]
-	#width_eff_mean = width_eff_mean[width_eff_mean>0]
-	
-	# convert photometry to erg/s/cm2/A
-	if (fit_photometry=='yes'): # only if there are observed magnitudes
-		# first mag to Jy
-		f_phot_nu = f0_phot * 10**(-mag_phot/2.5) # in Jy
-		ef_phot_nu = 10**(-mag_phot/2.5)*np.sqrt(ef0_phot**2+((-1*np.log(10)/2.5)*f0_phot*emag_phot)**2) # in Jy
-		# Jy to erg/s/cm2/A
-		#f_phot = (f_phot_nu / (lambda_eff_mean*1e-4)**2) * 3e-21 # in erg/s/cm2/A
-		f_phot = f_phot_nu / (3.33564095e+04*(lambda_eff_mean*1e4)**2) # in erg/s/cm2/A
-		ef_phot = f_phot * ef_phot_nu/f_phot_nu
+#	if (skip_convolution=='no'): # it is possible to skip the convolution of model spectra (the slowest process in the code), 
+#								 # only when comparing photometry and when synthetic magnitudes are precomputed
+#		##################################################
+#		# synthetic photometry from model spectra before reddening them
+#		if (fit_photometry=='yes'): # only if there are observed magnitudes
+#			## read filters' zero points
+#			#filter_parms = ascii.read(filter_parms_file)
+#			#f0_filt = filter_parms['f0(Jy)'] # in Jy
+#			#ef0_filt = filter_parms['ef0(Jy)'] # in Jy
+#			#ref_filt = filter_parms['ref']
+#			phot_synt = np.zeros((len(spectra_name), filter_phot.size)) # array to save synthetic photometry in erg/s/cm2/A
+#			lambda_eff = np.zeros((len(spectra_name), filter_phot.size)) # to save the effective wavelength of each filter from every synthetic spectrum
+#			lambda_mean = np.zeros((len(spectra_name), filter_phot.size)) # to save the mean wavelength of each filter from every synthetic spectrum
+#			width_eff = np.zeros((len(spectra_name), filter_phot.size)) # to save the effective width of each filter from every synthetic spectrum
+#			f0_phot = np.zeros(filter_phot.size) # to save the zero flux of each filter
+#			ef0_phot = np.zeros(filter_phot.size) # to save the error of the zero flux of each filter
+#			for i in range(len(spectra_name)):
+#				# synthetic photometry from the model spectra in the filters with magnitudes
+#				for k in range(len(fil_phot)):
+#					if ((sur_phot[k]=='Gaia') & (fil_phot[k]=='BP')): 
+#						filter_response = ascii.read(path_seda+'/aux/filter_transmissions/GAIA_GAIA3.Gbp.dat')
+#						f0_phot[k] = 3552.01 # Jy
+#						ef0_phot[k] = 0.0 # Jy
+#					filter_response_wl = filter_response['col1'] / 1e4 # in um
+#					filter_response_flux = filter_response['col2']
+#	
+#					# wavelength dispersion of model spectra in the wavelength range of the filter
+#					#if (wl_array_model[i,:].max()>=filter_response_wl.max()): # when the synthetic spectrum covers the whole filter passband
+#					ind_model_filter_response = np.where((wl_array_model[i,:]>=filter_response_wl.min()) & (wl_array_model[i,:]<=filter_response_wl.max()))[0]
+#					wl_model_filter_response = wl_array_model[i,ind_model_filter_response] # wavelength of the model in the filter passband
+#					flux_model_filter_response = flux_array_model[i,ind_model_filter_response] # fluxes of the model in the filter passband
+#			
+#					wl_dis_model_filter_response = wl_model_filter_response[1:] - wl_model_filter_response[:-1] # dispersion of model spectra (um)
+#					if (ind_model_filter_response.size>0): # when cropped model spectra cover the photometric passbands
+#						wl_dis_model_filter_response = np.insert(wl_dis_model_filter_response, wl_dis_model_filter_response.size, wl_dis_model_filter_response[-1]) # add an element equal to the last row to keep the same shape as the wl_model array
+#			
+#						# synthetic photometry for each filter
+#						# interpolate the model spectrum wavelength points into the filter response
+#						# (the result is the same if the filter response wavelength points are interpolated into the model spectra; see test below)
+#						filter_response_flux_int = np.interp(wl_model_filter_response, filter_response_wl, filter_response_flux) # filter response for the wavelength resolution of the model spectra (dimensionless)
+#						
+#						# normalize the response curve (it was dimensionless but now it has 1/um units)
+#						filter_response_flux_int_norm = filter_response_flux_int / sum(filter_response_flux_int*wl_dis_model_filter_response) # 1/um
+#						
+#						# synthetic flux density
+#						phot_synt[i,k] = sum(flux_model_filter_response*filter_response_flux_int_norm*wl_dis_model_filter_response) # erg/s/cm2/A (but on the surface of a dwarf, not considering the distance to the target)
+#			
+#						# compute the effective wavelength and effective width of each filter
+#						lambda_eff[i,k] = sum(wl_model_filter_response*filter_response_flux_int*flux_model_filter_response*wl_dis_model_filter_response) / sum(filter_response_flux_int*flux_model_filter_response*wl_dis_model_filter_response) # um
+#						lambda_mean[i,k] = sum(wl_model_filter_response*filter_response_flux_int*wl_dis_model_filter_response) / sum(filter_response_flux_int*wl_dis_model_filter_response) # um
+#						width_eff[i,k] = sum(filter_response_flux_int*wl_dis_model_filter_response) / filter_response_flux_int.max() # um
+#			
+#						##----------------------------
+#						## test
+#						## wavelength dispersion of the filter response
+#						#wl_dis_filter_response = filter_response_wl[1:] - filter_response_wl[:-1]
+#						#wl_dis_filter_response = np.insert(wl_dis_filter_response, wl_dis_filter_response.size, wl_dis_filter_response[-1]) # add an element equal to the last row to keep the same shape as the wl_model array
+#			
+#						## synthetic photometry for each filter
+#						## interpolate the filter response wavelength points into the model spectrum
+#						#flux_model_filter_response_int = np.interp(filter_response_wl, wl_model_filter_response, flux_model_filter_response) # model spectrum for the wavelength points of the filter response (dimensionless)
+#			
+#						## normalize the response curve (it was dimensionless but now it has 1/um units)
+#						#filter_response_flux_norm = filter_response_flux / sum(filter_response_flux*wl_dis_filter_response) # 1/um
+#			
+#						## synthetic flux density
+#						##print('\n',phot_synt[i,k])
+#						#phot_synt[i,k] = sum(flux_model_filter_response_int*filter_response_flux_norm*wl_dis_filter_response) # erg/s/cm2/A (but on the surface of a dwarf, not considering the distance to the target)
+#						##print(phot_synt[i,k])
+#			
+#						## compute the effective wavelength and effective width of each filter
+#						#lambda_eff[i,k] = sum(filter_response_wl*filter_response_flux*flux_model_filter_response_int*wl_dis_filter_response) / sum(filter_response_flux*flux_model_filter_response_int*wl_dis_filter_response) # um
+#						#lambda_mean[i,k] = sum(filter_response_wl*filter_response_flux*wl_dis_filter_response) / sum(filter_response_flux*wl_dis_filter_response) # um
+#						#width_eff[i,k] = sum(filter_response_flux*wl_dis_filter_response) / filter_response_flux.max() # um
+#						##----------------------------
+#	
+#	# when synthetic magnitudes are already obtained
+#	if (skip_convolution=='yes'): # it makes the code much faster when comparing photometry only, because synthetic magnitudes are already obtained for the filter of interest
+#		print('\n'+str(len(spectra_name))+' model spectra to be compared')
+#		# read synthetic magnitudes from all BT-Settl synthetic spectra considering select filters
+#		phot_synt = np.zeros((len(spectra_name), len(fil_phot)))
+#		lambda_eff = np.zeros((len(spectra_name), len(fil_phot)))
+#		width_eff = np.zeros((len(spectra_name), len(fil_phot)))
+#		f0_phot = np.zeros(len(fil_phot)) # to save the zero flux of each filter
+#		ef0_phot = np.zeros(len(fil_phot)) # to save the error of the zero flux of each filter
+#		N = 10000
+#		if (model_label=='best'):
+#			wl_array_model_conv = np.zeros((len(spectra_name), N))
+#			flux_array_model_conv = np.zeros((len(spectra_name), N))
+#		for i in range(len(spectra_name)):
+#			for j in range(mag_phot.size):
+#				phot_synt[i,j] = np.loadtxt(path_seda+'/aux/synthetic_photometry/'+model+'/synthetic_photometry/'+spectra_name[i]+'_synthetic_photometry_'+sur_phot[j]+'_'+fil_phot[j])
+#				lambda_eff[i,j] = np.loadtxt(path_seda+'/aux/synthetic_photometry/'+model+'/filter_params/'+spectra_name[i]+'_lambda_eff_'+sur_phot[j]+'_'+fil_phot[j])
+#				width_eff[i,j] = np.loadtxt(path_seda+'/aux/synthetic_photometry/'+model+'/filter_params/'+spectra_name[i]+'_width_eff_'+sur_phot[j]+'_'+fil_phot[j])
+#				if (i==0):
+#					f0_phot[j] = np.loadtxt(path_seda+'/aux/synthetic_photometry/'+model+'/filter_params/f0_phot_'+sur_phot[j]+'_'+fil_phot[j])
+#					ef0_phot[j] = np.loadtxt(path_seda+'/aux/synthetic_photometry/'+model+'/filter_params/ef0_phot_'+sur_phot[j]+'_'+fil_phot[j])
+#			if (model_label=='best'): # to avoid reading the convolved spectra when all the selected grid (model_label=='all') is considered
+#				wl_array_model_conv_all = np.loadtxt(path_seda+'/aux/synthetic_photometry/'+model+'/convolved_spectra/'+spectra_name[i]+'_wl_convolved.dat')
+#				flux_array_model_conv_all = np.loadtxt(path_seda+'/aux/synthetic_photometry/'+model+'/convolved_spectra/'+spectra_name[i]+'_flux_convolved.dat')
+#
+#				# cut the convolved model spectra to the range of the plot
+#				ind = np.where((wl_array_model_conv_all>=(model_wl_range[0])) & (wl_array_model_conv_all<=model_wl_range[1]))
+#				wl_array_model_conv[i,ind] = wl_array_model_conv_all[ind]
+#				flux_array_model_conv[i,ind] = flux_array_model_conv_all[ind]
+#	
+#	# mean effective wavelength and mean effective (half) width
+#	if (fit_photometry=='yes'): # only if there are observed magnitudes
+#		lambda_eff_mean = np.zeros(len(mag_phot))
+#		width_eff_mean = np.zeros(len(mag_phot))
+#		for i in range(len(mag_phot)):
+#			lambda_eff_mean[i] = np.mean(lambda_eff[:,i])
+#			width_eff_mean[i] = np.mean(width_eff[:,i])
+#	#		if (lambda_eff[lambda_eff[:,i]>0,i].size > 0): # only when synthetic photometry was derived
+#	#			lambda_eff_mean[i] = np.mean(lambda_eff[lambda_eff[:,i]>0,i]) # exclude spectra for which no values were estimated because the spectra do not cover entirely the filter passband
+#	#			width_eff_mean[i] = np.mean(width_eff[width_eff[:,i]>0,i]) # exclude spectra for which no values were estimated because the spectra do not cover entirely the filter passband
+#	## remove filter parameters for the passband without synthetic photometry
+#	#lambda_eff_mean = lambda_eff_mean[lambda_eff_mean>0]
+#	#width_eff_mean = width_eff_mean[width_eff_mean>0]
+#	
+#	# convert photometry to erg/s/cm2/A
+#	if (fit_photometry=='yes'): # only if there are observed magnitudes
+#		# first mag to Jy
+#		f_phot_nu = f0_phot * 10**(-mag_phot/2.5) # in Jy
+#		ef_phot_nu = 10**(-mag_phot/2.5)*np.sqrt(ef0_phot**2+((-1*np.log(10)/2.5)*f0_phot*emag_phot)**2) # in Jy
+#		# Jy to erg/s/cm2/A
+#		#f_phot = (f_phot_nu / (lambda_eff_mean*1e-4)**2) * 3e-21 # in erg/s/cm2/A
+#		f_phot = f_phot_nu / (3.33564095e+04*(lambda_eff_mean*1e4)**2) # in erg/s/cm2/A
+#		ef_phot = f_phot * ef_phot_nu/f_phot_nu
 	
 	# print a message when model spectra don't cover the whole input spectra wavelength range
 	if fit_spectra and not fit_photometry:
@@ -701,7 +720,7 @@ def chi2(my_chi2):
 	# output dictionary
 	out_chi2 = {'my_chi2': my_chi2}
 	# add more elements to the dictionary
-	out_chi2.update({'model': model, 'spectra_name_full': spectra_name_full, 'spectra_name': spectra_name, 'Teff_range': Teff_range, 'logg_range': logg_range, 
+	out_chi2.update({'model': model, 'spectra_name_full': spectra_name_full, 'spectra_name': spectra_name, 'N_model_spectra': N_model_spectra, 'Teff_range': Teff_range, 'logg_range': logg_range, 
  				     'res': res, 'lam_res': lam_res, 'fit_wl_range': fit_wl_range, 'N_modelpoints': N_modelpoints, 'out_lmfit': out_lmfit, 'iterations_fit': iterations_fit, 
 				     'Av_fit': Av_fit, 'eAv_fit': eAv_fit, 'scaling_fit': scaling_fit, 'escaling_fit': escaling_fit, 'chi2_wl_fit': chi2_wl_fit, 
 				     'chi2_red_wl_fit': chi2_red_wl_fit, 'chi2_fit': chi2_fit, 'chi2_red_fit': chi2_red_fit, 'weight_fit': weight_fit})
@@ -840,6 +859,8 @@ def save_params(dict_for_table):
 	Teff_fit = dict_for_table['Teff']
 	logg_fit = dict_for_table['logg']
 
+	skip_convolution = dict_for_table['my_chi2'].skip_convolution
+
 	# table with model spectra sorted by the resulting chi square
 	ind = np.argsort(chi2_red_fit)
 
@@ -847,47 +868,87 @@ def save_params(dict_for_table):
 	if (model == 'Sonora_Diamondback'):
 		Z_fit = dict_for_table['Z']
 		fsed_fit = dict_for_table['fsed']
-		out.write('# file                               chi2     chi2_red     scaling     e_scaling   Av    eAv    Teff   logg  Z      fsed   Iterations\n')
-		for i in range(len(spectra_name)):
-			out.write('%-35s %8.0f %9.3f %13.3E %11.3E %6.2f %5.2f %6i %5.1f %5.1f %4i %7i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], Z_fit[ind[i]], fsed_fit[ind[i]], iterations_fit[ind[i]]))
+		if not skip_convolution:
+			out.write('# file                               chi2     chi2_red     scaling     e_scaling   Av    eAv    Teff   logg  Z      fsed   Iterations\n')
+			for i in range(len(spectra_name)):
+				out.write('%-35s %8.0f %9.3f %13.3E %11.3E %6.2f %5.2f %6i %5.1f %5.1f %4i %7i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], Z_fit[ind[i]], fsed_fit[ind[i]], iterations_fit[ind[i]]))
+		else:
+			out.write('# file                                                chi2     chi2_red     scaling     e_scaling   Av    eAv    Teff   logg  Z      fsed   Iterations\n')
+			for i in range(len(spectra_name)):
+				out.write('%-52s %8.0f %9.3f %13.3E %11.3E %6.2f %5.2f %6i %5.1f %5.1f %4i %7i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], Z_fit[ind[i]], fsed_fit[ind[i]], iterations_fit[ind[i]]))
 	if (model == 'Sonora_Elf_Owl'):
 		logKzz_fit = dict_for_table['logKzz']
 		Z_fit = dict_for_table['Z']
 		CtoO_fit = dict_for_table['CtoO']
-		out.write('# file                                                         chi2      chi2_red     scaling     e_scaling   Av    eAv    Teff  logg   logKzz  Z    CtoO   Iterations\n')
-		for i in range(len(spectra_name)):
-			out.write('%-60s %8.0f %10.3f %14.3E %11.3E %6.2f %5.2f %5i %6.2f %3.0f %9.1f %6.3f %3i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], logKzz_fit[ind[i]], Z_fit[ind[i]], CtoO_fit[ind[i]], iterations_fit[ind[i]]))
+		if not skip_convolution:
+			out.write('# file                                                         chi2      chi2_red     scaling     e_scaling   Av    eAv    Teff  logg   logKzz  Z    CtoO   Iterations\n')
+			for i in range(len(spectra_name)):
+				out.write('%-60s %8.0f %10.3f %14.3E %11.3E %6.2f %5.2f %5i %6.2f %3.0f %9.1f %6.3f %3i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], logKzz_fit[ind[i]], Z_fit[ind[i]], CtoO_fit[ind[i]], iterations_fit[ind[i]]))
+		else:
+			out.write('# file                                                                          chi2      chi2_red     scaling     e_scaling   Av    eAv    Teff  logg   logKzz  Z    CtoO   Iterations\n')
+			for i in range(len(spectra_name)):
+				out.write('%-77s %8.0f %10.3f %14.3E %11.3E %6.2f %5.2f %5i %6.2f %3.0f %9.1f %6.3f %3i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], logKzz_fit[ind[i]], Z_fit[ind[i]], CtoO_fit[ind[i]], iterations_fit[ind[i]]))
 	if (model == 'LB23'):
 		logKzz_fit = dict_for_table['logKzz']
 		Z_fit = dict_for_table['Z']
-		out.write('# file                                         chi2      chi2_red      scaling     e_scaling   Av    eAv    Teff  logg   Z      logKzz  Iterations\n')
-		for i in range(len(spectra_name)):
-			out.write('%-45s %8.0f %10.3f %14.3E %11.3E %6.2f %5.2f %5i %6.2f %7.3f %4.1f %7i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], Z_fit[ind[i]], logKzz_fit[ind[i]], iterations_fit[ind[i]]))
+		if not skip_convolution:
+			out.write('# file                                         chi2      chi2_red      scaling     e_scaling   Av    eAv    Teff  logg   Z      logKzz  Iterations\n')
+			for i in range(len(spectra_name)):
+				out.write('%-45s %8.0f %10.3f %14.3E %11.3E %6.2f %5.2f %5i %6.2f %7.3f %4.1f %7i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], Z_fit[ind[i]], logKzz_fit[ind[i]], iterations_fit[ind[i]]))
+		else:
+			out.write('# file                                                          chi2      chi2_red      scaling     e_scaling   Av    eAv    Teff  logg   Z      logKzz  Iterations\n')
+			for i in range(len(spectra_name)):
+				out.write('%-62s %8.0f %10.3f %14.3E %11.3E %6.2f %5.2f %5i %6.2f %7.3f %4.1f %7i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], Z_fit[ind[i]], logKzz_fit[ind[i]], iterations_fit[ind[i]]))
 	if (model == 'ATMO2020'):
 		logKzz_fit = dict_for_table['logKzz']
-		out.write('# file                           chi2    chi2_red      scaling     e_scaling   Av    eAv    Teff  logg  logKzz  Iterations\n')
-		for i in range(len(spectra_name)):
-			out.write('%-30s %8.0f %9.3f %14.3E %11.3E %6.2f %5.2f %6i %4.1f %5.1f %6i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], logKzz_fit[ind[i]], iterations_fit[ind[i]]))
+		if not skip_convolution:
+			out.write('# file                           chi2    chi2_red      scaling     e_scaling   Av    eAv    Teff  logg  logKzz  Iterations\n')
+			for i in range(len(spectra_name)):
+				out.write('%-30s %8.0f %9.3f %14.3E %11.3E %6.2f %5.2f %6i %4.1f %5.1f %6i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], logKzz_fit[ind[i]], iterations_fit[ind[i]]))
+		else:
+			out.write('# file                                            chi2    chi2_red      scaling     e_scaling   Av    eAv    Teff  logg  logKzz  Iterations\n')
+			for i in range(len(spectra_name)):
+				out.write('%-47s %8.0f %9.3f %14.3E %11.3E %6.2f %5.2f %6i %4.1f %5.1f %6i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], logKzz_fit[ind[i]], iterations_fit[ind[i]]))
 	if (model == 'Sonora_Cholla'):
 		logKzz_fit = dict_for_table['logKzz']
-		out.write('# file                     chi2     chi2_red     scaling     e_scaling   Av    eAv   Teff   logg  logKzz  Iterations\n')
-		for i in range(len(spectra_name)):
-			out.write('%-25s %8.0f %8.3f %14.3E %11.3E %6.2f %5.2f %5i %5.1f %3i %8i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], logKzz_fit[ind[i]], iterations_fit[ind[i]]))
+		if not skip_convolution:
+			out.write('# file                     chi2     chi2_red     scaling     e_scaling   Av    eAv   Teff   logg  logKzz  Iterations\n')
+			for i in range(len(spectra_name)):
+				out.write('%-25s %8.0f %8.3f %14.3E %11.3E %6.2f %5.2f %5i %5.1f %3i %8i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], logKzz_fit[ind[i]], iterations_fit[ind[i]]))
+		else:
+			out.write('# file                                      chi2     chi2_red     scaling     e_scaling   Av    eAv   Teff   logg  logKzz  Iterations\n')
+			for i in range(len(spectra_name)):
+				out.write('%-42s %8.0f %8.3f %14.3E %11.3E %6.2f %5.2f %5i %5.1f %3i %8i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], logKzz_fit[ind[i]], iterations_fit[ind[i]]))
 	if (model == 'Sonora_Bobcat'):
 		Z_fit = dict_for_table['Z']
 		CtoO_fit = dict_for_table['CtoO']
-		out.write('# file                               chi2     chi2_red     scaling     e_scaling   Av    eAv   Teff   logg  Z     CtoO  Iterations\n')
-		for i in range(len(spectra_name)):
-			out.write('%-35s %8.0f %8.3f %14.3E %11.3E %6.2f %5.2f %5i %6.2f %4.1f %5.1f %4i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], Z_fit[ind[i]], CtoO_fit[ind[i]], iterations_fit[ind[i]]))
+		if not skip_convolution:
+			out.write('# file                               chi2     chi2_red     scaling     e_scaling   Av    eAv   Teff   logg  Z     CtoO  Iterations\n')
+			for i in range(len(spectra_name)):
+				out.write('%-35s %8.0f %8.3f %14.3E %11.3E %6.2f %5.2f %5i %6.2f %4.1f %5.1f %4i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], Z_fit[ind[i]], CtoO_fit[ind[i]], iterations_fit[ind[i]]))
+		else:
+			out.write('# file                                                chi2     chi2_red     scaling     e_scaling   Av    eAv   Teff   logg  Z     CtoO  Iterations\n')
+			for i in range(len(spectra_name)):
+				out.write('%-52s %8.0f %8.3f %14.3E %11.3E %6.2f %5.2f %5i %6.2f %4.1f %5.1f %4i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], Z_fit[ind[i]], CtoO_fit[ind[i]], iterations_fit[ind[i]]))
 	if (model == 'BT-Settl'):
-		out.write('# file                               chi2     chi2_red    scaling     e_scaling   Av    eAv   Teff  logg    Iterations \n')
-		for i in range(len(spectra_name)):
-			out.write('%-15s %8.0f %8.3f %13.3E %11.3E %6.2f %5.2f %5i %4.1f %6i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], iterations_fit[ind[i]]))
+		if not skip_convolution:
+			out.write('# file                               chi2     chi2_red    scaling     e_scaling   Av    eAv   Teff  logg    Iterations \n')
+			for i in range(len(spectra_name)):
+				out.write('%-15s %8.0f %8.3f %13.3E %11.3E %6.2f %5.2f %5i %4.1f %6i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], iterations_fit[ind[i]]))
+		else:
+			out.write('# file                                                chi2     chi2_red    scaling     e_scaling   Av    eAv   Teff  logg    Iterations \n')
+			for i in range(len(spectra_name)):
+				out.write('%-32s %8.0f %8.3f %13.3E %11.3E %6.2f %5.2f %5i %4.1f %6i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], iterations_fit[ind[i]]))
 	if (model == 'SM08'):
 		fsed_fit = dict_for_table['fsed']
-		out.write('# file            chi2     chi2_red   scaling     e_scaling   Av    eAv   Teff  logg  fsed  Iterations \n')
-		for i in range(len(spectra_name)):
-			out.write('%-15s %9.0f %8.3f %12.3E %11.3E %6.2f %5.2f %4i %5.1f %3i %6i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], fsed_fit[ind[i]], iterations_fit[ind[i]]))
+		if not skip_convolution:
+			out.write('# file            chi2     chi2_red   scaling     e_scaling   Av    eAv   Teff  logg  fsed  Iterations \n')
+			for i in range(len(spectra_name)):
+				out.write('%-15s %9.0f %8.3f %12.3E %11.3E %6.2f %5.2f %4i %5.1f %3i %6i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], fsed_fit[ind[i]], iterations_fit[ind[i]]))
+		else:
+			out.write('# file                             chi2     chi2_red   scaling     e_scaling   Av    eAv   Teff  logg  fsed  Iterations \n')
+			for i in range(len(spectra_name)):
+				out.write('%-32s %9.0f %8.3f %12.3E %11.3E %6.2f %5.2f %4i %5.1f %3i %6i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], fsed_fit[ind[i]], iterations_fit[ind[i]]))
 	out.close()
 
 	return  

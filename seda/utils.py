@@ -14,7 +14,7 @@ from specutils.utils.wcs_utils import vac_to_air
 from sys import exit
 
 ##########################
-def convolve_spectrum(wl, flux, res, lam_res, eflux=None, disp_wl_range=None, convolve_wl_range=None):
+def convolve_spectrum(wl, flux, res, lam_res, eflux=None, disp_wl_range=None, convolve_wl_range=None, out_file=None):
 	'''
 	Description:
 	------------
@@ -38,13 +38,22 @@ def convolve_spectrum(wl, flux, res, lam_res, eflux=None, disp_wl_range=None, co
 	- convolve_wl_range : float array, optional
 		Minimum and maximum wavelengths (same units as ``wl``) to convolve the input spectrum.
 		Default values are the minimum and maximum wavelengths in ``wl``.
+	- out_file : str, optional
+		File name to save the convolved spectrum as netCDF with xarray (it produces lighter files compared to normal ASCII files).
+		The file name can include a path e.g. my_path/convolved_spectrum.nc
+		If not provided, the convolved spectrum will not be saved.
 
 	Returns:
 	--------
-	Dictionary with the convolved spectrum: 
-		- ``'wl_conv'`` : wavelengths for the convolved spectrum (equal to input ``wl`` within ``convolve_wl_range``). 
-		- ``'flux_conv'`` : convolved fluxes.
-		- ``'eflux_conv'`` : convolved flux errors (if ``eflux`` is provided).
+	- Dictionary
+		Dictionary with the convolved spectrum: 
+			- ``'wl_conv'`` : wavelengths for the convolved spectrum (equal to input ``wl`` within ``convolve_wl_range``). 
+			- ``'flux_conv'`` : convolved fluxes.
+			- ``'eflux_conv'`` : convolved flux errors (if ``eflux`` is provided).
+	- ``out_file`` file
+		netCDF file with the convolved spectrum, if ``out_file`` is provided. 
+		Wavelengths and fluxes for the convolved spectrum have the same units as the input spectrum.
+		Note: the wavelength data points are the same as in the input spectrum, so wavelength steps do not reflect the resolution of the convolved spectrum.
 
 	Example:
 	--------
@@ -90,10 +99,18 @@ def convolve_spectrum(wl, flux, res, lam_res, eflux=None, disp_wl_range=None, co
 
 	flux_conv = convolve(flux[mask_conv], gauss) # convolve only the selected wavelength range 
 	wl_conv = wl[mask_conv] # corresponding wavelength data points for convolved fluxes
-	if (eflux is not None): eflux_conv = convolve(eflux[mask_conv], gauss)
+	if eflux is not None: eflux_conv = convolve(eflux[mask_conv], gauss)
 
 	out = {'wl_conv': wl_conv, 'flux_conv': flux_conv}
 	if (eflux is not None): out['eflux_conv'] = eflux_conv
+
+	# save convolved spectrum as netCDF
+	if out_file is not None:
+		# make xarray
+		if eflux is None: ds = xarray.Dataset({'wl': wl_conv}, coords={'flux': flux_conv})
+		else: ds = xarray.Dataset({'wl': wl_conv}, coords={'flux': flux_conv, 'eflux': eflux_conv})
+		# store xarray as netCDF
+		ds.to_netcdf(out_file)
 
 	return out
 
@@ -287,7 +304,7 @@ def read_model_spectrum(spectra_name_full, model, model_wl_range=None):
 	return out
 
 ##########################
-def best_chi2_fits(chi2_pickle_file, N_best_fits=1):
+def best_chi2_fits(chi2_pickle_file, N_best_fits=1, model_dir_ori=None, ori_res=None):
 	'''
 	Description:
 	------------
@@ -299,6 +316,11 @@ def best_chi2_fits(chi2_pickle_file, N_best_fits=1):
 		Pickle file with a dictionary with the results from the chi-square minimization by ``chi2_fit.chi2``.
 	- N_best_fits : int, optional (default 1)
 		Number of best model fits to be read.
+	- ori_res : {``True``, ``False``}, optional (default ``False``)
+		Read (``True``) or do not read (``False``) model spectra with the original resolution.
+	- model_dir_ori : str, list, or array
+		Path to the directory (str, list, or array) or directories (as a list or array) containing the model spectra with the original resolution.
+		This parameter is needed if ``ori_res`` is True and `chi2_fit.chi2` was run skipping the model spectra convolution (if `skip_convolution`` is True).
 
 	Returns:
 	--------
@@ -321,40 +343,75 @@ def best_chi2_fits(chi2_pickle_file, N_best_fits=1):
 	res = out_chi2['res']#[0] # resolution for the first input spectrum
 	lam_res = out_chi2['lam_res']#[0] # wavelength reference for the first input spectrum
 	N_modelpoints = out_chi2['N_modelpoints']
+	N_model_spectra = out_chi2['N_model_spectra']
 	fit_wl_range = out_chi2['fit_wl_range'][0] # for the first input spectrum
 	spectra_name_full = out_chi2['spectra_name_full']
 	spectra_name = out_chi2['spectra_name']
 	chi2_red_fit = out_chi2['chi2_red_fit']
 	scaling_fit = out_chi2['scaling_fit']
+	wl_array_model_conv_resam = out_chi2['wl_array_model_conv_resam'] # wavelengths of resampled, convolved model spectra in the fit
+	flux_array_model_conv_resam = out_chi2['flux_array_model_conv_resam'] # fluxes of resampled, convolved model spectra in the fit
+	skip_convolution = out_chi2['my_chi2'].skip_convolution
 
 	# select the best fits given by N_best_fits
+	if (N_best_fits > N_model_spectra): raise Exception(f"not enough model spectra (only {N_model_spectra}) in the fit to select {N_best_fits} best fits")
 	sort_ind = np.argsort(chi2_red_fit)
 	chi2_red_fit_best = chi2_red_fit[sort_ind][:N_best_fits]
 	scaling_fit_best = scaling_fit[sort_ind][:N_best_fits]
 	spectra_name_full_best = spectra_name_full[sort_ind][:N_best_fits]
 	spectra_name_best = spectra_name[sort_ind][:N_best_fits]
+	wl_array_model_conv_resam_best = wl_array_model_conv_resam[sort_ind,:][:N_best_fits,:]
+	flux_array_model_conv_resam_best = flux_array_model_conv_resam[sort_ind,:][:N_best_fits,:]
 
 	# read parameters from file name for the best fits
 	out_separate_params = separate_params(model=model, spectra_name=spectra_name_best)
 
-	# read best fits
-	wl_model = np.zeros((N_modelpoints, N_best_fits))
-	flux_model = np.zeros((N_modelpoints, N_best_fits))
-	for i in range(N_best_fits):
-		out_read_model_spectrum = read_model_spectrum(spectra_name_full_best[i], model)
-		wl_model[:,i] = out_read_model_spectrum['wl_model']
-		flux_model[:,i] = scaling_fit_best[i] * out_read_model_spectrum['flux_model'] # scaled fluxes
+	# read best fits with the original resolution
+	if ori_res:
+		wl_model = np.zeros((N_best_fits, N_modelpoints))
+		flux_model = np.zeros((N_best_fits, N_modelpoints))
+		if not skip_convolution: # when the convolution was not skipped
+			for i in range(N_best_fits):
+				if not skip_convolution:
+					out_read_model_spectrum = read_model_spectrum(spectra_name_full=spectra_name_full_best[i], model=model)
+					wl_model[i,:] = out_read_model_spectrum['wl_model']
+					flux_model[i,:] = scaling_fit_best[i] * out_read_model_spectrum['flux_model'] # scaled fluxes
+		else:
+			if model_dir_ori is None: raise Exception(f"parameter 'model_dir_ori' is needed to read model spectra with the original resolution")
+			else:
+				out_select_model_spectra = select_model_spectra(model_dir=model_dir_ori, model=model) # all spectra in model_dir_ori
+				for i in range(N_best_fits):
+					spectrum_name = spectra_name_best[i].split('_R')[0] # convolved spectrum name without additions to match original resolution name
+					if spectrum_name in out_select_model_spectra['spectra_name']: # if the i best fit is in the model_dir_ori folder 
+						spectrum_name_full = out_select_model_spectra['spectra_name_full'][out_select_model_spectra['spectra_name']==spectrum_name][0]
+						out_read_model_spectrum = read_model_spectrum(spectra_name_full=spectrum_name_full, model=model)
+						wl_model[i,:] = out_read_model_spectrum['wl_model']
+						flux_model[i,:] = scaling_fit_best[i] * out_read_model_spectrum['flux_model'] # scaled fluxes
+					else: raise Exception(f"{spectrum_name} is not in {model_dir_ori}")
 
-	# convolve spectrum
-	wl_model_conv = np.zeros((N_modelpoints, N_best_fits))
-	flux_model_conv = np.zeros((N_modelpoints, N_best_fits))
-	for i in range(N_best_fits):
-		out_convolve_spectrum = convolve_spectrum(wl=wl_model[:,i], flux=flux_model[:,i], lam_res=lam_res, res=res, disp_wl_range=fit_wl_range)
-		wl_model_conv[:,i] = out_convolve_spectrum['wl_conv']
-		flux_model_conv[:,i] = out_convolve_spectrum['flux_conv']
+#	# convolve spectrum
+#	wl_model_conv = np.zeros((N_modelpoints, N_best_fits))
+#	flux_model_conv = np.zeros((N_modelpoints, N_best_fits))
+#	for i in range(N_best_fits):
+#		out_convolve_spectrum = convolve_spectrum(wl=wl_model[:,i], flux=flux_model[:,i], lam_res=lam_res, res=res, disp_wl_range=fit_wl_range)
+#		wl_model_conv[:,i] = out_convolve_spectrum['wl_conv']
+#		flux_model_conv[:,i] = out_convolve_spectrum['flux_conv']
+#		#if not skip_convolution:
+#		#	out_convolve_spectrum = convolve_spectrum(wl=wl_model[:,i], flux=flux_model[:,i], lam_res=lam_res, res=res, disp_wl_range=fit_wl_range)
+#		#	wl_model_conv[:,i] = out_convolve_spectrum['wl_conv']
+#		#	flux_model_conv[:,i] = out_convolve_spectrum['flux_conv']
+#		#else:
+#		#	out_read_model_spectrum = read_model_spectrum_conv(spectra_name_full=spectra_name_full_best[i])
+#		#	wl_model_conv[:,i] = out_read_model_spectrum['wl_model']
+#		#	flux_model_conv[:,i] = out_read_model_spectrum['flux_model']
 
-	out = {'spectra_name_best': spectra_name_best, 'chi2_red_fit_best': chi2_red_fit_best, 'wl_model': wl_model, 
-		   'flux_model': flux_model, 'wl_model_conv': wl_model_conv, 'flux_model_conv': flux_model_conv}
+	out = {'spectra_name_best': spectra_name_best, 'chi2_red_fit_best': chi2_red_fit_best, 
+		   #'flux_model': flux_model, 'wl_model_conv': wl_model_conv, 'flux_model_conv': flux_model_conv}
+		   'wl_model_conv': wl_array_model_conv_resam_best, 'flux_model_conv': flux_array_model_conv_resam_best}
+	#if not skip_convolution or model_dir_ori is not None:
+	if ori_res:
+		out['wl_model'] = wl_model
+		out['flux_model'] = flux_model
 	out['parameters'] = out_separate_params
 
 	return out
@@ -710,18 +767,86 @@ def grid_ranges(model):
 		Teff_range1 = np.arange(275., 600.+25, 25)
 		Teff_range2 = np.arange(650., 1000.+50, 50)
 		Teff_range3 = np.arange(1100., 2400.+100, 100)
-		Teff = np.concatenate((Teff_range1, Teff_range2, Teff_range3)) # K
+		Teff = np.concatenate([Teff_range1, Teff_range2, Teff_range3]) # K
 		# logg
-		logg = np.arange(3.25, 5.50+0.25, 0.25) # dex (g in cgs)
+		logg = np.arange(3.25, 5.50+0.25, 0.25) # g in cm/s2
 		#logKzz
-		logKzz = np.array((2.0, 4.0, 7.0, 8.0, 9.0)) # dex (Kzz in cgs)
+		logKzz = np.array([2.0, 4.0, 7.0, 8.0, 9.0]) # Kzz in cm2/s
 		# Z or [M/H]
-		Z = np.array((-1.0, -0.5, 0.0, 0.5, 0.7, 1.0)) # cgs
-		# C/O ratio
-		CtoO = np.array((0.5, 1.0, 1.5, 2.5)) # relative to solar C/O
+		Z = np.array([-1.0, -0.5, 0.0, 0.5, 0.7, 1.0]) # Z=0 means solar metallicity
+		# C/O
+		CtoO = np.array([0.5, 1.0, 1.5, 2.5]) # relative to solar C/O (equal to 1)
 
-#	if (model=='ATMO2020'):
+	if (model=='Sonora_Diamondback'):
+		# Teff
+		Teff = np.arange(900., 2400.+100., 100.) # K
+		# logg
+		logg = np.array([3.5, 4., 4.5, 5., 5.5]) # g in cm/s2
+		# Z
+		Z = np.array([-0.5, 0., 0.5])
+		# fsed
+		fsed = np.array([1., 2., 3., 4., 8., 99.]) # fsed=99 means no clouds
 
+	if (model=='LB23'):
+		# Teff
+		Teff_range1 = np.arange(250., 575+25., 25.)
+		Teff_range2 = np.arange(600., 800+50., 50.)
+		Teff = np.concatenate([Teff_range1, Teff_range2]) # K
+		# logg
+		logg = np.arange(3.5, 5.0+0.25, 0.25) # g in cm/s2
+		# Z
+		Z = np.array([-0.5, 0., 0.5]) # [M/H]
+		# logKzz
+		logKzz = np.array([6]) # Kzz in cm2/s
+		# Hmix
+		Hmix = np.array([0.01, 0.1, 1.])
+
+	if (model=='Sonora_Cholla'):
+		Teff = np.arange(500., 1300.+50, 50) # K
+		logg = np.arange(3.5, 5.5+0.25, 0.25) # g in s/cm2
+		logKzz = np.array([2., 4., 7.]) # Kzz in cm2/s
+
+	if (model=='Sonora_Bobcat'):
+		# Teff
+		Teff_range1 = np.arange(200., 600.+25, 25)
+		Teff_range2 = np.arange(650., 1000.+50, 50)
+		Teff_range3 = np.arange(1100., 2400.+100, 100)
+		Teff = np.concatenate([Teff_range1, Teff_range2, Teff_range3]) # K
+		# logg
+		logg = np.arange(3., 5.5+0.25, 0.25) # g in s/cm2
+		# Z
+		Z = np.array([-0.5, 0., 0.5]) # [M/H]
+		# C/O
+		CtoO = np.array([0.5, 1.0, 1.5]) # relative to solar C/O (equal to 1)
+
+	if (model=='ATMO2020'):
+		# Teff
+		Teff_range1 = np.arange(200., 600.+50, 50)
+		Teff_range2 = np.arange(700., 3000.+100, 100)
+		Teff = np.concatenate([Teff_range1, Teff_range2]) # K
+		# logg
+		logg = np.arange(2.5, 5.5+0.5, 0.5) # g in s/cm2
+		# logKzz
+		logKzz = np.array([0, 4, 6]) # Kzz in cm2/s
+
+	if (model=='BT-Settl'):
+		# Teff
+		Teff_range1 = np.arange(260., 420.+20, 20)
+		Teff_range2 = np.arange(450., 1200.+50, 50)
+		Teff_range3 = np.arange(1300., 1500.+100, 100)
+		Teff_range4 = np.arange(1550., 2400.+50, 50)
+		Teff_range5 = np.arange(2500., 7000.+100, 100)
+		Teff = np.concatenate([Teff_range1, Teff_range2, Teff_range3, Teff_range4, Teff_range5]) # K
+		# logg
+		logg = np.arange(2., 5.5+0.5, 0.5) # g in s/cm2
+
+	if (model=='SM08'):
+		# Teff
+		Teff = np.arange(800., 2400.+100, 100) # K
+		# logg
+		logg = np.arange(3., 5.5+0.5, 0.5) # g in s/cm2
+		# fsed
+		fsed = np.array([1., 2., 3., 4.])
 
 	out = {'Teff': Teff, 'logg': logg, 'logKzz': logKzz, 'Z': Z, 'CtoO': CtoO}
 
@@ -1015,6 +1140,7 @@ def select_model_spectra(model, model_dir, Teff_range=None, logg_range=None, Z_r
 
 	# make sure model_dir is a list
 	if isinstance(model_dir, str): model_dir = [model_dir]
+	if isinstance(model_dir, np.ndarray): model_dir = model_dir.tolist()
 
 	# to store files in model_dir
 	files = [] # with full path
@@ -1026,7 +1152,7 @@ def select_model_spectra(model, model_dir, Teff_range=None, logg_range=None, Z_r
 			files.append(model_dir[i]+file)
 			files_short.append(file)
 
-	# read Teff and logg from each model spectrum
+	# read free parameters from each model spectrum
 	out_separate_params = separate_params(model=model, spectra_name=files_short)
 
 	# select spectra within the desired Teff and logg ranges
@@ -1060,13 +1186,16 @@ def select_model_spectra(model, model_dir, Teff_range=None, logg_range=None, Z_r
 
 	if len(spectra_name_full)==0: raise Exception('No model spectra within the indicated parameter ranges') # show up an error when there are no models in the indicated ranges
 	else: 
-		print(f'\n      {len(spectra_name)} model spectra selected with:')
-		if ('Teff' in out_separate_params) and (Teff_range is not None): print(f'         Teff=[{Teff_range[0]}, {Teff_range[1]}]')
-		if ('logg' in out_separate_params) and (logg_range is not None): print(f'         logg=[{logg_range[0]}, {logg_range[1]}]')
-		if ('Z' in out_separate_params) and (Z_range is not None): print(f'         Z=[{Z_range[0]}, {Z_range[1]}]')
-		if ('logKzz' in out_separate_params) and (logKzz_range is not None): print(f'         logKzz=[{logKzz_range[0]}, {logKzz_range[1]}]')
-		if ('CtoO' in out_separate_params) and (CtoO_range is not None): print(f'         CtoO=[{CtoO_range[0]}, {CtoO_range[1]}]')
-		if ('fsed' in out_separate_params) and (fsed_range is not None): print(f'         fsed=[{fsed_range[0]}, {fsed_range[1]}]')
+		if (Teff_range is None) & (logg_range is None) & (Z_range is None) & (logKzz_range is None) & (CtoO_range is None) & (fsed_range is None):
+			print(f'\n      {len(spectra_name)} model spectra')
+		else:
+			print(f'\n      {len(spectra_name)} model spectra selected with:')
+			if ('Teff' in out_separate_params) and (Teff_range is not None): print(f'         Teff=[{Teff_range[0]}, {Teff_range[1]}]')
+			if ('logg' in out_separate_params) and (logg_range is not None): print(f'         logg=[{logg_range[0]}, {logg_range[1]}]')
+			if ('Z' in out_separate_params) and (Z_range is not None): print(f'         Z=[{Z_range[0]}, {Z_range[1]}]')
+			if ('logKzz' in out_separate_params) and (logKzz_range is not None): print(f'         logKzz=[{logKzz_range[0]}, {logKzz_range[1]}]')
+			if ('CtoO' in out_separate_params) and (CtoO_range is not None): print(f'         CtoO=[{CtoO_range[0]}, {CtoO_range[1]}]')
+			if ('fsed' in out_separate_params) and (fsed_range is not None): print(f'         fsed=[{fsed_range[0]}, {fsed_range[1]}]')
 
 	out = {'spectra_name_full': np.array(spectra_name_full), 'spectra_name': np.array(spectra_name)}
 
@@ -1166,30 +1295,34 @@ def separate_params(model, spectra_name):
 		logg_fit = np.zeros(len(spectra_name))
 		Z_fit = np.zeros(len(spectra_name))
 		logKzz_fit = np.zeros(len(spectra_name))
+		Hmix_fit = np.zeros(len(spectra_name))
 		for i in range(len(spectra_name)):
 			# Teff 
 			Teff_fit[i] = float(spectra_name[i].split('_')[0][1:]) # K
 			# logg
 			logg_fit[i] = float(spectra_name[i].split('_')[1][1:]) # logg
 			# Z (metallicity)
-			Z_fit[i] = float(spectra_name[i].split('_')[2][1:])
+			Z_fit[i] = np.round(np.log10(float(spectra_name[i].split('_')[2][1:])),1)
 			# Kzz (radiative zone)
 			logKzz_fit[i] = np.log10(float(spectra_name[i].split('CDIFF')[1].split('_')[0])) # in cgs units
+			# Hmix
+			Hmix_fit[i] = float(spectra_name[i].split('HMIX')[1][:5])
 		out['Teff']= Teff_fit
 		out['logg']= logg_fit
-		out['logKzz']= logKzz_fit
 		out['Z']= Z_fit
+		out['logKzz']= logKzz_fit
+		out['Hmix']= Hmix_fit
 	if (model == 'Sonora_Cholla'):
 		Teff_fit = np.zeros(len(spectra_name))
 		logg_fit = np.zeros(len(spectra_name))
 		logKzz_fit = np.zeros(len(spectra_name))
 		for i in range(len(spectra_name)):
 			# Teff 
-			Teff_fit[i] = float(spectra_name[i].split('_')[0][:-1]) 
+			Teff_fit[i] = float(spectra_name[i].split('_')[0][:-1]) # K
 			# logg
-			logg_fit[i] = round(np.log10(float(spectra_name[i].split('_')[1][:-1])),1) + 2
+			logg_fit[i] = round_logg_point25(np.log10(float(spectra_name[i].split('_')[1][:-1])) + 2) # g in cm/s2
 			# logKzz
-			logKzz_fit[i] = float(spectra_name[i].split('_')[2].split('.')[0][-1])
+			logKzz_fit[i] = float(spectra_name[i].split('_')[2].split('.')[0][-1]) # Kzz in cm2/s
 		out['Teff']= Teff_fit
 		out['logg']= logg_fit
 		out['logKzz']= logKzz_fit
@@ -1200,9 +1333,9 @@ def separate_params(model, spectra_name):
 		CtoO_fit = np.zeros(len(spectra_name))
 		for i in range(len(spectra_name)):
 			# Teff 
-			Teff_fit[i] = float(spectra_name[i].split('_')[1].split('g')[0][1:])
+			Teff_fit[i] = float(spectra_name[i].split('_')[1].split('g')[0][1:]) # K
 			# logg
-			logg_fit[i] = round(np.log10(float(spectra_name[i].split('_')[1].split('g')[1][:-2])),2) + 2
+			logg_fit[i] = round_logg_point25(np.log10(float(spectra_name[i].split('_')[1].split('g')[1][:-2])) + 2) # g in cm/s2
 			# Z
 			Z_fit[i] = float(spectra_name[i].split('_')[2][1:])
 			# C/O
@@ -1249,7 +1382,7 @@ def separate_params(model, spectra_name):
 			# Teff 
 			Teff_fit[i] = float(spectra_name[i].split('_')[1].split('g')[0][1:])
 			# logg
-			logg_fit[i] = np.log10(float(spectra_name[i].split('_')[1].split('g')[1].split('f')[0])) + 2 # g in cm/s^2
+			logg_fit[i] = np.round(np.log10(float(spectra_name[i].split('_')[1].split('g')[1].split('f')[0])), 1) + 2 # g in cm/s^2
 			# fsed
 			fsed_fit[i] = float(spectra_name[i].split('_')[1].split('g')[1].split('f')[1])
 		out['Teff']= Teff_fit
@@ -1389,6 +1522,23 @@ def app_to_abs_flux(flux, distance, eflux=0, edistance=0):
 		out['edistance'] = edistance
 		out['eflux_abs'] = eflux_abs # if eflux_abs was stored above it would replace it without issues
 	    
+	return out
+
+##########################
+# read convolved model spectra 
+# they are netCDF files with xarray produced by convolve_spectrum
+def read_model_spectrum_conv(spectra_name_full):
+
+	# read convolved spectrum
+	spectrum = xarray.open_dataset(spectra_name_full)
+	wl_model = spectrum['wl'].data # um
+	flux_model = spectrum['flux'].data # erg/s/cm2/A
+
+	# obtain fluxes in Jy
+	flux_model_Jy = (flux_model*u.erg/u.s/u.cm**2/u.angstrom).to(u.Jy, equivalencies=u.spectral_density(wl_model*u.micron)).value
+
+	out = {'wl_model': wl_model, 'flux_model': flux_model, 'flux_model_Jy': flux_model_Jy}
+
 	return out
 
 ##########################
