@@ -1139,6 +1139,8 @@ def select_model_spectra(model, model_dir, Teff_range=None, logg_range=None, Z_r
 	'''
 
 	# make sure model_dir is a list
+	model_dir = var_to_list(model_dir)
+	
 	if isinstance(model_dir, str): model_dir = [model_dir]
 	if isinstance(model_dir, np.ndarray): model_dir = model_dir.tolist()
 
@@ -1540,6 +1542,14 @@ def read_model_spectrum_conv(spectra_name_full):
 	out = {'wl_model': wl_model, 'flux_model': flux_model, 'flux_model_Jy': flux_model_Jy}
 
 	return out
+
+##########################
+# make a variable is a list
+def var_to_list(x):
+	if isinstance(x, str): x = [x]
+	if isinstance(x, np.ndarray): x = x.tolist()
+
+	return x
 
 ##########################
 # convert an astropy array into a numpy array

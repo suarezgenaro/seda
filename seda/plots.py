@@ -8,7 +8,7 @@ from sys import exit
 from .utils import *
 
 ##########################
-def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True, ori_res=False, model_dir_ori=None, out_file=None, save=True):
+def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True, xrange=None, yrange=None, ori_res=False, model_dir_ori=None, out_file=None, save=True):
 	'''
 	Description:
 	------------
@@ -22,6 +22,10 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True, ori_res=False, mod
 		Number (default 1) of best model fits for plotting.
 	- ylog : {``True``, ``False``}, optional (default ``True``)
 		Use logarithmic (``True``) or linear (``False``) scale to plot fluxes and residuals.
+	- xrange : list or array
+		Horizontal range of the plot.
+	- yrange : list or array
+		Vertical range of the plot.
 	- ori_res : {``True``, ``False``}, optional (default ``False``)
 		Plot (``True``) or do not include (``False``) model spectra with the original resolution.
 	- model_dir_ori : str, list, or array
@@ -107,8 +111,10 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True, ori_res=False, mod
 	for i in range(N_best_fits):
 		label = label_model[i]+r' ($\chi^2_\nu=$'+str(round(chi2_red_fit_best[i],1))+')'
 		mask = (wl_model_conv[i,:]>wl_array_model_conv_resam.min()) & (wl_model_conv[i,:]<wl_array_model_conv_resam.max())
-		ax[0].plot(wl_model_conv[i,:][mask], flux_model_conv[i,:][mask], '--', linewidth=1.0, label=label) # in erg/s/cm2
+		ax[0].plot(wl_model_conv[i,:][mask], flux_model_conv[i,:][mask], '--', linewidth=1.0, label=label, zorder=4) # in erg/s/cm2
 
+	if xrange is not None: ax[0].set_xlim(xrange[0], xrange[1])
+	if yrange is not None: ax[0].set_ylim(yrange[0], yrange[1])
 	if ylog: ax[0].set_yscale('log')
 	ax[0].legend(loc='best', prop={'size': 6}, handlelength=1.5, handletextpad=0.5, labelspacing=0.5) 
 	ax[0].xaxis.set_minor_locator(AutoMinorLocator())
@@ -349,8 +355,8 @@ def plot_bayes_fit(bayes_pickle_file, ylog=True, out_file=None, save=True):
 	return
 
 ##########################
-def plot_model_coverage(model, model_dir, xparam, yparam, xparam_range=None, yparam_range=None, 
-	                    xlog=False, ylog=False, out_file=None, save=True):
+def plot_model_coverage(model, model_dir, xparam, yparam, xrange=None, yrange=None, 
+	                    xlog=False, ylog=False, out_file=None, save=False):
 	'''
 	Description:
 	------------
@@ -366,10 +372,10 @@ def plot_model_coverage(model, model_dir, xparam, yparam, xparam_range=None, ypa
 		Parameter in ``model`` to be plotted in the horizontal axis. `input_parameters.ModelOptions`` provides more details about available parameters for ``model``.
 	- yparam : str
 		Parameter in ``model`` to be plotted in the vertical axis. `input_parameters.ModelOptions`` provides more details about available parameters for ``model``.
-	- xparam_range : list or array
-		Range in the plot for ``xparam``.
-	- yparam_range : list or array
-		Range in the plot for ``yparam``.
+	- xrange : list or array
+		Horizontal range of the plot.
+	- yrange : list or array
+		Vertical range of the plot.
 	- xlog : {``True``, ``False``}, optional (default ``False``)
 		Use logarithmic (``True``) or linear (``False``) scale to plot the horizontal axis.
 	- ylog : {``True``, ``False``}, optional (default ``False``)
@@ -416,8 +422,8 @@ def plot_model_coverage(model, model_dir, xparam, yparam, xparam_range=None, ypa
 
 	ax.xaxis.set_minor_locator(AutoMinorLocator())
 	ax.yaxis.set_minor_locator(AutoMinorLocator())
-	if xparam_range is not None: ax.set_xlim(xparam_range[0], xparam_range[1])
-	if yparam_range is not None: ax.set_ylim(yparam_range[0], yparam_range[1])
+	if xrange is not None: ax.set_xlim(xrange[0], xrange[1])
+	if yrange is not None: ax.set_ylim(yrange[0], yrange[1])
 	if xlog: 
 		ax.set_xscale('log')
 		ax.xaxis.set_major_formatter(StrMethodFormatter('{x:.0f}'))
@@ -432,6 +438,111 @@ def plot_model_coverage(model, model_dir, xparam, yparam, xparam_range=None, ypa
 
 	if save:
 		if out_file is None: plt.savefig(f'{model}_{xparam}_{yparam}.pdf', bbox_inches='tight')
+		else: plt.savefig(out_file, bbox_inches='tight')
+	plt.show()
+	plt.close()
+
+##########################
+def plot_model_resolution(model, spectra_name_full, xlog=True, ylog=False, xrange=None, yrange=None, 
+	                      delta_wl_log=False, resolving_power=True, out_file=None, save=False):
+	'''
+	Description:
+	------------
+		Plot model grid spectral resolution or resolving power as a function of wavelength.
+
+	Parameters:
+	-----------
+	- model : str
+		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
+	- spectra_name_full: str, list, or array
+		Spectra file names with full path.
+	- xlog : {``True``, ``False``}, optional (default ``True``)
+		Use logarithmic (``True``) or linear (``False``) scale for wavelength range.
+	- ylog : {``True``, ``False``}, optional (default ``False``)
+		Use logarithmic (``True``) or linear (``False``) scale for resolution range.
+	- xrange : list or array
+		Horizontal range of the plot.
+	- yrange : list or array
+		Vertical range of the plot.
+	- delta_wl_log : {``True``, ``False``}, optional (default ``False``)
+		Consider wavelength steps in linear (``False``) or logarithmic (``True``) scale.
+	- resolving_power : {``True``, ``False``}, optional (default ``True``)
+		Calculate resolving power (``True``; R=lambda/Delta(lambda)) or spectral resolution (``False``, Delta(lambda)).
+	- save : {``True``, ``False``}, optional (default ``True``)
+		Save (``'True'``) or do not save (``'False'``) the resulting figure.
+	- out_file : str, optional
+		File name to save the figure (it can include a path e.g. my_path/figure.pdf). Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
+		Default name is '{``model``}_resolution.pdf'.
+
+	Returns:
+	--------
+	Plot of the resolution of the input model spectra that will be stored if ``save`` with the name ``out_file``.
+
+	Example:
+	--------
+	>>> import seda
+	>>> 
+	>>> # plot and save the resolving power of a Sonora Diamondback model spectrum
+	>>> model = 'Sonora_Diamondback'
+	>>> spectra_name_full = 'my_path/t1000g1000f1_m0.0_co1.0.spec'
+	>>> seda.plot_model_resolution(model, spectra_name_full, save=True)
+
+	Author: Genaro Suárez
+	'''
+
+	# make sure model_dir is a list
+	spectra_name_full = var_to_list(spectra_name_full)
+
+	# read model spectra
+	wl_model = np.zeros((len(spectra_name_full), model_points(model)))
+	flux_model = np.zeros((len(spectra_name_full), model_points(model)))
+	resolution_model = np.zeros((len(spectra_name_full), model_points(model)))
+	for i, spectrum_name_full in enumerate(spectra_name_full):
+		out_read_model_spectrum = read_model_spectrum(spectra_name_full=spectrum_name_full, model=model)
+		wl_model[i,:] = out_read_model_spectrum['wl_model']
+		flux_model[i,:] = out_read_model_spectrum['flux_model']
+
+		# calculate resolution
+		if delta_wl_log: # obtain wavelength step in logarithm
+			wl_bin = np.log10(wl_model[i,1:]) - np.log10(wl_model[i,:-1]) # wavelength dispersion of the spectrum
+			wl_bin = np.append(wl_bin, wl_bin[-1]) # add an element equal to the last row to have same data points
+		else:
+			wl_bin = wl_model[i,1:] - wl_model[i,:-1] # wavelength dispersion of the spectrum
+			wl_bin = np.append(wl_bin, wl_bin[-1]) # add an element equal to the last row to have same data points
+
+		if resolving_power: resolution_model[i,:] = wl_model[i,:] / wl_bin
+		else: resolution_model[i,:] = wl_bin
+	
+
+	# plot resolution as a function of wavelength
+	#------------------------
+	# initialize plot for best fits and residuals
+	fig, ax = plt.subplots()
+
+	for i in range(len(spectra_name_full)):
+		ax.scatter(wl_model[i,:], resolution_model[i,:], s=5, zorder=3)
+
+	if xrange is not None: ax.set_xlim(xrange[0], xrange[1])
+	if yrange is not None: ax.set_ylim(yrange[0], yrange[1])
+	ax.minorticks_on() 
+	if xlog: 
+		ax.set_xscale('log')
+		ax.xaxis.set_major_formatter(StrMethodFormatter('{x:.0f}'))
+	if ylog: ax.set_yscale('log')
+	plt.grid(True, which='both', color='gainsboro', alpha=0.5)
+
+	plt.xlabel(r'$\lambda\ (\mu$m)', size=12)
+	if resolving_power: 
+		if delta_wl_log: plt.ylabel(r'$R=\lambda/\Delta(\log\lambda)$', size=12)
+		else: plt.ylabel(r'$R=\lambda/\Delta\lambda$', size=12)
+	else: 
+		if delta_wl_log: plt.ylabel(r'$\Delta(\log\lambda)$', size=12)
+		else: plt.ylabel(r'$\Delta\lambda$', size=12)
+
+	plt.title(f'{model_name(model)} Atmospheric Models')
+
+	if save:
+		if out_file is None: plt.savefig(f'{model}_resolution.pdf', bbox_inches='tight')
 		else: plt.savefig(out_file, bbox_inches='tight')
 	plt.show()
 	plt.close()
