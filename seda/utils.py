@@ -1,6 +1,7 @@
 import numpy as np
 import time
 import os
+import fnmatch
 import xarray
 import pickle
 from spectres import spectres
@@ -853,6 +854,21 @@ def grid_ranges(model):
 	return out
 
 ##########################
+def model_filename_pattern(model):
+	
+	# common pattern depending the models
+	if (model == 'Sonora_Diamondback'):	pattern = 't*.spec*'
+	if (model == 'Sonora_Elf_Owl'):	pattern = 'spectra_logzz_*.nc*'
+	if (model == 'LB23'): pattern = 'T*21*'
+	if (model == 'Sonora_Cholla'): pattern = '*.spec*'
+	if (model == 'Sonora_Bobcat'): pattern = 'sp_t*'
+	if (model == 'ATMO2020'): pattern = 'spec_T*.txt*'
+	if (model == 'BT-Settl'): pattern = 'lte*.BT-Settl.spec.7*'
+	if (model == 'SM08'): pattern = 'sp_t*'
+
+	return pattern
+
+##########################
 def param_ranges_sampling(chi2_pickle_file, N_best_fits=3):
 	'''
 	Description:
@@ -1148,7 +1164,7 @@ def select_model_spectra(model, model_dir, Teff_range=None, logg_range=None, Z_r
 	files = [] # with full path
 	files_short = [] # only spectra names
 	for i in range(len(model_dir)):
-		files_model_dir = os.listdir(model_dir[i])
+		files_model_dir = fnmatch.filter(os.listdir(model_dir[i]), model_filename_pattern(model))
 		files_model_dir.sort() # just to sort the files wrt their names
 		for file in files_model_dir:
 			files.append(model_dir[i]+file)

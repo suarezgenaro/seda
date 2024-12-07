@@ -208,7 +208,7 @@ class ModelOptions:
 					- R = [100000, 700000] (the resolving power varies with wavelength)
 	- model_dir : str, list, or array
 		Path to the directory (str, list, or array) or directories (as a list or array) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
-		Avoid using paths with null spaces. Caveat: the directories must contain only the spectra.
+		Avoid using paths with null spaces. 
 	- Teff_range : float array, optional
 		Minimum and maximum Teff values to select a model grid subset (e.g., ``Teff_range = np.array([Teff_min, Teff_max])``).
 		If not provided, the full Teff range in ``model_dir`` is considered.
