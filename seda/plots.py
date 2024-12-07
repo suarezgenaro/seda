@@ -513,7 +513,6 @@ def plot_model_resolution(model, spectra_name_full, xlog=True, ylog=False, xrang
 		if resolving_power: resolution_model[i,:] = wl_model[i,:] / wl_bin
 		else: resolution_model[i,:] = wl_bin
 	
-
 	# plot resolution as a function of wavelength
 	#------------------------
 	# initialize plot for best fits and residuals
