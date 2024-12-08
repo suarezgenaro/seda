@@ -2,6 +2,7 @@ Tutorials
 =========
 
 .. _tutorials_model_examination:
+
 Inspect atmospheric models available via SEDA
 ---------------------------------------------
 .. toctree::
