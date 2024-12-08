@@ -24,21 +24,21 @@ Fit atmospheric models to an observed spectrum
    notebooks/test_chi2_fit.ipynb
 
 .. Chi square fit of atmospheric models to observed photometry
-.. -----------------------------------------------------------
+.. +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 .. Chi square fit of atmospheric models to multiple observed spectra
-.. -----------------------------------------------------------------
+.. +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 .. Chi square fit of atmospheric models to observed spectrophotometry
-.. ------------------------------------------------------------------
+.. ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 .. _tutorials_bayes:
 
 Bayesian Sampling
-+++++++++++++++++
+-----------------
 
 Estimate Bayesian postetiors for an observed spectrum
------------------------------------------------------
++++++++++++++++++++++++++++++++++++++++++++++++++++++
 .. toctree::
    :maxdepth: 1
 
