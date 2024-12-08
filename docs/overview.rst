@@ -21,12 +21,12 @@ SEDA Workflow
   - Load input data (:meth:`~seda.input_parameters.InputData`).
   - Load model options (:meth:`~seda.input_parameters.ModelOptions`).
 
-  - Option 1: chi-square minimization.
+  - Option 1: chi-square minimization (tutorial: :ref:`tutorials_chi2`).
 
     - Load chi-square fit options (:meth:`~seda.input_parameters.Chi2Options`).
     - Run chi-square minimization module (:meth:`~seda.chi2_fit`).
 
-  - Option 2: Bayesian sampling.
+  - Option 2: Bayesian sampling  (tutorial: :ref:`tutorials_bayes`).
 
     - Load Bayesian fit options (:meth:`~seda.input_parameters.BayesOptions`).
     - Run Bayesian framework module (:meth:`~seda.bayes_fit`).
