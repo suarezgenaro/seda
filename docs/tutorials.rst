@@ -1,6 +1,14 @@
 Tutorials
 =========
 
+Inspect atmospheric models available via SEDA
+---------------------------------------------
+.. toctree::
+   :maxdepth: 1
+
+   notebooks/test_models_examination.ipynb
+
+
 Chi square fit of atmospheric models to an observed spectrum
 ------------------------------------------------------------
 
