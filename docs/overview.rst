@@ -21,12 +21,12 @@ SEDA Workflow
   - Load input data (:meth:`~seda.input_parameters.InputData`).
   - Load model options (:meth:`~seda.input_parameters.ModelOptions`).
 
-  - Option 1: chi-square minimization (tutorial: :ref:`tutorials_chi2`).
+  - Option 1: chi-square minimization (see tutorial :ref:`tutorials_chi2`).
 
     - Load chi-square fit options (:meth:`~seda.input_parameters.Chi2Options`).
     - Run chi-square minimization module (:meth:`~seda.chi2_fit`).
 
-  - Option 2: Bayesian sampling  (tutorial: :ref:`tutorials_bayes`).
+  - Option 2: Bayesian sampling  (see tutorial :ref:`tutorials_bayes`).
 
     - Load Bayesian fit options (:meth:`~seda.input_parameters.BayesOptions`).
     - Run Bayesian framework module (:meth:`~seda.bayes_fit`).
@@ -44,7 +44,7 @@ Main SEDA Tools
   - :meth:`~seda.utils.generate_model_spectrum`: to generate a synthetic spectrum with any parameters (within the grid coverage) from the indicated atmospheric models using interpolation techniques.
   - :meth:`~seda.utils.app_to_abs_flux`: to convert apparent fluxes into absolute fluxes considering a distance.
   - :meth:`~seda.utils.separate_params`: to extract parameters from model spectra file names.
-  - :meth:`~seda.plots.plot_model_coverage`: to visualize the coverage of free parameters in :ref:`models`, as exemplified in :ref:`tutorials_model_examination`.
+  - :meth:`~seda.plots.plot_model_coverage`: to visualize the coverage of free parameters in :ref:`models` (see tutorial :ref:`tutorials_model_examination`).
 
 .. _models:
 
