@@ -11,6 +11,8 @@ Inspect atmospheric models available via SEDA
    notebooks/test_models_examination.ipynb
 
 
+.. _tutorials_chi2:
+
 Chi square fit of atmospheric models to an observed spectrum
 ------------------------------------------------------------
 .. toctree::
@@ -26,6 +28,8 @@ Chi square fit of atmospheric models to an observed spectrum
 
 .. Chi square fit of atmospheric models to observed spectrophotometry
 .. ------------------------------------------------------------------
+
+.. _tutorials_bayes:
 
 Forward modeling of an observed spectrum using the Bayesian framework available in SEDA
 ---------------------------------------------------------------------------------------
