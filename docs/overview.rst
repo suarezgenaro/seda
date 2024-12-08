@@ -44,7 +44,7 @@ Main SEDA Tools
   - :meth:`~seda.utils.generate_model_spectrum`: to generate a synthetic spectrum with any parameters (within the grid coverage) from the indicated atmospheric models using interpolation techniques.
   - :meth:`~seda.utils.app_to_abs_flux`: to convert apparent fluxes into absolute fluxes considering a distance.
   - :meth:`~seda.utils.separate_params`: to extract parameters from model spectra file names.
-  - :meth:`~seda.plots.plot_model_coverage`: to visualize the coverage of free parameters in :ref:`models` (see tutorial :ref:`tutorials_model_examination`).
+  - :meth:`~seda.plots.plot_model_coverage` and :meth:`~seda.plots.plot_model_resolution`: to visualize parameters' coverage and resolution of :ref:`models` (see tutorial :ref:`tutorials_model_examination`).
 
 .. _models:
 
