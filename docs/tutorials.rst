@@ -11,7 +11,6 @@ Inspect atmospheric models available via SEDA
 
 Chi square fit of atmospheric models to an observed spectrum
 ------------------------------------------------------------
-
 .. toctree::
    :maxdepth: 1
 
@@ -28,7 +27,6 @@ Chi square fit of atmospheric models to an observed spectrum
 
 Forward modeling of an observed spectrum using the Bayesian framework available in SEDA
 ---------------------------------------------------------------------------------------
-
 .. toctree::
    :maxdepth: 1
 
