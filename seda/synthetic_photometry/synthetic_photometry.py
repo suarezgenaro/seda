@@ -19,8 +19,8 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None):
 		Fluxes in units specified by ``flux_unit``.
 	- flux_unit : str
 		Flux and flux error units:
-			'erg/s/cm2/A'
-			'Jy'
+			- 'erg/s/cm2/A'
+			- 'Jy'
 	- filters : str
 		Filters (following SVO filter IDs) to derive synthetic photometry.
 	- eflux : flux array (optional) 
@@ -29,22 +29,22 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None):
 	Returns:
 	--------
 	Python dictionary with the following parameters for each filter:
-		out['syn_flux(erg/s/cm2/A)'] : synthetic fluxes in erg/s/cm2/A.
-		out['esyn_flux(erg/s/cm2/A)'] : synthetic flux errors in erg/s/cm2/A (if input ``eflux`` is provided).
-		out['syn_flux(Jy)'] : synthetic fluxes in Jy.
-		out['esyn_flux(Jy)'] : synthetic flux errors in Jy (if input ``eflux`` is provided).
-		out['syn_mag'] : synthetic magnitudes.
-		out['esyn_mag'] : synthetic magnitude errors (if input ``eflux`` is provided).
-		out['filters'] : filters used to derive synthetic photometry.
-		out['lambda_eff(um)'] : filters' effective wavelengths in microns.
-		out['width_eff(um)'] : filters' effective width in micron.
-		out['zero_point(Jy)'] : filters' zero points in Jy.
-		out['label'] : label indicating if the filters are fully ('complete'), partially ('incomplete'), or no ('none') covered by the input spectrum or no recognized by SVO ('unrecognizable').
-		out['transmission'] : dictionary with 2D arrays for the filter transmissions, where the first first entry is wavelength in microns and the second one is the transmission.
-		out['wl'] : input spectrum wavelengths.
-		out['flux'] : input spectrum fluxes.
-		out['eflux'] : input spectrum flux uncertainties (if input ``eflux`` is provided)..
-		out['flux_unit'] : flux units of the input spectrum.
+		- ``syn_flux(erg/s/cm2/A)`` : synthetic fluxes in erg/s/cm2/A.
+		- ``esyn_flux(erg/s/cm2/A)`` : synthetic flux errors in erg/s/cm2/A (if input ``eflux`` is provided).
+		- ``syn_flux(Jy)`` : synthetic fluxes in Jy.
+		- ``esyn_flux(Jy)`` : synthetic flux errors in Jy (if input ``eflux`` is provided).
+		- ``syn_mag`` : synthetic magnitudes.
+		- ``esyn_mag`` : synthetic magnitude errors (if input ``eflux`` is provided).
+		- ``filters`` : filters used to derive synthetic photometry.
+		- ``lambda_eff(um)`` : filters' effective wavelengths in microns.
+		- ``width_eff(um)`` : filters' effective width in micron.
+		- ``zero_point(Jy)`` : filters' zero points in Jy.
+		- ``label`` : label indicating if the filters are fully ('complete'), partially ('incomplete'), or no ('none') covered by the input spectrum or no recognized by SVO ('unrecognizable').
+		- ``transmission`` : dictionary with 2D arrays for the filter transmissions, where the first first entry is wavelength in microns and the second one is the transmission.
+		- ``wl`` : input spectrum wavelengths.
+		- ``flux`` : input spectrum fluxes.
+		- ``eflux`` : input spectrum flux uncertainties (if input ``eflux`` is provided)..
+		- ``flux_unit`` : flux units of the input spectrum.
 
 	Example:
 	--------
@@ -64,8 +64,8 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None):
 	Modification history:
 		- 2024/05/24: SVO VOTable table is read from a link with the most updated filter parameters
 		- 2024/05/09: included VOTable table with all SVO filter zero points
-		- 2024/05/07: filter transmissions are read and downloaded from SVO, if not already stored locally
-		- 2024/04/20: function created
+		- 2024/05/07: filter transmissions are read and downloaded from SVO, if not already locally stored
+		- 2024/04/20: created a function
 		- 2021      : functional code but not as a function
 	'''
 
