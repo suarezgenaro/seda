@@ -30,7 +30,7 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True, xrange=None, yrang
 		Plot (``True``) or do not include (``False``) model spectra with the original resolution.
 	- model_dir_ori : str, list, or array
 		Path to the directory (str, list, or array) or directories (as a list or array) containing the model spectra with the original resolution.
-		This parameter is needed to plot the original resolution spectra (if ``ori_res`` is True) when `chi2_fit.chi2` was run skipping the model spectra convolution (if `skip_convolution`` is True).
+		This parameter is needed to plot the original resolution spectra (if ``ori_res`` is True) when ``chi2_fit.chi2`` was run skipping the model spectra convolution (if ``skip_convolution`` is True).
 	- out_file : str, optional
 		File name to save the figure (it can include a path e.g. my_path/figure.pdf). Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
 		Default name is 'SED_{``model``}_chi2.pdf', where ``model`` is read from ``chi2_pickle_file``.
