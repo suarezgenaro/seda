@@ -13,7 +13,7 @@ Inspect atmospheric models available via SEDA
 
 .. _tutorials_synthetic_photometry:
 
-Compute and visualize synthetic photometry
+Calculate and visualize synthetic photometry
 ------------------------------------------
 .. toctree::
    :maxdepth: 1
