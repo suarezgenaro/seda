@@ -546,6 +546,105 @@ def plot_model_resolution(model, spectra_name_full, xlog=True, ylog=False, xrang
 	plt.show()
 	plt.close()
 
+#########################
+def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False, out_file=None, save=False):
+	'''
+	Description:
+	------------
+		Plot synthetic fluxes and input SED.
+
+	Parameters:
+	-----------
+	- out_synthetic_photometry : dictionary
+		Output dictionary by ``synthetic_photometry``.
+	- xlog : {``True``, ``False``}, optional (default ``False``)
+		Use logarithmic (``True``) or linear (``False``) scale to plot wavelengths.
+	- ylog : {``True``, ``False``}, optional (default ``False``)
+		Use logarithmic (``True``) or linear (``False``) scale to plot fluxes.
+	- out_file : str, optional
+		File name to save the figure (it can include a path e.g. my_path/figure.pdf). Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
+		Default name is 'SED_synthetic_photometry.pdf', where ``model`` is read from ``chi2_pickle_file``.
+	- save : {``True``, ``False``}, optional (default ``True``)
+		Save (``'True'``) or do not save (``'False'``) the resulting figure.
+
+	Returns:
+	--------
+	Plot of the synthetic fluxes over the SED used to calculate the fluxes that will be stored if ``save`` with the name ``out_file``.
+
+	Example:
+	--------
+	>>> import seda
+	>>> 
+	>>> # plot and save the data with derived synthetic fluxes
+	>>> # 'out_synthetic_photometry' is the output of ``synthetic_photometry.synthetic_photometry``
+	>>> seda.plot_synthetic_photometry(out_synthetic_photometry=out_synthetic_photometry, save=True)
+
+	Author: Genaro Suárez
+	'''
+
+	# extract parameters from the output dictionary by synthetic_photometry
+	wl = out_synthetic_photometry['wl'] # input spectrum wavelength
+	flux = out_synthetic_photometry['flux'] # input spectrum fluxes
+	flux_unit = out_synthetic_photometry['flux_unit'] # units of input spectrum fluxes
+	filters = out_synthetic_photometry['filters'] # filters used to calculate synthetic photometry
+	eff_wl = out_synthetic_photometry['lambda_eff(um)'] # effective wavelength (um) for all filters
+	eff_width = out_synthetic_photometry['width_eff(um)'] # effective width (um) for all filters
+	flux_syn = out_synthetic_photometry['syn_flux(erg/s/cm2/A)'] # synthetic flux (erg/s/cm2/A) for all filters
+	eflux_syn = out_synthetic_photometry['esyn_flux(erg/s/cm2/A)'] # synthetic flux errors (erg/s/cm2/A) for all filters
+	flux_Jy_syn = out_synthetic_photometry['syn_flux(Jy)'] # synthetic flux (Jy) for all filters
+	eflux_Jy_syn = out_synthetic_photometry['esyn_flux(Jy)'] # synthetic flux errors (Jy) for all filters
+	mag_syn = out_synthetic_photometry['syn_mag'] # synthetic magnitude for all filters
+	emag_syn = out_synthetic_photometry['esyn_mag'] # synthetic magnitude error for all filters
+	label_syn = out_synthetic_photometry['label'] # label for synthetic photometry
+	transmission = out_synthetic_photometry['transmission'] # responses for each filter
+
+	#------------------------
+	# initialize plot for best fits and residuals
+	fig, ax = plt.subplots(2, sharex=True, gridspec_kw={'height_ratios': [1, 0.3], 'hspace': 0.0})
+
+	ax[0].plot(wl, flux, color='black', linewidth=1, zorder=3)
+	
+	for i, filt in enumerate(filters):
+	    if label_syn[i]=='complete':
+	        ax[0].errorbar(eff_wl[i], flux_syn[i], xerr=eff_width[i]/2., yerr=eflux_syn[i], 
+	                       fmt='.', markersize=1., capsize=2,  elinewidth=1.0, markeredgewidth=0.5, 
+	                       label=filt, zorder=3)
+	    elif label_syn[i]=='incomplete':
+	        arrow = 0.03*(flux.max()-flux.min())
+	        ax[0].errorbar(eff_wl[i], flux_syn[i], xerr=eff_width[i]/2., yerr=arrow, 
+	                       fmt='.', markersize=1., capsize=2,  elinewidth=1.0, markeredgewidth=0.5, 
+	                       lolims=1, label=filt, zorder=3)    
+	
+	ax[0].xaxis.set_minor_locator(AutoMinorLocator())
+	ax[0].yaxis.set_minor_locator(AutoMinorLocator())
+	if xlog: ax[0].set_xscale('log')
+	if ylog: ax[0].set_yscale('log')
+	ax[0].grid(True, which='both', color='gainsboro', linewidth=0.5, alpha=1.0)
+	ax[0].legend(prop={'size': 8.0})#, handlelength=1.5, handletextpad=0.5, labelspacing=0.5,)
+	
+	if flux_unit=='erg/s/cm2/A': ax[0].set_ylabel(r'$F_\lambda\ ($erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)', size=12)
+	if flux_unit=='Jy': ax[0].set_ylabel(r'$F_\nu$ (Jy)', size=12)
+	
+	#++++++++++++++++++++++++
+	# filters' transmissions
+	for i, filt in enumerate(filters):
+	    ax[1].plot(transmission[filt][0,:], transmission[filt][1,:], linewidth=1.0)
+	
+	ax[1].xaxis.set_minor_locator(AutoMinorLocator())
+	ax[1].yaxis.set_minor_locator(AutoMinorLocator())
+	ax[1].grid(True, which='both', color='gainsboro', linewidth=0.5, alpha=1.0)
+	
+	ax[1].set_xlabel(r'$\lambda\ (\mu$m)', size=12)
+	ax[1].set_ylabel('Transmission', size=12)
+	
+	if save:
+		if out_file is None: plt.savefig('SED_synthetic_photometry.pdf', bbox_inches='tight')
+		else: plt.savefig(out_file, bbox_inches='tight')
+	plt.show()
+	plt.close()
+
+	return
+
 ##########################
 # get proper model name from the model parameter
 def model_name(model):

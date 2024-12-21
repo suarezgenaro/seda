@@ -1,9 +1,15 @@
 MODIFICATION HISTORY
 
 ------------
+2024/12/20
+Genaro Suárez
+	Integrated synthetic photometry module into SEDA.
+	Addition of a plotting function to visualize synthetic fluxes.
+
+------------
 2024/11/24
 Genaro Suárez
-	Made function to plot model grid parameters to inspect their coverage.
+	Made function to visualize the resolution and parameters' coverage of atmospheric models.
 
 ------------
 2024/11/23

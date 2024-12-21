@@ -373,10 +373,9 @@ def best_chi2_fits(chi2_pickle_file, N_best_fits=1, model_dir_ori=None, ori_res=
 		flux_model = np.zeros((N_best_fits, N_modelpoints))
 		if not skip_convolution: # when the convolution was not skipped
 			for i in range(N_best_fits):
-				if not skip_convolution:
-					out_read_model_spectrum = read_model_spectrum(spectra_name_full=spectra_name_full_best[i], model=model)
-					wl_model[i,:] = out_read_model_spectrum['wl_model']
-					flux_model[i,:] = scaling_fit_best[i] * out_read_model_spectrum['flux_model'] # scaled fluxes
+				out_read_model_spectrum = read_model_spectrum(spectra_name_full=spectra_name_full_best[i], model=model)
+				wl_model[i,:] = out_read_model_spectrum['wl_model']
+				flux_model[i,:] = scaling_fit_best[i] * out_read_model_spectrum['flux_model'] # scaled fluxes
 		else:
 			if model_dir_ori is None: raise Exception(f"parameter 'model_dir_ori' is needed to read model spectra with the original resolution")
 			else:
