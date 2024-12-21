@@ -15,7 +15,7 @@ Principal Modules
   - :meth:`~seda.plots`: plotting functions.
   - :meth:`~seda.utils`: additional useful functions (see :ref:`seda_tools`).
 
-SEDA Workflow
+Code Workflow
 -------------
   - Download any :ref:`models`.
   - Load input data (:meth:`~seda.input_parameters.InputData`).
@@ -35,8 +35,8 @@ SEDA Workflow
 
 .. _seda_tools:
 
-Main SEDA Tools
----------------
+Main Tools
+----------
 :math:`\texttt{SEDA}` includes several useful functions that can be used separately:
   - :meth:`~seda.utils.convolve_spectrum`: to convolve spectra to a desired resolution at a given wavelength.
   - :meth:`~seda.synthetic_photometry`: to calculate synthetic phothometry from spectra for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_ (see tutorial :ref:`tutorials_synthetic_photometry`).
