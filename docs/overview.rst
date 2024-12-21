@@ -51,7 +51,7 @@ Main SEDA Tools
 Available Atmospheric Models
 ----------------------------
 
-:math:`\texttt{SEDA}` can use several modern and widely used atmospheric models, as indicated below. Check out the tutorial :ref:`tutorials_model_examination` to see the parameter coverage and resolution of the models.
+:math:`\texttt{SEDA}` can use several modern and widely used atmospheric models, as indicated below. Check out the tutorial :ref:`tutorials_model_examination` to see the parameters' coverage and resolution of the models.
 
 Sonora Diamondback Models
 +++++++++++++++++++++++++
