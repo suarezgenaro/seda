@@ -11,6 +11,16 @@ Inspect atmospheric models available via SEDA
    notebooks/test_models_examination.ipynb
 
 
+.. _tutorials_synthetic_photometry:
+
+Compute and visualize synthetic photometry
+------------------------------------------
+.. toctree::
+   :maxdepth: 1
+
+   notebooks/test_synthetic_photometry.ipynb
+
+
 .. _tutorials_chi2:
 
 Chi-square Minimization
