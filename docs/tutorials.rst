@@ -3,8 +3,8 @@ Tutorials
 
 .. _tutorials_model_examination:
 
-Inspect atmospheric models available via SEDA
----------------------------------------------
+Inspect atmospheric models
+--------------------------
 .. toctree::
    :maxdepth: 1
 
