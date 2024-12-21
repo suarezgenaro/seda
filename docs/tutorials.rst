@@ -8,7 +8,7 @@ Inspect atmospheric models available via SEDA
 .. toctree::
    :maxdepth: 1
 
-   notebooks/test_models_examination.ipynb
+   notebooks/tutorial_models_examination.ipynb
 
 
 .. _tutorials_synthetic_photometry:
@@ -18,7 +18,7 @@ Calculate and visualize synthetic photometry
 .. toctree::
    :maxdepth: 1
 
-   notebooks/test_synthetic_photometry.ipynb
+   notebooks/tutorial_synthetic_photometry.ipynb
 
 
 .. _tutorials_chi2:
@@ -31,7 +31,7 @@ Fit atmospheric models to an observed spectrum
 .. toctree::
    :maxdepth: 1
 
-   notebooks/test_chi2_fit.ipynb
+   notebooks/tutorial_chi2_fit.ipynb
 
 .. Chi square fit of atmospheric models to observed photometry
 .. +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -52,4 +52,4 @@ Estimate Bayesian postetiors for an observed spectrum
 .. toctree::
    :maxdepth: 1
 
-   notebooks/test_bayes_fit.ipynb
+   notebooks/tutorial_bayes_fit.ipynb
