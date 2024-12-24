@@ -38,7 +38,7 @@ Code Workflow
 Main Tools
 ----------
 :math:`\texttt{SEDA}` includes several useful functions that can be used separately:
-  - :meth:`~seda.synthetic_photometry`: to calculate synthetic phothometry from spectra for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_ (see tutorial :ref:`tutorials_synthetic_photometry`).
+  - :meth:`~seda.synthetic_photometry.synthetic_photometry.synthetic_photometry`: to calculate synthetic phothometry from spectra for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_ (see tutorial :ref:`tutorials_synthetic_photometry`).
   - :meth:`~seda.utils.convolve_spectrum`: to convolve spectra to a desired resolution at a given wavelength.
   - :meth:`~seda.synthetic_photometry.synthetic_photometry.convert_flux`: to convert fluxes from wavelength units (erg/s/cm2/s) to frequency units (Jy) or vice versa.
   - :meth:`~seda.synthetic_photometry.synthetic_photometry.flux_to_mag`: to convert fluxes into magnitudes.
