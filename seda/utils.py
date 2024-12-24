@@ -24,7 +24,7 @@ def convolve_spectrum(wl, flux, res, lam_res, eflux=None, disp_wl_range=None, co
 	Parameters:
 	-----------
 	- wl : float array
-		Wavelength (any length units) for the spectrum.
+		W, optionalavelength (any length units) for the spectrum.
 	- flux : float array
 		Fluxes (any flux units) for the spectrum.
 	- eflux : float array, optional
@@ -1559,10 +1559,11 @@ def read_model_spectrum_conv(spectra_name_full):
 	return out
 
 ##########################
-# make a variable is a list
+# make sure a variable is a list
 def var_to_list(x):
 	if isinstance(x, str): x = [x]
 	if isinstance(x, np.ndarray): x = x.tolist()
+	if isinstance(x, float): x = [x]
 
 	return x
 

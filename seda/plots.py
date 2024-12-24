@@ -610,7 +610,7 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False, 
 	                       fmt='.', markersize=1., capsize=2,  elinewidth=1.0, markeredgewidth=0.5, 
 	                       label=filt, zorder=3)
 	    elif label_syn[i]=='incomplete':
-	        arrow = 0.03*(flux.max()-flux.min())
+	        arrow = 0.05*(flux.max()-flux.min())
 	        ax[0].errorbar(eff_wl[i], flux_syn[i], xerr=eff_width[i]/2., yerr=arrow, 
 	                       fmt='.', markersize=1., capsize=2,  elinewidth=1.0, markeredgewidth=0.5, 
 	                       lolims=1, label=filt, zorder=3)    
@@ -628,7 +628,8 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False, 
 	#++++++++++++++++++++++++
 	# filters' transmissions
 	for i, filt in enumerate(filters):
-	    ax[1].plot(transmission[filt][0,:], transmission[filt][1,:], linewidth=1.0)
+		if filt in list(transmission.keys()): # only for input filters in SVO
+		    ax[1].plot(transmission[filt][0,:], transmission[filt][1,:], linewidth=1.0)
 	
 	ax[1].xaxis.set_minor_locator(AutoMinorLocator())
 	ax[1].yaxis.set_minor_locator(AutoMinorLocator())

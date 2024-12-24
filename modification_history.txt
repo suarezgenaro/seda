@@ -1,9 +1,21 @@
 MODIFICATION HISTORY
 
 ------------
+2024/12/23
+Genaro Suárez
+	Made functions to convert fluxes to mag and vice versa as well as fluxes in wavelength units to frequency units and vice versa.
+
+------------
 2024/12/20
 Genaro Suárez
 	Integrated synthetic photometry module into SEDA.
+		Modification history of this function:
+			- 2024/05/24: SVO VOTable table is read from a link with the most updated filter parameters
+			- 2024/05/09: included VOTable table with all SVO filter zero points
+			- 2024/05/07: filter transmissions are read and downloaded from SVO, if not already locally stored
+			- 2024/04/20: created a function
+			- 2021      : functional code but not as a function
+		
 	Addition of a plotting function to visualize synthetic fluxes.
 
 ------------
