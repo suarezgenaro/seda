@@ -161,7 +161,7 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None):
 				lambda_eff[k] = sum(wl[mask_wl]*filter_flux_resam*flux[mask_wl]*wl_disp) / sum(filter_flux_resam*flux[mask_wl]*wl_disp) # in um
 				width_eff[k] = sum(filter_flux_resam*wl_disp) / filter_flux_resam.max() # in um
 				
-				# convert flux to magnitudes
+				# convert flux into magnitudes
 				# first from erg/s/cm2/A to Jy (if needed) and then from Jy to mag
 				if flux_unit=='erg/s/cm2/A':
 					syn_flux_Jy[k] = convert_flux(flux=syn_flux, wl=lambda_eff[k], unit_in='erg/s/cm2/A', unit_out='Jy')['flux_out'] # in Jy
@@ -235,7 +235,7 @@ def convert_flux(flux, wl, unit_in, unit_out, eflux=None):
 
 	Example:
 	--------
-	>>> # convert fluxes from Jy into erg/s/cm2/A
+	>>> # convert fluxes from Jy to erg/s/cm2/A
 	>>> import seda
 	>>> import numpy as np
 	>>>
