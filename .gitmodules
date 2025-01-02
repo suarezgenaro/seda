@@ -1,3 +1,6 @@
 [submodule "seda/spectral_indices"]
 	path = seda/spectral_indices
 	url = https://github.com/suarezgenaro/spectral_indices
+[submodule "seda/synthetic_photometry_test"]
+	path = seda/synthetic_photometry_test
+	url = https://github.com/suarezgenaro/synthetic_photometry
