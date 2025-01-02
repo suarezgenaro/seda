@@ -5,4 +5,3 @@ from .chi2_fit import *
 from .bayes_fit import *
 from .synthetic_photometry.synthetic_photometry import *
 from .spectral_indices.spectral_indices import *
-#from .synthetic_photometry_test.synthetic_photometry import *
