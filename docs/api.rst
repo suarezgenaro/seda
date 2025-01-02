@@ -44,7 +44,7 @@ Utils
 .. automodule:: seda.synthetic_photometry.synthetic_photometry
     :members:
 
-.. autofunction:: seda.spectral_indices.silicate_index
+.. autofunction:: seda.silicate_index
 
 Plots
 -----
