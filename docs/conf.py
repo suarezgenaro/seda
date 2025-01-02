@@ -9,14 +9,6 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('../'))
 
-
-# TEST
-# Get the absolute path of the submodule directory
-submodule_path = os.path.abspath('../seda/spectral_indices')
-# Add the submodule directory to sys.path
-sys.path.append(submodule_path)
-
-
 project = 'SEDA'
 copyright = '2024, Genaro Suárez'
 author = 'Genaro Suárez'
