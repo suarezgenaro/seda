@@ -8,14 +8,6 @@
 import os
 import sys
 
-
-## Get the directory of the current file (conf.py)
-#conf_dir = os.path.dirname(os.path.abspath(__file__))
-## Add the submodule directory to sys.path
-#submodule_dir = os.path.join(conf_dir, '../seda/synthetic_photometry_test/')
-#sys.path.insert(0, submodule_dir)
-
-
 sys.path.insert(0, os.path.abspath('../')) # Source code dir relative to this file
 
 project = 'SEDA'
@@ -33,7 +25,7 @@ extensions = ['sphinx_rtd_theme',
               'sphinx.ext.doctest',
               'sphinx.ext.todo',
               'sphinx.ext.mathjax',    
-              'sphinx.ext.napoleon',
+              'sphinx.ext.napoleon', # preprocessor that converts docstrings to correct reStructuredText before autodoc processes them.
               'sphinx.ext.viewcode', # Add a link to the Python source code for classes, functions etc.
               'nbsphinx', # Integrate Jupyter Notebooks and Sphinx
               ]
