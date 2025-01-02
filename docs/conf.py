@@ -7,6 +7,15 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 import os
 import sys
+
+
+# Get the directory of the current file (conf.py)
+conf_dir = os.path.dirname(os.path.abspath(__file__))
+# Add the submodule directory to sys.path
+submodule_dir = os.path.join(conf_dir, '../seda/synthetic_photometry_test/')
+sys.path.insert(0, submodule_dir)
+
+
 sys.path.insert(0, os.path.abspath('../'))
 
 project = 'SEDA'
