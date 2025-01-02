@@ -44,6 +44,9 @@ Utils
 .. automodule:: seda.synthetic_photometry.synthetic_photometry
     :members:
 
+.. automodule:: seda.spectral_indices.spectral_indices
+    :members:
+
 Plots
 -----
 .. automodule:: seda.plots
