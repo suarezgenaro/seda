@@ -8,7 +8,7 @@
 import os
 import sys
 
-#sys.path.insert(0, os.path.abspath('../')) # Source code dir relative to this file
+sys.path.insert(0, os.path.abspath('../')) # Source code dir relative to this file
 
 project = 'SEDA'
 copyright = '2024, Genaro Suárez'
