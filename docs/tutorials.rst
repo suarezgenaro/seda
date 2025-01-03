@@ -23,8 +23,8 @@ Calculate and visualize synthetic photometry
 
 .. _tutorials_spectral_indices:
 
-Measure mid-infrared spectral indices 
--------------------------------------
+Depth of mid-infrared absorption features 
+-----------------------------------------
 .. toctree::
    :maxdepth: 1
 
