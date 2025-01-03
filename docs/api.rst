@@ -46,7 +46,6 @@ Utils
 
 .. automodule:: seda.spectral_indices.spectral_indices
     :members:
-    :imported-members:
 
 Plots
 -----
