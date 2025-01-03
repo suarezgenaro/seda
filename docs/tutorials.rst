@@ -21,14 +21,14 @@ Calculate and visualize synthetic photometry
    notebooks/tutorial_synthetic_photometry.ipynb
 
 
-.. _tutorials_index_measurements:
+.. _tutorials_spectral_indices:
 
 Measure mid-infrared spectral indices 
 -------------------------------------
 .. toctree::
    :maxdepth: 1
 
-   notebooks/tutorial_index_measurements.ipynb
+   notebooks/tutorial_spectral_indices.ipynb
 
 
 .. _tutorials_chi2:
