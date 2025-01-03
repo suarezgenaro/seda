@@ -1,0 +1,3 @@
+[submodule "seda/spectral_indices"]
+	path = seda/spectral_indices
+	url = https://github.com/suarezgenaro/spectral_indices.git
