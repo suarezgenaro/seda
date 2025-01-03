@@ -34,6 +34,14 @@ extensions = ['sphinx_rtd_theme',
 
 autosummary_generate = True  # Turn on sphinx.ext.autosummary
 
+
+autodoc_default_options = {
+    'members': True,
+    'imported-members': True,
+}
+
+
+
 # Mappings for sphinx.ext.intersphinx. Projects have to have Sphinx-generated doc! (.inv file)
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3/', None),
