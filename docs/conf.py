@@ -34,13 +34,10 @@ extensions = ['sphinx_rtd_theme',
 
 autosummary_generate = True  # Turn on sphinx.ext.autosummary
 
-
-autodoc_default_options = {
-    'members': True,
-    'imported-members': True,
-}
-
-
+#autodoc_default_options = {
+#    'members': True, # tells autodoc to document all members (functions, classes, variables, etc.) of the modules being documented.
+#    'imported-members': True, # tells autodoc to also document members that are imported from other modules within the module being documented.
+#}
 
 # Mappings for sphinx.ext.intersphinx. Projects have to have Sphinx-generated doc! (.inv file)
 intersphinx_mapping = {
