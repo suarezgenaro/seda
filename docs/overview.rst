@@ -8,7 +8,7 @@ Overview
 .. _seda_overview:
 
 Principal Modules
------------------
+----------------
   - :meth:`~seda.input_parameters`: to define all input parameters, namely :meth:`~seda.input_parameters.InputData`, :meth:`~seda.input_parameters.ModelOptions`, :meth:`~seda.input_parameters.Chi2Options`, and :meth:`~seda.input_parameters.BayesOptions`.
   - :meth:`~seda.chi2_fit`: to find the best model fits from :ref:`models` using `LMFIT <https://lmfit.github.io/lmfit-py/>`_ non-linear least-square minimization python package by `Newville et al. (2014) <https://ui.adsabs.harvard.edu/abs/2014zndo.....11813N/abstract>`_.
   - :meth:`~seda.bayes_fit`: to estimate Bayesian posteriors using `dynesty <https://dynesty.readthedocs.io/en/stable/index.html>`_ dynamic nested sampling package by `Speagle (2020) <https://ui.adsabs.harvard.edu/abs/2020MNRAS.493.3132S/abstract>`_.
@@ -39,7 +39,7 @@ Main Tools
 ----------
 :math:`\texttt{SEDA}` includes several useful functions that can be used separately:
   - :meth:`~seda.synthetic_photometry.synthetic_photometry.synthetic_photometry`: to calculate synthetic phothometry from spectra for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_ (see tutorial :ref:`tutorials_synthetic_photometry`).
-  - :meth:`~seda.spectral_indices.spectral_indices`: to measure the depth of key feature in mid-infrared spectra namely silicates (:meth:`~seda.spectral_indices.spectral_indices.silicate_index`) (see tutorial :ref:`tutorials_spectral_indices` and `TEST <https://github.com/suarezgenaro/spectral_indices>`_).
+  - :meth:`~seda.spectral_indices.spectral_indices`: to measure the depth of mid-infrared absorption features namely silicates at 9.3 microns (:meth:`~seda.spectral_indices.spectral_indices.silicate_index`), water at 6.25 microns (:meth:`~seda.spectral_indices.spectral_indices.water_index`), mathane at 7.65 microns (:meth:`~seda.spectral_indices.spectral_indices.methane_index`), and ammonia at 10.5 microns (:meth:`~seda.spectral_indices.spectral_indices.ammonia_index`) (see tutorial :ref:`tutorials_spectral_indices` and `\texttt{spectral_indices} <https://github.com/suarezgenaro/spectral_indices>`_).
   - :meth:`~seda.utils.convolve_spectrum`: to convolve spectra to a desired resolution at a given wavelength.
   - :meth:`~seda.synthetic_photometry.synthetic_photometry.convert_flux`: to convert fluxes from wavelength units (erg/s/cm2/s) to frequency units (Jy) or vice versa.
   - :meth:`~seda.synthetic_photometry.synthetic_photometry.flux_to_mag`: to convert fluxes into magnitudes for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_.
