@@ -10,7 +10,7 @@ def silicate_index(wl, flux, eflux, silicate_min=None, silicate_window=None, sil
 	'''
 	Description:
 	------------
-		Measure the strength of the mid-infrared silicate absorption considering the defined silicate index in Suárez & Metchev (2022,2023).
+		Measure the strength of the mid-infrared silicate absorption considering the silicate index defined in Suárez & Metchev (2022,2023).
 
 	Parameters:
 	-----------
