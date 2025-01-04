@@ -267,9 +267,8 @@ class ModelOptions:
 	             path_save_spectra_conv=None, skip_convolution=False):
 
 		self.model = model
-		models_valid = ['Sonora_Diamondback', 'Sonora_Elf_Owl', 'LB23', 'Sonora_Cholla', 
-						'Sonora_Bobcat', 'ATMO2020', 'BT-Settl', 'SM08']
-		if model not in models_valid: raise Exception(f'Models {model} are not recognized. The options are: \n          {models_valid}')
+		models_valid = list(available_models().keys())
+		if model not in models_valid: raise Exception(f'Models "{model}" are not recognized. Available models are: \n          {models_valid}')
 		self.R_range = R_range
 		self.Teff_range = Teff_range
 		self.logg_range = logg_range

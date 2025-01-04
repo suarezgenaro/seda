@@ -762,72 +762,75 @@ def grid_ranges(model):
 	Author: Genaro Suárez
 	'''
 
+	# initialize output dictionary
+	out = {}
+
 	if (model=='Sonora_Elf_Owl'):
 		# Teff
 		Teff_range1 = np.arange(275., 600.+25, 25)
 		Teff_range2 = np.arange(650., 1000.+50, 50)
 		Teff_range3 = np.arange(1100., 2400.+100, 100)
-		Teff = np.concatenate([Teff_range1, Teff_range2, Teff_range3]) # K
+		out['Teff'] = np.concatenate([Teff_range1, Teff_range2, Teff_range3]) # K
 		# logg
-		logg = np.arange(3.25, 5.50+0.25, 0.25) # g in cm/s2
+		out['logg'] = np.arange(3.25, 5.50+0.25, 0.25) # g in cm/s2
 		#logKzz
-		logKzz = np.array([2.0, 4.0, 7.0, 8.0, 9.0]) # Kzz in cm2/s
+		out['logKzz'] = np.array([2.0, 4.0, 7.0, 8.0, 9.0]) # Kzz in cm2/s
 		# Z or [M/H]
-		Z = np.array([-1.0, -0.5, 0.0, 0.5, 0.7, 1.0]) # Z=0 means solar metallicity
+		out['Z'] = np.array([-1.0, -0.5, 0.0, 0.5, 0.7, 1.0]) # Z=0 means solar metallicity
 		# C/O
-		CtoO = np.array([0.5, 1.0, 1.5, 2.5]) # relative to solar C/O (equal to 1)
+		out['CtoO'] = np.array([0.5, 1.0, 1.5, 2.5]) # relative to solar C/O (equal to 1)
 
 	if (model=='Sonora_Diamondback'):
 		# Teff
-		Teff = np.arange(900., 2400.+100., 100.) # K
+		out['Teff'] = np.arange(900., 2400.+100., 100.) # K
 		# logg
-		logg = np.array([3.5, 4., 4.5, 5., 5.5]) # g in cm/s2
+		out['logg'] = np.array([3.5, 4., 4.5, 5., 5.5]) # g in cm/s2
 		# Z
-		Z = np.array([-0.5, 0., 0.5])
+		out['Z'] = np.array([-0.5, 0., 0.5])
 		# fsed
-		fsed = np.array([1., 2., 3., 4., 8., 99.]) # fsed=99 means no clouds
+		out['fsed'] = np.array([1., 2., 3., 4., 8., 99.]) # fsed=99 means no clouds
 
 	if (model=='LB23'):
 		# Teff
 		Teff_range1 = np.arange(250., 575+25., 25.)
 		Teff_range2 = np.arange(600., 800+50., 50.)
-		Teff = np.concatenate([Teff_range1, Teff_range2]) # K
+		out['Teff'] = np.concatenate([Teff_range1, Teff_range2]) # K
 		# logg
-		logg = np.arange(3.5, 5.0+0.25, 0.25) # g in cm/s2
+		out['logg'] = np.arange(3.5, 5.0+0.25, 0.25) # g in cm/s2
 		# Z
-		Z = np.array([-0.5, 0., 0.5]) # [M/H]
+		out['Z'] = np.array([-0.5, 0., 0.5]) # [M/H]
 		# logKzz
-		logKzz = np.array([6]) # Kzz in cm2/s
+		out['logKzz'] = np.array([6]) # Kzz in cm2/s
 		# Hmix
-		Hmix = np.array([0.01, 0.1, 1.])
+		out['Hmix'] = np.array([0.01, 0.1, 1.])
 
 	if (model=='Sonora_Cholla'):
-		Teff = np.arange(500., 1300.+50, 50) # K
-		logg = np.arange(3.5, 5.5+0.25, 0.25) # g in s/cm2
-		logKzz = np.array([2., 4., 7.]) # Kzz in cm2/s
+		out['Teff'] = np.arange(500., 1300.+50, 50) # K
+		out['logg'] = np.arange(3.5, 5.5+0.25, 0.25) # g in s/cm2
+		out['logKzz'] = np.array([2., 4., 7.]) # Kzz in cm2/s
 
 	if (model=='Sonora_Bobcat'):
 		# Teff
 		Teff_range1 = np.arange(200., 600.+25, 25)
 		Teff_range2 = np.arange(650., 1000.+50, 50)
 		Teff_range3 = np.arange(1100., 2400.+100, 100)
-		Teff = np.concatenate([Teff_range1, Teff_range2, Teff_range3]) # K
+		out['Teff'] = np.concatenate([Teff_range1, Teff_range2, Teff_range3]) # K
 		# logg
-		logg = np.arange(3., 5.5+0.25, 0.25) # g in s/cm2
+		out['logg'] = np.arange(3., 5.5+0.25, 0.25) # g in s/cm2
 		# Z
-		Z = np.array([-0.5, 0., 0.5]) # [M/H]
+		out['Z'] = np.array([-0.5, 0., 0.5]) # [M/H]
 		# C/O
-		CtoO = np.array([0.5, 1.0, 1.5]) # relative to solar C/O (equal to 1)
+		out['CtoO'] = np.array([0.5, 1.0, 1.5]) # relative to solar C/O (equal to 1)
 
 	if (model=='ATMO2020'):
 		# Teff
 		Teff_range1 = np.arange(200., 600.+50, 50)
 		Teff_range2 = np.arange(700., 3000.+100, 100)
-		Teff = np.concatenate([Teff_range1, Teff_range2]) # K
+		out['Teff'] = np.concatenate([Teff_range1, Teff_range2]) # K
 		# logg
-		logg = np.arange(2.5, 5.5+0.5, 0.5) # g in s/cm2
+		out['logg'] = np.arange(2.5, 5.5+0.5, 0.5) # g in s/cm2
 		# logKzz
-		logKzz = np.array([0, 4, 6]) # Kzz in cm2/s
+		out['logKzz'] = np.array([0, 4, 6]) # Kzz in cm2/s
 
 	if (model=='BT-Settl'):
 		# Teff
@@ -836,19 +839,19 @@ def grid_ranges(model):
 		Teff_range3 = np.arange(1300., 1500.+100, 100)
 		Teff_range4 = np.arange(1550., 2400.+50, 50)
 		Teff_range5 = np.arange(2500., 7000.+100, 100)
-		Teff = np.concatenate([Teff_range1, Teff_range2, Teff_range3, Teff_range4, Teff_range5]) # K
+		out['Teff'] = np.concatenate([Teff_range1, Teff_range2, Teff_range3, Teff_range4, Teff_range5]) # K
 		# logg
-		logg = np.arange(2., 5.5+0.5, 0.5) # g in s/cm2
+		out['logg'] = np.arange(2., 5.5+0.5, 0.5) # g in s/cm2
 
 	if (model=='SM08'):
 		# Teff
-		Teff = np.arange(800., 2400.+100, 100) # K
+		out['Teff'] = np.arange(800., 2400.+100, 100) # K
 		# logg
-		logg = np.arange(3., 5.5+0.5, 0.5) # g in s/cm2
+		out['logg'] = np.arange(3., 5.5+0.5, 0.5) # g in s/cm2
 		# fsed
-		fsed = np.array([1., 2., 3., 4.])
+		out['fsed'] = np.array([1., 2., 3., 4.])
 
-	out = {'Teff': Teff, 'logg': logg, 'logKzz': logKzz, 'Z': Z, 'CtoO': CtoO}
+	#out = {'Teff': Teff, 'logg': logg, 'logKzz': logKzz, 'Z': Z, 'CtoO': CtoO}
 
 	return out
 
@@ -1219,7 +1222,7 @@ def select_model_spectra(model, model_dir, Teff_range=None, logg_range=None, Z_r
 	return out
 
 ##########################
-def separate_params(model, spectra_name):
+def separate_params(model, spectra_name, save_results=False):
 	'''
 	Description:
 	------------
@@ -1231,6 +1234,8 @@ def separate_params(model, spectra_name):
 		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
 	- spectra_name : array or list
 		Model spectra names (without full path).
+	- save_results : {``True``, ``False``}, optional (default ``False``)
+		Save (``True``) or do not save (``False``) the output as a pickle file named '``model``\_free\_parameters.pickle'.
 
 	Returns:
 	--------
@@ -1405,6 +1410,11 @@ def separate_params(model, spectra_name):
 		out['Teff']= Teff_fit
 		out['logg']= logg_fit
 		out['fsed']= fsed_fit
+
+	# save output dictionary
+	if save_results:
+		with open(f'{model}_free_parameters.pickle', 'wb') as file:
+			pickle.dump(out, file)
 
 	return out
 
@@ -1587,3 +1597,30 @@ def astropy_to_numpy(x):
 def round_logg_point25(logg):
 	logg = round(logg*4.) / 4. 
 	return logg
+
+##########################
+# dictionary with basic properties from available atmospheric models
+def available_models():
+
+#	out = { 
+#	'Sonora_Diamondback': {'ref': 'Morley et al (2024)',     'name': 'Sonora Diamondback',     'N_modelpoints': 385466 },
+#	'Sonora_Elf_Owl':     {'ref': 'Mukherjee et al. (2024)', 'name': 'Sonora Elf Owl',         'N_modelpoints': 193132 },
+#	'LB23':               {'ref': 'Lacy & Burrows (2023)',   'name': 'Lacy & Burrows (2023)',  'N_modelpoints': 30000  },
+#	'Sonora_Cholla':      {'ref': 'Karalidi et al. (2021)',  'name': 'Sonora Cholla',          'N_modelpoints': 110979 },
+#	'Sonora_Bobcat':      {'ref': 'Marley et al. (2021)',    'name': 'Sonora_Bobcat',          'N_modelpoints': 362000 },
+#	'ATMO2020':           {'ref': 'Phillips et al. (2020)',  'name': 'ATMO 2020',              'N_modelpoints': 5000   },
+#	'BT-Settl':           {'ref': 'Allard et al. (2012)',    'name': 'BT-Settl',               'N_modelpoints': 1291340},
+#	'SM08':               {'ref': 'Saumon & Marley (2008)',  'name': 'Saumon & Marley (2008)', 'N_modelpoints': 184663 }
+#	}
+
+	out = {}
+	out['Sonora_Diamondback'] = 'Morley et al (2024)'
+	out['Sonora_Elf_Owl'] = 'Mukherjee et al. (2024)'
+	out['LB23'] = 'Lacy & Burrows (2023)'
+	out['Sonora_Cholla'] = 'Karalidi et al. (2021)'
+	out['Sonora_Bobcat'] = 'Marley et al. (2021)'
+	out['ATMO2020'] = 'Phillips et al. (2020)'
+	out['BT-Settl'] = 'Allard et al. (2012)'
+	out['SM08'] = 'Saumon & Marley (2008)'
+
+	return out

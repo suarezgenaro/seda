@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import importlib
 import pickle
 import numpy as np
+import os
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter, AutoMinorLocator, StrMethodFormatter, NullFormatter
 from matplotlib.backends.backend_pdf import PdfPages # plot several pages in a single pdf
 from sys import exit
@@ -22,9 +23,9 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True, xrange=None, yrang
 		Number (default 1) of best model fits for plotting.
 	- ylog : {``True``, ``False``}, optional (default ``True``)
 		Use logarithmic (``True``) or linear (``False``) scale to plot fluxes and residuals.
-	- xrange : list or array
+	- xrange : list or array, optional (default is full range in the input spectra)
 		Horizontal range of the plot.
-	- yrange : list or array
+	- yrange : list or array, optional (default is full range in the input spectra)
 		Vertical range of the plot.
 	- ori_res : {``True``, ``False``}, optional (default ``False``)
 		Plot (``True``) or do not include (``False``) model spectra with the original resolution.
@@ -355,7 +356,7 @@ def plot_bayes_fit(bayes_pickle_file, ylog=True, out_file=None, save=True):
 	return
 
 ##########################
-def plot_model_coverage(model, model_dir, xparam, yparam, xrange=None, yrange=None, 
+def plot_model_coverage(model, xparam, yparam, model_dir=None, xrange=None, yrange=None, 
 	                    xlog=False, ylog=False, out_file=None, save=False):
 	'''
 	Description:
@@ -366,15 +367,16 @@ def plot_model_coverage(model, model_dir, xparam, yparam, xrange=None, yrange=No
 	-----------
 	- model : str
 		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
-	- model_dir : str or list, optional
-		Path to the directory (str or list) or directories (as a list) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
 	- xparam : str
 		Parameter in ``model`` to be plotted in the horizontal axis. `input_parameters.ModelOptions`` provides more details about available parameters for ``model``.
 	- yparam : str
 		Parameter in ``model`` to be plotted in the vertical axis. `input_parameters.ModelOptions`` provides more details about available parameters for ``model``.
-	- xrange : list or array
+	- model_dir : str or list, optional
+		Path to the directory (str or list) or directories (as a list) containing model spectra (e.g., ``model_dir = ['path_1', 'path_2']``) to display their parameters coverage. 
+		If not provided, the code will read pre-saved pickle files the full coverage of ``model``.
+	- xrange : list or array, optional (default is full range in the input spectra)
 		Horizontal range of the plot.
-	- yrange : list or array
+	- yrange : list or array, optional (default is full range in the input spectra)
 		Vertical range of the plot.
 	- xlog : {``True``, ``False``}, optional (default ``False``)
 		Use logarithmic (``True``) or linear (``False``) scale to plot the horizontal axis.
@@ -403,11 +405,22 @@ def plot_model_coverage(model, model_dir, xparam, yparam, xrange=None, yrange=No
 
 	Author: Genaro Suárez
 	'''
-	# get spectra names from the input directories
-	out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir)
-	# separate parameters for the spectra
-	out_separate_params = separate_params(model=model, spectra_name=out_select_model_spectra['spectra_name'])
-	del out_separate_params['spectra_name'] # only keep the free parameters in the dictionary
+
+	path_plots = os.path.dirname(__file__)+'/'
+
+	# get the coverage of model free parameters
+	if model_dir is not None: # coverage from input model spectra
+		# get spectra names from the input directories
+		out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir)
+		# separate parameters for the spectra
+		out_separate_params = separate_params(model=model, spectra_name=out_select_model_spectra['spectra_name'])
+	else: # coverage of the full model grid
+		# open results from the chi square analysis
+		with open(f'{path_plots}/aux/{model}_free_parameters.pickle', 'rb') as file:
+			out_separate_params = pickle.load(file)
+	
+	# only keep the free parameters in the dictionary
+	del out_separate_params['spectra_name']
 
 	# verify that xparam and yparam are valid parameters
 	if xparam not in out_separate_params: raise Exception(f'{xparam} is not in {model}. Valid parameters: {out_separate_params.keys()}')
@@ -460,9 +473,9 @@ def plot_model_resolution(model, spectra_name_full, xlog=True, ylog=False, xrang
 		Use logarithmic (``True``) or linear (``False``) scale for wavelength range.
 	- ylog : {``True``, ``False``}, optional (default ``False``)
 		Use logarithmic (``True``) or linear (``False``) scale for resolution range.
-	- xrange : list or array
+	- xrange : list or array, optional (default is full range in the input spectra)
 		Horizontal range of the plot.
-	- yrange : list or array
+	- yrange : list or array, optional (default is full range in the input spectra)
 		Vertical range of the plot.
 	- delta_wl_log : {``True``, ``False``}, optional (default ``False``)
 		Consider wavelength steps in linear (``False``) or logarithmic (``True``) scale.
