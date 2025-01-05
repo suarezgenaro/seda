@@ -143,7 +143,7 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None):
 				# wavelength dispersion of the spectrum in the filter wavelength range
 				mask_wl = (wl>=filter_wl.min()) & (wl<=filter_wl.max())
 		
-				wl_disp = wl[mask_wl][1:] - wl[mask_wl][:-1] # dispersion of spectrum spectra (um)
+				wl_disp = wl[mask_wl][1:] - wl[mask_wl][:-1] # (um) wavelength dispersion of spectra
 				wl_disp = np.append(wl_disp, wl_disp[-1]) # add an element equal to the last row to keep the same shape as the wl array
 
 				# synthetic photometry
