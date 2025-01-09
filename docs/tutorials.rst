@@ -41,13 +41,17 @@ Fit atmospheric models to an observed spectrum
 .. toctree::
    :maxdepth: 1
 
-   notebooks/tutorial_chi2_fit.ipynb
+   notebooks/tutorial_chi2_fit_single_spectrum.ipynb
 
 .. Chi square fit of atmospheric models to observed photometry
 .. +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-.. Chi square fit of atmospheric models to multiple observed spectra
-.. +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Chi square fit of atmospheric models to multiple observed spectra
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+.. toctree::
+   :maxdepth: 1
+
+   notebooks/tutorial_chi2_fit_multiple_spectra.ipynb
 
 .. Chi square fit of atmospheric models to observed spectrophotometry
 .. ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -62,4 +66,11 @@ Estimate Bayesian postetiors for an observed spectrum
 .. toctree::
    :maxdepth: 1
 
-   notebooks/tutorial_bayes_fit.ipynb
+   notebooks/tutorial_bayes_fit_single_spectrum.ipynb
+
+Estimate Bayesian postetiors for multiple spectra
++++++++++++++++++++++++++++++++++++++++++++++++++
+.. toctree::
+   :maxdepth: 1
+
+   notebooks/tutorial_bayes_fit_multiple_spectra.ipynb
