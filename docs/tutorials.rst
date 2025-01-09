@@ -2,6 +2,9 @@ Tutorials
 =========
 
 .. _tutorials_model_examination:
+.. toctree::
+   :maxdepth: 1
+
    notebooks/tutorial_models_examination.ipynb
 
 
