@@ -1,8 +1,6 @@
 Tutorials
 =========
 
-**Inspect atmospheric models**
-
 .. toctree::
    :maxdepth: 1
 
