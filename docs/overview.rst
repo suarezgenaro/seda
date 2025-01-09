@@ -21,12 +21,12 @@ Code Workflow
   - Load input data (:meth:`~seda.input_parameters.InputData`).
   - Load model options (:meth:`~seda.input_parameters.ModelOptions`).
 
-  - Option 1: chi-square minimization (see tutorial ).
+  - Option 1: chi-square minimization (see tutorials for `a single <https://seda.readthedocs.io/en/latest/notebooks/tutorial_chi2_fit_single_spectrum.html>`_ or `multiple <https://seda.readthedocs.io/en/latest/notebooks/tutorial_chi2_fit_multiple_spectra.html>`_ spectra).
 
     - Load chi-square fit options (:meth:`~seda.input_parameters.Chi2Options`).
     - Run chi-square minimization module (:meth:`~seda.chi2_fit`).
 
-  - Option 2: Bayesian sampling  (see tutorial ).
+  - Option 2: Bayesian sampling  (see tutorials for `a single <https://seda.readthedocs.io/en/latest/notebooks/tutorial_bayes_fit_single_spectrum.html>`_ or `multiple <https://seda.readthedocs.io/en/latest/notebooks/tutorial_bayes_fit_multiple_spectra.html>`_ spectra).
 
     - Load Bayesian fit options (:meth:`~seda.input_parameters.BayesOptions`).
     - Run Bayesian framework module (:meth:`~seda.bayes_fit`).
@@ -38,8 +38,8 @@ Code Workflow
 Main Tools
 ----------
 :math:`\texttt{SEDA}` includes several useful functions that can be used separately:
-  - :meth:`~seda.synthetic_photometry.synthetic_photometry.synthetic_photometry`: to calculate synthetic phothometry from spectra for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_ (see tutorial ).
-  - :meth:`~seda.spectral_indices.spectral_indices`: to measure the depth of mid-infrared absorption features, namely silicates at 9.3 microns (:meth:`~seda.spectral_indices.spectral_indices.silicate_index`), water at 6.25 microns (:meth:`~seda.spectral_indices.spectral_indices.water_index`), mathane at 7.65 microns (:meth:`~seda.spectral_indices.spectral_indices.methane_index`), and ammonia at 10.5 microns (:meth:`~seda.spectral_indices.spectral_indices.ammonia_index`) (see tutorial  and `spectral_indices <https://github.com/suarezgenaro/spectral_indices>`_).
+  - :meth:`~seda.synthetic_photometry.synthetic_photometry.synthetic_photometry`: to calculate synthetic phothometry from spectra for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_ (see `tutorial <https://seda.readthedocs.io/en/latest/notebooks/tutorial_synthetic_photometry.html>`_).
+  - :meth:`~seda.spectral_indices.spectral_indices`: to measure the depth of mid-infrared absorption features, namely silicates at 9.3 microns (:meth:`~seda.spectral_indices.spectral_indices.silicate_index`), water at 6.25 microns (:meth:`~seda.spectral_indices.spectral_indices.water_index`), mathane at 7.65 microns (:meth:`~seda.spectral_indices.spectral_indices.methane_index`), and ammonia at 10.5 microns (:meth:`~seda.spectral_indices.spectral_indices.ammonia_index`) (see `tutorial <https://seda.readthedocs.io/en/latest/notebooks/tutorial_spectral_indices.html>`_  and `spectral_indices <https://github.com/suarezgenaro/spectral_indices>`_).
   - :meth:`~seda.utils.convolve_spectrum`: to convolve spectra to a desired resolution at a given wavelength.
   - :meth:`~seda.synthetic_photometry.synthetic_photometry.convert_flux`: to convert fluxes from wavelength units (erg/s/cm2/s) to frequency units (Jy) or vice versa.
   - :meth:`~seda.synthetic_photometry.synthetic_photometry.flux_to_mag`: to convert fluxes into magnitudes for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_.
@@ -48,14 +48,14 @@ Main Tools
   - :meth:`~seda.utils.generate_model_spectrum`: to generate a synthetic spectrum with any parameters (within the grid coverage) from the indicated atmospheric models using interpolation techniques.
   - :meth:`~seda.utils.app_to_abs_flux`: to convert apparent fluxes into absolute fluxes considering a distance.
   - :meth:`~seda.utils.separate_params`: to extract parameters from model spectra file names.
-  - :meth:`~seda.plots.plot_model_coverage` and :meth:`~seda.plots.plot_model_resolution`: to visualize parameters' coverage and resolution of :ref:`models` (see tutorial ).
+  - :meth:`~seda.plots.plot_model_coverage` and :meth:`~seda.plots.plot_model_resolution`: to visualize parameters' coverage and resolution of :ref:`models` (see `tutorial <https://seda.readthedocs.io/en/latest/notebooks/tutorial_models_examination.html>`_ ).
 
 .. _models:
 
 Available Atmospheric Models
 ----------------------------
 
-:math:`\texttt{SEDA}` can use several modern and widely used atmospheric models, as indicated below. Check out the tutorial to see the parameters' coverage and resolution of the models.
+:math:`\texttt{SEDA}` can use several modern and widely used atmospheric models, as indicated below. Check out `this tutorial <https://seda.readthedocs.io/en/latest/notebooks/tutorial_models_examination.html>`_ to see the parameters' coverage and resolution of the models.
 
 Sonora Diamondback Models
 +++++++++++++++++++++++++
