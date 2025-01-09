@@ -548,9 +548,9 @@ def save_params(out_chi2):
 	iterations_fit = out_chi2['iterations_fit']
 	Teff_fit = out_chi2['Teff']
 	logg_fit = out_chi2['logg']
-	chi2_table_file = out_chi2['chi2_table_file']
 
 	skip_convolution = out_chi2['my_chi2'].skip_convolution
+	chi2_table_file = out_chi2['my_chi2'].chi2_table_file
 
 	# table with model spectra sorted by the resulting chi square
 	ind = np.argsort(chi2_red_fit)

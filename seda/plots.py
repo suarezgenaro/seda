@@ -542,7 +542,7 @@ def plot_model_resolution(model, spectra_name_full, xlog=True, ylog=False, xrang
 		Save (``'True'``) or do not save (``'False'``) the resulting figure.
 	- out_file : str, optional
 		File name to save the figure (it can include a path e.g. my_path/figure.pdf). Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
-		Default name is '``model``_resolution.pdf'.
+		Default name is '``model``\_resolution.pdf'.
 
 	Returns:
 	--------

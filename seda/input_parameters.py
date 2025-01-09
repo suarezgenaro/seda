@@ -340,10 +340,10 @@ class Chi2Options:
 		Save (``True``) or do not save (``False``) ``seda.chi2_fit`` results
 	- chi2_pickle_file : str, optional
 		Filename for the output dictionary stored as a pickle file, if ``save_results``.
-		Default name is '``model``_chi2_minimization.pickle'.
+		Default name is '``model``\_chi2\_minimization.pickle'.
 	- chi2_table_file : str, optional
 		Filename for an output ascii table (if ``save_results``) with relevant information from the fit.
-		Default name is '``model``_chi2_minimization.dat'.
+		Default name is '``model``\_chi2\_minimization.dat'.
 
 	Returns:
 	--------
@@ -519,7 +519,7 @@ class BayesOptions:
 		Save (``True``) or do not save (``False``) ``seda.bayes_fit`` results
 	- bayes_pickle_file : str, optional
 		Filename for the output dictionary stored as a pickle file, if ``save_results``.
-		Default name is '``model``_bayesian_sampling.pickle'.
+		Default name is '``model``\_bayesian\_sampling.pickle'.
 
 	Returns:
 	--------
