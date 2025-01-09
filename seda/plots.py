@@ -171,12 +171,20 @@ def plot_chi2_red(chi2_pickle_file, N_best_fits=1, xlog=False, ylog=False, out_f
 
 	Parameters:
 	-----------
-	chi2_pickle_file : str
+	- chi2_pickle_file : str
 		File name with the pickle file with chi2 results.
-	N_best_fits: int 
+	- N_best_fits : int 
 		Number (default 1) of best model fits for plotting.
 	- xlog : {``True``, ``False``}, optional (default ``False``)
 		Use logarithmic (``True``) or linear (``False``) scale to plot the horizontal axis.
+	- ylog : {``True``, ``False``}, optional (default ``False``)
+		Use logarithmic (``True``) or linear (``False``) scale to plot the vertical axis.
+	out_file : str, optional
+		File name to save the figure (it can include a path e.g. my_path/figure.pdf). 
+		Note: use file formats (pdf, eps, or ps). Image formats do not work because the figure is saved in several pages, according to ``N_best_fits``.
+		Default name is 'SED_``model``_chi2.pdf', where ``model`` is read from ``chi2_pickle_file``.
+	save : {``True``, ``False``}, optional (default ``True``)
+		Save (``'True'``) or do not save (``'False'``) the resulting figure.
 
 	Returns:
 	--------
@@ -192,13 +200,6 @@ def plot_chi2_red(chi2_pickle_file, N_best_fits=1, xlog=False, ylog=False, out_f
 
 	Author: Genaro Suárez
 	'''
-#	- ylog : {``True``, ``False``}, optional (default ``False``)
-#		Use logarithmic (``True``) or linear (``False``) scale to plot the vertical axis.
-#	out_file : str, optional
-#		File name to save the figure (it can include a path e.g. my_path/figure.pdf). Note: use file formats (pdf, eps, or ps). Image formats do not work because the figure is saved in several pages, according to ``N_best_fits``.
-#		Default name is 'SED_``model``_chi2.pdf', where ``model`` is read from ``chi2_pickle_file``.
-#	save : {``True``, ``False``}, optional (default ``True``)
-#		Save (``'True'``) or do not save (``'False'``) the resulting figure.
 
 	# read best fits
 	out_best_chi2_fits = best_chi2_fits(chi2_pickle_file=chi2_pickle_file, N_best_fits=N_best_fits)
