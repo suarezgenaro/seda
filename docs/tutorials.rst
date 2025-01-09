@@ -2,6 +2,8 @@ Tutorials
 =========
 
 .. _tutorials_model_examination:
+Inspect atmospheric models
+++++++++++++++++++++++++++
 .. toctree::
    :maxdepth: 1
 
@@ -11,7 +13,7 @@ Tutorials
 .. _tutorials_synthetic_photometry:
 
 Calculate and visualize synthetic photometry
---------------------------------------------
+++++++++++++++++++++++++++++++++++++++++++++
 .. toctree::
    :maxdepth: 1
 
@@ -21,7 +23,7 @@ Calculate and visualize synthetic photometry
 .. _tutorials_spectral_indices:
 
 Depth of mid-infrared absorption features 
------------------------------------------
++++++++++++++++++++++++++++++++++++++++++
 .. toctree::
    :maxdepth: 1
 
@@ -31,10 +33,10 @@ Depth of mid-infrared absorption features
 .. _tutorials_chi2:
 
 Chi-square Minimization
------------------------
++++++++++++++++++++++++
 
 Fit atmospheric models to an observed spectrum
-+++++++++++++++++++++++++++++++++++++++++++++++++
+++++++++++++++++++++++++++++++++++++++++++++++
 .. toctree::
    :maxdepth: 1
 
