@@ -21,12 +21,12 @@ Code Workflow
   - Load input data (:meth:`~seda.input_parameters.InputData`).
   - Load model options (:meth:`~seda.input_parameters.ModelOptions`).
 
-  - Option 1: chi-square minimization (see tutorial :ref:`tutorials_chi2`).
+  - Option 1: chi-square minimization (see tutorial ).
 
     - Load chi-square fit options (:meth:`~seda.input_parameters.Chi2Options`).
     - Run chi-square minimization module (:meth:`~seda.chi2_fit`).
 
-  - Option 2: Bayesian sampling  (see tutorial :ref:`tutorials_bayes`).
+  - Option 2: Bayesian sampling  (see tutorial ).
 
     - Load Bayesian fit options (:meth:`~seda.input_parameters.BayesOptions`).
     - Run Bayesian framework module (:meth:`~seda.bayes_fit`).
@@ -38,8 +38,8 @@ Code Workflow
 Main Tools
 ----------
 :math:`\texttt{SEDA}` includes several useful functions that can be used separately:
-  - :meth:`~seda.synthetic_photometry.synthetic_photometry.synthetic_photometry`: to calculate synthetic phothometry from spectra for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_ (see tutorial :ref:`tutorials_synthetic_photometry`).
-  - :meth:`~seda.spectral_indices.spectral_indices`: to measure the depth of mid-infrared absorption features, namely silicates at 9.3 microns (:meth:`~seda.spectral_indices.spectral_indices.silicate_index`), water at 6.25 microns (:meth:`~seda.spectral_indices.spectral_indices.water_index`), mathane at 7.65 microns (:meth:`~seda.spectral_indices.spectral_indices.methane_index`), and ammonia at 10.5 microns (:meth:`~seda.spectral_indices.spectral_indices.ammonia_index`) (see tutorial :ref:`tutorials_spectral_indices` and `spectral_indices <https://github.com/suarezgenaro/spectral_indices>`_).
+  - :meth:`~seda.synthetic_photometry.synthetic_photometry.synthetic_photometry`: to calculate synthetic phothometry from spectra for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_ (see tutorial ).
+  - :meth:`~seda.spectral_indices.spectral_indices`: to measure the depth of mid-infrared absorption features, namely silicates at 9.3 microns (:meth:`~seda.spectral_indices.spectral_indices.silicate_index`), water at 6.25 microns (:meth:`~seda.spectral_indices.spectral_indices.water_index`), mathane at 7.65 microns (:meth:`~seda.spectral_indices.spectral_indices.methane_index`), and ammonia at 10.5 microns (:meth:`~seda.spectral_indices.spectral_indices.ammonia_index`) (see tutorial  and `spectral_indices <https://github.com/suarezgenaro/spectral_indices>`_).
   - :meth:`~seda.utils.convolve_spectrum`: to convolve spectra to a desired resolution at a given wavelength.
   - :meth:`~seda.synthetic_photometry.synthetic_photometry.convert_flux`: to convert fluxes from wavelength units (erg/s/cm2/s) to frequency units (Jy) or vice versa.
   - :meth:`~seda.synthetic_photometry.synthetic_photometry.flux_to_mag`: to convert fluxes into magnitudes for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_.
@@ -48,7 +48,7 @@ Main Tools
   - :meth:`~seda.utils.generate_model_spectrum`: to generate a synthetic spectrum with any parameters (within the grid coverage) from the indicated atmospheric models using interpolation techniques.
   - :meth:`~seda.utils.app_to_abs_flux`: to convert apparent fluxes into absolute fluxes considering a distance.
   - :meth:`~seda.utils.separate_params`: to extract parameters from model spectra file names.
-  - :meth:`~seda.plots.plot_model_coverage` and :meth:`~seda.plots.plot_model_resolution`: to visualize parameters' coverage and resolution of :ref:`models` (see tutorial :ref:`tutorials_model_examination`).
+  - :meth:`~seda.plots.plot_model_coverage` and :meth:`~seda.plots.plot_model_resolution`: to visualize parameters' coverage and resolution of :ref:`models` (see tutorial ).
 
 .. _models:
 
