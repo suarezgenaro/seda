@@ -1,5 +1,6 @@
 import numpy as np
 from .utils import *
+from .synthetic_photometry.synthetic_photometry import *
 from sys import exit
 
 print('\n    SEDA package imported')
@@ -19,16 +20,16 @@ class InputData:
 	- fit_photometry : {``True``, ``False``}, optional (default ``False``)
 		Include (``True``) or do not include (``False``) photometry.
 	- wl_spectra : float array or list, optional (required if ``fit_spectra``)
-		Wavelength in um of the spectrum or set of spectra for the fits. 
-		When providing more than one spectrum, verify that there is no overlap between the spectra. 
-		Provide the multiple spectra as a list (e.g., ``wl_spectra = []``, ``wl_spectra.append(spectrum_1)``, etc.).
-		The input list must have the spectra from shorter to longer wavelength coverage
-	- flux_spectra : float array or list, optional
-		Fluxes in erg/cm^2/s/A of the input spectrum or spectra.
-		Input list for multiple spectra (equivalent to wl_spectra).
-	- eflux_spectra : float array or list, optional
-		Fluxes uncertainties in erg/cm^2/s/A of the input spectrum or spectra. 
-		Input multiple spectra as a list (equivalent to wl_spectra). 
+		Wavelength in um of the spectra for model comparisons.
+		For multiple spectra, provide them as a list (e.g., ``wl_spectra = [wl_spectrum1, wl_spectrum2]``).
+	- flux_spectra : float array or list, optional (required if ``fit_spectra``)
+		Fluxes in erg/cm^2/s/A of the input spectra.
+		Use a list for multiple spectra (similar to ``wl_spectra``).
+	- eflux_spectra : float array or list, optional (required if ``fit_spectra``)
+		Fluxes uncertainties in erg/cm^2/s/A of the input spectra. 
+		Use a list for multiple spectra (similar to ``wl_spectra``).
+	- flux_unit : str, optional (default ``'erg/s/cm2/A'``)
+		Units of ``flux``: ``'Jy'`` or ``'erg/s/cm2/A'``.
 	- mag_phot : float array, optional (required if ``fit_photometry``)
 		Magnitudes for the fit
 	- emag_phot : float array, optional (required if ``fit_photometry``)
@@ -36,12 +37,14 @@ class InputData:
 	- filter_phot : float array, optional (required if ``fit_photometry``)
 		Filters associated to the input magnitudes following SVO filter IDs 
 		http://svo2.cab.inta-csic.es/theory/fps/
-	- res : float, optional (default res=100)
-		Spectral resolution at ``lam_res`` of input spectra to smooth model spectra.
-	- lam_res : float, optional (default 2 um) 
+	- res : float, list or array, optional (required if ``fit_spectra``)
+		Resolving power (R=lambda/delta(lambda)) at ``lam_res`` of input spectra to smooth model spectra.
+		For multiple input spectra, ``res`` should be a list or array with a value for each spectrum.
+	- lam_res : float, list or array, optional (required if ``fit_spectra``)
 		Wavelength of reference at which ``res`` is given.
+		For multiple input spectra, ``lam_res`` should be a list or array with a value for each spectrum.
 	- distance : float, optional
-		Target distance (in pc) used to derive radius from the scaling factor.
+		Target distance (in pc) used to derive radii from scaling factors for models.
 	- edistance : float, optional
 		Distance error (in pc).
 
@@ -67,8 +70,9 @@ class InputData:
 	'''
 
 	def __init__(self, fit_spectra=True, fit_photometry=False, wl_spectra=None, 
-	    flux_spectra=None, eflux_spectra=None, mag_phot=None, emag_phot=None, 
-	    filter_phot=None, res=100, lam_res=2, distance=None, edistance=None):	
+	    flux_spectra=None, eflux_spectra=None, flux_unit='erg/s/cm2/A', 
+	    res=None, lam_res=None, mag_phot=None, emag_phot=None, filter_phot=None, 
+	    distance=None, edistance=None):	
 
 		self.fit_spectra = fit_spectra
 		self.fit_photometry = fit_photometry
@@ -89,8 +93,8 @@ class InputData:
 		# reshape some input parameters and define non-provided parameters in terms of other parameters
 		if fit_spectra:
 			# if res and lam_res are scalars, convert them into array
-			if not isinstance(res, np.ndarray): res = np.array([res])
-			if not isinstance(lam_res, np.ndarray): lam_res = np.array([lam_res])
+			if isinstance(res, (float, int)): res = np.array([res])
+			if isinstance(lam_res, (float, int)): lam_res = np.array([lam_res])
 
 			# when one spectrum is given, convert the spectrum into a list
 			if not isinstance(wl_spectra, list): wl_spectra = [wl_spectra]
@@ -115,6 +119,13 @@ class InputData:
 			wl_spectra[i] = wl_spectra[i][mask_noneg]
 			flux_spectra[i] = flux_spectra[i][mask_noneg]
 			eflux_spectra[i] = eflux_spectra[i][mask_noneg]
+		# convert input fluxes to erg/s/cm2/A if provided in Jy
+		if flux_unit=='Jy':
+			for i in range(N_spectra):
+				out_convert_flux = convert_flux(flux=flux_spectra[i], eflux=eflux_spectra[i], 
+				                                wl=wl_spectra[i], unit_in='Jy', unit_out='erg/s/cm2/A')
+				flux_spectra[i] = out_convert_flux['flux_out']
+				eflux_spectra[i] = out_convert_flux['eflux_out']
 
 		self.res = res
 		self.lam_res = lam_res
@@ -302,13 +313,13 @@ class Chi2Options:
 	- my_model : dictionary
 		Output dictionary by ``input_parameters.ModelOptions`` with model options.
 	- fit_wl_range : float array, optional
-		Minimum and maximum wavelengths (in microns) where model spectra will be compared to the data. 
+		Minimum and maximum wavelengths (in microns) where each input spectrum will be compared to the models. E.g., ``fit_wl_range = np.array([fit_wl_min1, fit_wl_max1], [fit_wl_min2, fit_wl_max2])``. 
 		This parameter is used if ``fit_spectra`` but ignored if only ``fit_photometry``. 
-		Default values are the minimum and the maximum wavelengths of each input spectrum. E.g., ``fit_wl_range = np.array([chi2_wl_min, chi2_wl_max])``. 
+		Default values are the minimum and the maximum wavelengths of each input spectrum.
 	- model_wl_range : float array, optional
-		Minimum and maximum wavelength (in microns) to cut model spectra (to make the code faster). 
-		Default values are the same as ``fit_wl_range`` with a padding to avoid the point below.
-		CAVEAT: the selected wavelength range of model spectra must cover the spectrophotometry used in the fit and a bit more (to avoid errors when resampling synthetic spectra using spectres)
+		Minimum and maximum wavelength (in microns) to cut model spectra to keep only wavelengths of interest.
+		Default values are the minimum and maximum wavelengths covered by the input spectra with a padding to avoid the point below.
+		CAVEAT: the selected wavelength range of model spectra must cover the spectrophotometry used in the fit and a bit more (to avoid errors when resampling synthetic spectra using spectres).
 	- extinction_free_param : {``'yes'``, ``'no'``}, optional (default ``'no'``)
 		Extinction as a free parameter: 
 			- ``'no'``: null extinction is assumed and it will not change.
@@ -327,6 +338,12 @@ class Chi2Options:
 		Shortest wavelength at which IR excesses are expected.
 	- save_results : {``True``, ``False``}, optional (default ``True``)
 		Save (``True``) or do not save (``False``) ``seda.chi2_fit`` results
+	- chi2_pickle_file : str, optional
+		Filename for the output dictionary stored as a pickle file, if ``save_results``.
+		Default name is '``model``_chi2_minimization.pickle'.
+	- chi2_table_file : str, optional
+		Filename for an output ascii table (if ``save_results``) with relevant information from the fit.
+		Default name is '``model``_chi2_minimization.dat'.
 
 	Returns:
 	--------
@@ -347,8 +364,9 @@ class Chi2Options:
 
 	def __init__(self, my_data, my_model, 
 		fit_wl_range=None, model_wl_range=None, extinction_free_param='no', 
-		scaling_free_param='yes', scaling=None, #skip_convolution='no', 
-		avoid_IR_excess='no', IR_excess_limit=3, save_results=True):
+		scaling_free_param='yes', scaling=None, 
+		avoid_IR_excess='no', IR_excess_limit=3, save_results=True,
+		chi2_pickle_file=None, chi2_table_file=None):
 
 		self.save_results = save_results
 		self.scaling_free_param = scaling_free_param
@@ -437,24 +455,29 @@ class Chi2Options:
 #		for i in range(N_spectra):
 #			N_datapoints  = N_datapoints + wl_spectra[i].size
 
+		# number of data points in the input spectra
+		out_input_data_stats = input_data_stats(wl_spectra=wl_spectra, N_spectra=N_spectra)
+		wl_spectra_min = out_input_data_stats['wl_spectra_min']
+		wl_spectra_max = out_input_data_stats['wl_spectra_max']
+		N_datapoints = out_input_data_stats['N_datapoints']
+
 		# handle fit_wl_range
 		fit_wl_range = set_fit_wl_range(fit_wl_range=fit_wl_range, N_spectra=N_spectra, wl_spectra=wl_spectra)
 
 		# handle model_wl_range
-		model_wl_range = set_model_wl_range(model_wl_range=model_wl_range, fit_wl_range=fit_wl_range)
-
-		# number of data points in the input spectra
-		out_input_data_stats = input_data_stats(wl_spectra=wl_spectra, N_spectra=N_spectra)
+		model_wl_range = set_model_wl_range(model_wl_range=model_wl_range, wl_spectra_min=wl_spectra_min, wl_spectra_max=wl_spectra_max)
 
 		self.fit_wl_range = fit_wl_range
 		self.model_wl_range = model_wl_range
-		self.wl_spectra_min = out_input_data_stats['wl_spectra_min']
-		self.wl_spectra_max = out_input_data_stats['wl_spectra_max']
-		self.N_datapoints = out_input_data_stats['N_datapoints']
+		self.wl_spectra_min = wl_spectra_min
+		self.wl_spectra_max = wl_spectra_max
+		self.N_datapoints = N_datapoints
 
 		# file name to save the chi2 results as a pickle
-		self.chi2_pickle_file = f'{model}_chi2_minimization.pickle'
-		self.chi2_table_file = f'{model}_chi2_minimization.dat'
+		if chi2_pickle_file is None: self.chi2_pickle_file = f'{model}_chi2_minimization.pickle'
+		else: self.chi2_pickle_file = chi2_pickle_file
+		if chi2_table_file is None: self.chi2_table_file = f'{model}_chi2_minimization.dat'
+		else: self.chi2_table_file = chi2_table_file
 
 		print('\n   Chi-square fit options loaded successfully')
 
@@ -479,22 +502,13 @@ class BayesOptions:
 		Minimum and maximum wavelength (in microns) to cut model spectra (to make the code faster). 
 		Default values are the same as ``fit_wl_range`` with a padding to avoid the point below.
 		CAVEAT: the selected wavelength range of model spectra must cover the spectrophotometry used in the fit and a bit more (to avoid errors when resampling synthetic spectra using spectres)
-	- logKzz_range: float array, optional
-		logKzz range for prior transformation. 
-		If not given, the full grid logKzz range (if in ``model``) will be considered, unless ``chi2_pickle_file`` is provided. 
-	- Z_range : float array, optional
-		Z range for prior transformation. 
-		If not given, the full grid Z range (if in ``model``) will be considered, unless ``chi2_pickle_file`` is provided. 
-	- CtoO_range : float array, optional
-		C/O range for prior transformation. 
-		If not given, the full grid C/O range (if in ``model``) will be considered, unless ``chi2_pickle_file`` is provided. 
 	- 'chi2_pickle_file' : dictionary, optional
 		Pickle file with a dictionary with the results from the chi-square minimization by ``chi2_fit.chi2``.
 		If given, the parameters from the best chi-square fits will be used to define priors to estimate posteriors. 
 		Otherwise, the grid parameters and radius are constrained by the input ranges. 
 	- grid: dictionary, optional
 		Model grid (``'wavelength'`` and ``'flux'``) generated by ``utils.read_grid`` to interpolate model spectra. 
-		If not provided (default), then the grid is read (``model``, ``model_dir``, ``Teff_range`` and ``logg_range`` must be provided). 
+		If not provided (default), then the grid is read (``model`` and ``model_dir`` must be provided). 
 		If provided, the code will skip reading the grid, which will save some time (a few minutes).
 	- dynamic_sampling: {``True``, ``False``}, optional (default ``True``). 
 		Consider dynamic (``True``) or static (``False``) nested sampling. Read ``dynesty`` documentation for more info. 
@@ -503,6 +517,9 @@ class BayesOptions:
 		Number of nested sampling live points. 
 	- save_results : {``True``, ``False``}, optional (default ``True``)
 		Save (``True``) or do not save (``False``) ``seda.bayes_fit`` results
+	- bayes_pickle_file : str, optional
+		Filename for the output dictionary stored as a pickle file, if ``save_results``.
+		Default name is '``model``_bayesian_sampling.pickle'.
 
 	Returns:
 	--------
@@ -521,12 +538,12 @@ class BayesOptions:
 	'''
 
 	def __init__(self, my_data, my_model, fit_wl_range=None, model_wl_range=None, 
-		         logKzz_range=None, Z_range=None, CtoO_range=None, chi2_pickle_file=None, 
+	             chi2_pickle_file=None, bayes_pickle_file=None,
 		         grid=None, dynamic_sampling=True, nlive=500, save_results=True):
 
-		self.logKzz_range = logKzz_range
-		self.Z_range = Z_range
-		self.CtoO_range = CtoO_range
+		#self.logKzz_range = logKzz_range
+		#self.Z_range = Z_range
+		#self.CtoO_range = CtoO_range
 		self.chi2_pickle_file = chi2_pickle_file
 		self.dynamic_sampling = dynamic_sampling
 		self.nlive = nlive
@@ -575,14 +592,17 @@ class BayesOptions:
 		CtoO_range = my_model.CtoO_range
 		fsed_range = my_model.fsed_range
 
+		# number of data points in the input spectra
+		out_input_data_stats = input_data_stats(wl_spectra=wl_spectra, N_spectra=N_spectra)
+		wl_spectra_min = out_input_data_stats['wl_spectra_min']
+		wl_spectra_max = out_input_data_stats['wl_spectra_max']
+		N_datapoints = out_input_data_stats['N_datapoints']
+
 		# handle fit_wl_range
 		fit_wl_range = set_fit_wl_range(fit_wl_range=fit_wl_range, N_spectra=N_spectra, wl_spectra=wl_spectra)
 
 		# handle model_wl_range
-		model_wl_range = set_model_wl_range(model_wl_range=model_wl_range, fit_wl_range=fit_wl_range)
-
-		# number of data points in the input spectra
-		out_input_data_stats = input_data_stats(wl_spectra=wl_spectra, N_spectra=N_spectra)
+		model_wl_range = set_model_wl_range(model_wl_range=model_wl_range, wl_spectra_min=wl_spectra_min, wl_spectra_max=wl_spectra_max)
 
 		self.fit_wl_range = fit_wl_range
 		self.model_wl_range = model_wl_range
@@ -591,7 +611,8 @@ class BayesOptions:
 		self.N_datapoints = out_input_data_stats['N_datapoints']
 
 		# file name to save the chi2 results as a pickle
-		self.bayes_pickle_file = f'{model}_bayesian_sampling.pickle'
+		if bayes_pickle_file is None: self.bayes_pickle_file = f'{model}_bayesian_sampling.pickle'
+		else: self.bayes_pickle_file = bayes_pickle_file
 
 		# parameter ranges for the posteriors
 		if chi2_pickle_file:
@@ -604,11 +625,11 @@ class BayesOptions:
 		else:
 			# I AM HERE: SAMPLING DOESN'T WORK WITH ANY OF THE PARAMS DEFINITIONS BELOW. IT SAYS THERE IS SOMETHING OUT OF BOUNDS
 			# define priors from input parameters or grid ranges
-			if Teff_range is None: print('Please provide the Teff_range parameter'), exit()
-			if logg_range is None: print('Please provide the logg_range parameter'), exit()
-			Teff_range_prior = Teff_range
-			logg_range_prior = logg_range
 			out_grid_ranges = grid_ranges(model) # read grid ranges
+			if Teff_range is not None: Teff_range_prior = Teff_range
+			else: Teff_range_prior = np.array([out_grid_ranges['Teff'].min(), out_grid_ranges['Teff'].max()])
+			if logg_range is not None: logg_range_prior = logg_range
+			else: logg_range_prior = np.array([out_grid_ranges['logg'].min(), out_grid_ranges['logg'].max()])
 			if logKzz_range is not None: logKzz_range_prior = logKzz_range
 			else: logKzz_range_prior = np.array([out_grid_ranges['logKzz'].min(), out_grid_ranges['logKzz'].max()])
 			if Z_range is not None: Z_range_prior = Z_range
@@ -644,7 +665,7 @@ class BayesOptions:
 
 		#if distance_label=='yes':
 		if distance is not None:
-			if R_range is None: print('Please provide the R_range parameter'), exit()
+			if R_range is None: raise Exception('Please provide the "R_range" parameter')
 			R_range_prior = R_range
 
 		self.Teff_range_prior = Teff_range_prior
@@ -661,14 +682,21 @@ class BayesOptions:
 			ndim = 5
 		self.ndim = ndim
 
-		# read model grid within the Teff and logg ranges
+		# read model grid
 		if grid is None: 
-			for i in range(N_spectra):
-				if Teff_range is None: print('Please provide the Teff_range parameter'), exit()
-				if logg_range is None: print('Please provide the logg_range parameter'), exit()
+			# initialize list to save the resampled, convolved grid appropriate for each input spectrum
+			grid = []
+			for i in range(N_spectra): # for each input observed spectrum
 				if model=='Sonora_Elf_Owl':
-					grid = read_grid(model=model, model_dir=model_dir, Teff_range=Teff_range, logg_range=logg_range, 
-					                 convolve=True, res=res, lam_res=lam_res, model_wl_range=model_wl_range, fit_wl_range=fit_wl_range, wl_resample=wl_spectra[i])
+					# convolve the grid to the given res and lam_res for each input spectrum
+					# resample the convolved grid to the input wavelengths within the fit range for each input spectrum
+					print(f'\nFor input observed spectrum #{i+1}')
+					grid_each = read_grid(model=model, model_dir=model_dir, Teff_range=Teff_range, logg_range=logg_range, 
+					                 Z_range=Z_range, logKzz_range=logKzz_range, CtoO_range=CtoO_range, 
+					                 fsed_range=fsed_range, convolve=True, res=res[i], lam_res=lam_res[i], 
+					                 fit_wl_range=fit_wl_range[i], wl_resample=wl_spectra[i])
+				# add resampled grid for each input spectrum to the same list
+				grid.append(grid_each)
 		self.grid = grid
 
 		print('\n   Bayes fit options loaded successfully')

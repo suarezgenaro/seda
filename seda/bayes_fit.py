@@ -105,22 +105,19 @@ def bayes(my_bayes):
 	CtoO_range_prior = my_bayes.CtoO_range_prior
 	R_range_prior = my_bayes.R_range_prior
 
-	# when multiple spectra are provided, transform the input list with the spectra to arrays having the spectra next to each other
-	# rename the input list with the spectra for convenience 
-	wl_spectra_list = wl_spectra
-	flux_spectra_list = flux_spectra
-	eflux_spectra_list = eflux_spectra
+	# cut input spectra to the fit range
+	wl_obs = []
+	flux_obs = []
+	eflux_obs = []
+	for i in range(N_spectra): # for each input spectrum
+		mask_fit = (wl_spectra[i] >= max(fit_wl_range[i][0], grid[i]['wavelength'].min())) & \
+		           (wl_spectra[i] <= min(fit_wl_range[i][1], grid[i]['wavelength'].max()))
 
-	wl_spectra = np.zeros(N_datapoints) # flat array with all wavelengths of input spectra
-	flux_spectra = np.zeros(N_datapoints) # flat array with all fluxes of input spectra
-	eflux_spectra = np.zeros(N_datapoints) # flat array with all flux errors of input spectra
-	l = 0
-	for k in range(N_spectra): # for each input observed spectrum
-		wl_spectra[l:wl_spectra_list[k].size+l] = wl_spectra_list[k] # add wavelengths of each input spectrum
-		flux_spectra[l:wl_spectra_list[k].size+l] = flux_spectra_list[k] # add fluxes of each input spectrum
-		eflux_spectra[l:wl_spectra_list[k].size+l] = eflux_spectra_list[k] # add flux errors of each input spectrum
-		l += wl_spectra_list[k].size # counter to indicate the minimum index
+		wl_obs.append(wl_spectra[i][mask_fit])
+		flux_obs.append(flux_spectra[i][mask_fit])
+		eflux_obs.append(eflux_spectra[i][mask_fit])
 
+	# print priors
 	print(f'\n      Uniform priors:')
 	print(f'         Teff range = {Teff_range_prior}')
 	print(f'         logg range = {logg_range_prior}')
@@ -129,6 +126,7 @@ def bayes(my_bayes):
 	print(f'         CtoO range = {CtoO_range_prior}')
 	if distance is not None: print(f'         R range = {R_range_prior}')
 	print('')
+
 
 	#------------------
 	def prior_transform(p):
@@ -145,43 +143,34 @@ def bayes(my_bayes):
 		return v
 
 	#------------------
-	def model_gen(p):
-		if distance is not None: # sample radius distribution
-			Teff, logg, logKzz, Z, CtoO, R = p
-		else:
-			Teff, logg, logKzz, Z, CtoO = p
-
-		# generate model with the parameters (the model will have the resolution and wavelength data points as the observation)
-		out_generate_model_spectrum = generate_model_spectrum(Teff=Teff, logg=logg, logKzz=logKzz, Z=Z, CtoO=CtoO, grid=grid)
-
-#		# resample the convolved model spectrum to the wavelength data points in the observed spectra
-#		flux_model = spectres(wl_spectra, out_generate_model_spectrum['wavelength'], out_generate_model_spectrum['flux'])
-
-		flux_model = out_generate_model_spectrum['flux']
-	
-		# scaled model spectrum
-		if distance is not None:
-			scaling = (((R*u.R_jup).to(u.km) / (distance*u.pc).to(u.km))**2).value # scaling = (R/d)^2
-		else:
-			scaling = np.sum(flux_spectra*flux_model/eflux_spectra**2) / np.sum(flux_model**2/eflux_spectra**2) # scaling that minimizes chi2
-		flux_model = scaling*flux_model
-
-		return flux_model # return scaled, convolved, resampled fluxes for the model with the above parameters
-
-	#------------------
 	def loglike(p):
 		if distance is not None: # sample radius distribution
 			Teff, logg, logKzz, Z, CtoO, R = p
 		else:
 			Teff, logg, logKzz, Z, CtoO = p
 
-		flux_model = model_gen(p) # model spectrum for each parameters' combination
+		lnlike = 0.0 # initialize the log-likelihood variable
+		for i in range(N_spectra): # for each input spectrum
+			#flux_model = model_gen(p) # model spectrum for each parameters' combination
 
-		residual2 = (flux_spectra - flux_model)**2 / eflux_spectra**2
-		lnlike = -0.5 * np.sum(residual2 + np.log(2*np.pi*eflux_spectra**2))
+			# generate a model with the sampled parameters 
+			# (the model will have the resolution and be resampled to the fit region for each input spectrum)
+			out_generate_model_spectrum = generate_model_spectrum(Teff=Teff, logg=logg, logKzz=logKzz, Z=Z, CtoO=CtoO, grid=grid[i])
+			flux_model = out_generate_model_spectrum['flux']
+
+			# scaled model spectrum
+			if distance is not None:
+				scaling = (((R*u.R_jup).to(u.km) / (distance*u.pc).to(u.km))**2).value # scaling = (R/d)^2
+			else:
+				scaling = np.sum(flux_obs[i]*flux_model/eflux_obs[i]**2) / np.sum(flux_model**2/eflux_obs[i]**2) # scaling that minimizes chi2
+			flux_model = scaling*flux_model
+
+			residual2 = (flux_obs[i] - flux_model)**2 / eflux_obs[i]**2
+			lnlike += -0.5 * np.sum(residual2 + np.log(2*np.pi*eflux_obs[i]**2))
 
 		return lnlike
 
+	#+++++++++++++++++++++++++++++++++++++
 	print('\n   Starting dynesty...')
 	if dynamic_sampling:
 		# 'dynamic' nested sampling.

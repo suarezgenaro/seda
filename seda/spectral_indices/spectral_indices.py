@@ -600,7 +600,7 @@ def plot_silicate_index(out_silicate_index, plot_xrange=None, plot_yrange=None, 
 	        [ymin, ymax, ymax, ymin], facecolor='gainsboro', linewidth=1, zorder=2)
 	
 	# plot flux uncertainty region
-	default_blue = plt.rcParams['axes.prop_cycle'].by_key()['color'][0] # default blue coloe
+	default_blue = plt.rcParams['axes.prop_cycle'].by_key()['color'][0] # default blue color
 	wl_region = np.append(wl, np.flip(wl))
 	flux_region = np.append(flux-eflux, np.flip(flux+eflux))
 	ax.fill(wl_region, flux_region, facecolor=default_blue, edgecolor=default_blue, linewidth=0, alpha=0.30, zorder=3)

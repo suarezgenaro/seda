@@ -9,7 +9,8 @@ from sys import exit
 from .utils import *
 
 ##########################
-def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True, xrange=None, yrange=None, ori_res=False, model_dir_ori=None, out_file=None, save=True):
+def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, xlog=False, ylog=True, xrange=None, yrange=None, 
+	              ori_res=False, model_dir_ori=None, out_file=None, save=True):
 	'''
 	Description:
 	------------
@@ -21,8 +22,10 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True, xrange=None, yrang
 		File name with the pickle file with results from the chi-square minimization.
 	- N_best_fits : int 
 		Number (default 1) of best model fits for plotting.
+	- xlog : {``True``, ``False``}, optional (default ``False``)
+		Use logarithmic (``True``) or linear (``False``) scale to plot the horizontal axis.
 	- ylog : {``True``, ``False``}, optional (default ``True``)
-		Use logarithmic (``True``) or linear (``False``) scale to plot fluxes and residuals.
+		Use logarithmic (``True``) or linear (``False``) scale to plot the vertical axis.
 	- xrange : list or array, optional (default is full range in the input spectra)
 		Horizontal range of the plot.
 	- yrange : list or array, optional (default is full range in the input spectra)
@@ -34,7 +37,7 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True, xrange=None, yrang
 		This parameter is needed to plot the original resolution spectra (if ``ori_res`` is True) when ``chi2_fit.chi2`` was run skipping the model spectra convolution (if ``skip_convolution`` is True).
 	- out_file : str, optional
 		File name to save the figure (it can include a path e.g. my_path/figure.pdf). Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
-		Default name is 'SED_{``model``}_chi2.pdf', where ``model`` is read from ``chi2_pickle_file``.
+		Default name is 'SED_``model``_chi2.pdf', where ``model`` is read from ``chi2_pickle_file``.
 	- save : {``True``, ``False``}, optional (default ``True``)
 		Save (``'True'``) or do not save (``'False'``) the resulting figure.
 
@@ -58,83 +61,92 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True, xrange=None, yrang
 	spectra_name_best = out_best_chi2_fits['spectra_name_best']
 	chi2_red_fit_best = out_best_chi2_fits['chi2_red_fit_best']
 	if ori_res:
-		wl_model = out_best_chi2_fits['wl_model']
-		flux_model = out_best_chi2_fits['flux_model']
-	wl_model_conv = out_best_chi2_fits['wl_model_conv']
-	flux_model_conv = out_best_chi2_fits['flux_model_conv']
+		wl_model_best = out_best_chi2_fits['wl_model_best']
+		flux_model_best = out_best_chi2_fits['flux_model_best']
+	wl_array_model_conv_resam_best = out_best_chi2_fits['wl_array_model_conv_resam_best']
+	flux_array_model_conv_resam_best = out_best_chi2_fits['flux_array_model_conv_resam_best']
+	wl_array_model_conv_resam_fit_best = out_best_chi2_fits['wl_array_model_conv_resam_fit_best']
+	flux_array_model_conv_resam_fit_best = out_best_chi2_fits['flux_array_model_conv_resam_fit_best']
+	flux_residuals_best = out_best_chi2_fits['flux_residuals_best']
+	logflux_residuals_best = out_best_chi2_fits['logflux_residuals_best']
 
 	# open results from the chi square analysis
 	with open(chi2_pickle_file, 'rb') as file:
 		out_chi2 = pickle.load(file)
-	model = out_chi2['model']
-	wl_spectra = out_chi2['wl_array_data'] # it is an array with all spectra, which is different to the list with all spectra in self.wl_spectra
-	flux_spectra = out_chi2['flux_array_data']
-	eflux_spectra = out_chi2['eflux_array_data']
-	wl_array_model_conv_resam = out_chi2['wl_array_model_conv_resam']
-	flux_residuals = out_chi2['flux_residuals']
-	logflux_residuals = out_chi2['logflux_residuals']
-	# sort variables read from the pickle file
-	sort_ind = np.argsort(out_chi2['chi2_red_fit'])
-	flux_residuals_best = flux_residuals[sort_ind][:N_best_fits,:]
-	logflux_residuals_best = logflux_residuals[sort_ind][:N_best_fits,:]
+	model = out_chi2['my_chi2'].model
+	N_spectra = out_chi2['my_chi2'].N_spectra
+	wl_spectra = out_chi2['my_chi2'].wl_spectra
+	flux_spectra = out_chi2['my_chi2'].flux_spectra
+	eflux_spectra = out_chi2['my_chi2'].eflux_spectra
+	wl_spectra_min = out_chi2['my_chi2'].wl_spectra_min 
+	wl_spectra_max = out_chi2['my_chi2'].wl_spectra_max 
 
 	#------------------------
 	# initialize plot for best fits and residuals
 	fig, ax = plt.subplots(2, sharex=True, gridspec_kw={'height_ratios': [1, 0.3], 'hspace': 0.0})
 
-	#------------------------
-	# input spectra
-	#for i in range(self.N_spectra):
-	#	# plot flux uncertainty region
-	#	mask = np.where(flux_spectra[i]-eflux_spectra[i]>0.1*flux_spectra[i].min()) # to avoid very small flux-eflux values
-	#	wl_region = np.append(wl_spectra[i][mask], np.flip(wl_spectra[i][mask]))
-	#	flux_region = np.append(flux_spectra[i][mask]-eflux_spectra[i][mask], np.flip(flux_spectra[i][mask]+eflux_spectra[i][mask]))
-	#	ax[0].fill(wl_region, flux_region*(1e4*wl_region), facecolor='black', edgecolor='white', linewidth=1, alpha=0.30, zorder=2) # in erg/s/cm2
-	#	# plot observed spectra
-	#	ax[0].plot(wl_spectra[i], flux_spectra[i]*(1e4*wl_spectra[i]), color='black', linewidth=1.0, label='Observed spectra') # in erg/s/cm2
+	# set xrange equal to the input SED range, if not provided
+	if xrange is None: xrange = [wl_spectra_min, wl_spectra_max]
 
 	# plot flux uncertainty region
-	mask = flux_spectra-eflux_spectra>0.1*flux_spectra.min() # to avoid very small flux-eflux values
-	wl_region = np.append(wl_spectra[mask], np.flip(wl_spectra[mask]))
-	flux_region = np.append(flux_spectra[mask]-eflux_spectra[mask], np.flip(flux_spectra[mask]+eflux_spectra[mask]))
-	ax[0].fill(wl_region, flux_region, facecolor='black', edgecolor='white', linewidth=1, alpha=0.30, zorder=3) # in erg/s/cm2
-	# plot observed spectra
-	ax[0].plot(wl_spectra, flux_spectra, color='black', linewidth=1.0, label='Observed spectra', zorder=3) # in erg/s/cm2
+	for k in range(N_spectra): # for each input observed spectrum
+		mask = (flux_spectra[k]-eflux_spectra[k] > 0.1*flux_spectra[k].min()) & (wl_spectra[k]>=xrange[0]) & (wl_spectra[k]<=xrange[1])
+		wl_region = np.append(wl_spectra[k][mask], np.flip(wl_spectra[k][mask]))
+		flux_region = np.append(flux_spectra[k][mask]-eflux_spectra[k][mask], 
+		                        np.flip(flux_spectra[k][mask]+eflux_spectra[k][mask]))
+		ax[0].fill(wl_region, flux_region, facecolor='black', edgecolor='white', linewidth=1, alpha=0.30, zorder=3) # in erg/s/cm2
+		# plot observed spectra
+		if k==0: ax[0].plot(wl_spectra[k][mask], flux_spectra[k][mask], color='black', linewidth=1.0, label='Observed spectra', zorder=3) # in erg/s/cm2
+		else: ax[0].plot(wl_spectra[k][mask], flux_spectra[k][mask], color='black', linewidth=1.0, zorder=3) # in erg/s/cm2
 
 	# plot best fits (original resolution spectra)
 	if ori_res: # plot model spectra with the original resolution
 		for i in range(N_best_fits):
-			mask = (wl_model[i,:]>wl_array_model_conv_resam.min()) & (wl_model[i,:]<wl_array_model_conv_resam.max())
-			ax[0].plot(wl_model[i,:][mask], flux_model[i,:][mask], linewidth=0.1, color='silver', zorder=2, alpha=0.5) # in erg/s/cm2
+			mask = (wl_model_best[i,:]>xrange[0]) & (wl_model_best[i,:]<xrange[1])
+			ax[0].plot(wl_model_best[i,:][mask], flux_model_best[i,:][mask], linewidth=0.1, color='silver', zorder=2, alpha=0.5) # in erg/s/cm2
 
 	# plot best fits (convolved spectra)
 	label_model = spectra_name_short(model=model, spectra_name=spectra_name_best) # short name for spectra to keep only relevant info
-	for i in range(N_best_fits):
-		label = label_model[i]+r' ($\chi^2_\nu=$'+str(round(chi2_red_fit_best[i],1))+')'
-		mask = (wl_model_conv[i,:]>wl_array_model_conv_resam.min()) & (wl_model_conv[i,:]<wl_array_model_conv_resam.max())
-		ax[0].plot(wl_model_conv[i,:][mask], flux_model_conv[i,:][mask], '--', linewidth=1.0, label=label, zorder=4) # in erg/s/cm2
+	for i in range(N_best_fits): # for the best fits
+		for k in range(N_spectra): # for each input observed spectrum
+			label = label_model[i]+r' ($\chi^2_\nu=$'+str(round(chi2_red_fit_best[i],1))+')'
+			mask = (wl_array_model_conv_resam_fit_best[i][k]>=xrange[0]) & (wl_array_model_conv_resam_fit_best[i][k]<=xrange[1])
+			color = plt.rcParams['axes.prop_cycle'].by_key()['color'][i] # default color
+			if k==0: 
+				ax[0].plot(wl_array_model_conv_resam_fit_best[i][k][mask], flux_array_model_conv_resam_fit_best[i][k][mask], 
+				           '--', color=color, linewidth=1.0, label=label, zorder=4) # in erg/s/cm2
+			else: 
+				ax[0].plot(wl_array_model_conv_resam_fit_best[i][k][mask], flux_array_model_conv_resam_fit_best[i][k][mask], 
+				           '--', color=color, linewidth=1.0, zorder=4) # in erg/s/cm2
 
-	if xrange is not None: ax[0].set_xlim(xrange[0], xrange[1])
+	ax[0].set_xlim(xrange[0], xrange[1])
 	if yrange is not None: ax[0].set_ylim(yrange[0], yrange[1])
-	if ylog: ax[0].set_yscale('log')
-	ax[0].legend(loc='best', prop={'size': 6}, handlelength=1.5, handletextpad=0.5, labelspacing=0.5) 
 	ax[0].xaxis.set_minor_locator(AutoMinorLocator())
-	if not ylog:
-		ax[0].yaxis.set_minor_locator(AutoMinorLocator())
-	ax[0].grid(True, which='both', color='gainsboro', linewidth=0.5, alpha=1.0)
-	if (wl_spectra.max()-wl_spectra.min()>10): # use log-scale for wavelength in broad SEDs
+	ax[0].yaxis.set_minor_locator(AutoMinorLocator())
+	if xlog:
 		plt.xscale('log')
 		ax[0].xaxis.set_major_formatter(StrMethodFormatter('{x:.0f}'))
+	if ylog: ax[0].set_yscale('log')
+
+	ax[0].legend(loc='best', prop={'size': 6}, handlelength=1.5, handletextpad=0.5, labelspacing=0.5) 
+	ax[0].grid(True, which='both', color='gainsboro', linewidth=0.5, alpha=1.0)
 	ax[0].set_ylabel(r'$F_\lambda\ ($erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)', size=12)
 	ax[0].set_title(f'{model_name(model)} Atmospheric Models')
 
 	#------------------------
 	# residuals
-	for i in range(N_best_fits): # for best fists
-		if ylog:
-			ax[1].plot(wl_array_model_conv_resam[i,:], logflux_residuals_best[i,:], linewidth=1.0) # in erg/s/cm2
-		if not ylog:
-			ax[1].plot(wl_array_model_conv_resam[i,:], flux_residuals_best[i,:], linewidth=1.0) # in erg/s/cm2
+
+	# reference line at zero
+	ax[1].plot([xrange[0], xrange[1]], [0, 0], '--', color='black', linewidth=1.)
+
+	for i in range(N_best_fits): # for best fits
+		for k in range(N_spectra): # for each input observed spectrum
+			color = plt.rcParams['axes.prop_cycle'].by_key()['color'][i] # default color
+			mask = (wl_array_model_conv_resam_fit_best[i][k]>=xrange[0]) & (wl_array_model_conv_resam_fit_best[i][k]<=xrange[1])
+			if ylog:
+				ax[1].plot(wl_array_model_conv_resam_fit_best[i][k][mask], logflux_residuals_best[i][k][mask], linewidth=1.0, color=color) # in erg/s/cm2
+			if not ylog:
+				ax[1].plot(wl_array_model_conv_resam_fit_best[i][k][mask], flux_residuals_best[i][k][mask], linewidth=1.0, color=color) # in erg/s/cm2
 
 	ax[1].yaxis.set_minor_locator(AutoMinorLocator())
 	ax[1].grid(True, which='both', color='gainsboro', linewidth=0.5, alpha=1.0)
@@ -143,7 +155,7 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True, xrange=None, yrang
 	if not ylog: ax[1].set_ylabel(r'$\Delta (F_\lambda$)', size=12)
 
 	if save:
-		if out_file is None: plt.savefig('SED_'+out_chi2['model']+'_chi2.pdf', bbox_inches='tight')
+		if out_file is None: plt.savefig(f'SED_{model}_chi2.pdf', bbox_inches='tight')
 		else: plt.savefig(out_file, bbox_inches='tight')
 	plt.show()
 	plt.close()
@@ -151,7 +163,7 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, ylog=True, xrange=None, yrang
 	return
 
 ##########################
-def plot_chi2_red(chi2_pickle_file, N_best_fits=1, out_file=None, save=True):
+def plot_chi2_red(chi2_pickle_file, N_best_fits=1, xlog=False, ylog=False, out_file=None, save=True):
 	'''
 	Description:
 	------------
@@ -163,9 +175,13 @@ def plot_chi2_red(chi2_pickle_file, N_best_fits=1, out_file=None, save=True):
 		File name with the pickle file with chi2 results.
 	N_best_fits: int 
 		Number (default 1) of best model fits for plotting.
+	- xlog : {``True``, ``False``}, optional (default ``False``)
+		Use logarithmic (``True``) or linear (``False``) scale to plot the horizontal axis.
+	- ylog : {``True``, ``False``}, optional (default ``False``)
+		Use logarithmic (``True``) or linear (``False``) scale to plot the vertical axis
 	out_file : str, optional
 		File name to save the figure (it can include a path e.g. my_path/figure.pdf). Note: use file formats (pdf, eps, or ps). Image formats do not work because the figure is saved in several pages, according to ``N_best_fits``.
-		Default name is 'SED_{``model``}_chi2.pdf', where ``model`` is read from ``chi2_pickle_file``.
+		Default name is 'SED_``model``_chi2.pdf', where ``model`` is read from ``chi2_pickle_file``.
 	save : {``True``, ``False``}, optional (default ``True``)
 		Save (``'True'``) or do not save (``'False'``) the resulting figure.
 
@@ -184,39 +200,43 @@ def plot_chi2_red(chi2_pickle_file, N_best_fits=1, out_file=None, save=True):
 	Author: Genaro Suárez
 	'''
 
+	# read best fits
+	out_best_chi2_fits = best_chi2_fits(chi2_pickle_file=chi2_pickle_file, N_best_fits=N_best_fits)
+	spectra_name_best = out_best_chi2_fits['spectra_name_best']
+	chi2_red_fit_best = out_best_chi2_fits['chi2_red_fit_best']
+	chi2_red_wl_fit_best = out_best_chi2_fits['chi2_red_wl_fit_best']
+	wl_array_model_conv_resam_fit_best = out_best_chi2_fits['wl_array_model_conv_resam_fit_best']
+
 	# open results from the chi square analysis
 	with open(chi2_pickle_file, 'rb') as file:
 		out_chi2 = pickle.load(file)
 
-	model = out_chi2['model']
-	spectra_name = out_chi2['spectra_name']
-	wl_spectra = out_chi2['wl_array_data']
-	chi2_red_fit = out_chi2['chi2_red_fit']
-	chi2_red_wl_fit = out_chi2['chi2_red_wl_fit']
-
-	# select the best fits given by N_best_fits
-	sort_ind = np.argsort(chi2_red_fit)
-	chi2_red_fit_best = chi2_red_fit[sort_ind][:N_best_fits]
-	chi2_red_wl_fit_best = chi2_red_wl_fit[sort_ind][:N_best_fits,:]
-	spectra_name_best = spectra_name[sort_ind][:N_best_fits]
+	model = out_chi2['my_chi2'].model
+	N_spectra = out_chi2['my_chi2'].N_spectra
 
 	if save:
 		if out_file is None: pdf_pages = PdfPages('chi2_'+model+'.pdf') # name of the pdf
 		else: pdf_pages = PdfPages(out_file) # name of the pdf
 
 	plot_title = spectra_name_short(model=model, spectra_name=spectra_name_best) # short name for spectra to keep only relevant info
-	for i in range(N_best_fits): 
+
+	for i in range(N_best_fits): # for best fits
+		wl_fit = np.array([]) # initialize numpy array to save array with data points in the fit
+		for k in range(N_spectra): # for each input observed spectrum
+			wl_fit = np.concatenate([wl_fit, wl_array_model_conv_resam_fit_best[i][k]])
+
 		fig, ax = plt.subplots()
 	
-		ax.plot(wl_spectra, chi2_red_wl_fit_best[i,:], marker='x', markersize=5.0, linestyle='None')
+		ax.plot(wl_fit, chi2_red_wl_fit_best[i], marker='x', markersize=5.0, linestyle='None')
 		ax.annotate(r' ($\chi^2_r=$'+str(round(chi2_red_fit_best[i],1))+')', xy=(0.75, .90), xycoords='axes fraction', ha='left', va='bottom', size=12, color='black')	
-
-		if (wl_spectra.max()-wl_spectra.min()>10): # use log-scale for wavelength in broad SEDs
-			plt.xscale('log')
-			ax.xaxis.set_major_formatter(StrMethodFormatter('{x:.0f}'))
 
 		ax.xaxis.set_minor_locator(AutoMinorLocator())
 		ax.yaxis.set_minor_locator(AutoMinorLocator())
+		if xlog:
+			plt.xscale('log')
+			ax.xaxis.set_major_formatter(StrMethodFormatter('{x:.0f}'))
+		if ylog: ax.set_yscale('log')
+
 		plt.grid(True, which='both', color='gainsboro', alpha=0.5)
 		plt.xlabel(r'$\lambda$ ($\mu$m)', size=12)
 		plt.ylabel(r'$\chi^2_r$', size=12)
@@ -232,7 +252,7 @@ def plot_chi2_red(chi2_pickle_file, N_best_fits=1, out_file=None, save=True):
 	plt.close('all')
 
 ##########################
-def plot_bayes_fit(bayes_pickle_file, ylog=True, out_file=None, save=True):
+def plot_bayes_fit(bayes_pickle_file, xlog=False, ylog=True, xrange=None, yrange=None, out_file=None, save=True):
 	'''
 	Description:
 	------------
@@ -242,11 +262,17 @@ def plot_bayes_fit(bayes_pickle_file, ylog=True, out_file=None, save=True):
 	-----------
 	- bayes_pickle_file : str
 		File name with the pickle file with results from the Bayesian sampling.
+	- xlog : {``True``, ``False``}, optional (default ``False``)
+		Use logarithmic (``True``) or linear (``False``) scale to plot the horizontal axis.
 	- ylog : {``True``, ``False``}, optional (default ``True``)
-		Use logarithmic (``True``) or linear (``False``) scale to plot fluxes and residuals.
+		Use logarithmic (``True``) or linear (``False``) scale to plot the vertical axis.
+	- xrange : list or array, optional (default is full range in the input spectra)
+		Horizontal range of the plot.
+	- yrange : list or array, optional (default is full range in the input spectra)
+		Vertical range of the plot.
 	- out_file : str, optional
 		File name to save the figure (it can include a path e.g. my_path/figure.pdf). Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
-		Default name is 'SED_{``model``}_bayes.pdf', where ``model`` is read from ``bayes_pickle_file``.
+		Default name is 'SED_``model``_bayes.pdf', where ``model`` is read from ``bayes_pickle_file``.
 	- save : {``True``, ``False``}, optional (default ``True``)
 		Save (``'True'``) or do not save (``'False'``) the resulting figure.
 
@@ -275,6 +301,7 @@ def plot_bayes_fit(bayes_pickle_file, ylog=True, out_file=None, save=True):
 	wl_spectra_min = out_bayes['my_bayes'].wl_spectra_min
 	wl_spectra_max = out_bayes['my_bayes'].wl_spectra_max
 	model = out_bayes['my_bayes'].model
+	fit_wl_range = out_bayes['my_bayes'].fit_wl_range
 
 	# read best fit
 	out_best_bayesian_fit = best_bayesian_fit(bayes_pickle_file)
@@ -294,52 +321,82 @@ def plot_bayes_fit(bayes_pickle_file, ylog=True, out_file=None, save=True):
 	CtoO_med = round(CtoO_med, 2)
 	R_med = round(R_med, 2)
 
-	# obtain residuals
-	logflux_residuals = []
-	flux_residuals = []
+	# wavelengths from input spectra in the fit range
+	wl_spectra_fit = []
+	flux_spectra_fit = []
 	for k in range(N_spectra): # for each input observed spectrum
-		flux_residuals.append(flux_mod_conv_scaled_resam[k]-flux_spectra[k])
-		mask_pos = flux_spectra[k]>0 # mask to avoid negative fluxes to obtain the logarithm
-		logflux_residuals.append(np.log10(flux_mod_conv_scaled_resam[k][mask_pos])-np.log10(flux_spectra[k][mask_pos]))
+		mask_fit = (wl_spectra[k] >= max(fit_wl_range[k][0], wl_mod_conv_scaled_resam[k].min())) & \
+		           (wl_spectra[k] <= min(fit_wl_range[k][1], wl_mod_conv_scaled_resam[k].max()))
+		wl_spectra_fit.append(wl_spectra[k][mask_fit])
+		flux_spectra_fit.append(flux_spectra[k][mask_fit])
+
+	# obtain residuals in linear and logarithmic-scale for fluxes in the fit range
+	flux_residuals = []
+	logflux_residuals = []
+	for k in range(N_spectra): # for each input observed spectrum
+		# linear scale
+		res_lin = flux_mod_conv_scaled_resam[k]- flux_spectra_fit[k]
+		flux_residuals.append(res_lin)
+		# log scale
+		mask_pos = flux_spectra_fit[k]>0 # mask to avoid negative input fluxes to obtain the logarithm
+		res_log = np.log10(flux_mod_conv_scaled_resam[k]) - np.log10(flux_spectra_fit[k][mask_pos])
+		logflux_residuals.append(res_log)
 
 	#------------------------
 	# initialize plot for best fits and residuals
 	fig, ax = plt.subplots(2, sharex=True, gridspec_kw={'height_ratios': [1, 0.3], 'hspace': 0.0})
 
-	#------------------------
-	# input spectra
-	for i in range(N_spectra):
+	# set xrange equal to the input SED range, if not provided
+	if xrange is None: xrange = [wl_spectra_min, wl_spectra_max]
+
+	# plot input spectra
+	for k in range(N_spectra): # for each input observed spectrum
 		# plot flux uncertainty region
-		mask = flux_spectra[i]-eflux_spectra[i]>0.1*flux_spectra[i].min() # to avoid very small flux-eflux values
-		wl_region = np.append(wl_spectra[i][mask], np.flip(wl_spectra[i][mask]))
-		flux_region = np.append(flux_spectra[i][mask]-eflux_spectra[i][mask], np.flip(flux_spectra[i][mask]+eflux_spectra[i][mask]))
-		ax[0].fill(wl_region, flux_region, facecolor='black', edgecolor='white', linewidth=1, alpha=0.30, zorder=2) # in erg/s/cm2
+		mask = (flux_spectra[k]-eflux_spectra[k] > 0.1*flux_spectra[k].min()) & (wl_spectra[k]>=xrange[0]) & (wl_spectra[k]<=xrange[1])
+		wl_region = np.append(wl_spectra[k][mask], np.flip(wl_spectra[k][mask]))
+		flux_region = np.append(flux_spectra[k][mask]-eflux_spectra[k][mask], 
+		                        np.flip(flux_spectra[k][mask]+eflux_spectra[k][mask]))
+		ax[0].fill(wl_region, flux_region, facecolor='black', edgecolor='white', linewidth=1, alpha=0.30, zorder=3) # in erg/s/cm2
 		# plot observed spectra
-		ax[0].plot(wl_spectra[i], flux_spectra[i], label='Observed spectra')
+		if k==0: ax[0].plot(wl_spectra[k][mask], flux_spectra[k][mask], color='black', linewidth=1.0, label='Observed spectra', zorder=3) # in erg/s/cm2
+		else: ax[0].plot(wl_spectra[k][mask], flux_spectra[k][mask], color='black', linewidth=1.0, zorder=3) # in erg/s/cm2
 
-		# plot model spectrum
+	# plot model spectrum
+	for k in range(N_spectra): # for each input observed spectrum
+		color = plt.rcParams['axes.prop_cycle'].by_key()['color'][1] # default color
 		label = (f'Teff{Teff_med}_logg{logg_med}_logKzz{logKzz_med}_Z{Z_med}_CtoO{CtoO_med}_R{R_med}')
-		ax[0].plot(wl_mod_conv_scaled_resam[i], flux_mod_conv_scaled_resam[i], label=label)
+		mask = (wl_mod_conv_scaled_resam[k]>=xrange[0]) & (wl_mod_conv_scaled_resam[k]<=xrange[1])
+		if k==0: 
+			ax[0].plot(wl_mod_conv_scaled_resam[k][mask], flux_mod_conv_scaled_resam[k][mask], color=color, label=label)
+		else:
+			ax[0].plot(wl_mod_conv_scaled_resam[k][mask], flux_mod_conv_scaled_resam[k][mask], color=color)
 
-	if ylog: ax[0].set_yscale('log')
-	ax[0].legend(loc='best', prop={'size': 6}, handlelength=1.5, handletextpad=0.5, labelspacing=0.5) 
+	ax[0].set_xlim(xrange[0], xrange[1])
+	if yrange is not None: ax[0].set_ylim(yrange[0], yrange[1])
 	ax[0].xaxis.set_minor_locator(AutoMinorLocator())
-	if not ylog:
-		ax[0].yaxis.set_minor_locator(AutoMinorLocator())
-	ax[0].grid(True, which='both', color='gainsboro', linewidth=0.5, alpha=1.0)
-	if (wl_spectra_max-wl_spectra_min>10): # use log-scale for wavelength in broad SEDs
+	ax[0].yaxis.set_minor_locator(AutoMinorLocator())
+	if xlog:
 		plt.xscale('log')
 		ax[0].xaxis.set_major_formatter(StrMethodFormatter('{x:.0f}'))
+	if ylog: ax[0].set_yscale('log')
+
+	ax[0].legend(loc='best', prop={'size': 6}, handlelength=1.5, handletextpad=0.5, labelspacing=0.5) 
+	ax[0].grid(True, which='both', color='gainsboro', linewidth=0.5, alpha=1.0)
 	ax[0].set_ylabel(r'$F_\lambda\ ($erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)', size=12)
 	ax[0].set_title(f'{model_name(model)} Atmospheric Models')
 
 	#------------------------
 	# residuals
-	for i in range(N_spectra):
+
+	# reference line at zero
+	ax[1].plot([xrange[0], xrange[1]], [0, 0], '--', color='black', linewidth=1.)
+
+	for i in range(N_spectra): # for each input observed spectrum
+		mask = (wl_spectra_fit[i]>=xrange[0]) & (wl_spectra_fit[i]<=xrange[1])
 		if ylog:
-			ax[1].plot(wl_spectra[i], logflux_residuals[i], linewidth=1.0) # in erg/s/cm2
+			ax[1].plot(wl_spectra_fit[i][mask], logflux_residuals[i][mask], linewidth=1.0, color=color) # in erg/s/cm2
 		if not ylog:
-			ax[1].plot(wl_spectra[i], flux_residuals[i], linewidth=1.0) # in erg/s/cm2
+			ax[1].plot(wl_spectra_fit[i][mask], flux_residuals[i][mask], linewidth=1.0, color=color) # in erg/s/cm2
 
 	ax[1].yaxis.set_minor_locator(AutoMinorLocator())
 	ax[1].grid(True, which='both', color='gainsboro', linewidth=0.5, alpha=1.0)
@@ -348,7 +405,7 @@ def plot_bayes_fit(bayes_pickle_file, ylog=True, out_file=None, save=True):
 	if not ylog: ax[1].set_ylabel(r'$\Delta (F_\lambda$)', size=12)
 
 	if save:
-		if out_file is None: plt.savefig('SED_'+model+'_bayes.pdf', bbox_inches='tight')
+		if out_file is None: plt.savefig(f'SED_{model}_bayes.pdf', bbox_inches='tight')
 		else: plt.savefig(out_file, bbox_inches='tight')
 	plt.show()
 	plt.close()
@@ -384,7 +441,7 @@ def plot_model_coverage(model, xparam, yparam, model_dir=None, xrange=None, yran
 		Use logarithmic (``True``) or linear (``False``) scale to plot the vertical axis.
 	- out_file : str, optional
 		File name to save the figure (it can include a path e.g. my_path/figure.pdf). Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
-		Default name is '{model}_{xparam}_{yparam}.pdf', where ``model`` is read from ``chi2_pickle_file``.
+		Default name is '``model``_``xparam``_``yparam``.pdf', where ``model`` is read from ``chi2_pickle_file``.
 	- save : {``True``, ``False``}, optional (default ``True``)
 		Save (``'True'``) or do not save (``'False'``) the resulting figure.
 
@@ -485,7 +542,7 @@ def plot_model_resolution(model, spectra_name_full, xlog=True, ylog=False, xrang
 		Save (``'True'``) or do not save (``'False'``) the resulting figure.
 	- out_file : str, optional
 		File name to save the figure (it can include a path e.g. my_path/figure.pdf). Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
-		Default name is '{``model``}_resolution.pdf'.
+		Default name is '``model``_resolution.pdf'.
 
 	Returns:
 	--------

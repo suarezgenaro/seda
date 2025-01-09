@@ -328,10 +328,14 @@ def best_chi2_fits(chi2_pickle_file, N_best_fits=1, model_dir_ori=None, ori_res=
 	Dictionary with model spectra:
 		- ``'spectra_name_best'`` : name of model spectrum
 		- ``'chi2_red_fit_best'`` : reduced chi-square
-		- ``'wl_model'`` : wavelength (in um) of original model spectra.
-		- ``'flux_model'`` : fluxes (in erg/s/cm2/A) of original model spectra.
-		- ``'wl_model_conv'`` : wavelength (in um) of convolved model spectra using ``res`` and ``lam_res`` in the input dictionary.
-		- ``'flux_model_conv'`` : fluxes (in erg/s/cm2/A) of convolved model spectra.
+		- ``'wl_model_best'`` : (if ``ori_res``) wavelength (in um) of original model spectra.
+		- ``'flux_model_best'`` : (if ``ori_res``) fluxes (in erg/s/cm2/A) of original model spectra.
+		- ``'wl_array_model_conv_resam_best'`` : wavelength (in um) of resampled, convolved model spectra in the input spectra ranges.
+		- ``'flux_array_model_conv_resam_best'`` : fluxes (in erg/s/cm2/A) of resampled, convolved model spectra in the input spectra ranges.
+		- ``'wl_array_model_conv_resam_fit_best'`` : wavelength (in um) of resampled, convolved model spectra within the fit range.
+		- ``'flux_array_model_conv_resam_fit_best'`` : fluxes (in erg/s/cm2/A) of resampled, convolved model spectra within the fit range.
+		- ``'flux_residuals_best'`` : flux residuals in linear scale between model and input spectra.
+		- ``'logflux_residuals_best'`` : flux residuals in log scale between model and input spectra.
 		- ``'parameters'`` : physical parameters for each spectrum as provided by ``utils.separate_params``, namely ``Teff``, ``logg``, ``Z``, ``logKzz``, ``fsed``, and ``CtoO``, if provided by ``model``.
 
 	Author: Genaro Suárez
@@ -340,42 +344,52 @@ def best_chi2_fits(chi2_pickle_file, N_best_fits=1, model_dir_ori=None, ori_res=
 	# open results from the chi square analysis
 	with open(chi2_pickle_file, 'rb') as file:
 		out_chi2 = pickle.load(file)
-	model = out_chi2['model']
-	res = out_chi2['res']#[0] # resolution for the first input spectrum
-	lam_res = out_chi2['lam_res']#[0] # wavelength reference for the first input spectrum
-	N_modelpoints = out_chi2['N_modelpoints']
+	model = out_chi2['my_chi2'].model
+	res = out_chi2['my_chi2'].res#[0] # resolution for the first input spectrum
+	lam_res = out_chi2['my_chi2'].lam_res#[0] # lam_resolution for the first input spectrum
+	N_modelpoints = out_chi2['my_chi2'].N_modelpoints
 	N_model_spectra = out_chi2['N_model_spectra']
-	fit_wl_range = out_chi2['fit_wl_range'][0] # for the first input spectrum
+	#fit_wl_range = out_chi2['my_chi2'].fit_wl_range
 	spectra_name_full = out_chi2['spectra_name_full']
 	spectra_name = out_chi2['spectra_name']
 	chi2_red_fit = out_chi2['chi2_red_fit']
+	chi2_red_wl_fit = out_chi2['chi2_red_wl_fit'] # list of reduced chi-square for each model compared
 	scaling_fit = out_chi2['scaling_fit']
-	wl_array_model_conv_resam = out_chi2['wl_array_model_conv_resam'] # wavelengths of resampled, convolved model spectra in the fit
-	flux_array_model_conv_resam = out_chi2['flux_array_model_conv_resam'] # fluxes of resampled, convolved model spectra in the fit
+	wl_array_model_conv_resam = out_chi2['wl_array_model_conv_resam'] # wavelengths of resampled, convolved model spectra in the input spectra wavelength ranges
+	flux_array_model_conv_resam = out_chi2['flux_array_model_conv_resam'] # fluxes of resampled, convolved model spectra in the input spectra wavelength ranges
+	wl_array_model_conv_resam_fit = out_chi2['wl_array_model_conv_resam_fit'] # wavelengths of resampled, convolved model spectra within the fit ranges
+	flux_array_model_conv_resam_fit = out_chi2['flux_array_model_conv_resam_fit'] # fluxes of resampled, convolved model spectra within the fit ranges
+	flux_residuals = out_chi2['flux_residuals']
+	logflux_residuals = out_chi2['logflux_residuals']
 	skip_convolution = out_chi2['my_chi2'].skip_convolution
 
 	# select the best fits given by N_best_fits
 	if (N_best_fits > N_model_spectra): raise Exception(f"not enough model spectra (only {N_model_spectra}) in the fit to select {N_best_fits} best fits")
 	sort_ind = np.argsort(chi2_red_fit)
 	chi2_red_fit_best = chi2_red_fit[sort_ind][:N_best_fits]
+	chi2_red_wl_fit_best = [chi2_red_wl_fit[i] for i in sort_ind][:N_best_fits]
 	scaling_fit_best = scaling_fit[sort_ind][:N_best_fits]
 	spectra_name_full_best = spectra_name_full[sort_ind][:N_best_fits]
 	spectra_name_best = spectra_name[sort_ind][:N_best_fits]
-	wl_array_model_conv_resam_best = wl_array_model_conv_resam[sort_ind,:][:N_best_fits,:]
-	flux_array_model_conv_resam_best = flux_array_model_conv_resam[sort_ind,:][:N_best_fits,:]
+	wl_array_model_conv_resam_best = [wl_array_model_conv_resam[i] for i in sort_ind][:N_best_fits]
+	flux_array_model_conv_resam_best = [flux_array_model_conv_resam[i] for i in sort_ind][:N_best_fits]
+	wl_array_model_conv_resam_fit_best = [wl_array_model_conv_resam_fit[i] for i in sort_ind][:N_best_fits]
+	flux_array_model_conv_resam_fit_best = [flux_array_model_conv_resam_fit[i] for i in sort_ind][:N_best_fits]
+	flux_residuals_best = [flux_residuals[i] for i in sort_ind][:N_best_fits]
+	logflux_residuals_best = [logflux_residuals[i] for i in sort_ind][:N_best_fits]
 
 	# read parameters from file name for the best fits
 	out_separate_params = separate_params(model=model, spectra_name=spectra_name_best)
 
 	# read best fits with the original resolution
 	if ori_res:
-		wl_model = np.zeros((N_best_fits, N_modelpoints))
-		flux_model = np.zeros((N_best_fits, N_modelpoints))
+		wl_model_best = np.zeros((N_best_fits, N_modelpoints))
+		flux_model_best = np.zeros((N_best_fits, N_modelpoints))
 		if not skip_convolution: # when the convolution was not skipped
 			for i in range(N_best_fits):
 				out_read_model_spectrum = read_model_spectrum(spectra_name_full=spectra_name_full_best[i], model=model)
-				wl_model[i,:] = out_read_model_spectrum['wl_model']
-				flux_model[i,:] = scaling_fit_best[i] * out_read_model_spectrum['flux_model'] # scaled fluxes
+				wl_model_best[i,:] = out_read_model_spectrum['wl_model']
+				flux_model_best[i,:] = scaling_fit_best[i] * out_read_model_spectrum['flux_model'] # scaled fluxes
 		else:
 			if model_dir_ori is None: raise Exception(f"parameter 'model_dir_ori' is needed to read model spectra with the original resolution")
 			else:
@@ -385,8 +399,8 @@ def best_chi2_fits(chi2_pickle_file, N_best_fits=1, model_dir_ori=None, ori_res=
 					if spectrum_name in out_select_model_spectra['spectra_name']: # if the i best fit is in the model_dir_ori folder 
 						spectrum_name_full = out_select_model_spectra['spectra_name_full'][out_select_model_spectra['spectra_name']==spectrum_name][0]
 						out_read_model_spectrum = read_model_spectrum(spectra_name_full=spectrum_name_full, model=model)
-						wl_model[i,:] = out_read_model_spectrum['wl_model']
-						flux_model[i,:] = scaling_fit_best[i] * out_read_model_spectrum['flux_model'] # scaled fluxes
+						wl_model_best[i,:] = out_read_model_spectrum['wl_model']
+						flux_model_best[i,:] = scaling_fit_best[i] * out_read_model_spectrum['flux_model'] # scaled fluxes
 					else: raise Exception(f"{spectrum_name} is not in {model_dir_ori}")
 
 #	# convolve spectrum
@@ -401,17 +415,20 @@ def best_chi2_fits(chi2_pickle_file, N_best_fits=1, model_dir_ori=None, ori_res=
 #		#	wl_model_conv[:,i] = out_convolve_spectrum['wl_conv']
 #		#	flux_model_conv[:,i] = out_convolve_spectrum['flux_conv']
 #		#else:
-#		#	out_read_model_spectrum = read_model_spectrum_conv(spectra_name_full=spectra_name_full_best[i])
+#		#	out_read_model_spectrum = read_model_spectrum_conv(spectrum_name_full=spectra_name_full_best[i])
 #		#	wl_model_conv[:,i] = out_read_model_spectrum['wl_model']
 #		#	flux_model_conv[:,i] = out_read_model_spectrum['flux_model']
 
-	out = {'spectra_name_best': spectra_name_best, 'chi2_red_fit_best': chi2_red_fit_best, 
+	out = {'spectra_name_best': spectra_name_best, 'chi2_red_fit_best': chi2_red_fit_best, 'chi2_red_wl_fit_best': chi2_red_wl_fit_best, 
 		   #'flux_model': flux_model, 'wl_model_conv': wl_model_conv, 'flux_model_conv': flux_model_conv}
-		   'wl_model_conv': wl_array_model_conv_resam_best, 'flux_model_conv': flux_array_model_conv_resam_best}
+		   #'wl_model_conv': wl_array_model_conv_resam_best, 'flux_model_conv': flux_array_model_conv_resam_best,
+		   'wl_array_model_conv_resam_best': wl_array_model_conv_resam_best, 'flux_array_model_conv_resam_best': flux_array_model_conv_resam_best,
+		   'wl_array_model_conv_resam_fit_best': wl_array_model_conv_resam_fit_best, 'flux_array_model_conv_resam_fit_best': flux_array_model_conv_resam_fit_best,
+	       'flux_residuals_best': flux_residuals_best, 'logflux_residuals_best': logflux_residuals_best}
 	#if not skip_convolution or model_dir_ori is not None:
 	if ori_res:
-		out['wl_model'] = wl_model
-		out['flux_model'] = flux_model
+		out['wl_model_best'] = wl_model_best
+		out['flux_model_best'] = flux_model_best
 	out['parameters'] = out_separate_params
 
 	return out
@@ -534,7 +551,10 @@ def generate_model_spectrum(Teff, logg, logKzz, Z, CtoO, grid=None, model=None, 
 	return out
 
 ##################################################
-def read_grid(model, model_dir, Teff_range, logg_range, convolve=False, model_wl_range=None, fit_wl_range=None, res=100, lam_res=2, wl_resample=None):
+#def read_grid(model, model_dir, Teff_range, logg_range, convolve=False, model_wl_range=None, fit_wl_range=None, res=100, lam_res=2, wl_resample=None):
+def read_grid(model, model_dir, Teff_range=None, logg_range=None, Z_range=None, logKzz_range=None, 
+	          CtoO_range=None, fsed_range=None, convolve=False, model_wl_range=None, 
+	          fit_wl_range=None, res=None, lam_res=None, wl_resample=None):
 	'''
 	Description:
 	------------
@@ -546,30 +566,47 @@ def read_grid(model, model_dir, Teff_range, logg_range, convolve=False, model_wl
 		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
 	- model_dir : str or list
 		Path to the directory (str or list) or directories (as a list) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
-	- Teff_range : float array
+	- Teff_range : float array, optional
 		Minimum and maximum Teff values to select a model grid subset (e.g., ``Teff_range = np.array([Teff_min, Teff_max])``).
-	- logg_range : float array
+		If not provided, the full Teff range in ``model_dir`` is considered.
+	- logg_range : float array, optional
 		Minimum and maximum logg values to select a model grid subset.
+		If not provided, the full logg range in ``model_dir`` is considered.
+	- Z_range : float array, optional
+		Minimum and maximum metallicity values to select a model grid subset.
+		If not provided, the full Z range in ``model_dir`` is considered, if available in ``model``.
+	- logKzz_range : float array, optional
+		Minimum and maximum diffusion parameter values to select a model grid subset.
+		If not provided, the full logKzz range in ``model_dir`` is considered, if available in ``model``.
+	- CtoO_range : float array, optional
+		Minimum and maximum C/O ratio values to select a model grid subset.
+		If not provided, the full C/O ratio range in ``model_dir`` is considered, if available in ``model``.
+	- fsed_range : float array, optional
+		Minimum and maximum cloudiness parameter values to select a model grid subset.
+		If not provided, the full fsed range in ``model_dir`` is considered, if available in ``model``.
 	- convolve: {``True``, ``False``}, optional (default ``False``)
 		Convolve (``'yes'``) or do not convolve (``'no'``) the model grid spectra to the indicated ``res`` at ``lam_res``.
 	- res : float, optional (required if ``convolve``).
 		Spectral resolution at ``lam_res`` to smooth model spectra.
 	- lam_res : float, optional (required if ``convolve``).
 		Wavelength of reference for ``res``.
-	- model_wl_range : float array (optional)
-		Minimum and maximum wavelengths in microns to cut model spectra.
 	- fit_wl_range : float array, optional
-		Minimum and maximum wavelengths in microns to resample model spectra to the observed spectrum.
-	- res : float, optional (default res=100)
+		Minimum and maximum wavelengths (in microns) to resample the model spectra to the fit range. E.g., ``fit_wl_range = np.array([fit_wl_min1, fit_wl_max1])``. 
+		Default values are the minimum and the maximum wavelengths in ``wl_resample``.
+	- model_wl_range : float array (optional)
+		Minimum and maximum wavelength (in microns) to cut model spectra to keep only wavelengths of interest.
+		Default values are the minimum and maximum wavelengths in ``wl_resample``, if provided, with a padding to avoid issues with the resampling.
+		Otherwise, ``model_wl_range=None``, so model spectra will not be trimmed.
+	- res : float, optional
 		Spectral resolution at ``lam_res`` of input spectra to smooth model spectra.
-	- lam_res : float, optional (default 2 um) 
+	- lam_res : float, optional
 		Wavelength of reference at which ``res`` is given.
 	- wl_resample : float array or list, optional
-		wavelength data points to resample the grid
+		Wavelength data points to resample the grid
 
 	Returns:
 	--------
-	Dictionary with the model grid:
+	Dictionary with the (convolved and resampled, if requested) model grid:
 		- ``'wavelength'`` : wavelengths in microns for the model spectra in the grid.
 		- ``'flux'`` : fluxes in erg/s/cm2/A for the model spectra in the grid.
 		- ``'Teff'`` : Effective temperature at each grid point.
@@ -600,31 +637,49 @@ def read_grid(model, model_dir, Teff_range, logg_range, convolve=False, model_wl
 
 	ini_time_grid = time.time() # to estimate the time elapsed reading the grid
 
-	# read models in the input folders
-	out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir, Teff_range=Teff_range, logg_range=logg_range)
+	# read the model spectra names in the input folders and meeting the indicated parameters ranges 
+	#out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir, Teff_range=Teff_range, logg_range=logg_range)
+	out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir, Teff_range=Teff_range, logg_range=logg_range, 
+	                                                Z_range=Z_range, logKzz_range=logKzz_range, CtoO_range=CtoO_range, fsed_range=fsed_range)
 	spectra_name_full = out_select_model_spectra['spectra_name_full']
 	spectra_name = out_select_model_spectra['spectra_name']
-
-	# set model_wl_range in case wl_resample is given
-	if wl_resample is not None:
-		model_wl_range = set_model_wl_range(model_wl_range=model_wl_range, fit_wl_range=fit_wl_range)
-
-	# all parameters's steps in the grid
-	out_grid_ranges = grid_ranges(model)
 	
+	if wl_resample is not None:
+		# handle fit_wl_range
+		fit_wl_range = set_fit_wl_range(fit_wl_range=fit_wl_range, N_spectra=1, wl_spectra=[wl_resample])[0]
+		# handle model_wl_range
+		model_wl_range = set_model_wl_range(model_wl_range=model_wl_range, wl_spectra_min=fit_wl_range.min(), wl_spectra_max=fit_wl_range.max())
+	
+#	# set model_wl_range in case wl_resample is given
+#	if wl_resample is not None:
+#		#model_wl_range = set_model_wl_range(model_wl_range=model_wl_range, fit_wl_range=fit_wl_range)
+#		model_wl_range = set_model_wl_range(model_wl_range=model_wl_range, wl_spectra_min=wl_spectra_min, wl_spectra_max=wl_spectra_max)
+
+	# all parameter's steps in the grid
+	out_grid_ranges = grid_ranges(model)
 	Teff_grid = out_grid_ranges['Teff']
 	logg_grid = out_grid_ranges['logg']
 	logKzz_grid = out_grid_ranges['logKzz']
 	Z_grid = out_grid_ranges['Z']
 	CtoO_grid = out_grid_ranges['CtoO']
 
-	# parameters constraints to read only a part of the grid
-	mask_Teff = (Teff_grid>=Teff_range[0]) & (Teff_grid<=Teff_range[1])
-	mask_logg = (logg_grid>=logg_range[0]) & (logg_grid<=logg_range[1])
-	
-	# replace Teff and logg array
-	Teff_grid = Teff_grid[mask_Teff]
-	logg_grid = logg_grid[mask_logg]
+	# constrain parameters to the desired ranges
+	# it will help to avoid iterating below over undesired parameter values
+	if Teff_range is not None: 
+		mask_Teff = (Teff_grid>=Teff_range[0]) & (Teff_grid<=Teff_range[1])
+		Teff_grid = Teff_grid[mask_Teff]
+	if logg_range is not None: 
+		mask_logg = (logg_grid>=logg_range[0]) & (logg_grid<=logg_range[1])
+		logg_grid = logg_grid[mask_logg]
+	if logKzz_range is not None: 
+		mask_logKzz = (logKzz_grid>=logKzz_range[0]) & (logKzz_grid<=logKzz_range[1])
+		logKzz_grid = logKzz_grid[mask_logKzz]
+	if Z_range is not None: 
+		mask_Z = (Z_grid>=Z_range[0]) & (Z_grid<=Z_range[1])
+		Z_grid = Z_grid[mask_Z]
+	if CtoO_range is not None: 
+		mask_CtoO = (CtoO_grid>=CtoO_range[0]) & (CtoO_grid<=CtoO_range[1])
+		CtoO_grid = CtoO_grid[mask_CtoO]
 
 #	# define arrays to save the model grid
 #	if wl_resample is not None: 
@@ -649,7 +704,7 @@ def read_grid(model, model_dir, Teff_range, logg_range, convolve=False, model_wl
 			desc = 'Reading model grid'
 	grid_bar = tqdm(total=len(spectra_name), desc=desc)
 
-	# read the grid in the constrained ranges
+	# read the grid with the selected model spectra
 	k = 0
 	for i_Teff in range(len(Teff_grid)): # iterate Teff
 		for i_logg in range(len(logg_grid)): # iterate logg
@@ -675,15 +730,15 @@ def read_grid(model, model_dir, Teff_range, logg_range, convolve=False, model_wl
 						# name of spectrum with parameters in the iteration
 						spectrum_name = f'spectra_logzz_{logKzz_grid[i_logKzz]}_teff_{Teff_grid[i_Teff]}_grav_{g_grid}_mh_{Z_grid[i_Z]}_co_{CtoO_grid[i_CtoO]}.nc'
 						# look into the selected spectra to find the full path for the spectrum above
-						spectrum_name_full = [x for x in spectra_name_full if x.endswith(spectrum_name)][0]
+						spectrum_name_full = [x for x in spectra_name_full if x.endswith(spectrum_name)]
 
-						if spectrum_name_full: # if there is a spectrum with the parameters in the iteration
-							# read spectrum from each combination of parameters
-							out_read_model_spectrum = read_model_spectrum(spectra_name_full=spectrum_name_full, model=model, model_wl_range=model_wl_range)
+						if spectrum_name_full: # if there is a spectrum with the parameters in the iteration in the input directories
+							# read the spectrum with the parameter combination in the iteration and cut it to model_wl_range (default value: fit_wl_range plus padding)
+							out_read_model_spectrum = read_model_spectrum(spectra_name_full=spectrum_name_full[0], model=model, model_wl_range=model_wl_range)
 							wl_model = out_read_model_spectrum['wl_model'] # in um
 							flux_model = out_read_model_spectrum['flux_model'] # in erg/s/cm2/A
 							
-							# convolve model spectrum to the resolution of the input observed spectra
+							# convolve the model spectrum to the indicated resolution
 							if convolve:
 								out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, res=res, lam_res=lam_res)
 								wl_model = out_convolve_spectrum['wl_conv']
@@ -691,12 +746,17 @@ def read_grid(model, model_dir, Teff_range, logg_range, convolve=False, model_wl
 
 							# resample convolved model spectrum to the wavelength data points in the observed spectra
 							if wl_resample is not None:
-								flux_model = spectres(wl_resample, wl_model, flux_model)
-								wl_model = wl_resample
+								# mask to select data points within the fit range or model coverage range, whichever is narrower
+								mask_fit = (wl_resample >= max(fit_wl_range[0], wl_model.min())) & \
+								           (wl_resample <= min(fit_wl_range[1], wl_model.max()))
+								flux_model = spectres(wl_resample[mask_fit], wl_model, flux_model)
+								wl_model = wl_resample[mask_fit]
 
 							# save flux at each combination
 							if i_Teff==0 and i_logg==0 and i_logKzz==0 and i_Z==0 and i_CtoO==0:
 								# define arrays to save the model grid
+								# it is better to initialize the arrays after the first iteration to consider the size of
+								# the array after resampling instead of using the data points in the original model spectra
 								flux_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), len(wl_model))) # to save the flux at each grid point
 								wl_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), len(wl_model))) # to save the wavelength at each grid point
 
@@ -707,16 +767,8 @@ def read_grid(model, model_dir, Teff_range, logg_range, convolve=False, model_wl
 								flux_grid[i_Teff, i_logg, i_logKzz, i_Z, i_CtoO, :len(wl_model)] = flux_model
 								wl_grid[i_Teff, i_logg, i_logKzz, i_Z, i_CtoO, :len(wl_model)] = wl_model
 						
-							#print(len(wl_model))
-							## measure the resolution of each model spectrum
-							## wavelength dispersion of synthetic spectra
-							#Dellam_model = wl_model[1:] - wl_model[:-1] # dispersion of model spectra
-							#Dellam_model = np.insert(Dellam_model, Dellam_model.size, Dellam_model[-1]) # add an element equal to the last row to keep the same shape as the wl_model array
-							#mask_1 = (wl_model>=1) & (wl_model<=2)
-							#mask_2 = (wl_model>=9) & (wl_model<=10)
-							#print('   ',1.5/np.median(Dellam_model[mask_1]), 9.5/np.median(Dellam_model[mask_2]))
 						else:
-						    print(f'There is no spectrum: {spectrum_name}') # no spectrum with that name
+						    print(f'No spectrum {spectrum_name} in "model_dir"') # no spectrum with that parameters combination in the input directories
 						k += 1
 	# close the progress bar
 	grid_bar.close()
@@ -909,7 +961,7 @@ def param_ranges_sampling(chi2_pickle_file, N_best_fits=3):
 	with open(chi2_pickle_file, 'rb') as file:
 		out_chi2 = pickle.load(file)
 
-	model = out_chi2['model']
+	model = out_chi2['my_chi2'].model
 
 	if (model=='Sonora_Elf_Owl'):
 		ind_best_fit = np.argsort(out_chi2['chi2_red_fit'])[:N_best_fits] # index of the three best-fitting spectra
@@ -1011,6 +1063,7 @@ def best_bayesian_fit(bayes_pickle_file, grid=None, save_spectrum=False):
 	flux_spectra = out_bayes['my_bayes'].flux_spectra
 	eflux_spectra = out_bayes['my_bayes'].eflux_spectra
 	N_spectra = out_bayes['my_bayes'].N_spectra
+	fit_wl_range = out_bayes['my_bayes'].fit_wl_range
 
 	# compute median values for all parameters
 	if model=='Sonora_Elf_Owl':
@@ -1039,9 +1092,13 @@ def best_bayesian_fit(bayes_pickle_file, grid=None, save_spectrum=False):
 
 		Teff_range = find_two_nearest(out_grid_ranges['Teff'], Teff_med)
 		logg_range = find_two_nearest(out_grid_ranges['logg'], logg_med)
+		Z_range = find_two_nearest(out_grid_ranges['Z'], Z_med)
+		logKzz_range = find_two_nearest(out_grid_ranges['logKzz'], logKzz_med)
+		CtoO_range = find_two_nearest(out_grid_ranges['CtoO'], CtoO_med)
 		
 		# read grid
-		grid = read_grid(model=model, model_dir=model_dir, Teff_range=Teff_range, logg_range=logg_range)
+		grid = read_grid(model=model, model_dir=model_dir, Teff_range=Teff_range, logg_range=logg_range, 
+		                 Z_range=Z_range, logKzz_range=logKzz_range, CtoO_range=CtoO_range)#, fsed_range=fsed_range)
 
 	# generate synthetic spectrum
 	syn_spectrum = generate_model_spectrum(Teff=Teff_med, logg=logg_med, logKzz=logKzz_med, Z=Z_med, CtoO=CtoO_med, grid=grid)
@@ -1050,28 +1107,41 @@ def best_bayesian_fit(bayes_pickle_file, grid=None, save_spectrum=False):
 
 	# convolve synthetic spectrum
 	# (add padding on both edges to avoid issues we using spectres)
-	out_convolve_spectrum = convolve_spectrum(wl=wl, flux=flux, lam_res=lam_res, res=res, 
-	                                          disp_wl_range=np.array([wl_spectra_min, wl_spectra_max]), 
-	                                          convolve_wl_range=np.array([0.99*wl_spectra_min, 1.01*wl_spectra_max]))
-	wl_conv = out_convolve_spectrum['wl_conv']
-	flux_conv = out_convolve_spectrum['flux_conv']
+	# initialize lists for convolved model spectra for all input spectra
+	wl_conv = []
+	flux_conv = []
+	for i in range(N_spectra): # for each input observed spectrum
+		out_convolve_spectrum = convolve_spectrum(wl=wl, flux=flux, lam_res=lam_res[i], res=res[i], 
+		                                          disp_wl_range=np.array([wl_spectra[i].min(), wl_spectra[i].max()]), 
+		                                          convolve_wl_range=np.array([0.99*wl_spectra[i].min(), 1.01*wl_spectra[i].max()]))
+		wl_conv.append(out_convolve_spectrum['wl_conv'])
+		flux_conv.append(out_convolve_spectrum['flux_conv'])
 
 	# scale synthetic spectrum
 	if distance is not None:
 		flux_scaled = scale_synthetic_spectrum(wl=wl, flux=flux, distance=distance, radius=R_med)
-		flux_conv_scaled = scale_synthetic_spectrum(wl=wl_conv, flux=flux_conv, distance=distance, radius=R_med)
 		wl_scaled = wl
-		wl_conv_scaled = wl_conv
 
-	# resample synthetic spectra to the observed wavelengths
-	flux_conv_resam = [] # initialize list to store resampled, convolved model spectra for each input spectrum
-	flux_conv_scaled_resam = [] # initialize list to store resampled, scaled, convolved model spectra for each input spectrum
-	for k in range(N_spectra): # for each input observed spectrum
-		flux_conv_resam.append(spectres(wl_spectra[k], wl_conv, flux_conv))
+		wl_conv_scaled = []
+		flux_conv_scaled = []
+		for i in range(N_spectra): # for each input observed spectrum
+			flux_conv_scaled.append(scale_synthetic_spectrum(wl=wl_conv[i], flux=flux_conv[i], distance=distance, radius=R_med))
+			wl_conv_scaled.append(wl_conv[i])
+
+	# resample the convolved synthetic spectrum to the fit ranges of the input spectra
+	# initialize lists for resampled, convolved model spectra for all input spectra
+	flux_conv_resam = []
+	wl_conv_resam = []
+	flux_conv_scaled_resam = []
+	wl_conv_scaled_resam = []
+	for i in range(N_spectra): # for each input observed spectrum
+		mask_fit = (wl_spectra[i] >= max(fit_wl_range[i][0], wl.min())) & \
+		           (wl_spectra[i] <= min(fit_wl_range[i][1], wl.max()))
+		flux_conv_resam.append(spectres(wl_spectra[i][mask_fit], wl_conv[i], flux_conv[i]))
+		wl_conv_resam.append(wl_spectra[i][mask_fit])
 		if distance is not None:
-			flux_conv_scaled_resam.append(spectres(wl_spectra[k], wl_conv_scaled, flux_conv_scaled))
-	wl_conv_resam = wl_spectra
-	wl_conv_scaled_resam = wl_spectra
+			flux_conv_scaled_resam.append(spectres(wl_spectra[i][mask_fit], wl_conv_scaled[i], flux_conv_scaled[i]))
+			wl_conv_scaled_resam.append(wl_spectra[i][mask_fit])
 
 	# save synthetic spectrum
 	if save_spectrum:
@@ -1081,11 +1151,13 @@ def best_bayesian_fit(bayes_pickle_file, grid=None, save_spectrum=False):
 		#Z_file = round(Z_med, 1)
 		#CtoO_file = round(CtoO_med, 1)
 		#out = open(f'{model}_Teff{Teff_file}_logg{logg_file}_logKzz{logKzz_file}_Z{Z_file}_CtoO{CtoO_file}.dat', 'w')
-		out = open(f'{model}_best_fit_bayesian_sampling.dat', 'w')
-		out.write('# wavelength(um) flux(erg/s/cm2/A)  \n')
-		for i in range(len(wl_conv)):
-			out.write('%11.7f %17.6E \n' %(wl_conv[i], flux_conv[i]))
-		out.close()
+		#out = open(f'{model}_best_fit_bayesian_sampling.dat', 'w')
+		for i in range(N_spectra): # for each input observed spectrum
+			out = open(f'{model}_R{res[i]}at{lam_res[i]}um_best_fit_bayesian_sampling.dat', 'w')
+			out.write('# wavelength(um) flux(erg/s/cm2/A)  \n')
+			for k in range(len(wl_conv)):
+				out.write('%11.7f %17.6E \n' %(wl_conv[i][k], flux_conv[i][k]))
+			out.close()
 
 	# output dictionary
 	out = {'wl_spectra': wl_spectra, 'flux_spectra': flux_spectra, 'eflux_spectra': eflux_spectra, 'wl_mod': wl, 'flux_mod': flux, 'wl_mod_conv': wl_conv, 'flux_mod_conv': flux_conv, 
@@ -1175,7 +1247,7 @@ def select_model_spectra(model, model_dir, Teff_range=None, logg_range=None, Z_r
 	# read free parameters from each model spectrum
 	out_separate_params = separate_params(model=model, spectra_name=files_short)
 
-	# select spectra within the desired Teff and logg ranges
+	# select spectra within the desired parameter ranges
 	spectra_name_full = [] # full name with path
 	spectra_name = [] # only spectra names
 	for i in range(len(files)):
@@ -1196,13 +1268,6 @@ def select_model_spectra(model, model_dir, Teff_range=None, logg_range=None, Z_r
 		if mask:
 			spectra_name_full.append(files[i]) # keep only spectra within the input parameter ranges
 			spectra_name.append(files_short[i]) # keep only spectra within the input parameter ranges
-
-
-	#--------------
-	# TEST to fit only a few model spectra
-	#spectra_name = spectra_name[:2]
-	#spectra_name_full = spectra_name_full[:2]
-	#--------------
 
 	if len(spectra_name_full)==0: raise Exception('No model spectra within the indicated parameter ranges') # show up an error when there are no models in the indicated ranges
 	else: 
@@ -1434,43 +1499,19 @@ def set_fit_wl_range(fit_wl_range, N_spectra, wl_spectra):
 
 #+++++++++++++++++++++++++++
 # set wavelength range to cut models for comparisons via chi-square or Bayes techniques
-#def set_model_wl_range(model_wl_range, fit_wl_range, N_spectra,  wl_spectra):
-def set_model_wl_range(model_wl_range, fit_wl_range):
+#def set_model_wl_range(model_wl_range, fit_wl_range):
+def set_model_wl_range(model_wl_range, wl_spectra_min, wl_spectra_max):
 
-	# define model_wl_range (if not provided) in terms of fit_wl_range
+	# define model_wl_range (if not provided) in terms of input spectra coverage
 	if model_wl_range is None:
-		model_wl_range = np.array((0.9*fit_wl_range.min(), 1.1*fit_wl_range.max())) # add padding to have enough spectral coverage in models
+		#model_wl_range = np.array((0.9*fit_wl_range.min(), 1.1*fit_wl_range.max())) # add padding to have enough spectral coverage in models
+		model_wl_range = np.array([0.9*wl_spectra_min, 1.1*wl_spectra_max]) # add padding to have enough spectral coverage in models
 
-	# when model_wl_range is given and is equal or narrower than fit_wl_range
-	# add padding to model_wl_range to avoid problems with the spectres routine
-	# first find the minimum and maximum wavelength from the input spectra
-#	min_tmp1 = min(wl_spectra[0])
-#	for i in range(N_spectra):
-#		min_tmp2 = min(wl_spectra[i])
-#		if min_tmp2<min_tmp1: 
-#			wl_spectra_min = min_tmp2
-#			min_tmp1 = min_tmp2
-#		else: 
-#			wl_spectra_min = min_tmp1
-#	max_tmp1 = max(wl_spectra[0])
-#	for i in range(N_spectra):
-#		max_tmp2 = max(wl_spectra[i])
-#		if max_tmp2>max_tmp1:
-#			wl_spectra_max = max_tmp2
-#			max_tmp1 = max_tmp2
-#		else:
-#			wl_spectra_max = max_tmp1
-#
-#	if (model_wl_range.min()>=wl_spectra_min):
-#		model_wl_range[0] = wl_spectra_min-0.1*wl_spectra_min # add padding to shorter wavelengths
-#	if (model_wl_range.max()<=wl_spectra_max):
-#		model_wl_range[1] = wl_spectra_max+0.1*wl_spectra_max # add padding to longer wavelengths
-
-	# it may need an update to work with multiple spectra
-	if (model_wl_range.min()>=fit_wl_range.min()):
-		model_wl_range[0] = 0.9*fit_wl_range.min() # add padding to shorter wavelengths
-	if (model_wl_range.max()<=fit_wl_range.max()):
-		model_wl_range[1] = 1.1*fit_wl_range.max() # add padding to longer wavelengths
+#	# it may need an update to work with multiple spectra
+#	if (model_wl_range.min()>=fit_wl_range.min()):
+#		model_wl_range[0] = 0.9*fit_wl_range.min() # add padding to shorter wavelengths
+#	if (model_wl_range.max()<=fit_wl_range.max()):
+#		model_wl_range[1] = 1.1*fit_wl_range.max() # add padding to longer wavelengths
 
 	return model_wl_range
 
@@ -1552,12 +1593,12 @@ def app_to_abs_flux(flux, distance, eflux=0, edistance=0):
 	return out
 
 ##########################
-# read convolved model spectra 
-# they are netCDF files with xarray produced by convolve_spectrum
-def read_model_spectrum_conv(spectra_name_full):
+# read a pre-stored convolved model spectrum
+# it is a netCDF file with xarray produced by convolve_spectrum
+def read_model_spectrum_conv(spectrum_name_full):
 
 	# read convolved spectrum
-	spectrum = xarray.open_dataset(spectra_name_full)
+	spectrum = xarray.open_dataset(spectrum_name_full)
 	wl_model = spectrum['wl'].data # um
 	flux_model = spectrum['flux'].data # erg/s/cm2/A
 
