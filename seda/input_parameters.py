@@ -667,13 +667,13 @@ class BayesOptions:
 		if distance is not None:
 			if R_range is None: raise Exception('Please provide the "R_range" parameter')
 			R_range_prior = R_range
+			self.R_range_prior = R_range_prior
 
 		self.Teff_range_prior = Teff_range_prior
 		self.logg_range_prior = logg_range_prior
 		self.logKzz_range_prior = logKzz_range_prior
 		self.Z_range_prior = Z_range_prior
 		self.CtoO_range_prior = CtoO_range_prior
-		self.R_range_prior = R_range_prior
 
 		# define the dimensionality of our problem.
 		if distance is not None: # sample radius distribution
