@@ -1,6 +1,6 @@
 SEDA: Spectral Energy Distribution Analyzer
 =======================================
 
-SEDA is an open-source Python package for forward modeling analysis of brown dwarfs, directly imaged exoplanets, and low-mass stars. The code compares spectra and/or photometry to both modern and widely used atmospheric models by using a Bayesian framework to sample posteriors. Alternatively, the code minimizes the chi-square statistic to find the best model fits.
+SEDA is an open-source Python package for forward modeling and empirical analysis of spectral energy distributions for ultracool objects, including brown dwarfs, directly imaged exoplanets, and low-mass stars. The code compares observed spectrophotometric data to atmospheric models by using a Bayesian framework to sample posteriors. Alternatively, the code minimizes the chi-square statistic to find the best model fits. SEDA also has a variety of functions to visualize results and several useful tools for the analysis of spectral energy distributions.
 
 Check out the documentation at https://seda.readthedocs.io
