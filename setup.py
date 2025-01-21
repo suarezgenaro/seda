@@ -3,8 +3,8 @@
 
 from setuptools import setup
 
-with open("README", 'r') as f:
-    long_description = f.read()
+#with open("README", 'r') as f:
+#    long_description = f.read()
 
 #def install_requires():
 #    reqs = []
@@ -15,7 +15,7 @@ with open("README", 'r') as f:
 setup(name='seda',
       version='1.0',
       description='SEDA: Spectral Energy Distribution Analyzer',
-      long_description=long_description, 
+#      long_description=long_description, 
       keywords = ['ultracool objects', 'low mass stars', 'brown dwarfs', 'gas giant planets', \
                   'spectroscopy', 'photometry', 'atmospheres', 'astronomy', 'astrophysics'],
       author='Genaro Suárez',
