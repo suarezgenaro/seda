@@ -316,7 +316,7 @@ class Chi2Options:
 		Minimum and maximum wavelengths (in microns) where each input spectrum will be compared to the models. E.g., ``fit_wl_range = np.array([fit_wl_min1, fit_wl_max1], [fit_wl_min2, fit_wl_max2])``. 
 		This parameter is used if ``fit_spectra`` but ignored if only ``fit_photometry``. 
 		Default values are the minimum and the maximum wavelengths of each input spectrum.
-	- model_wl_range : float array, optional
+	- model_wl_range : array or list, optional
 		Minimum and maximum wavelength (in microns) to cut model spectra to keep only wavelengths of interest.
 		Default values are the minimum and maximum wavelengths covered by the input spectra with a padding to avoid the point below.
 		CAVEAT: the selected wavelength range of model spectra must cover the spectrophotometry used in the fit and a bit more (to avoid errors when resampling synthetic spectra using spectres).
@@ -498,7 +498,7 @@ class BayesOptions:
 		Minimum and maximum wavelengths (in microns) where model spectra will be compared to the data. 
 		This parameter is used if ``fit_spectra`` but ignored if only ``fit_photometry``. 
 		Default values are the minimum and the maximum wavelengths of each input spectrum. E.g., ``fit_wl_range = np.array([bayes_wl_min, bayes_wl_max])``. 
-	- model_wl_range : float array, optional
+	- model_wl_range : array or list, optional
 		Minimum and maximum wavelength (in microns) to cut model spectra (to make the code faster). 
 		Default values are the same as ``fit_wl_range`` with a padding to avoid the point below.
 		CAVEAT: the selected wavelength range of model spectra must cover the spectrophotometry used in the fit and a bit more (to avoid errors when resampling synthetic spectra using spectres)
