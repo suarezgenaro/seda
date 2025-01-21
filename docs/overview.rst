@@ -60,7 +60,7 @@ Available Atmospheric Models
 Sonora Diamondback Models
 +++++++++++++++++++++++++
 
-Cloudy (silicate clouds) atmospheric models assuming chemical equilibrium but considering the effect of both clouds and metallicity by `Morley et al (2024) <https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract>`_. Download the `Sonora Diamondback models <https://ui.adsabs.harvard.edu/abs/2024arXiv240200758M/abstract>`_.
+Cloudy (silicate clouds) atmospheric models assuming chemical equilibrium but considering the effect of both clouds and metallicity by `Morley et al (2024) <https://ui.adsabs.harvard.edu/abs/2024ApJ...975...59M/abstract>`_. Download the `Sonora Diamondback models <https://zenodo.org/records/12735103>`_.
 
 Parameter coverage:
 
