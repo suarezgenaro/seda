@@ -154,7 +154,7 @@ class ModelOptions:
 					- [M/H] = [-0.5, 0.5] (cgs) in steps of 0.5
 					- fsed = 1, 2, 3, 4, 8, nc
 			- ``'Sonora_Elf_Owl'`` : models with atmospheric mixing and chemical disequilibrium with varying metallicity and C/O by Mukherjee et al. (2024).
-				Parameter coverage: 
+				Parameter coverage:
 					- wavelength = [0.6, 15] um
 					- Teff = [275, 2400] K in steps: 25 K for 275-600 K, 50 K for 600-1000 K, and 100 K for 1000-2400 K
 					- logg = [3.25, 5.50] in steps of 0.25 dex plus logg=3.0 for Teff=[275-2000], logKzz=8, [M/H]=1.0, and C/O=1.0.
