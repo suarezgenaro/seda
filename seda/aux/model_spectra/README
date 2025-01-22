@@ -1,7 +1,9 @@
-Sonora Diamondback model spectrum: t1000g316f4_m0.0_co1.0.spec
-Sonora Elf Owl model spectrum: spectra_logzz_4.0_teff_1200.0_grav_1000.0_mh_0.0_co_0.5.nc
-Sonora Cholla model spectrum: 1000K_1000g_logkzz2.spec
-Sonora Bobcat model spectrum: sp_t1000g1000nc_m0.0
-ATMO 2020 model spectrum: spec_T1000_lg4.0_NEQ_weak.txt
-BT-Settl model spectrum: lte010-4.0-0.0a+0.0.BT-Settl.spec.7
+Synthetic spectra and their corresponding atmospheric models
+
+Sonora Diamondback model spectrum:     t1000g316f4_m0.0_co1.0.spec
+Sonora Elf Owl model spectrum:         spectra_logzz_4.0_teff_1200.0_grav_1000.0_mh_0.0_co_0.5.nc
+Sonora Cholla model spectrum:          1000K_1000g_logkzz2.spec
+Sonora Bobcat model spectrum:          sp_t1000g1000nc_m0.0
+ATMO 2020 model spectrum:              spec_T1000_lg4.0_NEQ_weak.txt
+BT-Settl model spectrum:               lte010-4.0-0.0a+0.0.BT-Settl.spec.7
 Saumon & Marley (2008) model spectrum: sp_t1000g1000f1
