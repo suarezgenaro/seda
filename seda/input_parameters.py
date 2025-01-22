@@ -700,34 +700,3 @@ class BayesOptions:
 		self.grid = grid
 
 		print('\n   Bayes fit options loaded successfully')
-
-#+++++++++++++++++++++++++++
-# count the total number of data points in all input spectra
-def input_data_stats(wl_spectra, N_spectra):
-
-	# count the total number of data points in all input spectra
-	N_datapoints = 0
-	for i in range(N_spectra):
-		N_datapoints  = N_datapoints + wl_spectra[i].size
-
-	# minimum and maximum wavelength from the input spectra
-	min_tmp1 = min(wl_spectra[0])
-	for i in range(N_spectra):
-		min_tmp2 = min(wl_spectra[i])
-		if min_tmp2<min_tmp1: 
-			wl_spectra_min = min_tmp2
-			min_tmp1 = min_tmp2
-		else: 
-			wl_spectra_min = min_tmp1
-	max_tmp1 = max(wl_spectra[0])
-	for i in range(N_spectra):
-		max_tmp2 = max(wl_spectra[i])
-		if max_tmp2>max_tmp1:
-			wl_spectra_max = max_tmp2
-			max_tmp1 = max_tmp2
-		else:
-			wl_spectra_max = max_tmp1
-
-	out = {'N_datapoints': N_datapoints, 'wl_spectra_min': wl_spectra_min, 'wl_spectra_max': wl_spectra_max}
-
-	return out
