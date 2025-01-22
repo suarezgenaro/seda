@@ -89,8 +89,9 @@ def convolve_spectrum(wl, flux, res, lam_res, eflux=None, disp_wl_range=None, co
 
 	# define a Gaussian for convolution
 	mask_fit = (wl>=disp_wl_range[0]) & (wl<=disp_wl_range[1]) # mask to obtain the median wavelength dispersion
-	stddev = (lam_res/res)*(1./np.median(wl_bin[mask_fit]))/ (2.*np.sqrt(2*np.log(2))) # stddev is given in pixels
-	if stddev<1: 
+	stddev = (lam_res/res)*(1./np.median(wl_bin[mask_fit])) / (2.*np.sqrt(2*np.log(2))) # stddev is given in pixels
+	#if stddev<1: 
+	if (lam_res/res)*(1./np.median(wl_bin[mask_fit]))<1:
 		print('   Warning: the input spectrum may have a resolution smaller than the desired one.')
 		print('            the spectrum will be convolved but will be essentially the same.')
 
