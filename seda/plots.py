@@ -465,7 +465,7 @@ def plot_model_coverage(model, xparam, yparam, model_dir=None, xrange=None, yran
 	Author: Genaro Suárez
 	'''
 
-	path_plots = os.path.dirname(__file__)+'/'
+	path_plots = os.path.dirname(__file__)
 
 	# get the coverage of model free parameters
 	if model_dir is not None: # coverage from input model spectra
@@ -475,15 +475,15 @@ def plot_model_coverage(model, xparam, yparam, model_dir=None, xrange=None, yran
 		out_separate_params = separate_params(model=model, spectra_name=out_select_model_spectra['spectra_name'])
 	else: # coverage of the full model grid
 		# open results from the chi square analysis
-		with open(f'{path_plots}/aux/{model}_free_parameters.pickle', 'rb') as file:
+		with open(f'{path_plots}/aux/model_coverage/{model}_free_parameters.pickle', 'rb') as file:
 			out_separate_params = pickle.load(file)
 	
 	# only keep the free parameters in the dictionary
 	del out_separate_params['spectra_name']
 
 	# verify that xparam and yparam are valid parameters
-	if xparam not in out_separate_params: raise Exception(f'{xparam} is not in {model}. Valid parameters: {out_separate_params.keys()}')
-	if yparam not in out_separate_params: raise Exception(f'{yparam} is not in {model}. Valid parameters: {out_separate_params.keys()}')
+	if xparam not in out_separate_params: raise Exception(f'{xparam} is not a free parameter in {model}. Valid parameters: {out_separate_params.keys()}')
+	if yparam not in out_separate_params: raise Exception(f'{yparam} is not a free parameter in {model}. Valid parameters: {out_separate_params.keys()}')
 
 	# make plot of y_param against x_param
 	#------------------------

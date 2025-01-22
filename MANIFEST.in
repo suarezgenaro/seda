@@ -1,7 +1,5 @@
 # Include the license file
-include LICENSE
+#include LICENSE
 
 # include auxiliary files
-include seda/aux/*.pickle
-include docs/notebooks/*.pickle
-include docs/notebooks/data/*
+include seda/aux/*
