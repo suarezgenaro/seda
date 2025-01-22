@@ -90,7 +90,8 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, xlog=False, ylog=True, xrange
 
 	# plot flux uncertainty region
 	for k in range(N_spectra): # for each input observed spectrum
-		mask = (flux_spectra[k]-eflux_spectra[k] > 0.1*flux_spectra[k].min()) & (wl_spectra[k]>=xrange[0]) & (wl_spectra[k]<=xrange[1])
+		#mask = (flux_spectra[k]-eflux_spectra[k] > 0.1*flux_spectra[k].min()) & (wl_spectra[k]>=xrange[0]) & (wl_spectra[k]<=xrange[1])
+		mask = (wl_spectra[k]>=xrange[0]) & (wl_spectra[k]<=xrange[1])
 		wl_region = np.append(wl_spectra[k][mask], np.flip(wl_spectra[k][mask]))
 		flux_region = np.append(flux_spectra[k][mask]-eflux_spectra[k][mask], 
 		                        np.flip(flux_spectra[k][mask]+eflux_spectra[k][mask]))
