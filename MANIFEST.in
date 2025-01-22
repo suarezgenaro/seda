@@ -3,3 +3,5 @@ include LICENSE
 
 # include auxiliary files
 include seda/aux/*.pickle
+include docs/notebooks/*.pickle
+include docs/notebooks/data/*
