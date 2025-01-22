@@ -24,9 +24,9 @@ def chi2(my_chi2):
 	Returns:
 	--------
 	- '``model``\_chi2\_minimization.dat' : ascii table
-		Table with all fitted model spectra names sorted by chi square and including the information: 
+		Table with the names of all model spectra fits sorted by chi square and including the information: 
 		spectrum name, chi square, reduced chi square, scaling, scaling error, extinction, extinction error, 
-		physical parameters from the models (e.g. Teff and logg), and iterations to minimize chi square.
+		physical free parameters in the models (e.g. Teff and logg), and iterations to minimize chi-square.
 	- '``model``\_chi2\_minimization.pickle' : dictionary
 		Dictionary with the results from the chi-square minimization, namely:
 			- ``model``: selected atmospheric model.
@@ -582,14 +582,15 @@ def save_params(out_chi2):
 	if (model == 'LB23'):
 		logKzz_fit = out_chi2['logKzz']
 		Z_fit = out_chi2['Z']
+		HMIX_fit = out_chi2['Hmix']
 		if not skip_convolution:
-			out.write('# file                                         chi2      chi2_red      scaling     e_scaling   Av    eAv    Teff  logg   Z      logKzz  Iterations\n')
+			out.write('# file                                         chi2      chi2_red      scaling     e_scaling   Av    eAv    Teff  logg   Z      logKzz  Hmix    Iterations\n')
 			for i in range(N_model_spectra):
-				out.write('%-45s %8.0f %10.3f %14.3E %11.3E %6.2f %5.2f %5i %6.2f %7.3f %4.1f %7i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], Z_fit[ind[i]], logKzz_fit[ind[i]], iterations_fit[ind[i]]))
+				out.write('%-45s %8.0f %10.3f %14.3E %11.3E %6.2f %5.2f %5i %6.2f %7.3f %4.1f %9.3f %4i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], Z_fit[ind[i]], logKzz_fit[ind[i]], HMIX_fit[ind[i]], iterations_fit[ind[i]]))
 		else:
-			out.write('# file                                                          chi2      chi2_red      scaling     e_scaling   Av    eAv    Teff  logg   Z      logKzz  Iterations\n')
+			out.write('# file                                                          chi2      chi2_red      scaling     e_scaling   Av    eAv    Teff  logg   Z      logKzz  Hmix    Iterations\n')
 			for i in range(N_model_spectra):
-				out.write('%-62s %8.0f %10.3f %14.3E %11.3E %6.2f %5.2f %5i %6.2f %7.3f %4.1f %7i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], Z_fit[ind[i]], logKzz_fit[ind[i]], iterations_fit[ind[i]]))
+				out.write('%-62s %8.0f %10.3f %14.3E %11.3E %6.2f %5.2f %5i %6.2f %7.3f %4.1f %9.3f %4i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], Z_fit[ind[i]], logKzz_fit[ind[i]], HMIX_fit[ind[i]], iterations_fit[ind[i]]))
 	if (model == 'ATMO2020'):
 		logKzz_fit = out_chi2['logKzz']
 		if not skip_convolution:
