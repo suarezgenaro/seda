@@ -2,4 +2,5 @@
 #include LICENSE
 
 # include auxiliary files
-include seda/aux/*
+include seda/aux/model_coverage/*.pickle
+include seda/aux/model_spectra/*
