@@ -1,0 +1,6 @@
+# Include the license file
+#include LICENSE
+
+# include auxiliary files
+include seda/aux/model_coverage/*
+include seda/aux/model_spectra/*

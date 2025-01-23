@@ -89,8 +89,9 @@ def convolve_spectrum(wl, flux, res, lam_res, eflux=None, disp_wl_range=None, co
 
 	# define a Gaussian for convolution
 	mask_fit = (wl>=disp_wl_range[0]) & (wl<=disp_wl_range[1]) # mask to obtain the median wavelength dispersion
-	stddev = (lam_res/res)*(1./np.median(wl_bin[mask_fit]))/ (2.*np.sqrt(2*np.log(2))) # stddev is given in pixels
-	if stddev<1: 
+	stddev = (lam_res/res)*(1./np.median(wl_bin[mask_fit])) / (2.*np.sqrt(2*np.log(2))) # stddev is given in pixels
+	#if stddev<1: 
+	if (lam_res/res)*(1./np.median(wl_bin[mask_fit]))<1:
 		print('   Warning: the input spectrum may have a resolution smaller than the desired one.')
 		print('            the spectrum will be convolved but will be essentially the same.')
 
@@ -1663,5 +1664,36 @@ def available_models():
 	out['ATMO2020'] = 'Phillips et al. (2020)'
 	out['BT-Settl'] = 'Allard et al. (2012)'
 	out['SM08'] = 'Saumon & Marley (2008)'
+
+	return out
+
+#+++++++++++++++++++++++++++
+# count the total number of data points in all input spectra
+def input_data_stats(wl_spectra, N_spectra):
+
+	# count the total number of data points in all input spectra
+	N_datapoints = 0
+	for i in range(N_spectra):
+		N_datapoints  = N_datapoints + wl_spectra[i].size
+
+	# minimum and maximum wavelength from the input spectra
+	min_tmp1 = min(wl_spectra[0])
+	for i in range(N_spectra):
+		min_tmp2 = min(wl_spectra[i])
+		if min_tmp2<min_tmp1: 
+			wl_spectra_min = min_tmp2
+			min_tmp1 = min_tmp2
+		else: 
+			wl_spectra_min = min_tmp1
+	max_tmp1 = max(wl_spectra[0])
+	for i in range(N_spectra):
+		max_tmp2 = max(wl_spectra[i])
+		if max_tmp2>max_tmp1:
+			wl_spectra_max = max_tmp2
+			max_tmp1 = max_tmp2
+		else:
+			wl_spectra_max = max_tmp1
+
+	out = {'N_datapoints': N_datapoints, 'wl_spectra_min': wl_spectra_min, 'wl_spectra_max': wl_spectra_max}
 
 	return out

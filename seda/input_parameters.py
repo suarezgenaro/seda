@@ -154,7 +154,7 @@ class ModelOptions:
 					- [M/H] = [-0.5, 0.5] (cgs) in steps of 0.5
 					- fsed = 1, 2, 3, 4, 8, nc
 			- ``'Sonora_Elf_Owl'`` : models with atmospheric mixing and chemical disequilibrium with varying metallicity and C/O by Mukherjee et al. (2024).
-				Parameter coverage: 
+				Parameter coverage:
 					- wavelength = [0.6, 15] um
 					- Teff = [275, 2400] K in steps: 25 K for 275-600 K, 50 K for 600-1000 K, and 100 K for 1000-2400 K
 					- logg = [3.25, 5.50] in steps of 0.25 dex plus logg=3.0 for Teff=[275-2000], logKzz=8, [M/H]=1.0, and C/O=1.0.
@@ -700,34 +700,3 @@ class BayesOptions:
 		self.grid = grid
 
 		print('\n   Bayes fit options loaded successfully')
-
-#+++++++++++++++++++++++++++
-# count the total number of data points in all input spectra
-def input_data_stats(wl_spectra, N_spectra):
-
-	# count the total number of data points in all input spectra
-	N_datapoints = 0
-	for i in range(N_spectra):
-		N_datapoints  = N_datapoints + wl_spectra[i].size
-
-	# minimum and maximum wavelength from the input spectra
-	min_tmp1 = min(wl_spectra[0])
-	for i in range(N_spectra):
-		min_tmp2 = min(wl_spectra[i])
-		if min_tmp2<min_tmp1: 
-			wl_spectra_min = min_tmp2
-			min_tmp1 = min_tmp2
-		else: 
-			wl_spectra_min = min_tmp1
-	max_tmp1 = max(wl_spectra[0])
-	for i in range(N_spectra):
-		max_tmp2 = max(wl_spectra[i])
-		if max_tmp2>max_tmp1:
-			wl_spectra_max = max_tmp2
-			max_tmp1 = max_tmp2
-		else:
-			wl_spectra_max = max_tmp1
-
-	out = {'N_datapoints': N_datapoints, 'wl_spectra_min': wl_spectra_min, 'wl_spectra_max': wl_spectra_max}
-
-	return out

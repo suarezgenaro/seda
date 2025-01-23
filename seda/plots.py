@@ -90,7 +90,8 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, xlog=False, ylog=True, xrange
 
 	# plot flux uncertainty region
 	for k in range(N_spectra): # for each input observed spectrum
-		mask = (flux_spectra[k]-eflux_spectra[k] > 0.1*flux_spectra[k].min()) & (wl_spectra[k]>=xrange[0]) & (wl_spectra[k]<=xrange[1])
+		#mask = (flux_spectra[k]-eflux_spectra[k] > 0.1*flux_spectra[k].min()) & (wl_spectra[k]>=xrange[0]) & (wl_spectra[k]<=xrange[1])
+		mask = (wl_spectra[k]>=xrange[0]) & (wl_spectra[k]<=xrange[1])
 		wl_region = np.append(wl_spectra[k][mask], np.flip(wl_spectra[k][mask]))
 		flux_region = np.append(flux_spectra[k][mask]-eflux_spectra[k][mask], 
 		                        np.flip(flux_spectra[k][mask]+eflux_spectra[k][mask]))
@@ -464,7 +465,7 @@ def plot_model_coverage(model, xparam, yparam, model_dir=None, xrange=None, yran
 	Author: Genaro Suárez
 	'''
 
-	path_plots = os.path.dirname(__file__)+'/'
+	path_plots = os.path.dirname(__file__)
 
 	# get the coverage of model free parameters
 	if model_dir is not None: # coverage from input model spectra
@@ -474,15 +475,15 @@ def plot_model_coverage(model, xparam, yparam, model_dir=None, xrange=None, yran
 		out_separate_params = separate_params(model=model, spectra_name=out_select_model_spectra['spectra_name'])
 	else: # coverage of the full model grid
 		# open results from the chi square analysis
-		with open(f'{path_plots}/aux/{model}_free_parameters.pickle', 'rb') as file:
+		with open(f'{path_plots}/aux/model_coverage/{model}_free_parameters.pickle', 'rb') as file:
 			out_separate_params = pickle.load(file)
 	
 	# only keep the free parameters in the dictionary
 	del out_separate_params['spectra_name']
 
 	# verify that xparam and yparam are valid parameters
-	if xparam not in out_separate_params: raise Exception(f'{xparam} is not in {model}. Valid parameters: {out_separate_params.keys()}')
-	if yparam not in out_separate_params: raise Exception(f'{yparam} is not in {model}. Valid parameters: {out_separate_params.keys()}')
+	if xparam not in out_separate_params: raise Exception(f'{xparam} is not a free parameter in {model}. Valid parameters: {out_separate_params.keys()}')
+	if yparam not in out_separate_params: raise Exception(f'{yparam} is not a free parameter in {model}. Valid parameters: {out_separate_params.keys()}')
 
 	# make plot of y_param against x_param
 	#------------------------
@@ -565,39 +566,51 @@ def plot_model_resolution(model, spectra_name_full, xlog=True, ylog=False, xrang
 	spectra_name_full = var_to_list(spectra_name_full)
 
 	# read model spectra
-	wl_model = np.zeros((len(spectra_name_full), model_points(model)))
-	flux_model = np.zeros((len(spectra_name_full), model_points(model)))
-	resolution_model = np.zeros((len(spectra_name_full), model_points(model)))
+	wl_model = []
+	flux_model = []
+	resolution_model = []
 	for i, spectrum_name_full in enumerate(spectra_name_full):
 		out_read_model_spectrum = read_model_spectrum(spectra_name_full=spectrum_name_full, model=model)
-		wl_model[i,:] = out_read_model_spectrum['wl_model']
-		flux_model[i,:] = out_read_model_spectrum['flux_model']
+		wl = out_read_model_spectrum['wl_model']
+		flux = out_read_model_spectrum['flux_model']
 
 		# calculate resolution
 		if delta_wl_log: # obtain wavelength step in logarithm
-			wl_bin = np.log10(wl_model[i,1:]) - np.log10(wl_model[i,:-1]) # wavelength dispersion of the spectrum
+			wl_bin = np.log10(wl[1:]) - np.log10(wl[:-1]) # wavelength dispersion of the spectrum
 			wl_bin = np.append(wl_bin, wl_bin[-1]) # add an element equal to the last row to have same data points
 		else:
-			wl_bin = wl_model[i,1:] - wl_model[i,:-1] # wavelength dispersion of the spectrum
+			wl_bin = wl[1:] - wl[:-1] # wavelength dispersion of the spectrum
 			wl_bin = np.append(wl_bin, wl_bin[-1]) # add an element equal to the last row to have same data points
 
-		if resolving_power: resolution_model[i,:] = wl_model[i,:] / wl_bin
-		else: resolution_model[i,:] = wl_bin
-	
+		if resolving_power: resolution_model.append(wl / wl_bin)
+		else: resolution_model.append(wl_bin)
+
+		# nested list with all model spectra
+		wl_model.append(wl)
+		flux_model.append(flux)
+
 	# plot resolution as a function of wavelength
 	#------------------------
 	# initialize plot for best fits and residuals
 	fig, ax = plt.subplots()
 
+	out_input_data_stats = input_data_stats(wl_spectra=wl_model, N_spectra=len(spectra_name_full))
+	wl_spectra_min = out_input_data_stats['wl_spectra_min']
+	wl_spectra_max = out_input_data_stats['wl_spectra_max']
+
+	if xrange is None: xrange = [wl_spectra_min, wl_spectra_max]
+
 	for i in range(len(spectra_name_full)):
-		ax.scatter(wl_model[i,:], resolution_model[i,:], s=5, zorder=3)
+		mask = (wl_model[i]>=xrange[0]) & (wl_model[i]<=xrange[1])
+		ax.scatter(wl_model[i][mask], resolution_model[i][mask], s=5, zorder=3)
 
 	if xrange is not None: ax.set_xlim(xrange[0], xrange[1])
 	if yrange is not None: ax.set_ylim(yrange[0], yrange[1])
 	ax.minorticks_on() 
 	if xlog: 
 		ax.set_xscale('log')
-		ax.xaxis.set_major_formatter(StrMethodFormatter('{x:.0f}'))
+		if xrange[0]>0.1: # to avoid when spectra go down to wavelength zero
+			ax.xaxis.set_major_formatter(StrMethodFormatter('{x:.0f}')) 
 	if ylog: ax.set_yscale('log')
 	plt.grid(True, which='both', color='gainsboro', alpha=0.5)
 

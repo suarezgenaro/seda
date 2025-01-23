@@ -103,7 +103,8 @@ def bayes(my_bayes):
 	logKzz_range_prior = my_bayes.logKzz_range_prior
 	Z_range_prior = my_bayes.Z_range_prior
 	CtoO_range_prior = my_bayes.CtoO_range_prior
-	R_range_prior = my_bayes.R_range_prior
+	if distance is not None:
+		R_range_prior = my_bayes.R_range_prior
 
 	# cut input spectra to the fit range
 	wl_obs = []
