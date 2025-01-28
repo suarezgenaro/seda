@@ -2,6 +2,6 @@
 #include LICENSE
 
 # include auxiliary files
-recursive-include seda/aux
+#recursive-include seda/aux
 #include seda/aux/model_coverage/*
 #include seda/aux/model_spectra/*
