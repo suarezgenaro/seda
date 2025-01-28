@@ -28,7 +28,7 @@ setup(name='seda',
 #      install_requires=install_requires(),
       zip_safe=False,
 #      include_package_data=True)
-#      package_dir = {'seda': 'seda'},    
-#      package_data = {'seda': ['aux/*']},
+      package_dir = {'seda': 'seda'},    
+      package_data = {'seda': ['aux/*']},
       include_package_data=True)
       
