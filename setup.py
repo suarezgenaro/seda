@@ -25,12 +25,13 @@ setup(name='seda',
 #      packages = find_packages(),
       packages=['seda', 'seda.spectral_indices', 'seda.synthetic_photometry'],
       install_requires=['astropy','corner','dynesty','lmfit','matplotlib','numpy','scipy','specutils','spectres','tqdm','xarray'], 
+
+      package_data = {'seda/aux/*]},
+      include_package_data=True,
+      
 #      install_requires=install_requires(),
-      zip_safe=False,
+      zip_safe=False)
 #      include_package_data=True)
 #      zip_safe = True,
 #      use_2to3 = False,
-#      package_dir = {'seda': 'seda'},    
-      package_data = {'seda': ['aux/*']},
-      include_package_data=True)
-      
+#      package_dir = {'seda': 'seda'},  
