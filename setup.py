@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 with open('README.md', 'r') as f:
     long_description = f.read()
@@ -22,7 +22,8 @@ setup(name='seda',
       author_email='gsuarez2405@gmail.com',
       url='https://github.com/suarezgenaro/seda',
       license='MIT',
-      packages=['seda', 'seda.spectral_indices', 'seda.synthetic_photometry'],
+      packages = find_packages(),
+#      packages=['seda', 'seda.spectral_indices', 'seda.synthetic_photometry'],
       install_requires=['astropy','corner','dynesty','lmfit','matplotlib','numpy','scipy','specutils','spectres','tqdm','xarray'], 
 #      install_requires=install_requires(),
       zip_safe=False,
