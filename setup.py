@@ -28,6 +28,6 @@ setup(name='seda',
       zip_safe=False,
 #      include_package_data=True)
 #      package_dir = {'seda': 'seda'},    
-      package_data = {'seda': ['aux/*']},
+#      package_data = {'seda': ['aux/*']},
       include_package_data=True)
       
