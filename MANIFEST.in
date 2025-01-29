@@ -3,6 +3,7 @@
 
 # include auxiliary files
 #recursive-include aux
-include seda/aux
+include seda/aux/__init__.py
+include seda/aux/*.dat
 #include seda/aux/model_coverage/*
 #include seda/aux/model_spectra/*
