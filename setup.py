@@ -22,17 +22,11 @@ setup(name='seda',
       author_email='gsuarez2405@gmail.com',
       url='https://github.com/suarezgenaro/seda',
       license='MIT',
-      packages = find_packages(),
-#      packages=['seda', 'seda.spectral_indices', 'seda.synthetic_photometry'],
+#      packages = find_packages(),
+      packages=['seda', 'seda.spectral_indices', 'seda.synthetic_photometry'],
       install_requires=['astropy','corner','dynesty','lmfit','matplotlib','numpy','scipy','specutils','spectres','tqdm','xarray'], 
-
-      
-      package_data = {'aux/*]},
-      include_package_data=True,
-      
 #      install_requires=install_requires(),
-      zip_safe=False)
-#      include_package_data=True)
-#      zip_safe = True,
-#      use_2to3 = False,
-#      package_dir = {'seda': 'seda'},  
+#      package_dir = {'seda': 'seda'},
+      package_data = {'seda/aux/*'}
+      zip_safe=False,
+      include_package_data=True)
