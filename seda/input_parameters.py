@@ -1,6 +1,7 @@
 import numpy as np
 from .utils import *
 from .synthetic_photometry.synthetic_photometry import *
+from .models import *
 from sys import exit
 
 print('\n    SEDA package imported')
@@ -220,26 +221,10 @@ class ModelOptions:
 	- model_dir : str, list, or array
 		Path to the directory (str, list, or array) or directories (as a list or array) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
 		Avoid using paths with null spaces. 
-	- Teff_range : float array, optional
-		Minimum and maximum Teff values to select a model grid subset (e.g., ``Teff_range = np.array([Teff_min, Teff_max])``).
-		If not provided, the full Teff range in ``model_dir`` is considered.
-	- logg_range : float array, optional
-		Minimum and maximum logg values to select a model grid subset.
-		If not provided, the full logg range in ``model_dir`` is considered.
-	- Z_range : float array, optional
-		Minimum and maximum metallicity values to select a model grid subset.
-		If not provided, the full Z range in ``model_dir`` is considered, if available in ``model``.
-	- logKzz_range : float array, optional
-		Minimum and maximum diffusion parameter values to select a model grid subset.
-		If not provided, the full logKzz range in ``model_dir`` is considered, if available in ``model``.
-	- CtoO_range : float array, optional
-		Minimum and maximum C/O ratio values to select a model grid subset.
-		If not provided, the full C/O ratio range in ``model_dir`` is considered, if available in ``model``.
-	- fsed_range : float array, optional
-		Minimum and maximum cloudiness parameter values to select a model grid subset.
-		If not provided, the full fsed range in ``model_dir`` is considered, if available in ``model``.
-	- R_range: float array, optional (used in ``bayes_fit``)
-		Minimum and maximum radius values to sample the posterior for radius. It requires the parameter ``distance`` in `input_parameters.InputData`.
+	- params_ranges : dictionary, optional
+		Minimum and maximum values for any free model parameters to select a model grid subset.
+		E.g., ``params_ranges = {'Teff': [1000, 1200], 'logg': [4., 5.]}`` to consider spectra within those Teff and logg ranges.
+		If a parameter range is not provided, the full range in ``model_dir`` is considered.
 	- path_save_spectra_conv: str, optional
 		Directory path to store convolved model spectra. 
 		If not provided (default), the convolved spectra will not be saved. 
@@ -261,32 +246,30 @@ class ModelOptions:
 	--------
 	>>> import seda
 	>>> 
+	>>> # models
 	>>> model = 'Sonora_Elf_Owl'
 	>>> model_dir = ['my_path/output_700.0_800.0/', 
 	>>>              'my_path/output_850.0_950.0/'] # folders to seek model spectra
-	>>> Teff_range = np.array((700, 900)) # Teff range
-	>>> logg_range = np.array((4.0, 5.0)) # logg range
+	>>> 
+	>>> # some parameter ranges to read a model grid subset
+	>>> params_ranges = {'Teff': [700, 900, 'logg': [4.0, 5.0]
+	>>> 
+	>>> # load model options
 	>>> my_model = seda.ModelOptions(model=model, model_dir=model_dir, 
-	>>>                              logg_range=logg_range, Teff_range=Teff_range)
+	>>>                              params_ranges=params_ranges)
 	    Model options loaded successfully
 
 	Author: Genaro Suárez
 	'''
 
-	def __init__(self, model, model_dir, R_range=None, Teff_range=None, logg_range=None, 
-	             Z_range=None, logKzz_range=None, CtoO_range=None, fsed_range=None, 
+	def __init__(self, model, model_dir, params_ranges=None,
 	             path_save_spectra_conv=None, skip_convolution=False):
 
 		self.model = model
 		models_valid = list(available_models().keys())
 		if model not in models_valid: raise Exception(f'Models "{model}" are not recognized. Available models are: \n          {models_valid}')
-		self.R_range = R_range
-		self.Teff_range = Teff_range
-		self.logg_range = logg_range
-		self.Z_range = Z_range
-		self.logKzz_range = logKzz_range
-		self.CtoO_range = CtoO_range
-		self.fsed_range = fsed_range
+		#self.R_range = R_range
+		self.params_ranges = params_ranges
 		self.path_save_spectra_conv = path_save_spectra_conv
 		self.skip_convolution = skip_convolution
 
@@ -295,7 +278,7 @@ class ModelOptions:
 		self.model_dir = model_dir
 
 		# get number of model data points
-		self.N_modelpoints = model_points(model)
+		self.N_modelpoints = Models(model).N_modelpoints
 
 		print('\n   Model options loaded successfully')
 
@@ -372,7 +355,6 @@ class Chi2Options:
 		self.scaling_free_param = scaling_free_param
 		self.scaling = scaling
 		self.extinction_free_param = extinction_free_param
-#		self.skip_convolution = skip_convolution
 		self.avoid_IR_excess = avoid_IR_excess
 		self.IR_excess_limit = IR_excess_limit
 
@@ -393,14 +375,7 @@ class Chi2Options:
 
 		# read parameters from ModelOptions
 		self.model = my_model.model
-		self.R_range = my_model.R_range
-		self.Teff_range = my_model.Teff_range
-		self.logg_range = my_model.logg_range
-		self.Z_range = my_model.Z_range
-		self.logKzz_range = my_model.logKzz_range
-		self.CtoO_range = my_model.CtoO_range
-		self.fsed_range = my_model.fsed_range
-#		self.save_convolved_spectra = my_model.save_convolved_spectra
+		self.params_ranges = my_model.params_ranges
 		self.path_save_spectra_conv = my_model.path_save_spectra_conv
 		self.skip_convolution = my_model.skip_convolution
 		self.model_dir = my_model.model_dir
@@ -502,6 +477,8 @@ class BayesOptions:
 		Minimum and maximum wavelength (in microns) to cut model spectra (to make the code faster). 
 		Default values are the same as ``fit_wl_range`` with a padding to avoid the point below.
 		CAVEAT: the selected wavelength range of model spectra must cover the spectrophotometry used in the fit and a bit more (to avoid errors when resampling synthetic spectra using spectres)
+	- R_range: float array, optional (used in ``bayes_fit``)
+		Minimum and maximum radius values to sample the posterior for radius. It requires the parameter ``distance`` in `input_parameters.InputData`.
 	- 'chi2_pickle_file' : dictionary, optional
 		Pickle file with a dictionary with the results from the chi-square minimization by ``chi2_fit.chi2``.
 		If given, the parameters from the best chi-square fits will be used to define priors to estimate posteriors. 
@@ -538,12 +515,10 @@ class BayesOptions:
 	'''
 
 	def __init__(self, my_data, my_model, fit_wl_range=None, model_wl_range=None, 
-	             chi2_pickle_file=None, bayes_pickle_file=None,
+	             R_range=None, chi2_pickle_file=None, bayes_pickle_file=None,
 		         grid=None, dynamic_sampling=True, nlive=500, save_results=True):
 
-		#self.logKzz_range = logKzz_range
-		#self.Z_range = Z_range
-		#self.CtoO_range = CtoO_range
+		self.R_range = R_range
 		self.chi2_pickle_file = chi2_pickle_file
 		self.dynamic_sampling = dynamic_sampling
 		self.nlive = nlive
@@ -566,14 +541,8 @@ class BayesOptions:
 
 		# read parameters from ModelOptions
 		self.model = my_model.model
-		self.R_range = my_model.R_range
-		self.Teff_range = my_model.Teff_range
-		self.logg_range = my_model.logg_range
-		self.Z_range = my_model.Z_range
-		self.logKzz_range = my_model.logKzz_range
-		self.CtoO_range = my_model.CtoO_range
-		self.fsed_range = my_model.fsed_range
 		self.model_dir = my_model.model_dir
+		self.params_ranges = my_model.params_ranges
 		self.N_modelpoints = my_model.N_modelpoints
 
 		# extract parameters for convenience
@@ -584,19 +553,13 @@ class BayesOptions:
 		lam_res = my_data.lam_res
 		model = my_model.model
 		model_dir = my_model.model_dir
-		R_range = my_model.R_range
-		Teff_range = my_model.Teff_range
-		logg_range = my_model.logg_range
-		Z_range = my_model.Z_range
-		logKzz_range = my_model.logKzz_range
-		CtoO_range = my_model.CtoO_range
-		fsed_range = my_model.fsed_range
+		params_ranges = my_model.params_ranges
 
-		# number of data points in the input spectra
+		# some statistic for input spectra
 		out_input_data_stats = input_data_stats(wl_spectra=wl_spectra, N_spectra=N_spectra)
-		wl_spectra_min = out_input_data_stats['wl_spectra_min']
-		wl_spectra_max = out_input_data_stats['wl_spectra_max']
-		N_datapoints = out_input_data_stats['N_datapoints']
+		wl_spectra_min = out_input_data_stats['wl_spectra_min'] # minimum wavelength in the input spectra
+		wl_spectra_max = out_input_data_stats['wl_spectra_max'] # maximum wavelength in the input spectra
+		N_datapoints = out_input_data_stats['N_datapoints'] # number of data points in all input spectra
 
 		# handle fit_wl_range
 		fit_wl_range = set_fit_wl_range(fit_wl_range=fit_wl_range, N_spectra=N_spectra, wl_spectra=wl_spectra)
@@ -616,70 +579,25 @@ class BayesOptions:
 
 		# parameter ranges for the posteriors
 		if chi2_pickle_file:
+#			check this for all models
 			out_param_ranges_sampling = param_ranges_sampling(chi2_pickle_file)
 			Teff_range_prior = out_param_ranges_sampling['Teff_range_prior']
 			logg_range_prior = out_param_ranges_sampling['logg_range_prior']
 			logKzz_range_prior = out_param_ranges_sampling['logKzz_range_prior']
 			Z_range_prior = out_param_ranges_sampling['Z_range_prior']
 			CtoO_range_prior = out_param_ranges_sampling['CtoO_range_prior']
-		else:
-			# I AM HERE: SAMPLING DOESN'T WORK WITH ANY OF THE PARAMS DEFINITIONS BELOW. IT SAYS THERE IS SOMETHING OUT OF BOUNDS
-			# define priors from input parameters or grid ranges
-			out_grid_ranges = grid_ranges(model) # read grid ranges
-			if Teff_range is not None: Teff_range_prior = Teff_range
-			else: Teff_range_prior = np.array([out_grid_ranges['Teff'].min(), out_grid_ranges['Teff'].max()])
-			if logg_range is not None: logg_range_prior = logg_range
-			else: logg_range_prior = np.array([out_grid_ranges['logg'].min(), out_grid_ranges['logg'].max()])
-			if logKzz_range is not None: logKzz_range_prior = logKzz_range
-			else: logKzz_range_prior = np.array([out_grid_ranges['logKzz'].min(), out_grid_ranges['logKzz'].max()])
-			if Z_range is not None: Z_range_prior = Z_range
-			else: Z_range_prior = np.array([out_grid_ranges['Z'].min(), out_grid_ranges['Z'].max()])
-			if CtoO_range is not None: CtoO_range_prior = CtoO_range
-			else: CtoO_range_prior = np.array([out_grid_ranges['CtoO'].min(), out_grid_ranges['CtoO'].max()])
 
-			# TEST: give a padding on both edges of each parameter
-#			Teff_range_prior = np.array([1.05*Teff_range_prior[0], 0.95*Teff_range_prior[1]])
-#			logg_range_prior = np.array([1.05*logg_range_prior[0], 0.95*logg_range_prior[1]])
-#			logKzz_range_prior = np.array([1.05*logKzz_range_prior[0], 0.95*logKzz_range_prior[1]])
-#			Z_range_prior = np.array([1.05*Z_range_prior[0], 0.95*Z_range_prior[1]])
-#			CtoO_range_prior = np.array([1.05*CtoO_range_prior[0], 0.95*CtoO_range_prior[1]])
+#		self.Teff_range_prior = Teff_range_prior
+#		self.logg_range_prior = logg_range_prior
+#		self.logKzz_range_prior = logKzz_range_prior
+#		self.Z_range_prior = Z_range_prior
+#		self.CtoO_range_prior = CtoO_range_prior
 
-#			# TEST: define ranges as lists as when chi2_pickle_file is True
-#			Teff_range_prior = [Teff_range[0], Teff_range[1]]
-#			logg_range_prior = [logg_range[0], logg_range[1]]
-#			out_grid_ranges = grid_ranges(model) # read grid ranges
-#			logKzz_range_prior = [out_grid_ranges['logKzz'].min(), out_grid_ranges['logKzz'].max()]
-#			Z_range_prior = [out_grid_ranges['Z'].min(), out_grid_ranges['Z'].max()]
-#			CtoO_range_prior = [out_grid_ranges['CtoO'].min(), out_grid_ranges['CtoO'].max()]
-
-#			Teff_range_prior = [525.0, 625.0]
-#			logg_range_prior = [3.4981880270062007, 3.9981880270062007]
-#			logKzz_range_prior = [2.5, 5.5]
-#			Z_range_prior = [-1.0, -0.75]
-#			CtoO_range_prior = [1.0, 2.0]
-#
-##			SOLUTION: CUT THE LOGG RANGE FROM THE RANGE 3.0-5.5 to 3.3-5.5. UNDERSTAND WHY 3.0 DOESN'T WORK BUT 3.3 DOES!!!!!!!!!!!!!!!!!
-#			Teff_range_prior = [300, 700]
-
-#			logg_range_prior = [3.3, 5.5]
-
-		#if distance_label=='yes':
-		if distance is not None:
-			if R_range is None: raise Exception('Please provide the "R_range" parameter')
-			R_range_prior = R_range
-			self.R_range_prior = R_range_prior
-
-		self.Teff_range_prior = Teff_range_prior
-		self.logg_range_prior = logg_range_prior
-		self.logKzz_range_prior = logKzz_range_prior
-		self.Z_range_prior = Z_range_prior
-		self.CtoO_range_prior = CtoO_range_prior
-
-		# define the dimensionality of our problem.
+		# define the dimensionality of our problem
 		if distance is not None: # sample radius distribution
-			ndim = 6
+			ndim = len(Models(model).free_params) + 1
 		else:
-			ndim = 5
+			ndim = len(Models(model).free_params)
 		self.ndim = ndim
 
 		# read model grid
@@ -687,16 +605,29 @@ class BayesOptions:
 			# initialize list to save the resampled, convolved grid appropriate for each input spectrum
 			grid = []
 			for i in range(N_spectra): # for each input observed spectrum
-				if model=='Sonora_Elf_Owl':
-					# convolve the grid to the given res and lam_res for each input spectrum
-					# resample the convolved grid to the input wavelengths within the fit range for each input spectrum
-					print(f'\nFor input observed spectrum #{i+1}')
-					grid_each = read_grid(model=model, model_dir=model_dir, Teff_range=Teff_range, logg_range=logg_range, 
-					                 Z_range=Z_range, logKzz_range=logKzz_range, CtoO_range=CtoO_range, 
-					                 fsed_range=fsed_range, convolve=True, res=res[i], lam_res=lam_res[i], 
-					                 fit_wl_range=fit_wl_range[i], wl_resample=wl_spectra[i])
+				# convolve the grid to the given res and lam_res for each input spectrum
+				# resample the convolved grid to the input wavelengths within the fit range for each input spectrum
+				print(f'\nFor input observed spectrum #{i+1}')
+				grid_each = read_grid(model=model, model_dir=model_dir, params_ranges=params_ranges, 
+				                 convolve=True, res=res[i], lam_res=lam_res[i], 
+				                 fit_wl_range=fit_wl_range[i], wl_resample=wl_spectra[i])
 				# add resampled grid for each input spectrum to the same list
 				grid.append(grid_each)
 		self.grid = grid
+
+		# unique values for each model free parameter
+		params_unique = grid[0]['params_unique']
+		self.params_unique = params_unique
+
+		# define priors from input parameters or grid ranges
+		params_priors = {}
+		for param in params_unique:
+			params_priors[param] = np.array([params_unique[param].min(), params_unique[param].max()])
+
+		if distance is not None:
+			if R_range is None: raise Exception('Please provide the "R_range" parameter')
+			params_priors['R'] = R_range
+
+		self.params_priors = params_priors
 
 		print('\n   Bayes fit options loaded successfully')

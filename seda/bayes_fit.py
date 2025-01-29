@@ -39,18 +39,18 @@ def bayes(my_bayes):
 	>>> model = 'Sonora_Elf_Owl'
 	>>> model_dir = ['my_path/output_575.0_650.0/', 
 	>>>              'my_path/output_700.0_800.0/'] # folders to seek model spectra
-	>>> Teff_range = np.array((700, 900)) # Teff range in K
-	>>> logg_range = np.array((4.0, 5.0)) # logg range
+	>>> # set ranges for some (Teff and logg) free parameters to select only a grid subset
+	>>> params_ranges = {'Teff': [700, 900], 'logg': [4.0, 5.0]}
+	>>> my_model = seda.ModelOptions(model=model, model_dir=model_dir, 
+	>>>                              params_ranges=params_ranges)
+	>>> 
+	>>> # load Bayesian options
 	>>> R_range = np.array((0.6, 1.0)) # R range in Rjup
-	>>> my_model = seda.ModelOptions(model=model, model_dir=model_dir, logg_range=logg_range, 
-	>>>                              Teff_range=Teff_range, R_range=R_range)
-	>>> 
-	>>> # load chi-square options
-	>>> fit_wl_range = np.array([value1, value2]) # to make the fit between value1 and value2
+	>>> fit_wl_range = [value1, value2] # to make the fit between value1 and value2
 	>>> my_bayes = seda.Chi2FitOptions(my_data=my_data, my_model=my_model, 
-	>>>                                fit_wl_range=fit_wl_range)
+	>>>                                fit_wl_range=fit_wl_range, R_range=R_range)
 	>>> 
-	>>> # run chi-square fit
+	>>> # run Bayesian sampling 
 	>>> out_bayes = seda.bayes(my_bayes)
 	    Bayesian sampling ran successfully
 
@@ -79,18 +79,16 @@ def bayes(my_bayes):
 	# from ModelOptions
 	model = my_bayes.model
 	model_dir = my_bayes.model_dir
-	Teff_range = my_bayes.Teff_range
-	logg_range = my_bayes.logg_range
-	R_range = my_bayes.R_range
+	params_ranges = my_bayes.params_ranges
 	# from BayesOptions
 	save_results = my_bayes.save_results
 	fit_wl_range = my_bayes.fit_wl_range
 	model_wl_range = my_bayes.model_wl_range
-	logKzz_range = my_bayes.logKzz_range
-	Z_range = my_bayes.Z_range
-	CtoO_range = my_bayes.CtoO_range
+	R_range = my_bayes.R_range
 	chi2_pickle_file = my_bayes.chi2_pickle_file
 	grid = my_bayes.grid
+	params_unique = my_bayes.params_unique
+	params_priors = my_bayes.params_priors
 	dynamic_sampling = my_bayes.dynamic_sampling
 	ndim = my_bayes.ndim
 	nlive = my_bayes.nlive
@@ -98,13 +96,6 @@ def bayes(my_bayes):
 	wl_spectra_max = my_bayes.wl_spectra_max
 	N_datapoints = my_bayes.N_datapoints
 	bayes_pickle_file = my_bayes.bayes_pickle_file
-	Teff_range_prior = my_bayes.Teff_range_prior
-	logg_range_prior = my_bayes.logg_range_prior
-	logKzz_range_prior = my_bayes.logKzz_range_prior
-	Z_range_prior = my_bayes.Z_range_prior
-	CtoO_range_prior = my_bayes.CtoO_range_prior
-	if distance is not None:
-		R_range_prior = my_bayes.R_range_prior
 
 	# cut input spectra to the fit range
 	wl_obs = []
@@ -120,47 +111,37 @@ def bayes(my_bayes):
 
 	# print priors
 	print(f'\n      Uniform priors:')
-	print(f'         Teff range = {Teff_range_prior}')
-	print(f'         logg range = {logg_range_prior}')
-	print(f'         logKzz range = {logKzz_range_prior}')
-	print(f'         Z range = {Z_range_prior}')
-	print(f'         CtoO range = {CtoO_range_prior}')
-	if distance is not None: print(f'         R range = {R_range_prior}')
-	print('')
-
-
+	for param in params_priors:
+		print(f'         {param} range = {params_priors[param]}')
+	
 	#------------------
 	def prior_transform(p):
 		# p (sampler's live points) takes random values between 0 and 1 for each free parameter
 		v = p # just to have the same dimension as p
-		v[0] = (Teff_range_prior[1]-Teff_range_prior[0])     * p[0] + Teff_range_prior[0] # Teff_range_prior.min() < Teff < Teff_range_prior.max()
-		v[1] = (logg_range_prior[1]-logg_range_prior[0])     * p[1] + logg_range_prior[0] # logg_range_prior.min() < logg < logg_range_prior.max()
-		v[2] = (logKzz_range_prior[1]-logKzz_range_prior[0]) * p[2] + logKzz_range_prior[0] # logKzz_range_prior.min() < logKzz < logKzz_range_prior.max()
-		v[3] = (Z_range_prior[1]-Z_range_prior[0])           * p[3] + Z_range_prior[0] # Z_range_prior.min() < Z < Z_range_prior.max()
-		v[4] = (CtoO_range_prior[1]-CtoO_range_prior[0])     * p[4] + CtoO_range_prior[0] # CtoO_range_prior.min() < CtoO < CtoO_range_prior.max()
-		if distance: # sample radius distribution
-			v[5] = (R_range_prior[1]-R_range_prior[0])       * p[5] + R_range_prior[0] # R_range.min() < R < R_range.max()
+		for i,param in enumerate(params_priors):
+			v[i] = (params_priors[param][1]-params_priors[param][0]) * p[i] + params_priors[param][0] # parameter minimum < parameter < parameter maximum
 
 		return v
 
 	#------------------
 	def loglike(p):
-		if distance is not None: # sample radius distribution
-			Teff, logg, logKzz, Z, CtoO, R = p
-		else:
-			Teff, logg, logKzz, Z, CtoO = p
-
+		# arrange parameter values in the sampling related to model free parameters
+		# to be used in to generate the corresponding model spectrum
+		params = {}
+		for i,param in enumerate(params_priors.keys()): # for each parameter in the sampling
+			if param in params_unique: # only keep the free parameters in the model
+				params[param] = p[i]
+		
 		lnlike = 0.0 # initialize the log-likelihood variable
 		for i in range(N_spectra): # for each input spectrum
-			#flux_model = model_gen(p) # model spectrum for each parameters' combination
-
 			# generate a model with the sampled parameters 
 			# (the model will have the resolution and be resampled to the fit region for each input spectrum)
-			out_generate_model_spectrum = generate_model_spectrum(Teff=Teff, logg=logg, logKzz=logKzz, Z=Z, CtoO=CtoO, grid=grid[i])
+			out_generate_model_spectrum = generate_model_spectrum(params=params, model=model, model_dir=model_dir, grid=grid[i])
 			flux_model = out_generate_model_spectrum['flux']
 
 			# scaled model spectrum
 			if distance is not None:
+				R = p[list(params_priors.keys()).index('R')] # sampling value for radius
 				scaling = (((R*u.R_jup).to(u.km) / (distance*u.pc).to(u.km))**2).value # scaling = (R/d)^2
 			else:
 				scaling = np.sum(flux_obs[i]*flux_model/eflux_obs[i]**2) / np.sum(flux_model**2/eflux_obs[i]**2) # scaling that minimizes chi2

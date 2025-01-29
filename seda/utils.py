@@ -4,6 +4,7 @@ import os
 import fnmatch
 import xarray
 import pickle
+#import itertools
 from spectres import spectres
 from astropy import units as u
 from astropy.io import ascii
@@ -13,6 +14,7 @@ from scipy.interpolate import RegularGridInterpolator
 from tqdm.auto import tqdm
 from specutils.utils.wcs_utils import vac_to_air
 from sys import exit
+from .models import *
 
 ##########################
 def convolve_spectrum(wl, flux, res, lam_res, eflux=None, disp_wl_range=None, convolve_wl_range=None, out_file=None):
@@ -172,36 +174,36 @@ def print_time(time):
 
 	print(f'      elapsed time: {ftime} {unit}')
 
-##########################
-def model_points(model):
-	'''
-	Description:
-	------------
-		Maximum number of data points in the model spectra.
-
-	Parameters:
-	-----------
-	- model : str
-		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
-
-	Returns:
-	--------
-	- N_modelpoints: int
-		Maximum number of data points in the model spectra.
-
-	Author: Genaro Suárez
-	'''
-
-	if (model == 'Sonora_Diamondback'):	N_modelpoints = 385466 # number of rows in model spectra (all spectra have the same length)
-	if (model == 'Sonora_Elf_Owl'):	N_modelpoints = 193132 # number of rows in model spectra (all spectra have the same length)
-	if (model == 'LB23'): N_modelpoints = 30000 # maximum number of rows in model spectra
-	if (model == 'Sonora_Cholla'): N_modelpoints = 110979 # maximum number of rows in spectra of the grid
-	if (model == 'Sonora_Bobcat'): N_modelpoints = 362000 # maximum number of rows in spectra of the grid
-	if (model == 'ATMO2020'): N_modelpoints = 5000 # maximum number of rows of the ATMO2020 model spectra
-	if (model == 'BT-Settl'): N_modelpoints = 1291340 # maximum number of rows of the BT-Settl model spectra
-	if (model == 'SM08'): N_modelpoints = 184663 # rows of the SM08 model spectra
-
-	return N_modelpoints
+###########################
+#def model_points(model):
+#	'''
+#	Description:
+#	------------
+#		Maximum number of data points in the model spectra.
+#
+#	Parameters:
+#	-----------
+#	- model : str
+#		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
+#
+#	Returns:
+#	--------
+#	- N_modelpoints: int
+#		Maximum number of data points in the model spectra.
+#
+#	Author: Genaro Suárez
+#	'''
+#
+#	if (model == 'Sonora_Diamondback'):	N_modelpoints = 385466 # number of rows in model spectra (all spectra have the same length)
+#	if (model == 'Sonora_Elf_Owl'):	N_modelpoints = 193132 # number of rows in model spectra (all spectra have the same length)
+#	if (model == 'LB23'): N_modelpoints = 30000 # maximum number of rows in model spectra
+#	if (model == 'Sonora_Cholla'): N_modelpoints = 110979 # maximum number of rows in spectra of the grid
+#	if (model == 'Sonora_Bobcat'): N_modelpoints = 362000 # maximum number of rows in spectra of the grid
+#	if (model == 'ATMO2020'): N_modelpoints = 5000 # maximum number of rows of the ATMO2020 model spectra
+#	if (model == 'BT-Settl'): N_modelpoints = 1291340 # maximum number of rows of the BT-Settl model spectra
+#	if (model == 'SM08'): N_modelpoints = 184663 # rows of the SM08 model spectra
+#
+#	return N_modelpoints
 
 ##########################
 def read_model_spectrum(spectra_name_full, model, model_wl_range=None):
@@ -326,8 +328,8 @@ def best_chi2_fits(chi2_pickle_file, N_best_fits=1, model_dir_ori=None, ori_res=
 
 	Returns:
 	--------
-	Dictionary with model spectra:
-		- ``'spectra_name_best'`` : name of model spectrum
+	Dictionary with best model fits:
+		- ``'spectra_name_best'`` : model spectra names
 		- ``'chi2_red_fit_best'`` : reduced chi-square
 		- ``'wl_model_best'`` : (if ``ori_res``) wavelength (in um) of original model spectra.
 		- ``'flux_model_best'`` : (if ``ori_res``) fluxes (in erg/s/cm2/A) of original model spectra.
@@ -337,7 +339,7 @@ def best_chi2_fits(chi2_pickle_file, N_best_fits=1, model_dir_ori=None, ori_res=
 		- ``'flux_array_model_conv_resam_fit_best'`` : fluxes (in erg/s/cm2/A) of resampled, convolved model spectra within the fit range.
 		- ``'flux_residuals_best'`` : flux residuals in linear scale between model and input spectra.
 		- ``'logflux_residuals_best'`` : flux residuals in log scale between model and input spectra.
-		- ``'parameters'`` : physical parameters for each spectrum as provided by ``utils.separate_params``, namely ``Teff``, ``logg``, ``Z``, ``logKzz``, ``fsed``, and ``CtoO``, if provided by ``model``.
+		- ``'params'`` : model free parameters
 
 	Author: Genaro Suárez
 	'''
@@ -350,7 +352,6 @@ def best_chi2_fits(chi2_pickle_file, N_best_fits=1, model_dir_ori=None, ori_res=
 	lam_res = out_chi2['my_chi2'].lam_res#[0] # lam_resolution for the first input spectrum
 	N_modelpoints = out_chi2['my_chi2'].N_modelpoints
 	N_model_spectra = out_chi2['N_model_spectra']
-	#fit_wl_range = out_chi2['my_chi2'].fit_wl_range
 	spectra_name_full = out_chi2['spectra_name_full']
 	spectra_name = out_chi2['spectra_name']
 	chi2_red_fit = out_chi2['chi2_red_fit']
@@ -430,52 +431,42 @@ def best_chi2_fits(chi2_pickle_file, N_best_fits=1, model_dir_ori=None, ori_res=
 	if ori_res:
 		out['wl_model_best'] = wl_model_best
 		out['flux_model_best'] = flux_model_best
-	out['parameters'] = out_separate_params
+	out['params'] = out_separate_params['params']
 
 	return out
 
 ##################################################
-def generate_model_spectrum(Teff, logg, logKzz, Z, CtoO, grid=None, model=None, model_dir=None, Teff_range=None, logg_range=None, save_spectrum=False):
+def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spectrum=False):
 	'''
 	Description:
 	------------
-		Generate a Sonora Elf Owl model spectrum with any combination of parameters within the grid coverage (see ``input_parameters.ModelOptions``).
+		Generate a synthetic spectrum with any combination of free parameters within the coverage of the desired atmospheric models.
 
 	Parameters:
 	-----------
-	- Teff : float 
-		Effective temperature (Teff) of the desired spectrum.
-	- logg : float 
-		Surface gravity (logg) of the desired spectrum.
-	- logKzz : float 
-		Diffusion parameter (logKzz) of the desired spectrum.
-	- Z : float
-		Metallicity of the desired spectrum.
-	- CtoO : float 
-		C/O ration of the desired spectrum.
+	- params : dictionary
+		Value for each free parameter in the models to generate a synthetic spectrum with the desired parameter values.
+		E.g., ``params = {'Teff': 1010, 'logg': 4.2, 'Z': 0.1, 'fsed': 2.2}`` for a model grid with those free parameters.
+	- model : str
+		Atmospheric models to generate the synthetic spectrum. 
+		See available models in ``input_parameters.ModelOptions``.  
 	- grid : dictionary, optional
 		Model grid (``'wavelength'`` and ``'flux'``) generated by ``utils.read_grid`` for interpolations.
 		If not provided (default), then the grid is read (``model``, ``model_dir``, ``Teff_range`` and ``logg_range`` must be provided). 
 		If provided, the code will skip reading the grid, which will save some time (a few minutes).
-	- model : str, optional
-		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
-		Required if ``grid`` is not provided.
 	- model_dir : str or list, optional
 		Path to the directory (str or list) or directories (as a list) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
 		Required if ``grid`` is not provided.
-	- Teff_range : float array, optional (required if ``grid`` is not provided)
-		Minimum and maximum Teff values to select a model grid subset (e.g., ``Teff_range = np.array([Teff_min, Teff_max])``).
-	- logg_range : float array, optional (required if ``grid`` is not provided)
-		Minimum and maximum logg values to select a model grid subset.
 	- save_spectrum : {``True``, ``False``}, optional (default ``False``)
-		Save (``'yes'``) or do not save (``'no'``) the generated spectrum as an ascii table.
+		Save (``True``) or do not save (``False``) the generated spectrum as an ascii table.
+		Default name is '``model``_``params``_.dat'.
 
 	Returns:
 	--------
 	Dictionary with generated model spectrum:
 		- ``'wavelength'``: wavelengths in microns for the generated spectrum.
 		- ``'flux'``: fluxes in erg/s/cm2/A for the generated spectrum.
-		- ``'params'``: input parameters ``Teff``, ``logg``, ``logKzz``, ``Z``, and ``CtoO`` used to generate the spectrum.
+		- ``'params'``: input parameters for the generated synthetic spectrum.
 
 	Example:
 	--------
@@ -487,53 +478,45 @@ def generate_model_spectrum(Teff, logg, logKzz, Z, CtoO, grid=None, model=None, 
 	>>>              'my_path/Sonora_Elf_Owl/spectra/output_850.0_950.0/']
 	>>> 
 	>>> # parameters to generate a model spectrum
-	>>> Teff, logg, logKzz, Z, CtoO = 765, 4.15, 5.2, 0.2, 1.2
+	>>> params = {'Teff': 765, 'logg': 4.15, 'logKzz': 5.2, 'Z': 0.2, 'CtoO': 1.2}
 	>>> 
-	>>> # Teff and logg ranges to read model grid
-	>>> Teff_range = np.array([750, 800])
-	>>> logg_range = np.array([4.0, 4.5])
-	>>>
 	>>> # generate model spectrum
-	>>> out = seda.generate_model_spectrum(model=model, model_dir=model_dir, Teff=Teff, 
-	>>>                                    logg=logg, logKzz=logKzz, Z=Z, CtoO=CtoO, 
-	>>>                                    Teff_range=Teff_range, logg_range=logg_range)
+	>>> out = seda.generate_model_spectrum(model=model, model_dir=model_dir, 
+	>>>                                    params=params)
 
 	Author: Genaro Suárez
 	'''
 
+	# verify there is an input value for each free parameter in the grid
+	params_models = Models(model).params # free parameters in the model grid
+	for param in params_models:
+		if param not in params: raise Exception(f'Provide "{param}" value in "params" because it is a free parameter in "{model}".')
+
+	# verify that "params" are within the model grid coverage
+	for param in params:
+		if params[param]<params_models[param].min() or params[param]>params_models[param].max():
+			raise Exception(f'"{param}" value in "params" is out of the "{model}" grid coverage, which is [{params_models[param].min()}, {params_models[param].max()}]')
+
 	# read model grid if not provided
 	if grid is None:
-		# verify needed input parameters are provided
-		if Teff_range is None: raise Exception('missing Teff range to read a model grid subset')
-		if logg_range is None: raise Exception('missing logg range to read a model grid subset')
-		if Teff<Teff_range.min() or Teff>Teff_range.max(): raise Exception('Teff value is out of the Teff range') # show a warning if a Teff value is out of the loaded model grid.
-		if logg<logg_range.min() or logg>logg_range.max(): raise Exception('logg value is out of the logg range') # show a warning if a logg value is out of the loaded model grid.
-		if model is None: raise Exception('missing \'model\' variable')
-		if model_dir is None: raise Exception('missing \'model_dir\' variable')
+		# grid values around the desired parameter values
+		params_ranges = {}
+		for param in params: # for each free parameter in the grid
+			params_ranges[param] = find_two_nearest(params_models[param], params[param])
 
-		out_grid_ranges = grid_ranges(model) # read parameters' ranges
-
-		if logKzz<out_grid_ranges['logKzz'].min() or logKzz>out_grid_ranges['logKzz'].max(): raise Exception('logKzz value is out of the grid coverage')
-		if Z<out_grid_ranges['Z'].min() or Z>out_grid_ranges['Z'].max(): raise Exception('Z value is out of the grid coverage')
-		if CtoO<out_grid_ranges['CtoO'].min() or CtoO>out_grid_ranges['CtoO'].max(): raise Exception('C/O value is out of the grid coverage')
-
-		grid = read_grid(model=model, model_dir=model_dir, Teff_range=Teff_range, logg_range=logg_range)
-
+		grid = read_grid(model=model, model_dir=model_dir, params_ranges=params_ranges)
+		
 	# define an interpolating function from the grid
 	flux_grid = grid['flux']
 	wl_grid = grid['wavelength']
-	Teff_grid = grid['Teff']
-	logg_grid = grid['logg']
-	logKzz_grid = grid['logKzz']
-	Z_grid = grid['Z']
-	CtoO_grid = grid['CtoO']
-	interp_flux = RegularGridInterpolator((Teff_grid, logg_grid, logKzz_grid, Z_grid, CtoO_grid), flux_grid)
-	interp_wl = RegularGridInterpolator((Teff_grid, logg_grid, logKzz_grid, Z_grid, CtoO_grid), wl_grid)
+	params_unique = grid['params_unique']
+	interp_flux = RegularGridInterpolator((params_unique.values()), flux_grid)
+	interp_wl = RegularGridInterpolator((params_unique.values()), wl_grid)
 
-	params = ([Teff, logg, logKzz, Z, CtoO])
-	spectra_flux = interp_flux(params)[0,:] # to return a 1D array
-	spectra_wl = interp_wl(params)[0,:] # to return a 1D array
-
+	# interpolate input parameters
+	spectra_flux = interp_flux(list(params.values()))[0,:] # to return a 1D array
+	spectra_wl = interp_wl(list(params.values()))[0,:] # to return a 1D array
+	
 	# reverse array to sort wavelength from shortest to longest
 	ind_sort = np.argsort(spectra_wl)
 	spectra_wl = spectra_wl[ind_sort]
@@ -541,7 +524,14 @@ def generate_model_spectrum(Teff, logg, logKzz, Z, CtoO, grid=None, model=None, 
 
 	# store generated spectrum
 	if save_spectrum:
-		out = open(f'Elf_Owl_Teff{Teff}_logg{logg}_logKzz{logKzz}_Z{Z}_CtoO{CtoO}.dat', 'w')
+		# name for the file
+		spectrum_filename = model
+		for param in params:
+			spectrum_filename += f'_{param}{params[param]}'
+		spectrum_filename += '.dat'
+
+		# save spectrum
+		out = open(spectrum_filename, 'w')
 		out.write('# wavelength(um) flux(erg/s/cm2/A)  \n')
 		for i in range(len(spectra_wl)):
 			out.write('%11.7f %17.6E \n' %(spectra_wl[i], spectra_flux[i]))
@@ -552,9 +542,7 @@ def generate_model_spectrum(Teff, logg, logKzz, Z, CtoO, grid=None, model=None, 
 	return out
 
 ##################################################
-#def read_grid(model, model_dir, Teff_range, logg_range, convolve=False, model_wl_range=None, fit_wl_range=None, res=100, lam_res=2, wl_resample=None):
-def read_grid(model, model_dir, Teff_range=None, logg_range=None, Z_range=None, logKzz_range=None, 
-	          CtoO_range=None, fsed_range=None, convolve=False, model_wl_range=None, 
+def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_range=None, 
 	          fit_wl_range=None, res=None, lam_res=None, wl_resample=None):
 	'''
 	Description:
@@ -567,24 +555,10 @@ def read_grid(model, model_dir, Teff_range=None, logg_range=None, Z_range=None, 
 		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
 	- model_dir : str or list
 		Path to the directory (str or list) or directories (as a list) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
-	- Teff_range : float array, optional
-		Minimum and maximum Teff values to select a model grid subset (e.g., ``Teff_range = np.array([Teff_min, Teff_max])``).
-		If not provided, the full Teff range in ``model_dir`` is considered.
-	- logg_range : float array, optional
-		Minimum and maximum logg values to select a model grid subset.
-		If not provided, the full logg range in ``model_dir`` is considered.
-	- Z_range : float array, optional
-		Minimum and maximum metallicity values to select a model grid subset.
-		If not provided, the full Z range in ``model_dir`` is considered, if available in ``model``.
-	- logKzz_range : float array, optional
-		Minimum and maximum diffusion parameter values to select a model grid subset.
-		If not provided, the full logKzz range in ``model_dir`` is considered, if available in ``model``.
-	- CtoO_range : float array, optional
-		Minimum and maximum C/O ratio values to select a model grid subset.
-		If not provided, the full C/O ratio range in ``model_dir`` is considered, if available in ``model``.
-	- fsed_range : float array, optional
-		Minimum and maximum cloudiness parameter values to select a model grid subset.
-		If not provided, the full fsed range in ``model_dir`` is considered, if available in ``model``.
+	- params_ranges : dictionary, optional
+		Minimum and maximum values for any model free parameters to select a model grid subset.
+		E.g., ``params_ranges = {'Teff': [1000, 1200], 'logg': [4., 5.]}`` to consider spectra within those Teff and logg ranges.
+		If a parameter range is not provided, the full range in ``model_dir`` is considered.
 	- convolve: {``True``, ``False``}, optional (default ``False``)
 		Convolve (``'yes'``) or do not convolve (``'no'``) the model grid spectra to the indicated ``res`` at ``lam_res``.
 	- res : float, optional (required if ``convolve``).
@@ -610,11 +584,7 @@ def read_grid(model, model_dir, Teff_range=None, logg_range=None, Z_range=None, 
 	Dictionary with the (convolved and resampled, if requested) model grid:
 		- ``'wavelength'`` : wavelengths in microns for the model spectra in the grid.
 		- ``'flux'`` : fluxes in erg/s/cm2/A for the model spectra in the grid.
-		- ``'Teff'`` : Effective temperature at each grid point.
-		- ``'logg'`` : Surface gravity (logg) at each grid point.
-		- ``'logKzz'`` : Diffusion parameter (logKzz) at each grid point.
-		- ``'Z'`` : Metallicity at each grid point.
-		- ``'CtoO'`` : C/O ratio at each grid point.
+		- ``'params_unique'`` : dictionary with unique (non-repetitive) values for each model free parameter
 
 	Example:
 	--------
@@ -625,26 +595,18 @@ def read_grid(model, model_dir, Teff_range=None, logg_range=None, Z_range=None, 
 	>>> model_dir = ['my_path/Sonora_Elf_Owl/spectra/output_700.0_800.0/',
 	>>>              'my_path/Sonora_Elf_Owl/spectra/output_850.0_950.0/']
 	>>> 
-	>>> # Teff and logg ranges to read the model grid
-	>>> Teff_range = np.array([750, 800])
-	>>> logg_range = np.array([4.0, 4.5])
+	>>> # set ranges for some (Teff and logg) free parameters to select only a grid subset
+	>>> params_ranges = {'Teff': [700, 900], 'logg': [4.0, 5.0]}
 	>>>
 	>>> # read the grid
 	>>> out_read_grid = seda.read_grid(model=model, model_dir=model_dir, 
-	>>>                                Teff_range=Teff_range, logg_range=logg_range)
+	>>>                                params_ranges=params_ranges)
 
 	Author: Genaro Suárez
 	'''
 
 	ini_time_grid = time.time() # to estimate the time elapsed reading the grid
 
-	# read the model spectra names in the input folders and meeting the indicated parameters ranges 
-	#out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir, Teff_range=Teff_range, logg_range=logg_range)
-	out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir, Teff_range=Teff_range, logg_range=logg_range, 
-	                                                Z_range=Z_range, logKzz_range=logKzz_range, CtoO_range=CtoO_range, fsed_range=fsed_range)
-	spectra_name_full = out_select_model_spectra['spectra_name_full']
-	spectra_name = out_select_model_spectra['spectra_name']
-	
 	if wl_resample is not None:
 		# handle fit_wl_range
 		fit_wl_range = set_fit_wl_range(fit_wl_range=fit_wl_range, N_spectra=1, wl_spectra=[wl_resample])[0]
@@ -656,42 +618,26 @@ def read_grid(model, model_dir, Teff_range=None, logg_range=None, Z_range=None, 
 #		#model_wl_range = set_model_wl_range(model_wl_range=model_wl_range, fit_wl_range=fit_wl_range)
 #		model_wl_range = set_model_wl_range(model_wl_range=model_wl_range, wl_spectra_min=wl_spectra_min, wl_spectra_max=wl_spectra_max)
 
-	# all parameter's steps in the grid
-	out_grid_ranges = grid_ranges(model)
-	Teff_grid = out_grid_ranges['Teff']
-	logg_grid = out_grid_ranges['logg']
-	logKzz_grid = out_grid_ranges['logKzz']
-	Z_grid = out_grid_ranges['Z']
-	CtoO_grid = out_grid_ranges['CtoO']
+	# read the model spectra names and their parameters in the input folders and meeting the indicated parameters ranges 
+	out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir, params_ranges=params_ranges)
+	spectra_name_full = out_select_model_spectra['spectra_name_full']
+	spectra_name = out_select_model_spectra['spectra_name']
+	params = out_select_model_spectra['params']
 
-	# constrain parameters to the desired ranges
-	# it will help to avoid iterating below over undesired parameter values
-	if Teff_range is not None: 
-		mask_Teff = (Teff_grid>=Teff_range[0]) & (Teff_grid<=Teff_range[1])
-		Teff_grid = Teff_grid[mask_Teff]
-	if logg_range is not None: 
-		mask_logg = (logg_grid>=logg_range[0]) & (logg_grid<=logg_range[1])
-		logg_grid = logg_grid[mask_logg]
-	if logKzz_range is not None: 
-		mask_logKzz = (logKzz_grid>=logKzz_range[0]) & (logKzz_grid<=logKzz_range[1])
-		logKzz_grid = logKzz_grid[mask_logKzz]
-	if Z_range is not None: 
-		mask_Z = (Z_grid>=Z_range[0]) & (Z_grid<=Z_range[1])
-		Z_grid = Z_grid[mask_Z]
-	if CtoO_range is not None: 
-		mask_CtoO = (CtoO_grid>=CtoO_range[0]) & (CtoO_grid<=CtoO_range[1])
-		CtoO_grid = CtoO_grid[mask_CtoO]
+	# unique values for each free parameter
+	params_unique = {} # initialize dictionary
+	for param in params.keys():
+		params_unique[param] = np.unique(params[param]) # save unique values for each free parameter
 
-#	# define arrays to save the model grid
-#	if wl_resample is not None: 
-#		flux_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), len(wl_resample))) # to save the flux at each grid point
-#		wl_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), len(wl_resample))) # to save the wavelength at each grid point
-#		
-#	else:
-#		N_modelpoints = model_points(model)
-#		flux_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), N_modelpoints)) # to save the flux at each grid point
-#		wl_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), N_modelpoints)) # to save the wavelength at each grid point
-	
+	# create an array with as many dimensions as the number of free parameters in the models 
+	# and each dimension's size as the number of unique values for the corresponding parameter
+	arr = np.array(0.)*np.nan # initialize float array of NaNs with dimension zero
+	for param in params.keys(): # for each free parameter
+		dim_size = len(params_unique[param]) # number of unique values in each parameter
+		new_dim = np.expand_dims(arr, -1) # add a dimension (at the end)
+		arr = np.repeat(new_dim, dim_size, axis=-1) # change size of new dimension
+
+	# load model grid with the selected model spectra
 	# create a tqdm progress bar
 	if convolve:
 		if wl_resample is not None:
@@ -705,226 +651,422 @@ def read_grid(model, model_dir, Teff_range=None, logg_range=None, Z_range=None, 
 			desc = 'Reading model grid'
 	grid_bar = tqdm(total=len(spectra_name), desc=desc)
 
-	# read the grid with the selected model spectra
-	k = 0
-	for i_Teff in range(len(Teff_grid)): # iterate Teff
-		for i_logg in range(len(logg_grid)): # iterate logg
-			for i_logKzz in range(len(logKzz_grid)): # iterate logKzz
-				for i_Z in range(len(Z_grid)): # iterate Z
-					for i_CtoO in range(len(CtoO_grid)): # iterate C/O ration
-						# update the progress bar
-						grid_bar.update(1)
+	# save model spectra for each combination of free parameter values
+	for index in np.ndindex(arr.shape): # iterate over all possible combinations of the free parameter unique values
+		# update the progress bar
+		grid_bar.update(1)
 
-						# read the spectrum for each parameter combination
-						# file name uses g instead of logg
-						if (logg_grid[i_logg]==3.25): g_grid = 17.0
-						if (logg_grid[i_logg]==3.50): g_grid = 31.0
-						if (logg_grid[i_logg]==3.75): g_grid = 56.0
-						if (logg_grid[i_logg]==4.00): g_grid = 100.0
-						if (logg_grid[i_logg]==4.25): g_grid = 178.0
-						if (logg_grid[i_logg]==4.50): g_grid = 316.0
-						if (logg_grid[i_logg]==4.75): g_grid = 562.0
-						if (logg_grid[i_logg]==5.00): g_grid = 1000.0
-						if (logg_grid[i_logg]==5.25): g_grid = 1780.0
-						if (logg_grid[i_logg]==5.50): g_grid = 3160.0
+		# mask to select the corresponding spectrum for each combination of parameters
+		mask = np.ones(len(spectra_name), bool) # initialize mask with Trues
+		for i,param in enumerate(params.keys()): # for each free parameter
+			mask &= params[param]==params_unique[param][index[i]] # apply criteria to the mask and update it
 
-						# name of spectrum with parameters in the iteration
-						spectrum_name = f'spectra_logzz_{logKzz_grid[i_logKzz]}_teff_{Teff_grid[i_Teff]}_grav_{g_grid}_mh_{Z_grid[i_Z]}_co_{CtoO_grid[i_CtoO]}.nc'
-						# look into the selected spectra to find the full path for the spectrum above
-						spectrum_name_full = [x for x in spectra_name_full if x.endswith(spectrum_name)]
+		# verify if there is a model spectrum for the combination of parameters
+		if not np.any(mask): # if there is not a spectrum
+			print('   Caveat: No spectrum in "model_dir" for the combination:')
+			for i,param in enumerate(params.keys()):
+				print(f'	  {param}={params_unique[param][index[i]]}')
+		else: # if there is a spectrum
+			# read the spectrum with the parameter combination in the iteration and cut it to model_wl_range (default value: fit_wl_range plus padding)
+			spectrum_name_full = spectra_name_full[mask][0]
+			out_read_model_spectrum = read_model_spectrum(spectra_name_full=spectrum_name_full, model=model, 
+			                                              model_wl_range=model_wl_range)
+			wl_model = out_read_model_spectrum['wl_model'] # in um
+			flux_model = out_read_model_spectrum['flux_model'] # in erg/s/cm2/A
 
-						if spectrum_name_full: # if there is a spectrum with the parameters in the iteration in the input directories
-							# read the spectrum with the parameter combination in the iteration and cut it to model_wl_range (default value: fit_wl_range plus padding)
-							out_read_model_spectrum = read_model_spectrum(spectra_name_full=spectrum_name_full[0], model=model, model_wl_range=model_wl_range)
-							wl_model = out_read_model_spectrum['wl_model'] # in um
-							flux_model = out_read_model_spectrum['flux_model'] # in erg/s/cm2/A
-							
-							# convolve the model spectrum to the indicated resolution
-							if convolve:
-								out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, res=res, lam_res=lam_res)
-								wl_model = out_convolve_spectrum['wl_conv']
-								flux_model = out_convolve_spectrum['flux_conv']
+			# convolve (if requested) the model spectrum to the indicated resolution
+			if convolve:
+				out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, res=res, lam_res=lam_res)
+				wl_model = out_convolve_spectrum['wl_conv']
+				flux_model = out_convolve_spectrum['flux_conv']
 
-							# resample convolved model spectrum to the wavelength data points in the observed spectra
-							if wl_resample is not None:
-								# mask to select data points within the fit range or model coverage range, whichever is narrower
-								mask_fit = (wl_resample >= max(fit_wl_range[0], wl_model.min())) & \
-								           (wl_resample <= min(fit_wl_range[1], wl_model.max()))
-								flux_model = spectres(wl_resample[mask_fit], wl_model, flux_model)
-								wl_model = wl_resample[mask_fit]
+			# resample (if requested) the convolved model spectrum to the wavelength data points in the observed spectra
+			if wl_resample is not None:
+				# mask to select data points within the fit range or model coverage range, whichever is narrower
+				mask_fit = (wl_resample >= max(fit_wl_range[0], wl_model.min())) & \
+				           (wl_resample <= min(fit_wl_range[1], wl_model.max()))
+				flux_model = spectres(wl_resample[mask_fit], wl_model, flux_model)
+				wl_model = wl_resample[mask_fit]
 
-							# save flux at each combination
-							if i_Teff==0 and i_logg==0 and i_logKzz==0 and i_Z==0 and i_CtoO==0:
-								# define arrays to save the model grid
-								# it is better to initialize the arrays after the first iteration to consider the size of
-								# the array after resampling instead of using the data points in the original model spectra
-								flux_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), len(wl_model))) # to save the flux at each grid point
-								wl_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), len(wl_model))) # to save the wavelength at each grid point
+			
+			# save spectrum for each combination
+			if not np.any(np.array(index)): # for the first parameters' combination
+				# define arrays to save the grid
+				# add a last dimension with the number of data points in the model spectrum subset
+				# it is better to initialize the arrays after the first iteration to consider the model spectrum 
+				# data points after resampling instead of using all data points in the original model spectrum
+				wl_grid = np.repeat(np.expand_dims(arr, -1), len(wl_model), axis=-1) # to save the wavelength at each grid point
+				flux_grid = np.repeat(np.expand_dims(arr, -1), len(wl_model), axis=-1) # to save the flux at each grid point
+						 
+				# save first spectrum
+				wl_grid[index] = wl_model
+				flux_grid[index] = flux_model
+			
+			else: # all but first parameters' combinations	 
+				# ensure the new spectrum has the same number of data points as the first one read
+				if wl_model.shape!=wl_grid.shape[-1:]:
+					raise ValueError(f'Spectrum {spectra_name[mask]} has a different number of data points compared to the previous ones')
+				# save spectrum
+				wl_grid[index] = wl_model
+				flux_grid[index] = flux_model
 
-								# save first read model spectrum
-								flux_grid[i_Teff, i_logg, i_logKzz, i_Z, i_CtoO, :len(wl_model)] = flux_model
-								wl_grid[i_Teff, i_logg, i_logKzz, i_Z, i_CtoO, :len(wl_model)] = wl_model
-							else:
-								flux_grid[i_Teff, i_logg, i_logKzz, i_Z, i_CtoO, :len(wl_model)] = flux_model
-								wl_grid[i_Teff, i_logg, i_logKzz, i_Z, i_CtoO, :len(wl_model)] = wl_model
-						
-						else:
-						    print(f'No spectrum {spectrum_name} in "model_dir"') # no spectrum with that parameters combination in the input directories
-						k += 1
 	# close the progress bar
 	grid_bar.close()
 
 	fin_time_grid = time.time()
 	print_time(fin_time_grid-ini_time_grid)
 
-	out = {'wavelength': wl_grid, 'flux': flux_grid, 'Teff': Teff_grid, 'logg': logg_grid, 'logKzz': logKzz_grid, 'Z': Z_grid, 'CtoO': CtoO_grid}
+	out = {'wavelength': wl_grid, 'flux': flux_grid, 'params_unique': params_unique}
 
-	return out
 
-##########################
-def grid_ranges(model):
-	'''
-	Description:
-	------------
-		Read coverage of parameters in a model grid.
-
-	Parameters:
-	-----------
-	- model : str
-		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
-
-	Returns:
-	--------
-	Dictionary with model parameter coverage:
-		- ``'Teff'`` : effective temperature.
-		- ``'logg'`` : surface gravity (logg).
-		- ``'logKzz'`` : (if provided by ``model``) diffusion parameter (logKzz).
-		- ``'Z'`` : (if provided by ``model``) metallicity at each grid point.
-		- ``'CtoO'`` : (if provided by ``model``) C/O ratio at each grid point.
-
-	Example:
-	--------
-	>>> import seda
-	>>>
-	>>> # models
-	>>> model = 'Sonora_Elf_Owl'
-	>>>
-	>>> # read model parameters
-	>>> out_grid_ranges = seda.grid_ranges(model)
-
-	Author: Genaro Suárez
-	'''
-
-	# initialize output dictionary
-	out = {}
-
-	if (model=='Sonora_Elf_Owl'):
-		# Teff
-		Teff_range1 = np.arange(275., 600.+25, 25)
-		Teff_range2 = np.arange(650., 1000.+50, 50)
-		Teff_range3 = np.arange(1100., 2400.+100, 100)
-		out['Teff'] = np.concatenate([Teff_range1, Teff_range2, Teff_range3]) # K
-		# logg
-		out['logg'] = np.arange(3.25, 5.50+0.25, 0.25) # g in cm/s2
-		#logKzz
-		out['logKzz'] = np.array([2.0, 4.0, 7.0, 8.0, 9.0]) # Kzz in cm2/s
-		# Z or [M/H]
-		out['Z'] = np.array([-1.0, -0.5, 0.0, 0.5, 0.7, 1.0]) # Z=0 means solar metallicity
-		# C/O
-		out['CtoO'] = np.array([0.5, 1.0, 1.5, 2.5]) # relative to solar C/O (equal to 1)
-
-	if (model=='Sonora_Diamondback'):
-		# Teff
-		out['Teff'] = np.arange(900., 2400.+100., 100.) # K
-		# logg
-		out['logg'] = np.array([3.5, 4., 4.5, 5., 5.5]) # g in cm/s2
-		# Z
-		out['Z'] = np.array([-0.5, 0., 0.5])
-		# fsed
-		out['fsed'] = np.array([1., 2., 3., 4., 8., 99.]) # fsed=99 means no clouds
-
-	if (model=='LB23'):
-		# Teff
-		Teff_range1 = np.arange(250., 575+25., 25.)
-		Teff_range2 = np.arange(600., 800+50., 50.)
-		out['Teff'] = np.concatenate([Teff_range1, Teff_range2]) # K
-		# logg
-		out['logg'] = np.arange(3.5, 5.0+0.25, 0.25) # g in cm/s2
-		# Z
-		out['Z'] = np.array([-0.5, 0., 0.5]) # [M/H]
-		# logKzz
-		out['logKzz'] = np.array([6]) # Kzz in cm2/s
-		# Hmix
-		out['Hmix'] = np.array([0.01, 0.1, 1.])
-
-	if (model=='Sonora_Cholla'):
-		out['Teff'] = np.arange(500., 1300.+50, 50) # K
-		out['logg'] = np.arange(3.5, 5.5+0.25, 0.25) # g in s/cm2
-		out['logKzz'] = np.array([2., 4., 7.]) # Kzz in cm2/s
-
-	if (model=='Sonora_Bobcat'):
-		# Teff
-		Teff_range1 = np.arange(200., 600.+25, 25)
-		Teff_range2 = np.arange(650., 1000.+50, 50)
-		Teff_range3 = np.arange(1100., 2400.+100, 100)
-		out['Teff'] = np.concatenate([Teff_range1, Teff_range2, Teff_range3]) # K
-		# logg
-		out['logg'] = np.arange(3., 5.5+0.25, 0.25) # g in s/cm2
-		# Z
-		out['Z'] = np.array([-0.5, 0., 0.5]) # [M/H]
-		# C/O
-		out['CtoO'] = np.array([0.5, 1.0, 1.5]) # relative to solar C/O (equal to 1)
-
-	if (model=='ATMO2020'):
-		# Teff
-		Teff_range1 = np.arange(200., 600.+50, 50)
-		Teff_range2 = np.arange(700., 3000.+100, 100)
-		out['Teff'] = np.concatenate([Teff_range1, Teff_range2]) # K
-		# logg
-		out['logg'] = np.arange(2.5, 5.5+0.5, 0.5) # g in s/cm2
-		# logKzz
-		out['logKzz'] = np.array([0, 4, 6]) # Kzz in cm2/s
-
-	if (model=='BT-Settl'):
-		# Teff
-		Teff_range1 = np.arange(260., 420.+20, 20)
-		Teff_range2 = np.arange(450., 1200.+50, 50)
-		Teff_range3 = np.arange(1300., 1500.+100, 100)
-		Teff_range4 = np.arange(1550., 2400.+50, 50)
-		Teff_range5 = np.arange(2500., 7000.+100, 100)
-		out['Teff'] = np.concatenate([Teff_range1, Teff_range2, Teff_range3, Teff_range4, Teff_range5]) # K
-		# logg
-		out['logg'] = np.arange(2., 5.5+0.5, 0.5) # g in s/cm2
-
-	if (model=='SM08'):
-		# Teff
-		out['Teff'] = np.arange(800., 2400.+100, 100) # K
-		# logg
-		out['logg'] = np.arange(3., 5.5+0.5, 0.5) # g in s/cm2
-		# fsed
-		out['fsed'] = np.array([1., 2., 3., 4.])
-
-	#out = {'Teff': Teff, 'logg': logg, 'logKzz': logKzz, 'Z': Z, 'CtoO': CtoO}
-
-	return out
-
-##########################
-def model_filename_pattern(model):
 	
-	# common pattern depending the models
-	if (model == 'Sonora_Diamondback'):	pattern = 't*.spec*'
-	if (model == 'Sonora_Elf_Owl'):	pattern = 'spectra_logzz_*.nc*'
-	if (model == 'LB23'): pattern = 'T*21*'
-	if (model == 'Sonora_Cholla'): pattern = '*.spec*'
-	if (model == 'Sonora_Bobcat'): pattern = 'sp_t*'
-	if (model == 'ATMO2020'): pattern = 'spec_T*.txt*'
-	if (model == 'BT-Settl'): pattern = 'lte*.BT-Settl.spec.7*'
-	if (model == 'SM08'): pattern = 'sp_t*'
+###	# generate all combinations of parameters in the selected spectra
+###	def all_combinations(dictionary):
+###		values = list(dictionary.values())
+###		combinations = list(itertools.product(*values))
+###		return combinations
+###	parameters_combinations = all_combinations(out_select_model_spectra['parameters'])
+###	print(parameters_combinations)
+###	exit()
+###
 
-	return pattern
+###	# steps of all parameters in the grid
+###	parameters = Models(model).parameters
+###
+###	# constrain parameters to the desired ranges
+###	# it will help to avoid iterating below over undesired parameter values
+###	if 'Teff' in parameters: 
+###		if Teff_range is not None: 
+###			mask_Teff = (parameters['Teff']>=Teff_range[0]) & (parameters['Teff']<=Teff_range[1])
+###			parameters['Teff'] = parameters['Teff'][mask_Teff]
+###	if 'logg' in parameters: 
+###		if logg_range is not None: 
+###			mask_logg = (parameters['logg']>=logg_range[0]) & (parameters['logg']<=logg_range[1])
+###			parameters['logg'] = parameters['logg'][mask_logg]
+###	if 'Z' in parameters: 
+###		if Z_range is not None: 
+###			mask_Z = (parameters['Z']>=Z_range[0]) & (parameters['Z']<=Z_range[1])
+###			parameters['Z'] = parameters['Z'][mask_Z]
+###	if 'logKzz' in parameters: 
+###		if logKzz_range is not None: 
+###			mask_logKzz = (parameters['logKzz']>=logKzz_range[0]) & (parameters['logKzz']<=logKzz_range[1])
+###			parameters['logKzz'] = parameters['logKzz'][mask_logKzz]
+###	if 'CtoO' in parameters: 
+###		if CtoO_range is not None: 
+###			mask_CtoO = (parameters['CtoO']>=CtoO_range[0]) & (parameters['CtoO']<=CtoO_range[1])
+###			parameters['CtoO'] = parameters['CtoO'][mask_CtoO]
+###	if 'fsed' in parameters: 
+###		if fsed_range is not None: 
+###			mask_fsed = (parameters['fsed']>=fsed_range[0]) & (parameters['fsed']<=fsed_range[1])
+###			parameters['fsed'] = parameters['fsed'][mask_fsed]
+###	if 'Hmix' in parameters: 
+###		if Hmix_range is not None: 
+###			mask_Hmix = (parameters['Hmix']>=Hmix_range[0]) & (parameters['Hmix']<=Hmix_range[1])
+###			parameters['Hmix'] = parameters['Hmix'][mask_Hmix]
+###
+###	# generate all combinations of parameters
+###	def all_combinations(dictionary):
+###		values = list(dictionary.values())
+###		combinations = list(itertools.product(*values))
+###		return combinations
+###	parameters_combinations = all_combinations(parameters)
+###
+###
+###	# read the grid from each combination of parameters
+###	free_params = np.array([Models(model).free_params]) # free parameters as numpy array
+###	for combination in parameters_combinations: # for each combination of parameters
+###		for i, param in enumerate(free_params): # for each free parameter
+###			# name of spectrum with parameters in the iteration
+###			if model=='Sonora_Elf_Owl':
+###				spectrum_name = f'spectra_logzz_{logKzz_grid[i_logKzz]}_teff_{Teff_grid[i_Teff]}_grav_{g_grid}_mh_{Z_grid[i_Z]}_co_{CtoO_grid[i_CtoO]}.nc'
+###			if model=='Sonora_Diamondback':
+###				mask_Teff = free_params=='Teff'
+###				Teff_iter = np.array(combination)[mask_Teff[0]]
+###				mask_logg = free_params=='logg'
+###				logg_iter = np.array(combination)[mask_logg[0]]
+###				mask_Z = free_params=='Z'
+###				Z_iter = np.array(combination)[mask_Z[0]]
+###				mask_fsed = free_params=='fsed'
+###				fsed_iter = np.array(combination)[mask_fsed[0]]
+###				print(combination)
+###				print(Teff_iter)
+###				print(logg_iter)
+###				print(Z_iter)
+###				print(fsed_iter)
+###				spectrum_name = f't{Teff_iter}g316f{fsed_iter}_m{Z_iter}_co1.0.spec'
+###				print(spectrum_name)
+###				exit()
+
+
+#	# all parameter's steps in the grid
+#	out_grid_ranges = grid_ranges(model)
+#	Teff_grid = out_grid_ranges['Teff']
+#	logg_grid = out_grid_ranges['logg']
+#	logKzz_grid = out_grid_ranges['logKzz']
+#	Z_grid = out_grid_ranges['Z']
+#	CtoO_grid = out_grid_ranges['CtoO']
+#
+#	# constrain parameters to the desired ranges
+#	# it will help to avoid iterating below over undesired parameter values
+#	if Teff_range is not None: 
+#		mask_Teff = (Teff_grid>=Teff_range[0]) & (Teff_grid<=Teff_range[1])
+#		Teff_grid = Teff_grid[mask_Teff]
+#	if logg_range is not None: 
+#		mask_logg = (logg_grid>=logg_range[0]) & (logg_grid<=logg_range[1])
+#		logg_grid = logg_grid[mask_logg]
+#	if logKzz_range is not None: 
+#		mask_logKzz = (logKzz_grid>=logKzz_range[0]) & (logKzz_grid<=logKzz_range[1])
+#		logKzz_grid = logKzz_grid[mask_logKzz]
+#	if Z_range is not None: 
+#		mask_Z = (Z_grid>=Z_range[0]) & (Z_grid<=Z_range[1])
+#		Z_grid = Z_grid[mask_Z]
+#	if CtoO_range is not None: 
+#		mask_CtoO = (CtoO_grid>=CtoO_range[0]) & (CtoO_grid<=CtoO_range[1])
+#		CtoO_grid = CtoO_grid[mask_CtoO]
+#
+##	# define arrays to save the model grid
+##	if wl_resample is not None: 
+##		flux_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), len(wl_resample))) # to save the flux at each grid point
+##		wl_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), len(wl_resample))) # to save the wavelength at each grid point
+##		
+##	else:
+##		N_modelpoints = model_points(model)
+##		flux_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), N_modelpoints)) # to save the flux at each grid point
+##		wl_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), N_modelpoints)) # to save the wavelength at each grid point
+#	
+#	# create a tqdm progress bar
+#	if convolve:
+#		if wl_resample is not None:
+#			desc = 'Reading, convolving, and resampling model grid'
+#		else:
+#			desc = 'Reading and convolving model grid'
+#	else:
+#		if wl_resample is not None:
+#			desc = 'Reading and resampling model grid'
+#		else:
+#			desc = 'Reading model grid'
+#	grid_bar = tqdm(total=len(spectra_name), desc=desc)
+#
+#	# read the grid with the selected model spectra
+#	k = 0
+#	for i_Teff in range(len(Teff_grid)): # iterate Teff
+#		for i_logg in range(len(logg_grid)): # iterate logg
+#			for i_logKzz in range(len(logKzz_grid)): # iterate logKzz
+#				for i_Z in range(len(Z_grid)): # iterate Z
+#					for i_CtoO in range(len(CtoO_grid)): # iterate C/O ration
+#						# update the progress bar
+#						grid_bar.update(1)
+#
+#						# read the spectrum for each parameter combination
+#						# file name uses g instead of logg
+#						if (logg_grid[i_logg]==3.25): g_grid = 17.0
+#						if (logg_grid[i_logg]==3.50): g_grid = 31.0
+#						if (logg_grid[i_logg]==3.75): g_grid = 56.0
+#						if (logg_grid[i_logg]==4.00): g_grid = 100.0
+#						if (logg_grid[i_logg]==4.25): g_grid = 178.0
+#						if (logg_grid[i_logg]==4.50): g_grid = 316.0
+#						if (logg_grid[i_logg]==4.75): g_grid = 562.0
+#						if (logg_grid[i_logg]==5.00): g_grid = 1000.0
+#						if (logg_grid[i_logg]==5.25): g_grid = 1780.0
+#						if (logg_grid[i_logg]==5.50): g_grid = 3160.0
+#
+#						# name of spectrum with parameters in the iteration
+#						spectrum_name = f'spectra_logzz_{logKzz_grid[i_logKzz]}_teff_{Teff_grid[i_Teff]}_grav_{g_grid}_mh_{Z_grid[i_Z]}_co_{CtoO_grid[i_CtoO]}.nc'
+#						# look into the selected spectra to find the full path for the spectrum above
+#						spectrum_name_full = [x for x in spectra_name_full if x.endswith(spectrum_name)]
+#
+#						if spectrum_name_full: # if there is a spectrum with the parameters in the iteration in the input directories
+#							# read the spectrum with the parameter combination in the iteration and cut it to model_wl_range (default value: fit_wl_range plus padding)
+#							out_read_model_spectrum = read_model_spectrum(spectra_name_full=spectrum_name_full[0], model=model, model_wl_range=model_wl_range)
+#							wl_model = out_read_model_spectrum['wl_model'] # in um
+#							flux_model = out_read_model_spectrum['flux_model'] # in erg/s/cm2/A
+#							
+#							# convolve the model spectrum to the indicated resolution
+#							if convolve:
+#								out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, res=res, lam_res=lam_res)
+#								wl_model = out_convolve_spectrum['wl_conv']
+#								flux_model = out_convolve_spectrum['flux_conv']
+#
+#							# resample convolved model spectrum to the wavelength data points in the observed spectra
+#							if wl_resample is not None:
+#								# mask to select data points within the fit range or model coverage range, whichever is narrower
+#								mask_fit = (wl_resample >= max(fit_wl_range[0], wl_model.min())) & \
+#								           (wl_resample <= min(fit_wl_range[1], wl_model.max()))
+#								flux_model = spectres(wl_resample[mask_fit], wl_model, flux_model)
+#								wl_model = wl_resample[mask_fit]
+#
+#							# save flux at each combination
+#							if i_Teff==0 and i_logg==0 and i_logKzz==0 and i_Z==0 and i_CtoO==0:
+#								# define arrays to save the model grid
+#								# it is better to initialize the arrays after the first iteration to consider the size of
+#								# the array after resampling instead of using the data points in the original model spectra
+#								flux_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), len(wl_model))) # to save the flux at each grid point
+#								wl_grid = np.zeros((len(Teff_grid), len(logg_grid), len(logKzz_grid), len(Z_grid), len(CtoO_grid), len(wl_model))) # to save the wavelength at each grid point
+#
+#								# save first read model spectrum
+#								flux_grid[i_Teff, i_logg, i_logKzz, i_Z, i_CtoO, :len(wl_model)] = flux_model
+#								wl_grid[i_Teff, i_logg, i_logKzz, i_Z, i_CtoO, :len(wl_model)] = wl_model
+#							else:
+#								flux_grid[i_Teff, i_logg, i_logKzz, i_Z, i_CtoO, :len(wl_model)] = flux_model
+#								wl_grid[i_Teff, i_logg, i_logKzz, i_Z, i_CtoO, :len(wl_model)] = wl_model
+#						
+#						else:
+#						    print(f'No spectrum {spectrum_name} in "model_dir"') # no spectrum with that parameters combination in the input directories
+#						k += 1
+#	# close the progress bar
+#	grid_bar.close()
+#
+#	fin_time_grid = time.time()
+#	print_time(fin_time_grid-ini_time_grid)
+#
+#	out = {'wavelength': wl_grid, 'flux': flux_grid, 'Teff': Teff_grid, 'logg': logg_grid, 'logKzz': logKzz_grid, 'Z': Z_grid, 'CtoO': CtoO_grid}
+
+	return out
+
+###########################
+#def grid_ranges(model):
+#	'''
+#	Description:
+#	------------
+#		Read coverage of parameters in a model grid.
+#
+#	Parameters:
+#	-----------
+#	- model : str
+#		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
+#
+#	Returns:
+#	--------
+#	Dictionary with model parameter coverage:
+#		- ``'Teff'`` : effective temperature.
+#		- ``'logg'`` : surface gravity (logg).
+#		- ``'logKzz'`` : (if provided by ``model``) diffusion parameter (logKzz).
+#		- ``'Z'`` : (if provided by ``model``) metallicity at each grid point.
+#		- ``'CtoO'`` : (if provided by ``model``) C/O ratio at each grid point.
+#
+#	Example:
+#	--------
+#	>>> import seda
+#	>>>
+#	>>> # models
+#	>>> model = 'Sonora_Elf_Owl'
+#	>>>
+#	>>> # read model parameters
+#	>>> out_grid_ranges = seda.grid_ranges(model)
+#
+#	Author: Genaro Suárez
+#	'''
+#
+#	# initialize output dictionary
+#	out = {}
+#
+#	if (model=='Sonora_Elf_Owl'):
+#		# Teff
+#		Teff_range1 = np.arange(275., 600.+25, 25)
+#		Teff_range2 = np.arange(650., 1000.+50, 50)
+#		Teff_range3 = np.arange(1100., 2400.+100, 100)
+#		out['Teff'] = np.concatenate([Teff_range1, Teff_range2, Teff_range3]) # K
+#		# logg
+#		out['logg'] = np.arange(3.25, 5.50+0.25, 0.25) # g in cm/s2
+#		#logKzz
+#		out['logKzz'] = np.array([2.0, 4.0, 7.0, 8.0, 9.0]) # Kzz in cm2/s
+#		# Z or [M/H]
+#		out['Z'] = np.array([-1.0, -0.5, 0.0, 0.5, 0.7, 1.0]) # Z=0 means solar metallicity
+#		# C/O
+#		out['CtoO'] = np.array([0.5, 1.0, 1.5, 2.5]) # relative to solar C/O (equal to 1)
+#
+#	if (model=='Sonora_Diamondback'):
+#		# Teff
+#		out['Teff'] = np.arange(900., 2400.+100., 100.) # K
+#		# logg
+#		out['logg'] = np.array([3.5, 4., 4.5, 5., 5.5]) # g in cm/s2
+#		# Z
+#		out['Z'] = np.array([-0.5, 0., 0.5])
+#		# fsed
+#		out['fsed'] = np.array([1., 2., 3., 4., 8., 99.]) # fsed=99 means no clouds
+#
+#	if (model=='LB23'):
+#		# Teff
+#		Teff_range1 = np.arange(250., 575+25., 25.)
+#		Teff_range2 = np.arange(600., 800+50., 50.)
+#		out['Teff'] = np.concatenate([Teff_range1, Teff_range2]) # K
+#		# logg
+#		out['logg'] = np.arange(3.5, 5.0+0.25, 0.25) # g in cm/s2
+#		# Z
+#		out['Z'] = np.array([-0.5, 0., 0.5]) # [M/H]
+#		# logKzz
+#		out['logKzz'] = np.array([6]) # Kzz in cm2/s
+#		# Hmix
+#		out['Hmix'] = np.array([0.01, 0.1, 1.])
+#
+#	if (model=='Sonora_Cholla'):
+#		out['Teff'] = np.arange(500., 1300.+50, 50) # K
+#		out['logg'] = np.arange(3.5, 5.5+0.25, 0.25) # g in s/cm2
+#		out['logKzz'] = np.array([2., 4., 7.]) # Kzz in cm2/s
+#
+#	if (model=='Sonora_Bobcat'):
+#		# Teff
+#		Teff_range1 = np.arange(200., 600.+25, 25)
+#		Teff_range2 = np.arange(650., 1000.+50, 50)
+#		Teff_range3 = np.arange(1100., 2400.+100, 100)
+#		out['Teff'] = np.concatenate([Teff_range1, Teff_range2, Teff_range3]) # K
+#		# logg
+#		out['logg'] = np.arange(3., 5.5+0.25, 0.25) # g in s/cm2
+#		# Z
+#		out['Z'] = np.array([-0.5, 0., 0.5]) # [M/H]
+#		# C/O
+#		out['CtoO'] = np.array([0.5, 1.0, 1.5]) # relative to solar C/O (equal to 1)
+#
+#	if (model=='ATMO2020'):
+#		# Teff
+#		Teff_range1 = np.arange(200., 600.+50, 50)
+#		Teff_range2 = np.arange(700., 3000.+100, 100)
+#		out['Teff'] = np.concatenate([Teff_range1, Teff_range2]) # K
+#		# logg
+#		out['logg'] = np.arange(2.5, 5.5+0.5, 0.5) # g in s/cm2
+#		# logKzz
+#		out['logKzz'] = np.array([0, 4, 6]) # Kzz in cm2/s
+#
+#	if (model=='BT-Settl'):
+#		# Teff
+#		Teff_range1 = np.arange(260., 420.+20, 20)
+#		Teff_range2 = np.arange(450., 1200.+50, 50)
+#		Teff_range3 = np.arange(1300., 1500.+100, 100)
+#		Teff_range4 = np.arange(1550., 2400.+50, 50)
+#		Teff_range5 = np.arange(2500., 7000.+100, 100)
+#		out['Teff'] = np.concatenate([Teff_range1, Teff_range2, Teff_range3, Teff_range4, Teff_range5]) # K
+#		# logg
+#		out['logg'] = np.arange(2., 5.5+0.5, 0.5) # g in s/cm2
+#
+#	if (model=='SM08'):
+#		# Teff
+#		out['Teff'] = np.arange(800., 2400.+100, 100) # K
+#		# logg
+#		out['logg'] = np.arange(3., 5.5+0.5, 0.5) # g in s/cm2
+#		# fsed
+#		out['fsed'] = np.array([1., 2., 3., 4.])
+#
+#	#out = {'Teff': Teff, 'logg': logg, 'logKzz': logKzz, 'Z': Z, 'CtoO': CtoO}
+#
+#	return out
+
+###########################
+#def model_filename_pattern(model):
+#	
+#	# common pattern depending the models
+#	if (model == 'Sonora_Diamondback'):	pattern = 't*.spec*'
+#	if (model == 'Sonora_Elf_Owl'):	pattern = 'spectra_logzz_*.nc*'
+#	if (model == 'LB23'): pattern = 'T*21*'
+#	if (model == 'Sonora_Cholla'): pattern = '*.spec*'
+#	if (model == 'Sonora_Bobcat'): pattern = 'sp_t*'
+#	if (model == 'ATMO2020'): pattern = 'spec_T*.txt*'
+#	if (model == 'BT-Settl'): pattern = 'lte*.BT-Settl.spec.7*'
+#	if (model == 'SM08'): pattern = 'sp_t*'
+#
+#	return pattern
 
 ##########################
-def param_ranges_sampling(chi2_pickle_file, N_best_fits=3):
+def params_ranges_sampling(chi2_pickle_file, N_best_fits=3):
 	'''
 	Description:
 	------------
@@ -953,7 +1095,7 @@ def param_ranges_sampling(chi2_pickle_file, N_best_fits=3):
 	>>> # pickle file
 	>>> chi2_pickle_file = model+'_chi2_minimization.pickle'
 	>>> # read parameters' tolerance around the best model fits
-	>>> out_param_ranges_sampling = seda.param_ranges_sampling(chi2_pickle_file=chi2_pickle_file)
+	>>> out_params_ranges_sampling = seda.params_ranges_sampling(chi2_pickle_file=chi2_pickle_file)
 
 	Author: Genaro Suárez
 	'''
@@ -1065,44 +1207,35 @@ def best_bayesian_fit(bayes_pickle_file, grid=None, save_spectrum=False):
 	eflux_spectra = out_bayes['my_bayes'].eflux_spectra
 	N_spectra = out_bayes['my_bayes'].N_spectra
 	fit_wl_range = out_bayes['my_bayes'].fit_wl_range
+	params_priors = out_bayes['my_bayes'].params_priors
+	out_dynesty = out_bayes['out_dynesty']
 
-	# compute median values for all parameters
-	if model=='Sonora_Elf_Owl':
-		Teff_med = np.median(out_bayes['out_dynesty'].samples[:,0]) # Teff values
-		logg_med = np.median(out_bayes['out_dynesty'].samples[:,1]) # logg values
-		logKzz_med = np.median(out_bayes['out_dynesty'].samples[:,2]) # logKzz values
-		Z_med = np.median(out_bayes['out_dynesty'].samples[:,3]) # Z values
-		CtoO_med = np.median(out_bayes['out_dynesty'].samples[:,4]) # CtoO values
-		if distance is not None: R_med = np.median(out_bayes['out_dynesty'].samples[:,5]) # R values
+	# compute median values for all sampled parameters
+	params_med = {}
+	for i,param in enumerate(params_priors): # for each parameter in the sampling
+		params_med[param] = np.median(out_dynesty.samples[:,i]) # add to the dictionary the median of each parameter
+
+	# round median values for model grid parameters
+	params_models = Models(model).params
+	for i,param in enumerate(params_med): # for each sampled parameter
+		if param in params_models: # for free parameters in the model grid
+			params_med[param] = round(params_med[param], max_decimals(params_models[param])+1) # round to the precision (plus one decimal place) of the parameter in models
 
 	# generate spectrum with the median parameter values
 	if grid is None:
-		# read grid around the median values	
-		# first define Teff and logg ranges around the median values
-		out_grid_ranges = grid_ranges(model)
-		
-		# find the grid point before and after a median value
-		def find_two_nearest(array, value):
-			diff = array - value
-			if any(array[diff<0]): near_1 = diff[diff<0].max()+value
-			else: near_1 = array.min()
-			if any(array[diff>0]): near_2 = diff[diff>0].min()+value
-			else: near_2 = array.max()
+		# grid values around the desired parameter values
+		params_ranges = {}
+		for param in params_models: # for each free parameter in the grid
+			params_ranges[param] = find_two_nearest(params_models[param], params_med[param])
 
-			return np.array([near_1, near_2])
-
-		Teff_range = find_two_nearest(out_grid_ranges['Teff'], Teff_med)
-		logg_range = find_two_nearest(out_grid_ranges['logg'], logg_med)
-		Z_range = find_two_nearest(out_grid_ranges['Z'], Z_med)
-		logKzz_range = find_two_nearest(out_grid_ranges['logKzz'], logKzz_med)
-		CtoO_range = find_two_nearest(out_grid_ranges['CtoO'], CtoO_med)
-		
 		# read grid
-		grid = read_grid(model=model, model_dir=model_dir, Teff_range=Teff_range, logg_range=logg_range, 
-		                 Z_range=Z_range, logKzz_range=logKzz_range, CtoO_range=CtoO_range)#, fsed_range=fsed_range)
+		grid = read_grid(model=model, model_dir=model_dir, params_ranges=params_ranges)
 
 	# generate synthetic spectrum
-	syn_spectrum = generate_model_spectrum(Teff=Teff_med, logg=logg_med, logKzz=logKzz_med, Z=Z_med, CtoO=CtoO_med, grid=grid)
+	params = {}
+	for param in params_models: # for each free parameter in the grid
+		params[param] = params_med[param]
+	syn_spectrum = generate_model_spectrum(params=params, model=model, grid=grid)
 	wl = syn_spectrum['wavelength']
 	flux = syn_spectrum['flux']
 
@@ -1120,13 +1253,13 @@ def best_bayesian_fit(bayes_pickle_file, grid=None, save_spectrum=False):
 
 	# scale synthetic spectrum
 	if distance is not None:
-		flux_scaled = scale_synthetic_spectrum(wl=wl, flux=flux, distance=distance, radius=R_med)
+		flux_scaled = scale_synthetic_spectrum(wl=wl, flux=flux, distance=distance, radius=params_med['R'])
 		wl_scaled = wl
 
 		wl_conv_scaled = []
 		flux_conv_scaled = []
 		for i in range(N_spectra): # for each input observed spectrum
-			flux_conv_scaled.append(scale_synthetic_spectrum(wl=wl_conv[i], flux=flux_conv[i], distance=distance, radius=R_med))
+			flux_conv_scaled.append(scale_synthetic_spectrum(wl=wl_conv[i], flux=flux_conv[i], distance=distance, radius=params_med['R']))
 			wl_conv_scaled.append(wl_conv[i])
 
 	# resample the convolved synthetic spectrum to the fit ranges of the input spectra
@@ -1146,13 +1279,6 @@ def best_bayesian_fit(bayes_pickle_file, grid=None, save_spectrum=False):
 
 	# save synthetic spectrum
 	if save_spectrum:
-		#Teff_file = round(Teff_med, 1)
-		#logg_file = round(logg_med, 2)
-		#logKzz_file = round(logKzz_med,1)
-		#Z_file = round(Z_med, 1)
-		#CtoO_file = round(CtoO_med, 1)
-		#out = open(f'{model}_Teff{Teff_file}_logg{logg_file}_logKzz{logKzz_file}_Z{Z_file}_CtoO{CtoO_file}.dat', 'w')
-		#out = open(f'{model}_best_fit_bayesian_sampling.dat', 'w')
 		for i in range(N_spectra): # for each input observed spectrum
 			out = open(f'{model}_R{res[i]}at{lam_res[i]}um_best_fit_bayesian_sampling.dat', 'w')
 			out.write('# wavelength(um) flux(erg/s/cm2/A)  \n')
@@ -1162,10 +1288,8 @@ def best_bayesian_fit(bayes_pickle_file, grid=None, save_spectrum=False):
 
 	# output dictionary
 	out = {'wl_spectra': wl_spectra, 'flux_spectra': flux_spectra, 'eflux_spectra': eflux_spectra, 'wl_mod': wl, 'flux_mod': flux, 'wl_mod_conv': wl_conv, 'flux_mod_conv': flux_conv, 
-	       'wl_mod_conv_resam': wl_conv_resam, 'flux_mod_conv_resam': flux_conv_resam, 'Teff_med': Teff_med, 'logg_med': logg_med, 'logKzz_med': logKzz_med, 
-	       'Z_med': Z_med, 'CtoO_med': CtoO_med}
+	       'wl_mod_conv_resam': wl_conv_resam, 'flux_mod_conv_resam': flux_conv_resam, 'params_med' : params_med}
 	if distance is not None:
-		out['R_med'] = R_med
 		out['wl_mod_scaled'] = wl_scaled
 		out['flux_mod_scaled'] = flux_scaled
 		out['wl_mod_conv_scaled'] = wl_conv_scaled
@@ -1176,8 +1300,7 @@ def best_bayesian_fit(bayes_pickle_file, grid=None, save_spectrum=False):
 	return out
 
 ##########################
-def select_model_spectra(model, model_dir, Teff_range=None, logg_range=None, Z_range=None, 
-                         logKzz_range=None, CtoO_range=None, fsed_range=None):
+def select_model_spectra(model, model_dir, params_ranges=None):
 	'''
 	Description:
 	------------
@@ -1189,30 +1312,17 @@ def select_model_spectra(model, model_dir, Teff_range=None, logg_range=None, Z_r
 		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
 	- model_dir : str or list
 		Path to the directory (str or list) or directories (as a list) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
-	- Teff_range : float array, optional
-		Minimum and maximum Teff values to select a model grid subset (e.g., ``Teff_range = np.array([Teff_min, Teff_max])``).
-		If not provided, the full Teff range in ``model_dir`` is considered.
-	- logg_range : float array, optional
-		Minimum and maximum logg values to select a model grid subset.
-		If not provided, the full logg range in ``model_dir`` is considered.
-	- Z_range : float array, optional
-		Minimum and maximum metallicity values to select a model grid subset.
-		If not provided, the full Z range in ``model_dir`` is considered, if available in ``model``.
-	- logKzz_range : float array, optional
-		Minimum and maximum diffusion parameter values to select a model grid subset.
-		If not provided, the full logKzz range in ``model_dir`` is considered, if available in ``model``.
-	- CtoO_range : float array, optional
-		Minimum and maximum C/O ratio values to select a model grid subset.
-		If not provided, the full C/O ratio range in ``model_dir`` is considered, if available in ``model``.
-	- fsed_range : float array, optional
-		Minimum and maximum cloudiness parameter values to select a model grid subset.
-		If not provided, the full fsed range in ``model_dir`` is considered, if available in ``model``.
-		
+	- params_ranges : dictionary, optional
+		Minimum and maximum values for any model free parameters to select a model grid subset.
+		E.g., ``params_ranges = {'Teff': [1000, 1200], 'logg': [4., 5.]}`` to consider spectra within those Teff and logg ranges.
+		If a parameter range is not provided, the full range in ``model_dir`` is considered.
+
 	Returns:
 	--------
 	Dictionary with the parameters:
 		- ``spectra_name``: selected model spectra names.
 		- ``spectra_name_full``: selected model spectra names with full path.
+		- ``params``: parameters for the selected model spectra, as given by the ``seda.separate_params`` output dictionary.
 
 	Example:
 	--------
@@ -1221,10 +1331,10 @@ def select_model_spectra(model, model_dir, Teff_range=None, logg_range=None, Z_r
 	>>> model = 'Sonora_Elf_Owl'
 	>>> model_dir = ['my_path/output_575.0_650.0/', 
 	>>>              'my_path/output_700.0_800.0/'] # folders to seek model spectra
-	>>> Teff_range = np.array((700, 900)) # Teff range
-	>>> logg_range = np.array((4.0, 5.0)) # logg range
+	>>> # set ranges for some (Teff and logg) free parameters to select only a grid subset
+	>>> params_ranges = {'Teff': [700, 900], 'logg': [4.0, 5.0]}
 	>>> out = seda.select_model_spectra(model=model, model_dir=model_dir,
-	>>>                                 Teff_range=Teff_range, logg_range=logg_range)
+	>>>                                 params_ranges=params_ranges)
 
 	Author: Genaro Suárez
 	'''
@@ -1235,11 +1345,19 @@ def select_model_spectra(model, model_dir, Teff_range=None, logg_range=None, Z_r
 	if isinstance(model_dir, str): model_dir = [model_dir]
 	if isinstance(model_dir, np.ndarray): model_dir = model_dir.tolist()
 
+	# if params_ranges is provided, verified that there is a minimum and a maximum values for each provided parameter
+	if params_ranges is not None:
+		for param in params_ranges:
+			if len(params_ranges[param])!=2: raise Exception(f'{param} in "params_ranges" must have two values (minimum and maximum), but {len(params_ranges[param])} values were given')
+
+	# if params_ranges is not provided, define params_ranges as an empty dictionary
+	if params_ranges is None: params_ranges = {}
+
 	# to store files in model_dir
 	files = [] # with full path
 	files_short = [] # only spectra names
 	for i in range(len(model_dir)):
-		files_model_dir = fnmatch.filter(os.listdir(model_dir[i]), model_filename_pattern(model))
+		files_model_dir = fnmatch.filter(os.listdir(model_dir[i]), Models(model).filename_pattern)
 		files_model_dir.sort() # just to sort the files wrt their names
 		for file in files_model_dir:
 			files.append(model_dir[i]+file)
@@ -1247,43 +1365,38 @@ def select_model_spectra(model, model_dir, Teff_range=None, logg_range=None, Z_r
 
 	# read free parameters from each model spectrum
 	out_separate_params = separate_params(model=model, spectra_name=files_short)
+	params_spectra = out_separate_params['params']
 
 	# select spectra within the desired parameter ranges
 	spectra_name_full = [] # full name with path
 	spectra_name = [] # only spectra names
-	for i in range(len(files)):
-		mask = True
-		if ('Teff' in out_separate_params) and (Teff_range is not None):
-			if not Teff_range[0] <= out_separate_params['Teff'][i] <= Teff_range[1]: mask = False
-		if ('logg' in out_separate_params) and (logg_range is not None):
-			if not logg_range[0] <= out_separate_params['logg'][i] <= logg_range[1]: mask = False
-		if ('Z' in out_separate_params) and (Z_range is not None):
-			if not Z_range[0] <= out_separate_params['Z'][i] <= Z_range[1]: mask = False
-		if ('logKzz' in out_separate_params) and (logKzz_range is not None):
-			if not logKzz_range[0] <= out_separate_params['logKzz'][i] <= logKzz_range[1]: mask = False
-		if ('CtoO' in out_separate_params) and (CtoO_range is not None):
-			if not CtoO_range[0] <= out_separate_params['CtoO'][i] <= CtoO_range[1]: mask = False
-		if ('fsed' in out_separate_params) and (fsed_range is not None):
-			if not fsed_range[0] <= out_separate_params['fsed'][i] <= fsed_range[1]: mask = False
 
-		if mask:
-			spectra_name_full.append(files[i]) # keep only spectra within the input parameter ranges
-			spectra_name.append(files_short[i]) # keep only spectra within the input parameter ranges
+	# select spectra within the desired parameter ranges
+	spectra_name_full = [] # full name with path
+	spectra_name = [] # only spectra names
+	for i in range(len(files)): # for each file in model_dir
+		mask = True # initialize mask to apply parameter ranges criteria
+		for param in params_spectra: # for each free parameter
+			if param in params_ranges: # if there is an input range to constrain the free parameter
+				if not params_ranges[param][0] <= params_spectra[param][i] <= params_ranges[param][1]: 
+					mask = False # change mask if the file is for a spectrum out of the input ranges
+		if mask: # keep only spectra within the input parameter ranges
+			spectra_name_full.append(files[i]) # file with full path
+			spectra_name.append(files_short[i]) # only file name
 
 	if len(spectra_name_full)==0: raise Exception('No model spectra within the indicated parameter ranges') # show up an error when there are no models in the indicated ranges
 	else: 
-		if (Teff_range is None) & (logg_range is None) & (Z_range is None) & (logKzz_range is None) & (CtoO_range is None) & (fsed_range is None):
+		if not params_ranges: 
 			print(f'\n      {len(spectra_name)} model spectra')
 		else:
 			print(f'\n      {len(spectra_name)} model spectra selected with:')
-			if ('Teff' in out_separate_params) and (Teff_range is not None): print(f'         Teff=[{Teff_range[0]}, {Teff_range[1]}]')
-			if ('logg' in out_separate_params) and (logg_range is not None): print(f'         logg=[{logg_range[0]}, {logg_range[1]}]')
-			if ('Z' in out_separate_params) and (Z_range is not None): print(f'         Z=[{Z_range[0]}, {Z_range[1]}]')
-			if ('logKzz' in out_separate_params) and (logKzz_range is not None): print(f'         logKzz=[{logKzz_range[0]}, {logKzz_range[1]}]')
-			if ('CtoO' in out_separate_params) and (CtoO_range is not None): print(f'         CtoO=[{CtoO_range[0]}, {CtoO_range[1]}]')
-			if ('fsed' in out_separate_params) and (fsed_range is not None): print(f'         fsed=[{fsed_range[0]}, {fsed_range[1]}]')
+			for param in params_ranges:
+				print(f'         {param} range = {params_ranges[param]}')
 
-	out = {'spectra_name_full': np.array(spectra_name_full), 'spectra_name': np.array(spectra_name)}
+	# separate parameters from selected spectra
+	out_separate_params = separate_params(model=model, spectra_name=spectra_name)
+
+	out = {'spectra_name_full': np.array(spectra_name_full), 'spectra_name': np.array(spectra_name), 'params': out_separate_params['params']}
 
 	return out
 
@@ -1333,7 +1446,11 @@ def separate_params(model, spectra_name, save_results=False):
 	Author: Genaro Suárez
 	'''
 
+	# if there is one input spectrum with its name given as a string, convert it into a list
+	if isinstance(spectra_name, str): spectra_name = [spectra_name]
+
 	out = {'spectra_name': spectra_name} # start dictionary with some parameters
+	out['params'] = {}
 
 	# get parameters from model spectra names
 	if (model == 'Sonora_Diamondback'):
@@ -1352,10 +1469,10 @@ def separate_params(model, spectra_name, save_results=False):
 			fsed = spectra_name[i].split('_')[0][-1:]
 			if fsed=='c': fsed_fit[i] = 99 # 99 to indicate nc (no clouds)
 			if fsed!='c': fsed_fit[i] = float(fsed)
-		out['Teff']= Teff_fit
-		out['logg']= logg_fit
-		out['Z']= Z_fit
-		out['fsed']= fsed_fit
+		out['params']['Teff']= Teff_fit
+		out['params']['logg']= logg_fit
+		out['params']['Z']= Z_fit
+		out['params']['fsed']= fsed_fit
 	if (model == 'Sonora_Elf_Owl'):
 		Teff_fit = np.zeros(len(spectra_name))
 		logg_fit = np.zeros(len(spectra_name))
@@ -1373,11 +1490,11 @@ def separate_params(model, spectra_name, save_results=False):
 			Z_fit[i] = float(spectra_name[i].split('_')[8]) # in cgs
 			# C/O
 			CtoO_fit[i] = float(spectra_name[i].split('_')[10][:-3])
-		out['Teff']= Teff_fit
-		out['logg']= logg_fit
-		out['logKzz']= logKzz_fit
-		out['Z']= Z_fit
-		out['CtoO']= CtoO_fit
+		out['params']['Teff']= Teff_fit
+		out['params']['logg']= logg_fit
+		out['params']['logKzz']= logKzz_fit
+		out['params']['Z']= Z_fit
+		out['params']['CtoO']= CtoO_fit
 	if (model == 'LB23'):
 		Teff_fit = np.zeros(len(spectra_name))
 		logg_fit = np.zeros(len(spectra_name))
@@ -1395,11 +1512,11 @@ def separate_params(model, spectra_name, save_results=False):
 			logKzz_fit[i] = np.log10(float(spectra_name[i].split('CDIFF')[1].split('_')[0])) # in cgs units
 			# Hmix
 			Hmix_fit[i] = float(spectra_name[i].split('HMIX')[1][:5])
-		out['Teff']= Teff_fit
-		out['logg']= logg_fit
-		out['Z']= Z_fit
-		out['logKzz']= logKzz_fit
-		out['Hmix']= Hmix_fit
+		out['params']['Teff']= Teff_fit
+		out['params']['logg']= logg_fit
+		out['params']['Z']= Z_fit
+		out['params']['logKzz']= logKzz_fit
+		out['params']['Hmix']= Hmix_fit
 	if (model == 'Sonora_Cholla'):
 		Teff_fit = np.zeros(len(spectra_name))
 		logg_fit = np.zeros(len(spectra_name))
@@ -1411,9 +1528,9 @@ def separate_params(model, spectra_name, save_results=False):
 			logg_fit[i] = round_logg_point25(np.log10(float(spectra_name[i].split('_')[1][:-1])) + 2) # g in cm/s2
 			# logKzz
 			logKzz_fit[i] = float(spectra_name[i].split('_')[2].split('.')[0][-1]) # Kzz in cm2/s
-		out['Teff']= Teff_fit
-		out['logg']= logg_fit
-		out['logKzz']= logKzz_fit
+		out['params']['Teff']= Teff_fit
+		out['params']['logg']= logg_fit
+		out['params']['logKzz']= logKzz_fit
 	if (model == 'Sonora_Bobcat'):
 		Teff_fit = np.zeros(len(spectra_name))
 		logg_fit = np.zeros(len(spectra_name))
@@ -1431,10 +1548,10 @@ def separate_params(model, spectra_name, save_results=False):
 				CtoO_fit[i] = float(spectra_name[i].split('_')[3][2:])
 			if (len(spectra_name[i].split('_'))==3): # when the spectrum file name does not include the C/O
 				CtoO_fit[i] = 1.0
-		out['Teff']= Teff_fit
-		out['logg']= logg_fit
-		out['Z']= Z_fit
-		out['CtoO']= CtoO_fit
+		out['params']['Teff']= Teff_fit
+		out['params']['logg']= logg_fit
+		out['params']['Z']= Z_fit
+		out['params']['CtoO']= CtoO_fit
 	if (model == 'ATMO2020'):
 		Teff_fit = np.zeros(len(spectra_name))
 		logg_fit = np.zeros(len(spectra_name))
@@ -1449,9 +1566,9 @@ def separate_params(model, spectra_name, save_results=False):
 				logKzz_fit[i] = 4
 			if (spectra_name[i].split('spec_')[1].split('lg')[1][4:-4]=='NEQ_strong'): # when the grid is NEQ_strong
 				logKzz_fit[i] = 6
-		out['Teff']= Teff_fit
-		out['logg']= logg_fit
-		out['logKzz']= logKzz_fit
+		out['params']['Teff']= Teff_fit
+		out['params']['logg']= logg_fit
+		out['params']['logKzz']= logKzz_fit
 	if (model == 'BT-Settl'):
 		Teff_fit = np.zeros(len(spectra_name))
 		logg_fit = np.zeros(len(spectra_name))
@@ -1460,8 +1577,8 @@ def separate_params(model, spectra_name, save_results=False):
 			Teff_fit[i] = float(spectra_name[i].split('-')[0][3:]) * 100 # K
 			# logg
 			logg_fit[i] = float(spectra_name[i].split('-')[1]) # g in cm/s^2
-		out['Teff']= Teff_fit
-		out['logg']= logg_fit
+		out['params']['Teff']= Teff_fit
+		out['params']['logg']= logg_fit
 	if (model == 'SM08'):
 		Teff_fit = np.zeros(len(spectra_name))
 		logg_fit = np.zeros(len(spectra_name))
@@ -1473,9 +1590,9 @@ def separate_params(model, spectra_name, save_results=False):
 			logg_fit[i] = np.round(np.log10(float(spectra_name[i].split('_')[1].split('g')[1].split('f')[0])), 1) + 2 # g in cm/s^2
 			# fsed
 			fsed_fit[i] = float(spectra_name[i].split('_')[1].split('g')[1].split('f')[1])
-		out['Teff']= Teff_fit
-		out['logg']= logg_fit
-		out['fsed']= fsed_fit
+		out['params']['Teff']= Teff_fit
+		out['params']['logg']= logg_fit
+		out['params']['fsed']= fsed_fit
 
 	# save output dictionary
 	if save_results:
@@ -1697,3 +1814,28 @@ def input_data_stats(wl_spectra, N_spectra):
 	out = {'N_datapoints': N_datapoints, 'wl_spectra_min': wl_spectra_min, 'wl_spectra_max': wl_spectra_max}
 
 	return out
+
+#+++++++++++++++++++++++++++
+# find the data point before and after a given value
+def find_two_nearest(array, value):
+	diff = array - value
+	if all(diff<0) or all(diff>0): # value is out of the array coverage
+		raise Exception('Parameter does not cover by the model grid')
+	elif any(diff==0): # if the value is a grid node
+		near_low = near_high = array[diff==0][0]
+	else: # if the value is between two grid nodes
+		near_low = array[diff<0].max()
+		near_high = array[diff>0].min()
+
+	return np.array([near_low, near_high])
+
+#+++++++++++++++++++++++++++
+# maximum number of decimals in an array elements
+def max_decimals(arr):
+	max_places = 0
+	for num in arr:
+		if isinstance(num, float): # if the element is a float
+			num_str = str(num) 
+			decimal_part = num_str.split('.')[1] # select decimals as a string
+			max_places = max(max_places, len(decimal_part)) # compare decimals
+	return max_places

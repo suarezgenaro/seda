@@ -5,6 +5,7 @@ import astropy.units as u
 import pickle
 from spectres import spectres
 from tqdm.auto import tqdm
+from prettytable import PrettyTable
 from astropy.io import ascii
 from astropy.table import vstack
 from lmfit import Minimizer, minimize, Parameters, report_fit # model fit for non-linear least-squares problems
@@ -26,19 +27,14 @@ def chi2(my_chi2):
 	- '``model``\_chi2\_minimization.dat' : ascii table
 		Table with the names of all model spectra fits sorted by chi square and including the information: 
 		spectrum name, chi square, reduced chi square, scaling, scaling error, extinction, extinction error, 
-		physical free parameters in the models (e.g. Teff and logg), and iterations to minimize chi-square.
+		model free parameters, radius and error (if ``distance and ``edistance`` are provided), and
+		iterations to minimize chi-square.
 	- '``model``\_chi2\_minimization.pickle' : dictionary
 		Dictionary with the results from the chi-square minimization, namely:
-			- ``model``: selected atmospheric model.
-			- ``spectra_name``: model spectra names.
+			- ``my_chi2`` input dictionary
 			- ``spectra_name_full``: model spectra names with full path.
-			- ``Teff_range``: input ``Teff_range``.
-			- ``logg_range``: input ``logg_range``.
-			- ``res``: input ``res``.
-			- ``lam_res``: input ``lam_res``.
-			- ``fit_wl_range``: input ``fit_wl_range``.
+			- ``spectra_name``: model spectra names.
 			- ``N_modelpoints``: maximum number of data points in original model spectra.
-			- ``out_lmfit``: output of the ``minner.minimize`` module that minimizes chi2.
 			- ``iterations_fit``: number of iterations to minimize chi-square.
 			- ``Av_fit``: visual extinction (in mag) that minimizes chi-square.
 			- ``eAv_fit``: visual extinction uncertainty (in mag).
@@ -65,12 +61,7 @@ def chi2(my_chi2):
 			- ``eflux_array_obs_fit``: input flux errors for ``wl_array_obs_fit``.
 			- ``flux_residuals``: linear flux residual (in erg/cm2/s/A) between observed data and model spectra in ``fit_wl_range``.
 			- ``logflux_residuals``: logarithm flux residual (in erg/cm2/s/A) between observed data and model spectra ``fit_wl_range``.
-			- ``Teff``: effective temperature (in K) for each model spectrum.
-			- ``logg``: surface gravity (log g) for each model spectrum.
-			- ``Z``: (if provided by ``model``) metallicity for each model spectrum.
-			- ``logKzz``: (if provided by ``model``) diffusion parameter for each model spectrum. 
-			- ``fsed``: (if provided by ``model``) cloudiness parameter for each model spectrum.
-			- ``CtoO``: (if provided by ``model``) C/O ratio for each model spectrum.
+			- ``params``: model free parameters for each model spectrum.
 
 	Example:
 	--------
@@ -87,10 +78,9 @@ def chi2(my_chi2):
 	>>> model = 'Sonora_Elf_Owl'
 	>>> model_dir = ['my_path/output_700.0_800.0/', 
 	>>>              'my_path/output_850.0_950.0/'] # folders to seek model spectra
-	>>> Teff_range = np.array((700, 900)) # Teff range
-	>>> logg_range = np.array((4.0, 5.0)) # logg range
+	>>> params_ranges = {'Teff': [700, 900, 'logg': [4.0, 5.0]
 	>>> my_model = seda.ModelOptions(model=model, model_dir=model_dir, 
-	>>>                              logg_range=logg_range, Teff_range=Teff_range)
+	>>>                              params_ranges=params_ranges)
 	>>> 
 	>>> # load chi-square options
 	>>> fit_wl_range = np.array([value1, value2]) # to make the fit between value1 and value2
@@ -126,13 +116,8 @@ def chi2(my_chi2):
 	# from ModelOptions
 	model = my_chi2.model
 	model_dir = my_chi2.model_dir
-	R_range = my_chi2.R_range
-	Teff_range = my_chi2.Teff_range
-	logg_range = my_chi2.logg_range
-	Z_range = my_chi2.Z_range
-	logKzz_range = my_chi2.logKzz_range
-	CtoO_range = my_chi2.CtoO_range
-	fsed_range = my_chi2.fsed_range
+	params_ranges = my_chi2.params_ranges
+#	R_range = my_chi2.R_range
 #	save_convolved_spectra = my_chi2.save_convolved_spectra
 	path_save_spectra_conv = my_chi2.path_save_spectra_conv
 	skip_convolution = my_chi2.skip_convolution
@@ -154,8 +139,7 @@ def chi2(my_chi2):
 	chi2_table_file = my_chi2.chi2_pickle_file
 
 	# read the model spectra names in the input folders and meeting the indicated parameters ranges 
-	out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir, Teff_range=Teff_range, logg_range=logg_range, Z_range=Z_range, 
-	                                                logKzz_range=logKzz_range, CtoO_range=CtoO_range, fsed_range=fsed_range)
+	out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir, params_ranges=params_ranges)
 	spectra_name_full = out_select_model_spectra['spectra_name_full']
 	spectra_name = out_select_model_spectra['spectra_name']
 	N_model_spectra = len(spectra_name) # number of selected model spectra
@@ -214,7 +198,7 @@ def chi2(my_chi2):
 			name = spectrum.split('_R')[0]
 			if name not in spectra_name_ori: # to avoid repeating the same model spectrum when inputting multiple observed spectra
 				spectra_name_ori.append(name)
-		spectra_name_full_ori = [model_dir[0]+spectrum for spectrum in spectra_name_ori] # 
+		spectra_name_full_ori = [model_dir[0]+spectrum for spectrum in spectra_name_ori] # spectra files with full path
 
 		# necessary renaming to keep only unique model spectra
 		# as for multiple input spectra the same model spectrum is
@@ -384,9 +368,9 @@ def chi2(my_chi2):
 	out_chi2 = {'my_chi2': my_chi2}
 	# add more elements to the dictionary
 	out_chi2.update({'spectra_name_full': spectra_name_full, 'spectra_name': spectra_name, 'N_model_spectra': N_model_spectra, 
- 				     'iterations_fit': iterations_fit, #'out_lmfit': out_lmfit, 
-				     'Av_fit': Av_fit, 'eAv_fit': eAv_fit, 'scaling_fit': scaling_fit, 'escaling_fit': escaling_fit, 'chi2_wl_fit': chi2_wl_fit, 
-				     'chi2_red_wl_fit': chi2_red_wl_fit, 'chi2_fit': chi2_fit, 'chi2_red_fit': chi2_red_fit})#, 'weight_fit': weight_fit})
+ 				     'iterations_fit': iterations_fit, 'Av_fit': Av_fit, 'eAv_fit': eAv_fit, 'scaling_fit': scaling_fit, 
+		             'escaling_fit': escaling_fit, 'chi2_wl_fit': chi2_wl_fit, 'chi2_red_wl_fit': chi2_red_wl_fit, 
+		             'chi2_fit': chi2_fit, 'chi2_red_fit': chi2_red_fit})#, 'weight_fit': weight_fit})
 
 	# add more output parameters depending on the input information
 	if fit_spectra: # when only spectra are used in the fit
@@ -409,9 +393,6 @@ def chi2(my_chi2):
 	#	if (extinction_free_param=='yes'):
 	#		out_chi2['phot_synt_red'] = phot_synt_red
 	if distance!=None: # when a radius was obtained
-		out_chi2['R_range'] = R_range
-		out_chi2['distance'] = distance
-		out_chi2['edistance'] = edistance
 		out_chi2['radius'] = radius
 		if edistance!=None:
 			out_chi2['eradius'] = eradius
@@ -523,125 +504,74 @@ def save_params(out_chi2):
 			- ``e_scaling_fit`` : scaling factor uncertainty
 			- ``Av_fit`` : extinction
 			- ``eAv_fit`` : extinction uncertainty
-			- ``params`` : fundamental parameters provided by ``model`` including Teff and logg.
+			- ``params`` : fundamental parameters provided by ``model``.
+			- ``R`` : radius, when a ``distance`` was provided.
+			- ``eR`` : radius error, when ``distance`` and ``edistance`` were provided.
 			- ``iterations_fit`` : iterations to minimize chi square.
-			- ``model`` : selected atmospheric model.
 
 	Returns:
 	--------
-	- '``model``\_chi2\_minimization.dat' : ascii table
-		ASCII table with input parameters
+	- ``chi2_table_file`` : ascii table
+		ASCII table with input parameters sorted according to reduced chi-square.
+		Table named ``chi2_table_file``, as specified in ``input_parameters.Chi2Options``.
 
 	Author: Genaro Suárez
 	'''
 
-	# separate parameters to be included in the table
-	model = out_chi2['my_chi2'].model
-	spectra_name = out_chi2['spectra_name']
-	N_model_spectra = out_chi2['N_model_spectra']
-	chi2_fit = out_chi2['chi2_fit']
-	chi2_red_fit = out_chi2['chi2_red_fit']
-	scaling_fit = out_chi2['scaling_fit']
-	escaling_fit = out_chi2['escaling_fit']
-	Av_fit = out_chi2['Av_fit']
-	eAv_fit = out_chi2['eAv_fit']
-	iterations_fit = out_chi2['iterations_fit']
-	Teff_fit = out_chi2['Teff']
-	logg_fit = out_chi2['logg']
+	# sort index with respect to reduced chi-square
+	ind = np.argsort(out_chi2['chi2_red_fit'])
 
-	skip_convolution = out_chi2['my_chi2'].skip_convolution
-	chi2_table_file = out_chi2['my_chi2'].chi2_table_file
+	# read and sort relevant parameters from the input dictionary
+	filename = out_chi2['spectra_name'][ind] # filename
+	chi2 = out_chi2['chi2_fit'][ind] # chi-square as integer
+	chi2_red = out_chi2['chi2_red_fit'][ind] # reduced chi-square with three decimals
+	scaling_factor = out_chi2['scaling_fit'][ind]
+	escaling_factor = out_chi2['escaling_fit'][ind]
+	Av = out_chi2['Av_fit'][ind] # Av
+	eAv = out_chi2['eAv_fit'][ind] # Av error
+	iterations = out_chi2['iterations_fit'][ind] # iterations in the minimization
+	params = out_chi2['params']  # free model paramters
+	for param in params:
+		params[param] = params[param][ind]
+	if out_chi2['my_chi2'].distance is not None:
+		R = out_chi2['radius'][ind] # radius
+		eR = out_chi2['eradius'][ind] # radius error
 
-	# table with model spectra sorted by the resulting chi square
-	ind = np.argsort(chi2_red_fit)
+	# make dictionary with parameters of interest
+	my_dict = {} # initialize dictionary
+	my_dict['filename'] = filename
+	my_dict['chi2'] = np.round(chi2).astype(int) # chi-square as integer
+	my_dict['chi2_red'] = np.round(chi2_red,3) # reduced chi-square with three decimals
+	# round scaling and its error, which have scientific notation
+	scaling = np.array([])
+	escaling = np.array([])
+	for i,scal in enumerate(scaling_factor): # for each scaling value
+	    scaling = np.append(scaling, format(scaling_factor[i], '.3e')) # keep three decimals
+	    escaling = np.append(escaling, format(escaling_factor[i], '.3e')) # keep three decimals
+	my_dict['scaling'] = scaling # scaling
+	my_dict['escaling'] = escaling # scaling error
+	my_dict['Av'] = Av # Av
+	my_dict['eAv'] = eAv # Av error
+	my_dict.update(params) # free model paramters
+	if out_chi2['my_chi2'].distance is not None:
+		my_dict['R'] = np.round(R,3) # radius
+		my_dict['eR'] = np.round(eR,3) # radius error
+	my_dict['iterations'] = iterations.astype(int) # iterations in the minimization
 
-	out = open(chi2_table_file, 'w')
-	if (model == 'Sonora_Diamondback'):
-		Z_fit = out_chi2['Z']
-		fsed_fit = out_chi2['fsed']
-		if not skip_convolution:
-			out.write('# file                               chi2     chi2_red     scaling     e_scaling   Av    eAv    Teff   logg  Z      fsed   Iterations\n')
-			for i in range(N_model_spectra):
-				out.write('%-35s %8.0f %9.3f %13.3E %11.3E %6.2f %5.2f %6i %5.1f %5.1f %4i %7i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], Z_fit[ind[i]], fsed_fit[ind[i]], iterations_fit[ind[i]]))
-		else:
-			out.write('# file                                                chi2     chi2_red     scaling     e_scaling   Av    eAv    Teff   logg  Z      fsed   Iterations\n')
-			for i in range(N_model_spectra):
-				out.write('%-52s %8.0f %9.3f %13.3E %11.3E %6.2f %5.2f %6i %5.1f %5.1f %4i %7i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], Z_fit[ind[i]], fsed_fit[ind[i]], iterations_fit[ind[i]]))
-	if (model == 'Sonora_Elf_Owl'):
-		logKzz_fit = out_chi2['logKzz']
-		Z_fit = out_chi2['Z']
-		CtoO_fit = out_chi2['CtoO']
-		if not skip_convolution:
-			out.write('# file                                                         chi2      chi2_red     scaling     e_scaling   Av    eAv    Teff  logg   logKzz  Z    CtoO   Iterations\n')
-			for i in range(N_model_spectra):
-				out.write('%-60s %8.0f %10.3f %14.3E %11.3E %6.2f %5.2f %5i %6.2f %3.0f %9.1f %6.3f %3i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], logKzz_fit[ind[i]], Z_fit[ind[i]], CtoO_fit[ind[i]], iterations_fit[ind[i]]))
-		else:
-			out.write('# file                                                                          chi2      chi2_red     scaling     e_scaling   Av    eAv    Teff  logg   logKzz  Z    CtoO   Iterations\n')
-			for i in range(N_model_spectra):
-				out.write('%-77s %8.0f %10.3f %14.3E %11.3E %6.2f %5.2f %5i %6.2f %3.0f %9.1f %6.3f %3i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], logKzz_fit[ind[i]], Z_fit[ind[i]], CtoO_fit[ind[i]], iterations_fit[ind[i]]))
-	if (model == 'LB23'):
-		logKzz_fit = out_chi2['logKzz']
-		Z_fit = out_chi2['Z']
-		HMIX_fit = out_chi2['Hmix']
-		if not skip_convolution:
-			out.write('# file                                         chi2      chi2_red      scaling     e_scaling   Av    eAv    Teff  logg   Z      logKzz  Hmix    Iterations\n')
-			for i in range(N_model_spectra):
-				out.write('%-45s %8.0f %10.3f %14.3E %11.3E %6.2f %5.2f %5i %6.2f %7.3f %4.1f %9.3f %4i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], Z_fit[ind[i]], logKzz_fit[ind[i]], HMIX_fit[ind[i]], iterations_fit[ind[i]]))
-		else:
-			out.write('# file                                                          chi2      chi2_red      scaling     e_scaling   Av    eAv    Teff  logg   Z      logKzz  Hmix    Iterations\n')
-			for i in range(N_model_spectra):
-				out.write('%-62s %8.0f %10.3f %14.3E %11.3E %6.2f %5.2f %5i %6.2f %7.3f %4.1f %9.3f %4i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], Z_fit[ind[i]], logKzz_fit[ind[i]], HMIX_fit[ind[i]], iterations_fit[ind[i]]))
-	if (model == 'ATMO2020'):
-		logKzz_fit = out_chi2['logKzz']
-		if not skip_convolution:
-			out.write('# file                           chi2    chi2_red      scaling     e_scaling   Av    eAv    Teff  logg  logKzz  Iterations\n')
-			for i in range(N_model_spectra):
-				out.write('%-30s %8.0f %9.3f %14.3E %11.3E %6.2f %5.2f %6i %4.1f %5.1f %6i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], logKzz_fit[ind[i]], iterations_fit[ind[i]]))
-		else:
-			out.write('# file                                            chi2    chi2_red      scaling     e_scaling   Av    eAv    Teff  logg  logKzz  Iterations\n')
-			for i in range(N_model_spectra):
-				out.write('%-47s %8.0f %9.3f %14.3E %11.3E %6.2f %5.2f %6i %4.1f %5.1f %6i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], logKzz_fit[ind[i]], iterations_fit[ind[i]]))
-	if (model == 'Sonora_Cholla'):
-		logKzz_fit = out_chi2['logKzz']
-		if not skip_convolution:
-			out.write('# file                     chi2     chi2_red     scaling     e_scaling   Av    eAv   Teff   logg  logKzz  Iterations\n')
-			for i in range(N_model_spectra):
-				out.write('%-25s %8.0f %8.3f %14.3E %11.3E %6.2f %5.2f %5i %5.1f %3i %8i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], logKzz_fit[ind[i]], iterations_fit[ind[i]]))
-		else:
-			out.write('# file                                      chi2     chi2_red     scaling     e_scaling   Av    eAv   Teff   logg  logKzz  Iterations\n')
-			for i in range(N_model_spectra):
-				out.write('%-42s %8.0f %8.3f %14.3E %11.3E %6.2f %5.2f %5i %5.1f %3i %8i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], logKzz_fit[ind[i]], iterations_fit[ind[i]]))
-	if (model == 'Sonora_Bobcat'):
-		Z_fit = out_chi2['Z']
-		CtoO_fit = out_chi2['CtoO']
-		if not skip_convolution:
-			out.write('# file                               chi2     chi2_red     scaling     e_scaling   Av    eAv   Teff   logg  Z     CtoO  Iterations\n')
-			for i in range(N_model_spectra):
-				out.write('%-35s %8.0f %8.3f %14.3E %11.3E %6.2f %5.2f %5i %6.2f %4.1f %5.1f %4i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], Z_fit[ind[i]], CtoO_fit[ind[i]], iterations_fit[ind[i]]))
-		else:
-			out.write('# file                                                chi2     chi2_red     scaling     e_scaling   Av    eAv   Teff   logg  Z     CtoO  Iterations\n')
-			for i in range(N_model_spectra):
-				out.write('%-52s %8.0f %8.3f %14.3E %11.3E %6.2f %5.2f %5i %6.2f %4.1f %5.1f %4i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], Z_fit[ind[i]], CtoO_fit[ind[i]], iterations_fit[ind[i]]))
-	if (model == 'BT-Settl'):
-		if not skip_convolution:
-			out.write('# file                               chi2     chi2_red    scaling     e_scaling   Av    eAv   Teff  logg    Iterations \n')
-			for i in range(N_model_spectra):
-				out.write('%-15s %8.0f %8.3f %13.3E %11.3E %6.2f %5.2f %5i %4.1f %6i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], iterations_fit[ind[i]]))
-		else:
-			out.write('# file                                                chi2     chi2_red    scaling     e_scaling   Av    eAv   Teff  logg    Iterations \n')
-			for i in range(N_model_spectra):
-				out.write('%-32s %8.0f %8.3f %13.3E %11.3E %6.2f %5.2f %5i %4.1f %6i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], iterations_fit[ind[i]]))
-	if (model == 'SM08'):
-		fsed_fit = out_chi2['fsed']
-		if not skip_convolution:
-			out.write('# file            chi2     chi2_red   scaling     e_scaling   Av    eAv   Teff  logg  fsed  Iterations \n')
-			for i in range(N_model_spectra):
-				out.write('%-15s %9.0f %8.3f %12.3E %11.3E %6.2f %5.2f %4i %5.1f %3i %6i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], fsed_fit[ind[i]], iterations_fit[ind[i]]))
-		else:
-			out.write('# file                             chi2     chi2_red   scaling     e_scaling   Av    eAv   Teff  logg  fsed  Iterations \n')
-			for i in range(N_model_spectra):
-				out.write('%-32s %9.0f %8.3f %12.3E %11.3E %6.2f %5.2f %4i %5.1f %3i %6i \n' %(spectra_name[ind[i]], chi2_fit[ind[i]], chi2_red_fit[ind[i]], scaling_fit[ind[i]], escaling_fit[ind[i]], Av_fit[ind[i]], eAv_fit[ind[i]], Teff_fit[ind[i]], logg_fit[ind[i]], fsed_fit[ind[i]], iterations_fit[ind[i]]))
-	out.close()
+	# create a PrettyTable object
+	table = PrettyTable()
+	# add the dictionary keys as column headers
+	table.field_names = my_dict.keys()
+	# add the dictionary values as rows
+	for row in zip(*my_dict.values()):
+		table.add_row(row)
+	
+	# get the ASCII string representation
+	ascii_table = table.get_string()
+	
+	# save file
+	with open(out_chi2['my_chi2'].chi2_table_file, 'w') as f:
+		f.write(ascii_table)
 
 	return  
 

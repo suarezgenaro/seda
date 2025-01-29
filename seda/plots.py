@@ -309,19 +309,15 @@ def plot_bayes_fit(bayes_pickle_file, xlog=False, ylog=True, xrange=None, yrange
 	out_best_bayesian_fit = best_bayesian_fit(bayes_pickle_file)
 	wl_mod_conv_scaled_resam = out_best_bayesian_fit['wl_mod_conv_scaled_resam'] # best fit
 	flux_mod_conv_scaled_resam = out_best_bayesian_fit['flux_mod_conv_scaled_resam'] # best fit 
-	Teff_med = out_best_bayesian_fit['Teff_med']
-	logg_med = out_best_bayesian_fit['logg_med']
-	logKzz_med = out_best_bayesian_fit['logKzz_med']
-	Z_med = out_best_bayesian_fit['Z_med']
-	CtoO_med = out_best_bayesian_fit['CtoO_med']
-	R_med = out_best_bayesian_fit['R_med']
-	# round parameters
-	Teff_med = round(Teff_med)
-	logg_med = round(logg_med, 2)
-	logKzz_med = round(logKzz_med,1)
-	Z_med = round(Z_med, 2)
-	CtoO_med = round(CtoO_med, 2)
-	R_med = round(R_med, 2)
+	params_med = out_best_bayesian_fit['params_med']
+
+	# round median parameters
+	params = Models(model).params # free parameters in the models
+	for i,param in enumerate(params_med): # for each sampled parameter
+		if param in params: # for free parameters in the model grid
+			params_med[param] = round(params_med[param], max_decimals(params[param])+1) # round to the precision (plus one decimal place) of the parameter in models
+		else: # parameters other than those in the grid (e.g. radius)
+			params_med[param] = round(params_med[param], 2) # consider two decimals
 
 	# wavelengths from input spectra in the fit range
 	wl_spectra_fit = []
@@ -366,7 +362,11 @@ def plot_bayes_fit(bayes_pickle_file, xlog=False, ylog=True, xrange=None, yrange
 	# plot model spectrum
 	for k in range(N_spectra): # for each input observed spectrum
 		color = plt.rcParams['axes.prop_cycle'].by_key()['color'][1] # default color
-		label = (f'Teff{Teff_med}_logg{logg_med}_logKzz{logKzz_med}_Z{Z_med}_CtoO{CtoO_med}_R{R_med}')
+		# label
+		label = ''
+		for i,param in enumerate(params_med): # for each sampled parameter
+			if i==0: label += f'{param}{params_med[param]}'
+			else: label += f'_{param}{params_med[param]}'
 		mask = (wl_mod_conv_scaled_resam[k]>=xrange[0]) & (wl_mod_conv_scaled_resam[k]<=xrange[1])
 		if k==0: 
 			ax[0].plot(wl_mod_conv_scaled_resam[k][mask], flux_mod_conv_scaled_resam[k][mask], color=color, label=label)
