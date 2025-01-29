@@ -1,6 +1,3 @@
-# Include the license file
-#include LICENSE
-
 # include auxiliary files
 #recursive-include aux
 include seda/aux/__init__.py
