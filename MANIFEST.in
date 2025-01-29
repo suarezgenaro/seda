@@ -1,6 +1,6 @@
-# Include the license file
-#include LICENSE
-
 # include auxiliary files
-include seda/aux/model_coverage/*
-include seda/aux/model_spectra/*
+#recursive-include aux
+#include seda/aux/__init__.py
+include seda/models_aux/*.pickle
+#include seda/aux/model_coverage/*
+#include seda/aux/model_spectra/*
