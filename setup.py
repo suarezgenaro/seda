@@ -27,7 +27,7 @@ setup(name='seda',
       install_requires=['astropy','corner','dynesty','lmfit','matplotlib','numpy','scipy','specutils','spectres','tqdm','xarray'], 
 
       
-      package_data = {'seda/aux/*]},
+      package_data = {'aux/*]},
       include_package_data=True,
       
 #      install_requires=install_requires(),
