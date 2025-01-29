@@ -459,7 +459,7 @@ def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spect
 		Required if ``grid`` is not provided.
 	- save_spectrum : {``True``, ``False``}, optional (default ``False``)
 		Save (``True``) or do not save (``False``) the generated spectrum as an ascii table.
-		Default name is '``model``_``params``_.dat'.
+		Default name is '``model``\_``params``\_.dat'.
 
 	Returns:
 	--------
