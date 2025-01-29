@@ -4,6 +4,7 @@ dynesty
 lmfit
 matplotlib
 numpy 
+prettytable
 scipy
 specutils
 spectres

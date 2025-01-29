@@ -46,7 +46,7 @@ These packages can be installed using ``pip``:
 .. code-block:: console
 
     $ pip install astropy matplotlib numpy scipy specutils
-    $ pip install corner dynesty lmfit spectres tqdm xarray
+    $ pip install corner dynesty lmfit prettytable spectres tqdm xarray
 
 :math:`\texttt{SEDA}` has been tested in Python 3.9, 3.10, and 3.11 security versions as of Nov. 2024.
 
