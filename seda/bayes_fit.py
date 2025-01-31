@@ -126,7 +126,7 @@ def bayes(my_bayes):
 	#------------------
 	def loglike(p):
 		# arrange parameter values in the sampling related to model free parameters
-		# to be used in to generate the corresponding model spectrum
+		# to be used to generate the corresponding model spectrum
 		params = {}
 		for i,param in enumerate(params_priors.keys()): # for each parameter in the sampling
 			if param in params_unique: # only keep the free parameters in the model

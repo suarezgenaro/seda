@@ -1,6 +1,22 @@
 MODIFICATION HISTORY
 
 ------------
+2025/01
+Genaro Suárez
+	- Major changes made to the code organization to facilitate the management of models with different free parameters and the inclusion of new models:
+		- new module models.py as an attempt to include all the functions tightly related to model
+		- parameter ranges to select model spectra is provided now as a dictionary dictionary with all constraints rather than providing each parameter range separately.
+		- R_range is still given separately because that is not a model free parameter:
+			it is now given in BayesOptions rather than ModelOptions, because it is relevant for the sampling but not the chi-square minimization.
+		- included the directory "models_aux" with folder containing relevant information from models:
+			"model_spectra": an example of a synthetic spectrum for each model.
+			"model_coverage": pickle files with the full coverage of each free parameter in the available models.
+			"model_specifics": json files with basic information for each model.
+		- all available models can now be interpolated to generate a spectrum with any parameter combination within the grid using seda.generate_model_spectrum().
+		- Bayesian sampling works for all available models.
+	- lam_res is an optional parameter.
+
+------------
 2024/12/23
 Genaro Suárez
 	Made functions to convert fluxes to mag and vice versa as well as fluxes in wavelength units to frequency units and vice versa.

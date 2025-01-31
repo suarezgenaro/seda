@@ -36,6 +36,7 @@ External packages that must be installed separately (using ``pip``):
 
 * `corner <http://corner.readthedocs.io/en/latest/>`_
 * `dynesty <https://dynesty.readthedocs.io/en/stable/>`_
+* `fnmatch <https://docs.python.org/3/library/fnmatch.html>`_
 * `lmfit <https://pypi.org/project/lmfit/>`_
 * `prettytable <https://pypi.org/project/prettytable/>`_
 * `spectres <https://spectres.readthedocs.io/en/latest/>`_
@@ -47,7 +48,7 @@ These packages can be installed using ``pip``:
 .. code-block:: console
 
     $ pip install astropy matplotlib numpy scipy specutils
-    $ pip install corner dynesty lmfit prettytable spectres tqdm xarray
+    $ pip install corner dynesty fnmatch lmfit prettytable spectres tqdm xarray
 
 :math:`\texttt{SEDA}` has been tested in Python 3.9, 3.10, and 3.11 security versions as of Nov. 2024.
 

@@ -1,0 +1,20 @@
+{
+    "_comment_model": "Internal label for the atmospheric models",
+	"model": "Sonora_Elf_Owl",
+    "_comment_ref": "Reference for the models (optional)",
+    "ref": "Mukherjee et al. (2024)",
+    "_comment_name": "Name of the models (optional)",
+    "name": "Sonora Elf Owl",
+    "_comment_bibcode": "bibcode identifier for the models (optional)",
+    "bibcode": "2024ApJ...963...73M",
+    "_comment_ADS": "ADS links to the model publication (optional)",
+    "ADS": "https://ui.adsabs.harvard.edu/abs/2024ApJ...963...73M/abstract",
+    "_comment_download": "Link to download the models (optional)",
+    "download": ["https://zenodo.org/records/10385987", "https://zenodo.org/records/10385821", "https://zenodo.org/records/10381250"],
+    "_comment_filename_pattern": "Common pattern recognized in all spectra filenames used to select only spectra files in case there are other files in the same directory",
+    "filename_pattern": "spectra_logzz_*.nc*",
+    "_comment_N_modelpoints": "Maximum number of data points in model spectra",
+    "N_modelpoints": "193132",
+    "_comment_free_params": "Free parameters in the models",
+    "free_params": ["Teff", "logg", "logKzz", "Z", "CtoO"]
+}

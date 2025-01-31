@@ -6,7 +6,6 @@ from sys import exit
 
 print('\n    SEDA package imported')
 
-# Define input parameters to run SEDA
 #+++++++++++++++++++++++++++
 class InputData:
 	'''
@@ -39,11 +38,12 @@ class InputData:
 		Filters associated to the input magnitudes following SVO filter IDs 
 		http://svo2.cab.inta-csic.es/theory/fps/
 	- res : float, list or array, optional (required if ``fit_spectra``)
-		Resolving power (R=lambda/delta(lambda)) at ``lam_res`` of input spectra to smooth model spectra.
+		Resolving power (R=lambda/delta(lambda) at ``lam_res``) of input spectra to smooth model spectra.
 		For multiple input spectra, ``res`` should be a list or array with a value for each spectrum.
-	- lam_res : float, list or array, optional (required if ``fit_spectra``)
-		Wavelength of reference at which ``res`` is given.
+	- lam_res : float, list or array, optional
+		Wavelength of reference at which ``res`` is given (because resolution may change with wavelength).
 		For multiple input spectra, ``lam_res`` should be a list or array with a value for each spectrum.
+		Default is the integer closest to the median wavelength for each input spectrum.
 	- distance : float, optional
 		Target distance (in pc) used to derive radii from scaling factors for models.
 	- edistance : float, optional
@@ -62,9 +62,8 @@ class InputData:
 	>>> flux_spectra = flux_input # in erg/cm^2/s/A
 	>>> eflux_spectra = eflux_input # in erg/cm^2/s/A
 	>>> res = 100 # input spectrum resolution
-	>>> lam_res = 2.0 # (um) reference wavelength for res
 	>>> my_data = seda.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, 
-	>>>                          eflux_spectra=eflux_spectra, res=res, lam_res=lam_res)
+	>>>                          eflux_spectra=eflux_spectra, res=res)
 	    Input data loaded successfully
 
 	Author: Genaro Suárez
@@ -93,14 +92,20 @@ class InputData:
 
 		# reshape some input parameters and define non-provided parameters in terms of other parameters
 		if fit_spectra:
-			# if res and lam_res are scalars, convert them into array
-			if isinstance(res, (float, int)): res = np.array([res])
-			if isinstance(lam_res, (float, int)): lam_res = np.array([lam_res])
-
 			# when one spectrum is given, convert the spectrum into a list
 			if not isinstance(wl_spectra, list): wl_spectra = [wl_spectra]
 			if not isinstance(flux_spectra, list): flux_spectra = [flux_spectra]
 			if not isinstance(eflux_spectra, list): eflux_spectra = [eflux_spectra]
+
+			# set lam_res if not provided
+			if lam_res is None: 
+				lam_res = []
+				for wl_spectrum in wl_spectra:
+					lam_res.append(set_lam_res(wl_spectrum))
+
+			# if res and lam_res are scalars, convert them into array
+			if isinstance(res, (float, int)): res = np.array([res])
+			if isinstance(lam_res, (float, int)): lam_res = np.array([lam_res])
 
 		# handle input parameters
 		# convert input spectra to numpy arrays, if they are astropy
@@ -145,79 +150,9 @@ class ModelOptions:
 
 	Parameters:
 	-----------
-	- model : {``'Sonora_Diamondback'``, ``'Sonora_Elf_Owl'``, ``'LB23'``, ``'Sonora_Cholla'``, ``'Sonora_Bobcat'``, ``'ATMO2020'``, ``'BT-Settl'``, ``'SM08'``}
-		Atmospheric models used in the comparison. Available models: 
-			- ``'Sonora_Diamondback'`` : cloudy (silicate clouds) atmospheric models assuming chemical equilibrium but considering the effect of both clouds and metallicity by Morley et al. (2024).
-				Parameter coverage: 
-					- wavelength = [0.3, 250] um
-					- Teff = [900, 2400] K in steps of 100 K
-					- logg = [3.5, 5.5] in steps of 0.5
-					- [M/H] = [-0.5, 0.5] (cgs) in steps of 0.5
-					- fsed = 1, 2, 3, 4, 8, nc
-			- ``'Sonora_Elf_Owl'`` : models with atmospheric mixing and chemical disequilibrium with varying metallicity and C/O by Mukherjee et al. (2024).
-				Parameter coverage:
-					- wavelength = [0.6, 15] um
-					- Teff = [275, 2400] K in steps: 25 K for 275-600 K, 50 K for 600-1000 K, and 100 K for 1000-2400 K
-					- logg = [3.25, 5.50] in steps of 0.25 dex plus logg=3.0 for Teff=[275-2000], logKzz=8, [M/H]=1.0, and C/O=1.0.
-					- logKzz = 2, 4, 7, 8, and 9 (Kzz in cm2/s)
-					- [M/H] = -1.0, -0.5, +0.0, +0.5, +0.7, and +1.0 (cgs)
-					- C/O = 0.5, 1.0, 1.5, and 2.5 (relative to solar C/O, assumed as 0.458) (these are the values in the filenames). It corresponds to C/O=[0.22, 1.12] with values of 0.22, 0.458, 0.687, and 1.12 (e.g. 0.5 in the filename means 0.5*0.458=0.22)
-			- ``'LB23'`` : cloudy (water clouds) atmospheric models with equilibrium and non-equilibrium chemistry for Y-dwarf atmospheres by Lacy & Burrows (2023).
-				Parameter coverage in common for all grids:
-					- wavelength = [0.5, 300] um with 30,000 frequency points evenly spaced in ln(frequency)
-					- R~4340 (average resolving power)
-				Parameter coverage for cloudless models:
-					- Teff = [200, 600] K in steps of 25 K
-					- logg = [3.50, 5.00] in steps of 0.25 (g in cgs)
-					- [M/H] = -0.5, 0.0, and 0.5 (Z/Z_sun = 0.316, 1.0, 3.16)
-					- logKzz = 6 for non-equilibrium models
-				Parameter coverage for cloudy models (there are some additional cloudy atmospheres extending to lower surface gravities and warmer temperatures in some combinations where convergence was easy): 
-					- Teff = [200, 400] K (200-350 for Z/Z_sun=3.16) in steps of 25 K 
-					- logg = [3.75, 5.00] in steps of 0.25 (g in cgs)
-					- [M/H] = -0.5, 0.0, and 0.5 (Z/Z_sun = 0.316, 1.0, 3.16), but some Z/Z_sun=3.16 are missing
-					- logKzz = 6 for non-equilibrium models
-				Extended models (additions to models in the paper)
-					- Teff up to 800 K
-					- Hmix (mixing length) = 1.0, 0.1, and 0.01
-					- This grid replaces the original one ("The original spectra had an inconsistent wavelength grid and was missing CO2, so new ones are really a replacement.")
-			- ``'Sonora_Cholla'`` : cloudless models with non-equilibrium chemistry due to different eddy diffusion parameters by Karalidi et al. (2021).
-				Parameter coverage: 
-					- wavelength = [1, 250] um for Teff>=850 K (plus some with Teff=750 K)
-					- wavelength = [0.3, 250] um for Teff<800 K (plus 950K_1780g_logkzz2.spec)
-					- Teff = [500, 1300] K in steps of 50 K
-					- logg = [3.00, 5.50] in steps of 0.25 (g in cgs)
-					- log Kzz=2, 4, and 7
-			- ``'Sonora_Bobcat'`` : cloudless models in chemical equilibrium by Marley et al. (2021).
-				Parameter coverage: 
-					- wavelength = [0.4, 50] um
-					- Teff = [200, 2400] K in steps: 25 K for 200-600 K, 50 K for 600-1000 K, and 100 K for 1000-2400 K
-					- logg = [3.25, 5.50] in steps of 0.25 (g in cgs)
-					- M/H=-0.5, 0.0, and 0.5
-					- C/O = 0.5, 1.0 (solar C/O), and 1.5 for solar metallicity models
-					- R = [6000, 200000] (the resolving power varies with wavelength but is otherwise the same for all spectra)
-			- ``'ATMO2020'`` : cloudless atmospheric models with chemical and non-chemical equilibrium by Phillips et al. (2020).
-				ATMO2020 includes three grid:
-						- 'ATMO2020_CEQ': cloudless models with equilibrium chemistry
-						- 'ATMO2020_NEQ_weak': cloudless models with non-equilibrium chemistry due to weak vertical mixing (logKzz=4).
-						- 'ATMO2020_NEQ_strong': cloudless models with non-equilibrium chemistry due to strong vertical mixing (logKzz=6).
-				Parameter coverage: 
-					- wavelength = [0.2, 2000] um
-					- Teff = [200, 2400] K in steps varying from 25 K to 100 K
-					- logg = [2.5, 5.5] in steps of 0.5 (g in cgs)
-					- logKzz = 0 (ATMO2020_CEQ), 4 (ATMO2020_NEQ_weak), and 6 (ATMO2020_NEQ_strong)
-			- ``'BT-Settl'`` : cloudy models with non-equilibrium chemistry by Allard et al. (2012).
-				Parameter coverage: 
-					- wavelength = [1.e-4, 1000] um
-					- Teff = [200, 7000] K (Teff<=450 K for only logg<=3.5) in steps varying from 20 K to 100 K
-					- logg = [2.0, 5.5] in steps of 0.5 (g in cgs)
-					- R = [100000, 500000] (the resolving power varies with wavelength)
-			- ``'SM08'`` : cloudy models with equilibrium chemistry by Saumon & Marley (2008).
-				Parameter coverage: 
-					- wavelength = [0.4, 50] um
-					- Teff = [800, 2400] K in steps of 100 K
-					- logg = [3.0, 5.5] in steps of 0.5 (g in cgs)
-					- fsed = 1, 2, 3, 4
-					- R = [100000, 700000] (the resolving power varies with wavelength)
+	- model : str
+		Label for any of the available atmospheric models.
+		See more info in ``seda.Models``.
 	- model_dir : str, list, or array
 		Path to the directory (str, list, or array) or directories (as a list or array) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
 		Avoid using paths with null spaces. 
@@ -238,9 +173,10 @@ class ModelOptions:
 
 	Returns:
 	--------
-	- Dictionary with all (provided and default) model option parameters plus the following parameters:
+	Dictionary with all (provided and default) model option parameters plus the following parameters:
 		- N_modelpoints : int
 			Maximum number of data points in the model spectra.
+		- ...
 
 	Example:
 	--------
@@ -266,8 +202,7 @@ class ModelOptions:
 	             path_save_spectra_conv=None, skip_convolution=False):
 
 		self.model = model
-		models_valid = list(available_models().keys())
-		if model not in models_valid: raise Exception(f'Models "{model}" are not recognized. Available models are: \n          {models_valid}')
+		if model not in Models().available_models: raise Exception(f'Models "{model}" are not recognized. Available models are: \n          {models_valid}')
 		#self.R_range = R_range
 		self.params_ranges = params_ranges
 		self.path_save_spectra_conv = path_save_spectra_conv
@@ -431,7 +366,7 @@ class Chi2Options:
 #			N_datapoints  = N_datapoints + wl_spectra[i].size
 
 		# number of data points in the input spectra
-		out_input_data_stats = input_data_stats(wl_spectra=wl_spectra, N_spectra=N_spectra)
+		out_input_data_stats = input_data_stats(wl_spectra=wl_spectra)
 		wl_spectra_min = out_input_data_stats['wl_spectra_min']
 		wl_spectra_max = out_input_data_stats['wl_spectra_max']
 		N_datapoints = out_input_data_stats['N_datapoints']
@@ -556,7 +491,7 @@ class BayesOptions:
 		params_ranges = my_model.params_ranges
 
 		# some statistic for input spectra
-		out_input_data_stats = input_data_stats(wl_spectra=wl_spectra, N_spectra=N_spectra)
+		out_input_data_stats = input_data_stats(wl_spectra=wl_spectra)
 		wl_spectra_min = out_input_data_stats['wl_spectra_min'] # minimum wavelength in the input spectra
 		wl_spectra_max = out_input_data_stats['wl_spectra_max'] # maximum wavelength in the input spectra
 		N_datapoints = out_input_data_stats['N_datapoints'] # number of data points in all input spectra

@@ -1,195 +1,359 @@
 import pickle
 import numpy as np
 import os
+import fnmatch
+import json
 from sys import exit
 
-#!!! plots.model_name(model)
-#!!! utils.model_points(model)
-#!!! utils.grid_ranges(model)
-#!!! utilts.model_filename_pattern(model):
-#!!! utilts.available_models():
-# 
-# plots.spectra_name_short(model, spectra_name)
-# utilts.separate_params(model, spectra_name, save_results=False):
-
-# dictionary with basic properties from available atmospheric models
+##########################
 class Models:
+	'''
+	Description:
+	------------
+		See available atmospheric models and get basic parameters from a desired model grid.
 
-	#def __init__(self, model):
+	Parameters:
+	-----------
+	- model : str, optional.
+		Atmospheric models for which basic information will be read. 
+		See available models with ``seda.Models().available_models``.
+
+	Attributes:
+	-----------
+	- available_models (list) : Atmospheric models available on SEDA.
+	- ref (str) : Reference to ``model`` (if provided).
+	- name (str) : Name of ``model`` (if provided).
+	- bibcode (str) : bibcode identifier for ``model`` (if provided).
+	- ADS (str) : ADS links to ``model`` (if provided) reference.
+	- download (str) : link to download ``model`` (if provided).
+	- filename_pattern (str) : common pattern in all spectra filenames in ``model`` (if provided). 
+		It is used to avoid other potential files in the same directory with model spectra.
+	- N_modelpoints (int) : maximum number of data points in ``model`` (if provided) spectra.
+	- free_params (list) : free parameters in ``model`` (if provided).
+	- params (dict) : values (including repetitions) for each free parameter in ``model`` (if provided).
+	- params_unique (dict) : unique (no repetitions) values for each free parameter in ``model`` (if provided).
+
+	Returns:
+	--------
+	NoneType
+
+	Example:
+	--------
+	>>> import seda
+	>>> 
+	>>> # see available atmospheric models
+	>>> seda.Models().available_models
+	    ['BT-Settl',
+	     'ATMO2020',
+	     'Sonora_Elf_Owl',
+	     'SM08',
+	     'Sonora_Bobcat',
+	     'Sonora_Diamondback',
+	     'Sonora_Cholla',
+	     'LB23']
+	>>> 
+	>>> # see link to the reference paper
+	>>> seda.Models('Sonora_Elf_Owl').ADS
+	    'https://ui.adsabs.harvard.edu/abs/2024ApJ...963...73M/abstract'
+	>>> 
+	>>> # see free parameters in one of the models
+	>>> seda.Models('Sonora_Elf_Owl').free_params
+	    ['Teff', 'logg', 'logKzz', 'Z', 'CtoO']
+
+	Author: Genaro Suárez
+	'''
+
 	def __init__(self, model=None):
 
-		if model is not None:
-			self.model = model
-	
-		# available atmospheric models
-		self.available_models = ['Sonora_Diamondback', 'Sonora_Elf_Owl', 'LB23', 'Sonora_Cholla', 'Sonora_Bobcat', 'ATMO2020', 'BT-Settl', 'SM08']
-
-		# relevant info for available models
-		if model=='Sonora_Diamondback':
-			self.ref = 'Morley et al (2024)'
-			self.name = 'Sonora Diamondback'
-			self.bibcode = '2024ApJ...975...59M'
-			self.ADS = 'https://ui.adsabs.harvard.edu/abs/2024ApJ...975...59M/abstract'
-			self.download = 'https://zenodo.org/records/12735103'
-			self.filename_pattern = 't*.spec*'
-			self.N_modelpoints = 385466
-			self.free_params = ['Teff', 'logg', 'Z', 'fsed']
-		if model=='Sonora_Elf_Owl': 
-			self.ref = 'Mukherjee et al. (2024)'
-			self.name = 'Sonora Elf Owl'
-			self.bibcode = '2024ApJ...963...73M'
-			self.ADS = 'https://ui.adsabs.harvard.edu/abs/2024ApJ...963...73M/abstract'
-			self.download = ['https://zenodo.org/records/10385987', 'https://zenodo.org/records/10385821', 'https://zenodo.org/records/10381250']
-			self.filename_pattern = 'spectra_logzz_*.nc*'
-			self.N_modelpoints = 193132 
-			self.free_params = ['Teff', 'logg', 'logKzz', 'Z', 'CtoO']
-		if model=='LB23': 
-			self.ref = 'Lacy & Burrows (2023)'
-			self.name = 'Lacy & Burrows (2023)'
-			self.bibcode = '2023ApJ...950....8L'
-			self.ADS = 'https://ui.adsabs.harvard.edu/abs/2023ApJ...950....8L/abstract'
-			self.download = 'https://zenodo.org/records/7779180'
-			self.filename_pattern = 'T*21*'
-			self.N_modelpoints = 30000  
-			self.free_params = ['Teff', 'logg', 'Z', 'logKzz', 'Hmix']
-		if model=='Sonora_Cholla': 
-			self.ref = 'Karalidi et al. (2021)'
-			self.name = 'Sonora Cholla'
-			self.bibcode = '2021ApJ...923..269K'
-			self.ADS = 'https://ui.adsabs.harvard.edu/abs/2021ApJ...923..269K/abstract'
-			self.download = 'https://zenodo.org/records/4450269'
-			self.filename_pattern = '*.spec*'
-			self.N_modelpoints = 110979 
-			self.free_params = ['Teff', 'logg', 'logKzz']
-		if model=='Sonora_Bobcat': 
-			self.ref = 'Marley et al. (2021)'
-			self.name = 'Sonora_Bobcat'
-			self.bibcode = '2021ApJ...920...85M'
-			self.ADS = 'https://ui.adsabs.harvard.edu/abs/2021ApJ...920...85M/abstract'
-			self.download = 'https://zenodo.org/records/5063476'
-			self.filename_pattern = 'sp_t*'
-			self.N_modelpoints = 362000 
-			self.free_params = ['Teff', 'logg', 'Z', 'CtoO']
-		if model=='ATMO2020': 
-			self.ref = 'Phillips et al. (2020)'
-			self.name = 'ATMO 2020'
-			self.bibcode = '2020A%26A...637A..38P'
-			self.ADS = 'https://ui.adsabs.harvard.edu/abs/2020A%26A...637A..38P/abstract'
-			self.download = 'https://noctis.erc-atmo.eu/fsdownload/zyU96xA6o/phillips2020'
-			self.filename_pattern = 'spec_T*.txt*'
-			self.N_modelpoints = 5000   
-			self.free_params = ['Teff', 'logg', 'logKzz']
-		if model=='BT-Settl': 
-			self.ref = 'Allard et al. (2012)'
-			self.name = 'BT-Settl'
-			self.bibcode = '2012RSPTA.370.2765A'
-			self.ADS = 'https://ui.adsabs.harvard.edu/abs/2012RSPTA.370.2765A/abstract'
-			self.download = 'http://phoenix.ens-lyon.fr/simulator/'
-			self.filename_pattern = 'lte*.BT-Settl.spec.7*'
-			self.N_modelpoints = 1291340
-			self.free_params = ['Teff', 'logg']
-		if model=='SM08': 
-			self.ref = 'Saumon & Marley (2008)'
-			self.name = 'Saumon & Marley (2008)'
-			self.bibcode = '2008ApJ...689.1327S'
-			self.ADS = 'https://ui.adsabs.harvard.edu/abs/2008ApJ...689.1327S/abstract'
-			self.download = 'Contact authors'
-			self.filename_pattern = 'sp_t*'
-			self.N_modelpoints = 184663 
-			self.free_params = ['Teff', 'logg', 'fsed']
-
-		self.model_ranges()
-
-#		self.model_reference(model)
-#		self.model_name(model)
-#		self.model_points(model)
-#		self.model_filename_pattern(model)
-#		self.model_free_params(model)
-#	
-#	# model references
-#	def model_reference(self, model):
-#		if self.model=='Sonora_Diamondback': self.ref = 'Morley et al (2024)'
-#		if self.model=='Sonora_Elf_Owl': self.ref = 'Mukherjee et al. (2024)'
-#		if self.model=='LB23': self.ref = 'Lacy & Burrows (2023)'
-#		if self.model=='Sonora_Cholla': self.ref = 'Karalidi et al. (2021)'
-#		if self.model=='Sonora_Bobcat': self.ref = 'Marley et al. (2021)'
-#		if self.model=='ATMO2020': self.ref = 'Phillips et al. (2020)'
-#		if self.model=='BT-Settl': self.ref = 'Allard et al. (2012)'
-#		if self.model=='SM08': self.ref = 'Saumon & Marley (2008)'
-#
-#	# model name
-#	def model_name(self, model):
-#		if self.model=='Sonora_Diamondback': self.name = 'Sonora Diamondback'
-#		if self.model=='Sonora_Elf_Owl': self.name = 'Sonora Elf Owl'
-#		if self.model=='LB23': self.name = 'Lacy & Burrows (2023)'
-#		if self.model=='Sonora_Cholla': self.name = 'Sonora Cholla'
-#		if self.model=='Sonora_Bobcat': self.name = 'Sonora_Bobcat'
-#		if self.model=='ATMO2020': self.name = 'ATMO 2020'
-#		if self.model=='BT-Settl': self.name = 'BT-Settl'
-#		if self.model=='SM08': 'Saumon & Marley (2008)'
-#
-#	# number of rows in model spectra
-#	def model_points(self, model):
-#		if self.model=='Sonora_Diamondback': self.N_modelpoints = 385466 # number of rows in model spectra (all spectra have the same length)
-#		if self.model=='Sonora_Elf_Owl': self.N_modelpoints = 193132 # number of rows in model spectra (all spectra have the same length)
-#		if self.model=='LB23': self.N_modelpoints = 30000 # maximum number of rows in model spectra
-#		if self.model=='Sonora_Cholla': self.N_modelpoints = 110979 # maximum number of rows in spectra of the grid
-#		if self.model=='Sonora_Bobcat': self.N_modelpoints = 362000 # maximum number of rows in spectra of the grid
-#		if self.model=='ATMO2020': self.N_modelpoints = 5000 # maximum number of rows of the ATMO2020 model spectra
-#		if self.model=='BT-Settl': self.N_modelpoints = 1291340 # maximum number of rows of the BT-Settl model spectra
-#		if self.model=='SM08': self.N_modelpoints = 184663 # rows of the SM08 model spectra
-#
-#	# common pattern depending the models
-#	def model_filename_pattern(self, model):
-#		if self.model=='Sonora_Diamondback': self.filename_pattern = 't*.spec*'
-#		if self.model=='Sonora_Elf_Owl': self.filename_pattern = 'spectra_logzz_*.nc*'
-#		if self.model=='LB23': self.filename_pattern = 'T*21*'
-#		if self.model=='Sonora_Cholla': self.filename_pattern = '*.spec*'
-#		if self.model=='Sonora_Bobcat': self.filename_pattern = 'sp_t*'
-#		if self.model=='ATMO2020': self.filename_pattern = 'spec_T*.txt*'
-#		if self.model=='BT-Settl': self.filename_pattern = 'lte*.BT-Settl.spec.7*'
-#		if self.model=='SM08': self.filename_pattern = 'sp_t*'
-#
-#	# free parameters
-#	def model_free_params(self, model):
-#		if self.model=='Sonora_Diamondback': self.free_params = ['Teff', 'logg', 'Z', 'fsed']
-#		if self.model=='Sonora_Elf_Owl': self.free_params = ['Teff', 'logg', 'logKzz', 'Z', 'CtoO']
-#		if self.model=='LB23': self.free_params = ['Teff', 'logg', 'Z', 'logKzz', 'Hmix']
-#		if self.model=='Sonora_Cholla': self.free_params = ['Teff', 'logg', 'logKzz']
-#		if self.model=='Sonora_Bobcat': self.free_params = ['Teff', 'logg', 'Z', 'CtoO']
-#		if self.model=='ATMO2020': self.free_params = ['Teff', 'logg', 'logKzz']
-#		if self.model=='BT-Settl': self.free_params = ['Teff', 'logg']
-#		if self.model=='SM08': self.free_params = ['Teff', 'logg', 'fsed']
-		
-
-	# grid_ranges(model)
-	def model_ranges(self):
-
+		# path to this module
 		path_models = os.path.dirname(__file__)+'/'
 
-		with open(f'{path_models}/aux/model_coverage/{self.model}_free_parameters.pickle', 'rb') as file:
-			out_coverage = pickle.load(file)
+		# available atmospheric models
+		# open all the json files in models_aux/model_specifics
+		path_jsons = path_models+'models_aux/model_specifics/'
+		
+		json_files = fnmatch.filter(os.listdir(path_jsons), '*.json')
 
-		out = {}
-		if 'Teff' in out_coverage: 
-			#self.Teff_grid = np.unique(out_coverage['Teff'])
-			out['Teff'] = np.unique(out_coverage['Teff'])
-		if 'logg' in out_coverage: 
-			#self.logg_grid = np.unique(out_coverage['logg'])
-			out['logg'] = np.unique(out_coverage['logg'])
-		if 'Z' in out_coverage: 
-			#self.Z_grid = np.unique(out_coverage['Z'])
-			out['Z'] = np.unique(out_coverage['Z'])
-		if 'logKzz' in out_coverage: 
-			#self.logKzz_grid = np.unique(out_coverage['logKzz'])
-			out['logKzz'] = np.unique(out_coverage['logKzz'])
-		if 'CtoO' in out_coverage: 
-			#self.CtoO_grid = np.unique(out_coverage['CtoO'])
-			out['CtoO'] = np.unique(out_coverage['CtoO'])
-		if 'fsed' in out_coverage: 
-			#self.fsed_grid = np.unique(out_coverage['fsed'])
-			out['fsed'] = np.unique(out_coverage['fsed'])
-		if 'Hmix' in out_coverage: 
-			#self.Hmix_grid = np.unique(out_coverage['Hmix'])
-			out['Hmix'] = np.unique(out_coverage['Hmix'])
-		self.params = out
+		# read available models
+		available_models = []
+		for json_file in json_files:
+			if json_file!='template_models.json': # avoid template
+				available_models.append(json.load(open(path_jsons+json_file))['model'])
+
+		# set attribute
+		self.available_models = available_models
+
+		# read attributes from the json file for desired models
+		if model is not None:
+			if model not in self.available_models: raise Exception(f'"{model}" models are not recognized. Available models: \n          {self.available_models}')
+			
+			self.model = model
+	
+			# read relevant info for available atmospheric models from the json files in models_aux/model_specifics
+			for json_file in json_files:
+				if json.load(open(path_jsons+json_file))['model']==model: models_json = json.load(open(path_jsons+json_file))
+
+			# define attributes
+			self.ref = models_json['ref']
+			self.name = models_json['name']
+			self.bibcode = models_json['bibcode']
+			self.ADS = models_json['ADS']
+			self.download = models_json['download']
+			self.filename_pattern = models_json['filename_pattern']
+			self.N_modelpoints = int(models_json['N_modelpoints']) # in case the json file provides it as a string
+			self.free_params = models_json['free_params']
+
+			# set attributes related to coverage of the free parameters
+			self.model_ranges()
+
+	def model_ranges(self):
+		'''
+		Read coverage of model free parameters.
+
+		Author: Genaro Suárez
+		'''
+
+		# path to the this module
+		path_models = os.path.dirname(__file__)+'/'
+
+		# open the pickle file, if any, with model coverage
+		pickle_file = f'{path_models}models_aux/model_coverage/{self.model}_free_parameters.pickle'
+		if not os.path.exists(pickle_file): # if the pickle file exists
+			raise Exception(f'"{pickle_file}" file with model coverage is missing')
+			
+		#if os.path.exists(pickle_file): # if the pickle file exists
+		else:
+			with open(pickle_file, 'rb') as file:
+				model_coverage = pickle.load(file)
+
+			# dictionary to save all values for each free parameter
+			params = {}
+			for param in model_coverage['params']:
+				params[param] = model_coverage['params'][param] # unique values for each free parameter
+			self.params = params
+
+			# dictionary to save unique values for each free parameter
+			params_unique = {}
+			for param in model_coverage['params']:
+				params_unique[param] = np.unique(model_coverage['params'][param]) # unique values for each free parameter
+			self.params_unique = params_unique
+
+
+##########################
+def separate_params(model, spectra_name, save_results=False):
+	'''
+	Description:
+	------------
+		Extract parameters from the file names for model spectra.
+
+	Parameters:
+	-----------
+	- model : str
+		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
+	- spectra_name : array or list
+		Model spectra names (without full path).
+	- save_results : {``True``, ``False``}, optional (default ``False``)
+		Save (``True``) or do not save (``False``) the output as a pickle file named '``model``\_free\_parameters.pickle'.
+
+	Returns:
+	--------
+	Dictionary with parameters for each model spectrum.
+		- ``spectra_name`` : model spectra names.
+		- ``params``: model free parameters for the spectra.
+
+	Example:
+	--------
+	>>> import seda
+	>>>
+	>>> model = 'Sonora_Elf_Owl'
+	>>> spectra_name = np.array(['spectra_logzz_4.0_teff_750.0_grav_178.0_mh_0.0_co_1.0.nc', 
+	>>>                          'spectra_logzz_2.0_teff_800.0_grav_316.0_mh_0.0_co_1.0.nc'])
+	>>> seda.separate_params(spectra_name=spectra_name, model=model)
+	    {'spectra_name': array(['spectra_logzz_4.0_teff_750.0_grav_178.0_mh_0.0_co_1.0.nc',
+	                            'spectra_logzz_2.0_teff_800.0_grav_316.0_mh_0.0_co_1.0.nc'],
+	    'Teff': array([750., 800.]),
+	    'logg': array([4.25042   , 4.49968708]),
+	    'logKzz': array([4., 2.]),
+	    'Z': array([0., 0.]),
+	    'CtoO': array([1., 1.])}
+
+	Author: Genaro Suárez
+	'''
+
+	# if there is one input spectrum with its name given as a string, convert it into a list
+	if isinstance(spectra_name, str): spectra_name = [spectra_name]
+
+	out = {'spectra_name': spectra_name} # start dictionary with some parameters
+	out['params'] = {}
+
+	# get parameters from model spectra names
+	if (model == 'Sonora_Diamondback'):
+		Teff_fit = np.zeros(len(spectra_name))
+		logg_fit = np.zeros(len(spectra_name))
+		Z_fit = np.zeros(len(spectra_name))
+		fsed_fit = np.zeros(len(spectra_name))
+		for i in range(len(spectra_name)):
+			# Teff 
+			Teff_fit[i] = float(spectra_name[i].split('g')[0][1:]) # in K
+			# logg
+			logg_fit[i] = round(np.log10(float(spectra_name[i].split('g')[1].split('_')[0][:-2])),1) + 2 # g in cgs
+			# Z
+			Z_fit[i] = float(spectra_name[i].split('_')[1][1:])
+			# fsed
+			fsed = spectra_name[i].split('_')[0][-1:]
+			if fsed=='c': fsed_fit[i] = 99 # 99 to indicate nc (no clouds)
+			if fsed!='c': fsed_fit[i] = float(fsed)
+		out['params']['Teff']= Teff_fit
+		out['params']['logg']= logg_fit
+		out['params']['Z']= Z_fit
+		out['params']['fsed']= fsed_fit
+	if (model == 'Sonora_Elf_Owl'):
+		Teff_fit = np.zeros(len(spectra_name))
+		logg_fit = np.zeros(len(spectra_name))
+		logKzz_fit = np.zeros(len(spectra_name))
+		Z_fit = np.zeros(len(spectra_name))
+		CtoO_fit = np.zeros(len(spectra_name))
+		for i in range(len(spectra_name)):
+			# Teff 
+			Teff_fit[i] = float(spectra_name[i].split('_')[4]) # in K
+			# logg
+			logg_fit[i] = round_logg_point25(np.log10(float(spectra_name[i].split('_')[6])) + 2) # g in cgs
+			# logKzz
+			logKzz_fit[i] = float(spectra_name[i].split('_')[2]) # Kzz in cgs
+			# Z
+			Z_fit[i] = float(spectra_name[i].split('_')[8]) # in cgs
+			# C/O
+			CtoO_fit[i] = float(spectra_name[i].split('_')[10][:-3])
+		out['params']['Teff']= Teff_fit
+		out['params']['logg']= logg_fit
+		out['params']['logKzz']= logKzz_fit
+		out['params']['Z']= Z_fit
+		out['params']['CtoO']= CtoO_fit
+	if (model == 'LB23'):
+		Teff_fit = np.zeros(len(spectra_name))
+		logg_fit = np.zeros(len(spectra_name))
+		Z_fit = np.zeros(len(spectra_name))
+		logKzz_fit = np.zeros(len(spectra_name))
+		Hmix_fit = np.zeros(len(spectra_name))
+		for i in range(len(spectra_name)):
+			# Teff 
+			Teff_fit[i] = float(spectra_name[i].split('_')[0][1:]) # K
+			# logg
+			logg_fit[i] = float(spectra_name[i].split('_')[1][1:]) # logg
+			# Z (metallicity)
+			Z_fit[i] = np.round(np.log10(float(spectra_name[i].split('_')[2][1:])),1)
+			# Kzz (radiative zone)
+			logKzz_fit[i] = np.log10(float(spectra_name[i].split('CDIFF')[1].split('_')[0])) # in cgs units
+			# Hmix
+			Hmix_fit[i] = float(spectra_name[i].split('HMIX')[1][:5])
+		out['params']['Teff']= Teff_fit
+		out['params']['logg']= logg_fit
+		out['params']['Z']= Z_fit
+		out['params']['logKzz']= logKzz_fit
+		out['params']['Hmix']= Hmix_fit
+	if (model == 'Sonora_Cholla'):
+		Teff_fit = np.zeros(len(spectra_name))
+		logg_fit = np.zeros(len(spectra_name))
+		logKzz_fit = np.zeros(len(spectra_name))
+		for i in range(len(spectra_name)):
+			# Teff 
+			Teff_fit[i] = float(spectra_name[i].split('_')[0][:-1]) # K
+			# logg
+			logg_fit[i] = round_logg_point25(np.log10(float(spectra_name[i].split('_')[1][:-1])) + 2) # g in cm/s2
+			# logKzz
+			logKzz_fit[i] = float(spectra_name[i].split('_')[2].split('.')[0][-1]) # Kzz in cm2/s
+		out['params']['Teff']= Teff_fit
+		out['params']['logg']= logg_fit
+		out['params']['logKzz']= logKzz_fit
+	if (model == 'Sonora_Bobcat'):
+		Teff_fit = np.zeros(len(spectra_name))
+		logg_fit = np.zeros(len(spectra_name))
+		Z_fit = np.zeros(len(spectra_name))
+		CtoO_fit = np.zeros(len(spectra_name))
+		for i in range(len(spectra_name)):
+			# Teff 
+			Teff_fit[i] = float(spectra_name[i].split('_')[1].split('g')[0][1:]) # K
+			# logg
+			logg_fit[i] = round_logg_point25(np.log10(float(spectra_name[i].split('_')[1].split('g')[1][:-2])) + 2) # g in cm/s2
+			# Z
+			Z_fit[i] = float(spectra_name[i].split('_')[2][1:])
+			# C/O
+			if (len(spectra_name[i].split('_'))==4): # when the spectrum file name includes the C/O
+				CtoO_fit[i] = float(spectra_name[i].split('_')[3][2:])
+			if (len(spectra_name[i].split('_'))==3): # when the spectrum file name does not include the C/O
+				CtoO_fit[i] = 1.0
+		out['params']['Teff']= Teff_fit
+		out['params']['logg']= logg_fit
+		out['params']['Z']= Z_fit
+		out['params']['CtoO']= CtoO_fit
+	if (model == 'ATMO2020'):
+		Teff_fit = np.zeros(len(spectra_name))
+		logg_fit = np.zeros(len(spectra_name))
+		logKzz_fit = np.zeros(len(spectra_name))
+		for i in range(len(spectra_name)):
+			# Teff 
+			Teff_fit[i] = float(spectra_name[i].split('spec_')[1].split('_')[0][1:])
+			# logg
+			logg_fit[i] = float(spectra_name[i].split('spec_')[1].split('_')[1][2:])
+			# logKzz
+			if (spectra_name[i].split('spec_')[1].split('lg')[1][4:-4]=='NEQ_weak'): # when the grid is NEQ_weak
+				logKzz_fit[i] = 4
+			if (spectra_name[i].split('spec_')[1].split('lg')[1][4:-4]=='NEQ_strong'): # when the grid is NEQ_strong
+				logKzz_fit[i] = 6
+		out['params']['Teff']= Teff_fit
+		out['params']['logg']= logg_fit
+		out['params']['logKzz']= logKzz_fit
+	if (model == 'BT-Settl'):
+		Teff_fit = np.zeros(len(spectra_name))
+		logg_fit = np.zeros(len(spectra_name))
+		for i in range(len(spectra_name)):
+			# Teff 
+			Teff_fit[i] = float(spectra_name[i].split('-')[0][3:]) * 100 # K
+			# logg
+			logg_fit[i] = float(spectra_name[i].split('-')[1]) # g in cm/s^2
+		out['params']['Teff']= Teff_fit
+		out['params']['logg']= logg_fit
+	if (model == 'SM08'):
+		Teff_fit = np.zeros(len(spectra_name))
+		logg_fit = np.zeros(len(spectra_name))
+		fsed_fit = np.zeros(len(spectra_name))
+		for i in range(len(spectra_name)):
+			# Teff 
+			Teff_fit[i] = float(spectra_name[i].split('_')[1].split('g')[0][1:])
+			# logg
+			logg_fit[i] = np.round(np.log10(float(spectra_name[i].split('_')[1].split('g')[1].split('f')[0])), 1) + 2 # g in cm/s^2
+			# fsed
+			fsed_fit[i] = float(spectra_name[i].split('_')[1].split('g')[1].split('f')[1])
+		out['params']['Teff']= Teff_fit
+		out['params']['logg']= logg_fit
+		out['params']['fsed']= fsed_fit
+
+	# save output dictionary
+	if save_results:
+		with open(f'{model}_free_parameters.pickle', 'wb') as file:
+			pickle.dump(out, file)
+
+	return out
+
+##########################
+# short name for plot legends for model spectra
+def spectra_name_short(model, spectra_name):
+	
+	short_name = []
+	for spectrum_name in spectra_name:
+		if model=='Sonora_Diamondback': short_name.append(spectrum_name[:-5])
+		if model=='Sonora_Elf_Owl': short_name.append(spectrum_name[8:-3])
+		if model=='Sonora_Cholla': short_name.append(spectrum_name[:-5])
+		if model=='LB23': short_name.append(spectrum_name[:-3])
+		if model=='ATMO2020': short_name.append(spectrum_name.split('spec_')[1][:-4])
+		if model=='BT-Settl': short_name.append(spectrum_name[:-16])
+		if model=='SM08': short_name.append(spectrum_name[3:])
+
+	return short_name
+
+##########################
+# round logg to steps of 0.25
+def round_logg_point25(logg):
+	logg = round(logg*4.) / 4. 
+	return logg
+

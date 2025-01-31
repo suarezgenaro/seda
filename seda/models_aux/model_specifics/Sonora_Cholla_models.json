@@ -1,0 +1,20 @@
+{
+    "_comment_model": "Internal label for the atmospheric models",
+	"model": "Sonora_Cholla",
+    "_comment_ref": "Reference for the models (optional)",
+    "ref": "Karalidi et al. (2021)",
+    "_comment_name": "Name of the models (optional)",
+    "name": "Sonora Cholla",
+    "_comment_bibcode": "bibcode identifier for the models (optional)",
+    "bibcode": "2021ApJ...923..269K",
+    "_comment_ADS": "ADS links to the model publication (optional)",
+    "ADS": "https://ui.adsabs.harvard.edu/abs/2021ApJ...923..269K/abstract",
+    "_comment_download": "Link to download the models (optional)",
+    "download": "https://zenodo.org/records/4450269",
+    "_comment_filename_pattern": "Common pattern recognized in all spectra filenames used to select only spectra files in case there are other files in the same directory",
+    "filename_pattern": "*.spec*",
+    "_comment_N_modelpoints": "Maximum number of data points in model spectra",
+    "N_modelpoints": "110979",
+    "_comment_free_params": "Free parameters in the models",
+    "free_params": ["Teff", "logg", "logKzz"]
+}

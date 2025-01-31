@@ -1,6 +1,7 @@
 astropy
 corner
 dynesty
+fnmatch
 lmfit
 matplotlib
 numpy 

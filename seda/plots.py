@@ -7,6 +7,7 @@ from matplotlib.ticker import MultipleLocator, FormatStrFormatter, AutoMinorLoca
 from matplotlib.backends.backend_pdf import PdfPages # plot several pages in a single pdf
 from sys import exit
 from .utils import *
+from .models import *
 
 ##########################
 def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, xlog=False, ylog=True, xrange=None, yrange=None, 
@@ -36,7 +37,8 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, xlog=False, ylog=True, xrange
 		Path to the directory (str, list, or array) or directories (as a list or array) containing the model spectra with the original resolution.
 		This parameter is needed to plot the original resolution spectra (if ``ori_res`` is True) when ``chi2_fit.chi2`` was run skipping the model spectra convolution (if ``skip_convolution`` is True).
 	- out_file : str, optional
-		File name to save the figure (it can include a path e.g. my_path/figure.pdf). Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
+		File name to save the figure (it can include a path e.g. my_path/figure.pdf). 
+		Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
 		Default name is 'SED_``model``_chi2.pdf', where ``model`` is read from ``chi2_pickle_file``.
 	- save : {``True``, ``False``}, optional (default ``True``)
 		Save (``'True'``) or do not save (``'False'``) the resulting figure.
@@ -104,7 +106,10 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, xlog=False, ylog=True, xrange
 	if ori_res: # plot model spectra with the original resolution
 		for i in range(N_best_fits):
 			mask = (wl_model_best[i,:]>xrange[0]) & (wl_model_best[i,:]<xrange[1])
-			ax[0].plot(wl_model_best[i,:][mask], flux_model_best[i,:][mask], linewidth=0.1, color='silver', zorder=2, alpha=0.5) # in erg/s/cm2
+			if i==0: ax[0].plot(wl_model_best[i,:][mask], flux_model_best[i,:][mask], linewidth=0.1, 
+			                    color='silver', label='Models with original resolution', zorder=2, alpha=0.5) # in erg/s/cm2
+			else: ax[0].plot(wl_model_best[i,:][mask], flux_model_best[i,:][mask], linewidth=0.1, 
+			                 color='silver', zorder=2, alpha=0.5) # in erg/s/cm2
 
 	# plot best fits (convolved spectra)
 	label_model = spectra_name_short(model=model, spectra_name=spectra_name_best) # short name for spectra to keep only relevant info
@@ -132,7 +137,7 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, xlog=False, ylog=True, xrange
 	ax[0].legend(loc='best', prop={'size': 6}, handlelength=1.5, handletextpad=0.5, labelspacing=0.5) 
 	ax[0].grid(True, which='both', color='gainsboro', linewidth=0.5, alpha=1.0)
 	ax[0].set_ylabel(r'$F_\lambda\ ($erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)', size=12)
-	ax[0].set_title(f'{model_name(model)} Atmospheric Models')
+	ax[0].set_title(f'{Models(model).name} Atmospheric Models')
 
 	#------------------------
 	# residuals
@@ -254,7 +259,7 @@ def plot_chi2_red(chi2_pickle_file, N_best_fits=1, xlog=False, ylog=False, out_f
 	plt.close('all')
 
 ##########################
-def plot_bayes_fit(bayes_pickle_file, xlog=False, ylog=True, xrange=None, yrange=None, out_file=None, save=True):
+def plot_bayes_fit(bayes_pickle_file, xlog=False, ylog=True, xrange=None, yrange=None, ori_res=False, out_file=None, save=True):
 	'''
 	Description:
 	------------
@@ -272,8 +277,11 @@ def plot_bayes_fit(bayes_pickle_file, xlog=False, ylog=True, xrange=None, yrange
 		Horizontal range of the plot.
 	- yrange : list or array, optional (default is full range in the input spectra)
 		Vertical range of the plot.
+	- ori_res : {``True``, ``False``}, optional (default ``False``)
+		Plot (``True``) or do not include (``False``) best model spectrum with its original resolution.
 	- out_file : str, optional
-		File name to save the figure (it can include a path e.g. my_path/figure.pdf). Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
+		File name to save the figure (it can include a path e.g. my_path/figure.pdf). 
+		Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
 		Default name is 'SED_``model``_bayes.pdf', where ``model`` is read from ``bayes_pickle_file``.
 	- save : {``True``, ``False``}, optional (default ``True``)
 		Save (``'True'``) or do not save (``'False'``) the resulting figure.
@@ -307,8 +315,12 @@ def plot_bayes_fit(bayes_pickle_file, xlog=False, ylog=True, xrange=None, yrange
 
 	# read best fit
 	out_best_bayesian_fit = best_bayesian_fit(bayes_pickle_file)
-	wl_mod_conv_scaled_resam = out_best_bayesian_fit['wl_mod_conv_scaled_resam'] # best fit
-	flux_mod_conv_scaled_resam = out_best_bayesian_fit['flux_mod_conv_scaled_resam'] # best fit 
+	# best fit with original resolution
+	wl_mod_scaled = out_best_bayesian_fit['wl_mod_scaled']
+	flux_mod_scaled = out_best_bayesian_fit['flux_mod_scaled']
+	# best fit convolved and resampled (one for each input spectrum)
+	wl_mod_conv_scaled_resam = out_best_bayesian_fit['wl_mod_conv_scaled_resam']
+	flux_mod_conv_scaled_resam = out_best_bayesian_fit['flux_mod_conv_scaled_resam']
 	params_med = out_best_bayesian_fit['params_med']
 
 	# round median parameters
@@ -359,6 +371,12 @@ def plot_bayes_fit(bayes_pickle_file, xlog=False, ylog=True, xrange=None, yrange
 		if k==0: ax[0].plot(wl_spectra[k][mask], flux_spectra[k][mask], color='black', linewidth=1.0, label='Observed spectra', zorder=3) # in erg/s/cm2
 		else: ax[0].plot(wl_spectra[k][mask], flux_spectra[k][mask], color='black', linewidth=1.0, zorder=3) # in erg/s/cm2
 
+	# plot best fit with original resolution
+	if ori_res:
+		mask = (wl_mod_scaled>=xrange[0]) & (wl_mod_scaled<=xrange[1])
+		ax[0].plot(wl_mod_scaled[mask], flux_mod_scaled[mask], color='silver',
+		           label='Model with original resolution', zorder=2, alpha=0.5)
+
 	# plot model spectrum
 	for k in range(N_spectra): # for each input observed spectrum
 		color = plt.rcParams['axes.prop_cycle'].by_key()['color'][1] # default color
@@ -369,9 +387,11 @@ def plot_bayes_fit(bayes_pickle_file, xlog=False, ylog=True, xrange=None, yrange
 			else: label += f'_{param}{params_med[param]}'
 		mask = (wl_mod_conv_scaled_resam[k]>=xrange[0]) & (wl_mod_conv_scaled_resam[k]<=xrange[1])
 		if k==0: 
-			ax[0].plot(wl_mod_conv_scaled_resam[k][mask], flux_mod_conv_scaled_resam[k][mask], color=color, label=label)
+			ax[0].plot(wl_mod_conv_scaled_resam[k][mask], flux_mod_conv_scaled_resam[k][mask], 
+			           color=color, label=label, zorder=4)
 		else:
-			ax[0].plot(wl_mod_conv_scaled_resam[k][mask], flux_mod_conv_scaled_resam[k][mask], color=color)
+			ax[0].plot(wl_mod_conv_scaled_resam[k][mask], flux_mod_conv_scaled_resam[k][mask], 
+			           color=color, zorder=4)
 
 	ax[0].set_xlim(xrange[0], xrange[1])
 	if yrange is not None: ax[0].set_ylim(yrange[0], yrange[1])
@@ -385,7 +405,7 @@ def plot_bayes_fit(bayes_pickle_file, xlog=False, ylog=True, xrange=None, yrange
 	ax[0].legend(loc='best', prop={'size': 6}, handlelength=1.5, handletextpad=0.5, labelspacing=0.5) 
 	ax[0].grid(True, which='both', color='gainsboro', linewidth=0.5, alpha=1.0)
 	ax[0].set_ylabel(r'$F_\lambda\ ($erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)', size=12)
-	ax[0].set_title(f'{model_name(model)} Atmospheric Models')
+	ax[0].set_title(f'{Models(model).name} Atmospheric Models')
 
 	#------------------------
 	# residuals
@@ -442,7 +462,8 @@ def plot_model_coverage(model, xparam, yparam, model_dir=None, xrange=None, yran
 	- ylog : {``True``, ``False``}, optional (default ``False``)
 		Use logarithmic (``True``) or linear (``False``) scale to plot the vertical axis.
 	- out_file : str, optional
-		File name to save the figure (it can include a path e.g. my_path/figure.pdf). Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
+		File name to save the figure (it can include a path e.g. my_path/figure.pdf). 
+		Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
 		Default name is '``model``_``xparam``_``yparam``.pdf', where ``model`` is read from ``chi2_pickle_file``.
 	- save : {``True``, ``False``}, optional (default ``True``)
 		Save (``'True'``) or do not save (``'False'``) the resulting figure.
@@ -469,28 +490,23 @@ def plot_model_coverage(model, xparam, yparam, model_dir=None, xrange=None, yran
 
 	# get the coverage of model free parameters
 	if model_dir is not None: # coverage from input model spectra
-		# get spectra names from the input directories
-		out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir)
-		# separate parameters for the spectra
-		out_separate_params = separate_params(model=model, spectra_name=out_select_model_spectra['spectra_name'])
+		# values of free parameters in the spectra
+		params = select_model_spectra(model=model, model_dir=model_dir)['params']
 	else: # coverage of the full model grid
 		# open results from the chi square analysis
-		with open(f'{path_plots}/aux/model_coverage/{model}_free_parameters.pickle', 'rb') as file:
-			out_separate_params = pickle.load(file)
+		with open(f'{path_plots}/models_aux/model_coverage/{model}_free_parameters.pickle', 'rb') as file:
+			params = pickle.load(file)['params']
 	
-	# only keep the free parameters in the dictionary
-	del out_separate_params['spectra_name']
-
 	# verify that xparam and yparam are valid parameters
-	if xparam not in out_separate_params: raise Exception(f'{xparam} is not a free parameter in {model}. Valid parameters: {out_separate_params.keys()}')
-	if yparam not in out_separate_params: raise Exception(f'{yparam} is not a free parameter in {model}. Valid parameters: {out_separate_params.keys()}')
+	if xparam not in params: raise Exception(f'{xparam} is not a free parameter in {model}. Valid parameters: {params.keys()}')
+	if yparam not in params: raise Exception(f'{yparam} is not a free parameter in {model}. Valid parameters: {params.keys()}')
 
 	# make plot of y_param against x_param
 	#------------------------
 	# initialize plot for best fits and residuals
 	fig, ax = plt.subplots()
 
-	plt.scatter(out_separate_params[xparam], out_separate_params[yparam], s=5, zorder=3)
+	plt.scatter(params[xparam], params[yparam], s=5, zorder=3)
 
 	ax.xaxis.set_minor_locator(AutoMinorLocator())
 	ax.yaxis.set_minor_locator(AutoMinorLocator())
@@ -506,7 +522,7 @@ def plot_model_coverage(model, xparam, yparam, model_dir=None, xrange=None, yran
 
 	plt.xlabel(xparam)
 	plt.ylabel(yparam)
-	plt.title(f'{model_name(model)} Atmospheric Models')
+	plt.title(f'{Models(model).name} Atmospheric Models')
 
 	if save:
 		if out_file is None: plt.savefig(f'{model}_{xparam}_{yparam}.pdf', bbox_inches='tight')
@@ -543,7 +559,8 @@ def plot_model_resolution(model, spectra_name_full, xlog=True, ylog=False, xrang
 	- save : {``True``, ``False``}, optional (default ``True``)
 		Save (``'True'``) or do not save (``'False'``) the resulting figure.
 	- out_file : str, optional
-		File name to save the figure (it can include a path e.g. my_path/figure.pdf). Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
+		File name to save the figure (it can include a path e.g. my_path/figure.pdf). 
+		Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
 		Default name is '``model``\_resolution.pdf'.
 
 	Returns:
@@ -594,7 +611,7 @@ def plot_model_resolution(model, spectra_name_full, xlog=True, ylog=False, xrang
 	# initialize plot for best fits and residuals
 	fig, ax = plt.subplots()
 
-	out_input_data_stats = input_data_stats(wl_spectra=wl_model, N_spectra=len(spectra_name_full))
+	out_input_data_stats = input_data_stats(wl_spectra=wl_model)
 	wl_spectra_min = out_input_data_stats['wl_spectra_min']
 	wl_spectra_max = out_input_data_stats['wl_spectra_max']
 
@@ -622,7 +639,7 @@ def plot_model_resolution(model, spectra_name_full, xlog=True, ylog=False, xrang
 		if delta_wl_log: plt.ylabel(r'$\Delta(\log\lambda)$', size=12)
 		else: plt.ylabel(r'$\Delta\lambda$', size=12)
 
-	plt.title(f'{model_name(model)} Atmospheric Models')
+	plt.title(f'{Models(model).name} Atmospheric Models')
 
 	if save:
 		if out_file is None: plt.savefig(f'{model}_resolution.pdf', bbox_inches='tight')
@@ -646,7 +663,8 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False, 
 	- ylog : {``True``, ``False``}, optional (default ``False``)
 		Use logarithmic (``True``) or linear (``False``) scale to plot fluxes.
 	- out_file : str, optional
-		File name to save the figure (it can include a path e.g. my_path/figure.pdf). Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
+		File name to save the figure (it can include a path e.g. my_path/figure.pdf). 
+		Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
 		Default name is 'SED_synthetic_photometry.pdf', where ``model`` is read from ``chi2_pickle_file``.
 	- save : {``True``, ``False``}, optional (default ``True``)
 		Save (``'True'``) or do not save (``'False'``) the resulting figure.
@@ -729,34 +747,3 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False, 
 	plt.close()
 
 	return
-
-##########################
-# get proper model name from the model parameter
-def model_name(model):
-	
-	if model=='Sonora_Diamondback': name = 'Sonora Diamondback'
-	if model=='Sonora_Elf_Owl': name = 'Sonora Elf Owl'
-	if model=='LB23': name = 'Lacy & Burrows (2023)'
-	if model=='Sonora_Cholla': name = 'Sonora Cholla'
-	if model=='Sonora_Bobcat': name = 'Sonora Bobcat'
-	if model=='ATMO2020': name = 'ATMO 2020'
-	if model=='BT-Settl': name = 'BT-Settl'
-	if model=='SM08': name = 'Saumon & Marley (2008)'
-
-	return name
-
-##########################
-# short model spectrum name from file name
-def spectra_name_short(model, spectra_name):
-	
-	short_name = []
-	for spectrum_name in spectra_name:
-		if model=='Sonora_Diamondback': short_name.append(spectrum_name[:-5])
-		if model=='Sonora_Elf_Owl': short_name.append(spectrum_name[8:-3])
-		if model=='Sonora_Cholla': short_name.append(spectrum_name[:-5])
-		if model=='LB23': short_name.append(spectrum_name[:-3])
-		if model=='ATMO2020': short_name.append(spectrum_name.split('spec_')[1][:-4])
-		if model=='BT-Settl': short_name.append(spectrum_name[:-16])
-		if model=='SM08': short_name.append(spectrum_name[3:])
-
-	return short_name

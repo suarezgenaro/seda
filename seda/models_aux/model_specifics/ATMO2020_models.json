@@ -1,0 +1,20 @@
+{
+    "_comment_model": "Internal label for the atmospheric models",
+	"model": "ATMO2020",
+    "_comment_ref": "Reference for the models (optional)",
+    "ref": "Phillips et al. (2020)",
+    "_comment_name": "Name of the models (optional)",
+    "name": "ATMO 2020",
+    "_comment_bibcode": "bibcode identifier for the models (optional)",
+    "bibcode": "2020A%26A...637A..38P",
+    "_comment_ADS": "ADS links to the model publication (optional)",
+    "ADS": "https://ui.adsabs.harvard.edu/abs/2020A%26A...637A..38P/abstract",
+    "_comment_download": "Link to download the models (optional)",
+    "download": "https://noctis.erc-atmo.eu/fsdownload/zyU96xA6o/phillips2020",
+    "_comment_filename_pattern": "Common pattern recognized in all spectra filenames used to select only spectra files in case there are other files in the same directory",
+    "filename_pattern": "spec_T*.txt*",
+    "_comment_N_modelpoints": "Maximum number of data points in model spectra",
+    "N_modelpoints": "5000",
+    "_comment_free_params": "Free parameters in the models",
+    "free_params": ["Teff", "logg", "logKzz"]
+}
