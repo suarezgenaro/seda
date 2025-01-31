@@ -975,8 +975,8 @@ def select_model_spectra(model, model_dir, params_ranges=None, save_results=Fals
 	- save_results : {``True``, ``False``}, optional (default ``False``)
 		Save (``True``) or do not save (``False``) the output as a pickle file named '``model``\_free\_parameters.pickle'.
 	- out_file : str, optional
-		File name to save the results as a pickle file (it can include a path e.g. my_path/free_params.pickle).
-		Default name is '``model``_free_parameters.pickle' and is stored at the relative path 'models_aux/model_coverage/'.
+		File name to save the results as a pickle file (it can include a path e.g. my_path/free\_params.pickle).
+		Default name is '``model``\_free_parameters.pickle' and is stored at the relative path 'models\_aux/model\_coverage/'.
 
 	Returns:
 	--------
