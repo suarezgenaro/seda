@@ -27,6 +27,6 @@ setup(name='seda',
       install_requires=['astropy','corner','dynesty','lmfit','matplotlib','numpy','prettytable','scipy','specutils','spectres','tqdm','xarray'], 
 #      install_requires=install_requires(),
       package_dir = {'seda': 'seda'},
-      package_data = {'seda': 'models_aux/*'},
+      package_data = {'seda': ['models_aux/*']},
       zip_safe=False,
       include_package_data=True)
