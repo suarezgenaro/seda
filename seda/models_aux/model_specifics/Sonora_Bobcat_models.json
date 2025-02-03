@@ -13,8 +13,6 @@
     "download": "https://zenodo.org/records/5063476",
     "_comment_filename_pattern": "Common pattern recognized in all spectra filenames used to select only spectra files in case there are other files in the same directory",
     "filename_pattern": "sp_t*",
-    "_comment_N_modelpoints": "Maximum number of data points in model spectra",
-    "N_modelpoints": "362000",
     "_comment_free_params": "Free parameters in the models",
     "free_params": ["Teff", "logg", "Z", "CtoO"]
 }

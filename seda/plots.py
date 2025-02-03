@@ -587,7 +587,7 @@ def plot_model_resolution(model, spectra_name_full, xlog=True, ylog=False, xrang
 	flux_model = []
 	resolution_model = []
 	for i, spectrum_name_full in enumerate(spectra_name_full):
-		out_read_model_spectrum = read_model_spectrum(spectra_name_full=spectrum_name_full, model=model)
+		out_read_model_spectrum = read_model_spectrum(spectrum_name_full=spectrum_name_full, model=model)
 		wl = out_read_model_spectrum['wl_model']
 		flux = out_read_model_spectrum['flux_model']
 

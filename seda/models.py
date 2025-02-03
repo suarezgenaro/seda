@@ -3,6 +3,10 @@ import numpy as np
 import os
 import fnmatch
 import json
+import xarray
+from astropy import units as u
+from astropy.io import ascii
+from specutils.utils.wcs_utils import vac_to_air
 from sys import exit
 
 ##########################
@@ -28,7 +32,6 @@ class Models:
 	- download (str) : link to download ``model`` (if provided).
 	- filename_pattern (str) : common pattern in all spectra filenames in ``model`` (if provided). 
 		It is used to avoid other potential files in the same directory with model spectra.
-	- N_modelpoints (int) : maximum number of data points in ``model`` (if provided) spectra.
 	- free_params (list) : free parameters in ``model`` (if provided).
 	- params (dict) : values (including repetitions) for each free parameter in ``model`` (if provided).
 	- params_unique (dict) : unique (no repetitions) values for each free parameter in ``model`` (if provided).
@@ -100,7 +103,6 @@ class Models:
 			self.ADS = models_json['ADS']
 			self.download = models_json['download']
 			self.filename_pattern = models_json['filename_pattern']
-			self.N_modelpoints = int(models_json['N_modelpoints']) # in case the json file provides it as a string
 			self.free_params = models_json['free_params']
 
 			# set attributes related to coverage of the free parameters
@@ -187,6 +189,8 @@ def separate_params(model, spectra_name, save_results=False):
 	out['params'] = {}
 
 	# get parameters from model spectra names
+	# consider a way that also works when adding an additional string at the end of the name
+	# which is the case when convolved spectra are store and then read
 	if (model == 'Sonora_Diamondback'):
 		Teff_fit = np.zeros(len(spectra_name))
 		logg_fit = np.zeros(len(spectra_name))
@@ -332,6 +336,131 @@ def separate_params(model, spectra_name, save_results=False):
 	if save_results:
 		with open(f'{model}_free_parameters.pickle', 'wb') as file:
 			pickle.dump(out, file)
+
+	return out
+
+##########################
+def read_model_spectrum(spectrum_name_full, model, model_wl_range=None):
+	'''
+	Description:
+	------------
+		Read a desired model spectrum.
+
+	Parameters:
+	-----------
+	- model : str
+		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
+	- spectrum_name_full: str
+		Spectrum file name with full path.
+	- model_wl_range : float array, optional
+		Minimum and maximum wavelength (in microns) to cut the model spectrum.
+
+	Returns:
+	--------
+	Dictionary with model spectrum:
+		- ``'wl_model'`` : wavelengths in microns
+		- ``'flux_model'`` : fluxes in erg/s/cm2/A
+		- ``'flux_model_Jy'`` : fluxes in Jy
+
+	Author: Genaro Suárez
+	'''
+
+	# read model spectra files
+	if (model == 'Sonora_Diamondback'):
+		spec_model = ascii.read(spectrum_name_full, data_start=3, format='no_header')
+		wl_model = spec_model['col1'] * u.micron # um (in vacuum?)
+		wl_model = vac_to_air(wl_model).value # um in the air
+		flux_model = spec_model['col2'] * u.W/u.m**2/u.m # W/m2/m
+		flux_model = flux_model.to(u.erg/u.s/u.cm**2/u.angstrom).value # erg/s/cm2/A
+	if (model == 'Sonora_Elf_Owl'):
+		spec_model = xarray.open_dataset(spectrum_name_full) # Sonora Elf Owl model spectra have NetCDF Data Format data
+		wl_model = spec_model['wavelength'].data * u.micron # um
+		wl_model = wl_model.value
+		flux_model = spec_model['flux'].data * u.erg/u.s/u.cm**2/u.cm # erg/s/cm2/cm
+		flux_model = flux_model.to(u.erg/u.s/u.cm**2/u.angstrom).value # erg/s/cm2/A
+	if (model == 'LB23'):
+		spec_model = ascii.read(spectrum_name_full)
+		wl_model = spec_model['LAMBDA(mic)'] # micron
+		flux_model = spec_model['FLAM'] # erg/s/cm2/A
+		# convert scientific notation from 'D' to 'E'
+		wl_LB23 = np.zeros(wl_model.size)
+		flux_LB23 = np.zeros(wl_model.size)
+		for j in range(wl_LB23.size):
+			wl_LB23[j] = float(wl_model[j].replace('D', 'E'))
+			flux_LB23[j] = float(flux_model[j].replace('D', 'E'))
+		wl_model = wl_LB23 # um
+		flux_model = flux_LB23 # erg/s/cm2/A
+	if (model == 'Sonora_Cholla'):
+		spec_model = ascii.read(spectrum_name_full, data_start=2, format='no_header')
+		wl_model = spec_model['col1'] * u.micron # um (in vacuum?)
+		wl_model = vac_to_air(wl_model).value # um in the air
+		flux_model = spec_model['col2'] * u.W/u.m**2/u.m # W/m2/m
+		flux_model = flux_model.to(u.erg/u.s/u.cm**2/u.angstrom).value # erg/s/cm2/A
+	if (model == 'Sonora_Bobcat'):
+		spec_model = ascii.read(spectrum_name_full, data_start=2, format='no_header')
+		wl_model = spec_model['col1'] * u.micron # um (in vacuum?)
+		wl_model = vac_to_air(wl_model).value # um in the air
+		flux_model = spec_model['col2'] * u.erg/u.s/u.cm**2/u.Hz # erg/s/cm2/Hz
+		flux_model = flux_model.to(u.erg/u.s/u.cm**2/u.angstrom, equivalencies=u.spectral_density( wl_model * u.micron)).value # erg/s/cm2/A
+	if (model == 'ATMO2020'):
+		spec_model = ascii.read(spectrum_name_full, format='no_header')
+		wl_model = spec_model['col1'] * u.micron # um (in vacuum)
+		wl_model = vac_to_air(wl_model).value # um in the air
+		flux_model = spec_model['col2'] * u.W/u.m**2/u.micron # W/m2/micron
+		flux_model = flux_model.to(u.erg/u.s/u.cm**2/u.angstrom).value # erg/s/cm2/A
+	if (model == 'BT-Settl'):
+		spec_model = ascii.read(spectrum_name_full, format='no_header')
+		wl_model = (spec_model['col1']*u.angstrom).to(u.micron) # um (in vacuum)
+		wl_model = vac_to_air(wl_model).value # um in the air
+		flux_model = spec_model['col2'] * u.erg/u.s/u.cm**2/u.Hz # erg/s/cm2/Hz (to an unknown distance). 10**(F_lam + DF) to convert to erg/s/cm2/A
+		DF= -8.0
+		flux_model = 10**(flux_model.value + DF) # erg/s/cm2/A
+	if (model == 'SM08'):
+		spec_model = ascii.read(spectrum_name_full, data_start=2, format='no_header')
+		wl_model = spec_model['col1'] * u.micron # um (in air the alkali lines and in vacuum the rest of the spectra)
+		#wl_model = vac_to_air(wl_model).value # um in the air
+		wl_model = wl_model.value # um
+		flux_model = spec_model['col2'] * u.erg/u.s/u.cm**2/u.Hz # erg/s/cm2/Hz (to an unknown distance)
+		flux_model = flux_model.to(u.erg/u.s/u.cm**2/u.angstrom, equivalencies=u.spectral_density(wl_model*u.micron)).value # erg/s/cm2/A
+
+	# sort the array. For BT-Settl is recommended by Allard in her webpage and some models are sorted from higher to smaller wavelengths.
+	sort_index = np.argsort(wl_model)
+	wl_model = wl_model[sort_index]
+	flux_model = flux_model[sort_index]
+
+	# cut the model spectra to the indicated range
+	if model_wl_range is not None:
+		mask = (wl_model>=model_wl_range[0]) & (wl_model<=model_wl_range[1])
+		wl_model = wl_model[mask]
+		flux_model = flux_model[mask]
+
+	# obtain fluxes in Jy
+	flux_model_Jy = (flux_model*u.erg/u.s/u.cm**2/u.angstrom).to(u.Jy, equivalencies=u.spectral_density(wl_model*u.micron)).value
+
+	out = {'wl_model': wl_model, 'flux_model': flux_model, 'flux_model_Jy': flux_model_Jy}
+
+	return out
+
+##########################
+# read a pre-stored convolved model spectrum
+# it is a netCDF file with xarray produced by convolve_spectrum
+def read_model_spectrum_conv(spectrum_name_full, model_wl_range=None):
+
+	# read convolved spectrum
+	spectrum = xarray.open_dataset(spectrum_name_full)
+	wl_model = spectrum['wl'].data # um
+	flux_model = spectrum['flux'].data # erg/s/cm2/A
+
+	# cut the model spectra to the indicated range
+	if model_wl_range is not None:
+		mask = (wl_model>=model_wl_range[0]) & (wl_model<=model_wl_range[1])
+		wl_model = wl_model[mask]
+		flux_model = flux_model[mask]
+
+	# obtain fluxes in Jy
+	flux_model_Jy = (flux_model*u.erg/u.s/u.cm**2/u.angstrom).to(u.Jy, equivalencies=u.spectral_density(wl_model*u.micron)).value
+
+	out = {'wl_model': wl_model, 'flux_model': flux_model, 'flux_model_Jy': flux_model_Jy}
 
 	return out
 

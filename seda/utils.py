@@ -12,7 +12,6 @@ from astropy.table import Column, MaskedColumn
 from astropy.convolution import Gaussian1DKernel, convolve
 from scipy.interpolate import RegularGridInterpolator
 from tqdm.auto import tqdm
-from specutils.utils.wcs_utils import vac_to_air
 from sys import exit
 from .models import *
 
@@ -179,139 +178,6 @@ def print_time(time):
 
 	print(f'      elapsed time: {ftime} {unit}')
 
-###########################
-#def model_points(model):
-#	'''
-#	Description:
-#	------------
-#		Maximum number of data points in the model spectra.
-#
-#	Parameters:
-#	-----------
-#	- model : str
-#		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
-#
-#	Returns:
-#	--------
-#	- N_modelpoints: int
-#		Maximum number of data points in the model spectra.
-#
-#	Author: Genaro Suárez
-#	'''
-#
-#	if (model == 'Sonora_Diamondback'):	N_modelpoints = 385466 # number of rows in model spectra (all spectra have the same length)
-#	if (model == 'Sonora_Elf_Owl'):	N_modelpoints = 193132 # number of rows in model spectra (all spectra have the same length)
-#	if (model == 'LB23'): N_modelpoints = 30000 # maximum number of rows in model spectra
-#	if (model == 'Sonora_Cholla'): N_modelpoints = 110979 # maximum number of rows in spectra of the grid
-#	if (model == 'Sonora_Bobcat'): N_modelpoints = 362000 # maximum number of rows in spectra of the grid
-#	if (model == 'ATMO2020'): N_modelpoints = 5000 # maximum number of rows of the ATMO2020 model spectra
-#	if (model == 'BT-Settl'): N_modelpoints = 1291340 # maximum number of rows of the BT-Settl model spectra
-#	if (model == 'SM08'): N_modelpoints = 184663 # rows of the SM08 model spectra
-#
-#	return N_modelpoints
-
-##########################
-def read_model_spectrum(spectra_name_full, model, model_wl_range=None):
-	'''
-	Description:
-	------------
-		Read a desired model spectrum.
-
-	Parameters:
-	-----------
-	- model : str
-		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
-	- spectra_name_full: str
-		Spectrum file name with full path.
-	- model_wl_range : float array, optional
-		Minimum and maximum wavelength (in microns) to cut the model spectrum.
-
-	Returns:
-	--------
-	Dictionary with model spectrum:
-		- ``'wl_model'`` : wavelengths in microns
-		- ``'flux_model'`` : fluxes in erg/s/cm2/A
-		- ``'flux_model_Jy'`` : fluxes in Jy
-
-	Author: Genaro Suárez
-	'''
-
-	# read model spectra files
-	if (model == 'Sonora_Diamondback'):
-		spec_model = ascii.read(spectra_name_full, data_start=3, format='no_header')
-		wl_model = spec_model['col1'] * u.micron # um (in vacuum?)
-		wl_model = vac_to_air(wl_model).value # um in the air
-		flux_model = spec_model['col2'] * u.W/u.m**2/u.m # W/m2/m
-		flux_model = flux_model.to(u.erg/u.s/u.cm**2/u.angstrom).value # erg/s/cm2/A
-	if (model == 'Sonora_Elf_Owl'):
-		spec_model = xarray.open_dataset(spectra_name_full) # Sonora Elf Owl model spectra have NetCDF Data Format data
-		wl_model = spec_model['wavelength'].data * u.micron # um
-		wl_model = wl_model.value
-		flux_model = spec_model['flux'].data * u.erg/u.s/u.cm**2/u.cm # erg/s/cm2/cm
-		flux_model = flux_model.to(u.erg/u.s/u.cm**2/u.angstrom).value # erg/s/cm2/A
-	if (model == 'LB23'):
-		spec_model = ascii.read(spectra_name_full)
-		wl_model = spec_model['LAMBDA(mic)'] # micron
-		flux_model = spec_model['FLAM'] # erg/s/cm2/A
-		# convert scientific notation from 'D' to 'E'
-		wl_LB23 = np.zeros(wl_model.size)
-		flux_LB23 = np.zeros(wl_model.size)
-		for j in range(wl_LB23.size):
-			wl_LB23[j] = float(wl_model[j].replace('D', 'E'))
-			flux_LB23[j] = float(flux_model[j].replace('D', 'E'))
-		wl_model = wl_LB23 # um
-		flux_model = flux_LB23 # erg/s/cm2/A
-	if (model == 'Sonora_Cholla'):
-		spec_model = ascii.read(spectra_name_full, data_start=2, format='no_header')
-		wl_model = spec_model['col1'] * u.micron # um (in vacuum?)
-		wl_model = vac_to_air(wl_model).value # um in the air
-		flux_model = spec_model['col2'] * u.W/u.m**2/u.m # W/m2/m
-		flux_model = flux_model.to(u.erg/u.s/u.cm**2/u.angstrom).value # erg/s/cm2/A
-	if (model == 'Sonora_Bobcat'):
-		spec_model = ascii.read(spectra_name_full, data_start=2, format='no_header')
-		wl_model = spec_model['col1'] * u.micron # um (in vacuum?)
-		wl_model = vac_to_air(wl_model).value # um in the air
-		flux_model = spec_model['col2'] * u.erg/u.s/u.cm**2/u.Hz # erg/s/cm2/Hz
-		flux_model = flux_model.to(u.erg/u.s/u.cm**2/u.angstrom, equivalencies=u.spectral_density( wl_model * u.micron)).value # erg/s/cm2/A
-	if (model == 'ATMO2020'):
-		spec_model = ascii.read(spectra_name_full, format='no_header')
-		wl_model = spec_model['col1'] * u.micron # um (in vacuum)
-		wl_model = vac_to_air(wl_model).value # um in the air
-		flux_model = spec_model['col2'] * u.W/u.m**2/u.micron # W/m2/micron
-		flux_model = flux_model.to(u.erg/u.s/u.cm**2/u.angstrom).value # erg/s/cm2/A
-	if (model == 'BT-Settl'):
-		spec_model = ascii.read(spectra_name_full, format='no_header')
-		wl_model = (spec_model['col1']*u.angstrom).to(u.micron) # um (in vacuum)
-		wl_model = vac_to_air(wl_model).value # um in the air
-		flux_model = spec_model['col2'] * u.erg/u.s/u.cm**2/u.Hz # erg/s/cm2/Hz (to an unknown distance). 10**(F_lam + DF) to convert to erg/s/cm2/A
-		DF= -8.0
-		flux_model = 10**(flux_model.value + DF) # erg/s/cm2/A
-	if (model == 'SM08'):
-		spec_model = ascii.read(spectra_name_full, data_start=2, format='no_header')
-		wl_model = spec_model['col1'] * u.micron # um (in air the alkali lines and in vacuum the rest of the spectra)
-		#wl_model = vac_to_air(wl_model).value # um in the air
-		wl_model = wl_model.value # um
-		flux_model = spec_model['col2'] * u.erg/u.s/u.cm**2/u.Hz # erg/s/cm2/Hz (to an unknown distance)
-		flux_model = flux_model.to(u.erg/u.s/u.cm**2/u.angstrom, equivalencies=u.spectral_density(wl_model*u.micron)).value # erg/s/cm2/A
-
-	# sort the array. For BT-Settl is recommended by Allard in her webpage and some models are sorted from higher to smaller wavelengths.
-	sort_index = np.argsort(wl_model)
-	wl_model = wl_model[sort_index]
-	flux_model = flux_model[sort_index]
-
-	# cut the model spectra to the indicated range
-	if model_wl_range is not None:
-		ind = np.where((wl_model>=(model_wl_range[0])) & (wl_model<=model_wl_range[1]))
-		wl_model = wl_model[ind]
-		flux_model = flux_model[ind]
-
-	# obtain fluxes in Jy
-	flux_model_Jy = (flux_model*u.erg/u.s/u.cm**2/u.angstrom).to(u.Jy, equivalencies=u.spectral_density(wl_model*u.micron)).value
-
-	out = {'wl_model': wl_model, 'flux_model': flux_model, 'flux_model_Jy': flux_model_Jy}
-
-	return out
-
 ##########################
 def best_chi2_fits(chi2_pickle_file, N_best_fits=1, model_dir_ori=None, ori_res=None):
 	'''
@@ -329,7 +195,7 @@ def best_chi2_fits(chi2_pickle_file, N_best_fits=1, model_dir_ori=None, ori_res=
 		Read (``True``) or do not read (``False``) model spectra with the original resolution.
 	- model_dir_ori : str, list, or array
 		Path to the directory (str, list, or array) or directories (as a list or array) containing the model spectra with the original resolution.
-		This parameter is needed if ``ori_res`` is True and `chi2_fit.chi2` was run skipping the model spectra convolution (if `skip_convolution`` is True).
+		This parameter is needed if ``ori_res=True`` and `chi2_fit.chi2` was run skipping the model spectra convolution (if `skip_convolution=True``).
 
 	Returns:
 	--------
@@ -355,7 +221,6 @@ def best_chi2_fits(chi2_pickle_file, N_best_fits=1, model_dir_ori=None, ori_res=
 	model = out_chi2['my_chi2'].model
 	res = out_chi2['my_chi2'].res#[0] # resolution for the first input spectrum
 	lam_res = out_chi2['my_chi2'].lam_res#[0] # lam_resolution for the first input spectrum
-	N_modelpoints = out_chi2['my_chi2'].N_modelpoints
 	N_model_spectra = out_chi2['N_model_spectra']
 	spectra_name_full = out_chi2['spectra_name_full']
 	spectra_name = out_chi2['spectra_name']
@@ -390,13 +255,13 @@ def best_chi2_fits(chi2_pickle_file, N_best_fits=1, model_dir_ori=None, ori_res=
 
 	# read best fits with the original resolution
 	if ori_res:
-		wl_model_best = np.zeros((N_best_fits, N_modelpoints))
-		flux_model_best = np.zeros((N_best_fits, N_modelpoints))
+		wl_model_best_lst = []
+		flux_model_best_lst = []
 		if not skip_convolution: # when the convolution was not skipped
 			for i in range(N_best_fits):
-				out_read_model_spectrum = read_model_spectrum(spectra_name_full=spectra_name_full_best[i], model=model)
-				wl_model_best[i,:] = out_read_model_spectrum['wl_model']
-				flux_model_best[i,:] = scaling_fit_best[i] * out_read_model_spectrum['flux_model'] # scaled fluxes
+				out_read_model_spectrum = read_model_spectrum(spectrum_name_full=spectra_name_full_best[i], model=model)
+				wl_model_best_lst.append(out_read_model_spectrum['wl_model'])
+				flux_model_best_lst.append(scaling_fit_best[i] * out_read_model_spectrum['flux_model']) # scaled fluxes
 		else:
 			if model_dir_ori is None: raise Exception(f"parameter 'model_dir_ori' is needed to read model spectra with the original resolution")
 			else:
@@ -405,10 +270,27 @@ def best_chi2_fits(chi2_pickle_file, N_best_fits=1, model_dir_ori=None, ori_res=
 					spectrum_name = spectra_name_best[i].split('_R')[0] # convolved spectrum name without additions to match original resolution name
 					if spectrum_name in out_select_model_spectra['spectra_name']: # if the i best fit is in the model_dir_ori folder 
 						spectrum_name_full = out_select_model_spectra['spectra_name_full'][out_select_model_spectra['spectra_name']==spectrum_name][0]
-						out_read_model_spectrum = read_model_spectrum(spectra_name_full=spectrum_name_full, model=model)
-						wl_model_best[i,:] = out_read_model_spectrum['wl_model']
-						flux_model_best[i,:] = scaling_fit_best[i] * out_read_model_spectrum['flux_model'] # scaled fluxes
+						out_read_model_spectrum = read_model_spectrum(spectrum_name_full=spectrum_name_full, model=model)
+						wl_model_best_lst.append(out_read_model_spectrum['wl_model'])
+						flux_model_best_lst.append(scaling_fit_best[i] * out_read_model_spectrum['flux_model']) # scaled fluxes
 					else: raise Exception(f"{spectrum_name} is not in {model_dir_ori}")
+
+		# convert list with models to a numpy array
+		# maximum number of data points
+		max_tmp1 = 0
+		for i in range(N_best_fits): # for each model spectrum
+			max_tmp2 = len(wl_model_best_lst[i])
+			if max_tmp2>max_tmp1:
+				N_modelpoints_max = max_tmp2
+				max_tmp1 = max_tmp2
+			else:
+				N_modelpoints_max = max_tmp1
+	
+		wl_model_best = np.zeros((N_best_fits, N_modelpoints_max))
+		flux_model_best = np.zeros((N_best_fits, N_modelpoints_max))
+		for i in range(N_best_fits): # for each model spectrum
+			wl_model_best[i,:] = wl_model_best_lst[i]
+			flux_model_best[i,:] = flux_model_best_lst[i]
 
 #	# convolve spectrum
 #	wl_model_conv = np.zeros((N_modelpoints, N_best_fits))
@@ -548,7 +430,8 @@ def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spect
 
 ##################################################
 def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_range=None, 
-	          fit_wl_range=None, res=None, lam_res=None, wl_resample=None):
+	          fit_wl_range=None, res=None, lam_res=None, wl_resample=None, 
+	          skip_convolution=False, filename_pattern=None, path_save_spectra_conv=None):
 	'''
 	Description:
 	------------
@@ -584,6 +467,18 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 		Wavelength of reference at which ``res`` is given.
 	- wl_resample : float array or list, optional
 		Wavelength data points to resample the grid
+	- skip_convolution : {``True``, ``False``}, optional (default ``False``)
+		Convolution of model spectra (the slowest process in the code) can (``True``) or cannot (``False``) be avoided. 
+		Once the code has be run and the convolved spectra were stored in ``path_save_spectra_conv``, the convolved grid can be reused for other input data with the same resolution as the convolved spectra.
+	- filename_pattern : str, optional
+		Pattern to select only files including it.
+		Default is a common pattern in all spectra original filenames in ``model``, as indicated by ``Models(model).filename_pattern``.
+	- path_save_spectra_conv: str, optional
+		Directory path to store convolved model spectra. 
+		If not provided (default), the convolved spectra will not be saved. 
+		If the directory does not exist, it will be created. Otherwise, the spectra will be added to the existing folder.
+		The convolved spectra will keep the same original names along with the ``res`` and ``lam_res`` parameters, e.g. 'original_spectrum_name_R100at1um.nc' for ``res=100`` and ``lam_res=1``.
+		They will be saved as netCDF with xarray (it produces lighter files compared to normal ASCII files).
 
 	Returns:
 	--------
@@ -625,7 +520,7 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 #		model_wl_range = set_model_wl_range(model_wl_range=model_wl_range, wl_spectra_min=wl_spectra_min, wl_spectra_max=wl_spectra_max)
 
 	# read the model spectra names and their parameters in the input folders and meeting the indicated parameters ranges 
-	out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir, params_ranges=params_ranges)
+	out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir, params_ranges=params_ranges, filename_pattern=filename_pattern)
 	spectra_name_full = out_select_model_spectra['spectra_name_full']
 	spectra_name = out_select_model_spectra['spectra_name']
 	params = out_select_model_spectra['params']
@@ -675,13 +570,23 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 		else: # if there is a spectrum
 			# read the spectrum with the parameter combination in the iteration and cut it to model_wl_range (default value: fit_wl_range plus padding)
 			spectrum_name_full = spectra_name_full[mask][0]
-			out_read_model_spectrum = read_model_spectrum(spectra_name_full=spectrum_name_full, model=model, 
-			                                              model_wl_range=model_wl_range)
+			if not skip_convolution: # read model spectra with original resolution
+				out_read_model_spectrum = read_model_spectrum(spectrum_name_full=spectrum_name_full, model=model, 
+				                                              model_wl_range=model_wl_range)
+			else: # read precomputed convolved model spectra
+				out_read_model_spectrum = read_model_spectrum_conv(spectrum_name_full=spectrum_name_full, model_wl_range=model_wl_range)
 			wl_model = out_read_model_spectrum['wl_model'] # in um
 			flux_model = out_read_model_spectrum['flux_model'] # in erg/s/cm2/A
 
 			# convolve (if requested) the model spectrum to the indicated resolution
-			if convolve:
+			if convolve and not skip_convolution: # convolve spectra only if convolve is True and skip_convolution is False
+				if path_save_spectra_conv is None: # do not save the convolved spectrum
+					out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, res=res, lam_res=lam_res)
+				else: # save convolved spectrum
+					if not os.path.exists(path_save_spectra_conv): os.makedirs(path_save_spectra_conv) # make directory (if not existing) to store convolved spectra
+					out_file = path_save_spectra_conv+spectra_name[mask][0]+f'_R{res}at{lam_res}um.nc'
+					out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, res=res, lam_res=lam_res, out_file=out_file)
+
 				out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, res=res, lam_res=lam_res)
 				wl_model = out_convolve_spectrum['wl_conv']
 				flux_model = out_convolve_spectrum['flux_conv']
@@ -694,7 +599,6 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 				flux_model = spectres(wl_resample[mask_fit], wl_model, flux_model)
 				wl_model = wl_resample[mask_fit]
 
-			
 			# save spectrum for each combination
 			if not np.any(np.array(index)): # for the first parameters' combination
 				# define arrays to save the grid
@@ -872,12 +776,13 @@ def best_bayesian_fit(bayes_pickle_file, grid=None, save_spectrum=False):
 		params_med[param] = np.median(out_dynesty.samples[:,i]) # add to the dictionary the median of each parameter
 
 	# round median values for model grid parameters
-	params_models = Models(model).params
+#	params_models = Models(model).params
+	params_models = Models(model).params_unique
 	for i,param in enumerate(params_med): # for each sampled parameter
 		if param in params_models: # for free parameters in the model grid
 			params_med[param] = round(params_med[param], max_decimals(params_models[param])+1) # round to the precision (plus one decimal place) of the parameter in models
 
-	# generate spectrum with the median parameter values
+	# read grid, if needed
 	if grid is None:
 		# grid values around the desired parameter values
 		params_ranges = {}
@@ -887,7 +792,7 @@ def best_bayesian_fit(bayes_pickle_file, grid=None, save_spectrum=False):
 		# read grid
 		grid = read_grid(model=model, model_dir=model_dir, params_ranges=params_ranges)
 
-	# generate synthetic spectrum
+	# generate synthetic spectrum with the median parameter values
 	params = {}
 	for param in params_models: # for each free parameter in the grid
 		params[param] = params_med[param]
@@ -956,7 +861,7 @@ def best_bayesian_fit(bayes_pickle_file, grid=None, save_spectrum=False):
 	return out
 
 ##########################
-def select_model_spectra(model, model_dir, params_ranges=None, save_results=False, out_file=None):
+def select_model_spectra(model, model_dir, params_ranges=None, filename_pattern=None, save_results=False, out_file=None):
 	'''
 	Description:
 	------------
@@ -972,6 +877,9 @@ def select_model_spectra(model, model_dir, params_ranges=None, save_results=Fals
 		Minimum and maximum values for any model free parameters to select a model grid subset.
 		E.g., ``params_ranges = {'Teff': [1000, 1200], 'logg': [4., 5.]}`` to consider spectra within those Teff and logg ranges.
 		If a parameter range is not provided, the full range in ``model_dir`` is considered.
+	- filename_pattern : str, optional
+		Pattern to select only files including it.
+		Default is a common pattern in all spectra original filenames in ``model``, as indicated by ``Models(model).filename_pattern``.
 	- save_results : {``True``, ``False``}, optional (default ``False``)
 		Save (``True``) or do not save (``False``) the output as a pickle file named '``model``\_free\_parameters.pickle'.
 	- out_file : str, optional
@@ -1006,19 +914,21 @@ def select_model_spectra(model, model_dir, params_ranges=None, save_results=Fals
 	if isinstance(model_dir, str): model_dir = [model_dir]
 	if isinstance(model_dir, np.ndarray): model_dir = model_dir.tolist()
 
+	# set default parameters
 	# if params_ranges is provided, verified that there is a minimum and a maximum values for each provided parameter
 	if params_ranges is not None:
 		for param in params_ranges:
 			if len(params_ranges[param])!=2: raise Exception(f'{param} in "params_ranges" must have two values (minimum and maximum), but {len(params_ranges[param])} values were given')
-
 	# if params_ranges is not provided, define params_ranges as an empty dictionary
 	if params_ranges is None: params_ranges = {}
+	# if filename_pattern is not provided, consider the common pattern in original file names
+	if filename_pattern is None: filename_pattern = Models(model).filename_pattern
 
 	# to store files in model_dir
 	files = [] # with full path
 	files_short = [] # only spectra names
 	for i in range(len(model_dir)):
-		files_model_dir = fnmatch.filter(os.listdir(model_dir[i]), Models(model).filename_pattern)
+		files_model_dir = fnmatch.filter(os.listdir(model_dir[i]), filename_pattern)
 		files_model_dir.sort() # just to sort the files wrt their names
 		for file in files_model_dir:
 			files.append(model_dir[i]+file)
@@ -1267,23 +1177,6 @@ def spt_str_to_float(spt):
 	return spt
 
 ##########################
-# read a pre-stored convolved model spectrum
-# it is a netCDF file with xarray produced by convolve_spectrum
-def read_model_spectrum_conv(spectrum_name_full):
-
-	# read convolved spectrum
-	spectrum = xarray.open_dataset(spectrum_name_full)
-	wl_model = spectrum['wl'].data # um
-	flux_model = spectrum['flux'].data # erg/s/cm2/A
-
-	# obtain fluxes in Jy
-	flux_model_Jy = (flux_model*u.erg/u.s/u.cm**2/u.angstrom).to(u.Jy, equivalencies=u.spectral_density(wl_model*u.micron)).value
-
-	out = {'wl_model': wl_model, 'flux_model': flux_model, 'flux_model_Jy': flux_model_Jy}
-
-	return out
-
-##########################
 # make sure a variable is a list
 def var_to_list(x):
 	if isinstance(x, str): x = [x]
@@ -1351,6 +1244,21 @@ def find_two_nearest(array, value):
 	else: # if the value is between two grid nodes
 		near_low = array[diff<0].max()
 		near_high = array[diff>0].min()
+
+	return np.array([near_low, near_high])
+
+#+++++++++++++++++++++++++++
+def find_two_around_node(array, value):
+	diff = array - value
+	if any(diff<0): # if there are grid nodes smaller than the value
+		near_low = array[diff<0].max()
+	else: # if the value is the smallest grid point
+		near_low = array.min()
+		
+	if any(diff>0): # if there are grid nodes greater than the value
+		near_high = array[diff>0].min()
+	else: # if the value is the greatest grid point
+		near_high = array.max()
 
 	return np.array([near_low, near_high])
 

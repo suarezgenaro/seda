@@ -34,7 +34,6 @@ def chi2(my_chi2):
 			- ``my_chi2`` input dictionary
 			- ``spectra_name_full``: model spectra names with full path.
 			- ``spectra_name``: model spectra names.
-			- ``N_modelpoints``: maximum number of data points in original model spectra.
 			- ``iterations_fit``: number of iterations to minimize chi-square.
 			- ``Av_fit``: visual extinction (in mag) that minimizes chi-square.
 			- ``eAv_fit``: visual extinction uncertainty (in mag).
@@ -117,17 +116,14 @@ def chi2(my_chi2):
 	model = my_chi2.model
 	model_dir = my_chi2.model_dir
 	params_ranges = my_chi2.params_ranges
-#	R_range = my_chi2.R_range
 #	save_convolved_spectra = my_chi2.save_convolved_spectra
 	path_save_spectra_conv = my_chi2.path_save_spectra_conv
 	skip_convolution = my_chi2.skip_convolution
-	N_modelpoints = my_chi2.N_modelpoints
 	# from Chi2Options
 	save_results = my_chi2.save_results
 	scaling_free_param = my_chi2.scaling_free_param
 	scaling = my_chi2.scaling
 	extinction_free_param = my_chi2.extinction_free_param
-#	skip_convolution = my_chi2.skip_convolution
 	avoid_IR_excess = my_chi2.avoid_IR_excess
 	IR_excess_limit = my_chi2.IR_excess_limit
 	fit_wl_range = my_chi2.fit_wl_range
@@ -138,39 +134,51 @@ def chi2(my_chi2):
 	chi2_pickle_file = my_chi2.chi2_pickle_file
 	chi2_table_file = my_chi2.chi2_pickle_file
 
-	# read the model spectra names in the input folders and meeting the indicated parameters ranges 
-	out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir, params_ranges=params_ranges)
-	spectra_name_full = out_select_model_spectra['spectra_name_full']
-	spectra_name = out_select_model_spectra['spectra_name']
-	N_model_spectra = len(spectra_name) # number of selected model spectra
+	# initialize lists for resampled, convolved model spectra for all input spectra
+	wl_array_model_conv_resam = []
+	flux_array_model_conv_resam = []
+	for k in range(N_spectra): # for each input observed spectrum
+		print(f'\nFor input spectrum {k+1} of {N_spectra}')
 
-	#+++++++++++++++++++++++++++++++++
-	# read and convolve model spectra
+		# select files with spectra within the indicated ranges
+		if not skip_convolution: # read and convolve original model spectra
+			out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir, params_ranges=params_ranges)
+		else: # read model spectra already convolved to the data resolution
+			# set filename_pattern to look for model spectra with the corresponding resolution
+			filename_pattern = Models(model).filename_pattern+f'_R{res[k]}at{lam_res[k]}um.nc'
+			out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir, params_ranges=params_ranges, filename_pattern=filename_pattern)
+		spectra_name_full = out_select_model_spectra['spectra_name_full']
+		spectra_name = out_select_model_spectra['spectra_name']
+		N_model_spectra = len(spectra_name) # number of selected model spectra
 
-	# convolve model spectra to the required resolution
-	if not skip_convolution: # read and convolve original model spectra
 		# create a tqdm progress bar
-		convolving_bar = tqdm(total=N_model_spectra, desc='Convolving the spectra')
+		if not skip_convolution: # read original model spectra
+			model_bar = tqdm(total=N_model_spectra, desc='Reading, convolving, and resampling model spectra')
+		else:
+			model_bar = tqdm(total=N_model_spectra, desc='Reading and resampling model spectra')
 
-		# initialize lists for convolved model spectra for all input spectra
-		wl_array_model_conv = []
-		flux_array_model_conv = []
+		# list to save a resampled and convolved model spectrum for the input spectra
+		wl_array_model_conv_resam_each = []
+		flux_array_model_conv_resam_each = []
 		for i in range(N_model_spectra): # for each model spectrum
 			# update progress bar
-			convolving_bar.update(1)
-		
-			# read model spectrum
-			out_read_model_spectrum = read_model_spectrum(spectra_name_full=spectra_name_full[i], model=model, model_wl_range=model_wl_range)
+			model_bar.update(1)
+	
+			# read and convolve model spectra, if needed
+			if not skip_convolution: # read original model spectra
+				out_read_model_spectrum = read_model_spectrum(spectrum_name_full=spectra_name_full[i], model=model, model_wl_range=model_wl_range)
+			else: # read model spectra already convolved to the data resolution
+				out_read_model_spectrum = read_model_spectrum_conv(spectrum_name_full=spectra_name_full[i], model_wl_range=model_wl_range)
 			wl_model = out_read_model_spectrum['wl_model'] # um
 			flux_model = out_read_model_spectrum['flux_model'] # erg/s/cm2/A
-		
-			# convolved model spectrum
+	
+			# convolve the model spectrum to the indicated resolution
 			wl_array_model_conv_each = [] # to save each convolved spectrum 
 			flux_array_model_conv_each = [] # to save each convolved spectrum 
-			for k in range(N_spectra): # for each input observed spectrum
+			if not skip_convolution: # avoid convolution, even if convolve was left as True, when skip_convolution is True
 				# convolve models in the full wavelength range of each input spectrum plus a padding
 				convolve_wl_range = [0.9*wl_spectra[k].min(), 1.1*wl_spectra[k].max()]
-	
+		
 				# convolve model spectrum according to the resolution and fit range of each input spectrum
 				if path_save_spectra_conv is None: # do not save the convolved spectrum
 					out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, lam_res=lam_res[k], res=res[k], 
@@ -180,84 +188,50 @@ def chi2(my_chi2):
 					out_file = path_save_spectra_conv+spectra_name[i]+f'_R{res[k]}at{lam_res[k]}um.nc'
 					out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, lam_res=lam_res[k], res=res[k], 
 					                                          disp_wl_range=fit_wl_range[k], convolve_wl_range=convolve_wl_range, out_file=out_file)
-				# save each convolved spectrum in the list
-				wl_array_model_conv_each.append(out_convolve_spectrum['wl_conv'])
-				flux_array_model_conv_each.append(out_convolve_spectrum['flux_conv'])
-	
-			# nested list with all convolved model spectra
-			wl_array_model_conv.append(wl_array_model_conv_each)
-			flux_array_model_conv.append(flux_array_model_conv_each)
-	
-		# close progress bar
-		convolving_bar.close()
+				
+				out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, res=res, lam_res=lam_res)
+				wl_model = out_convolve_spectrum['wl_conv']
+				flux_model = out_convolve_spectrum['flux_conv']
 
-	else: # read precomputed convolved spectra
-		# get original filenames by removing the extension name added when the spectra were convolved and stored
-		spectra_name_ori = []
-		for spectrum in spectra_name: # for each selected model spectrum
-			name = spectrum.split('_R')[0]
-			if name not in spectra_name_ori: # to avoid repeating the same model spectrum when inputting multiple observed spectra
-				spectra_name_ori.append(name)
-		spectra_name_full_ori = [model_dir[0]+spectrum for spectrum in spectra_name_ori] # spectra files with full path
-
-		# necessary renaming to keep only unique model spectra
-		# as for multiple input spectra the same model spectrum is
-		# read multiple times by select_model_spectra because of the 
-		# different res and lam_res input values for the input spectra
-		spectra_name = np.array(spectra_name_ori)
-		spectra_name_full = np.array(spectra_name_full_ori)
-		N_model_spectra = len(spectra_name)
-
-		# read convolved spectra and save them as a nested list
-		# initialize lists for convolved model spectra for all input spectra
-		wl_array_model_conv = []
-		flux_array_model_conv = []
-		for i in range(N_model_spectra): # for each model spectrum
-			wl_array_model_conv_each = [] # to save each convolved spectrum 
-			flux_array_model_conv_each = [] # to save each convolved spectrum 
-			for k in range(N_spectra): # for each input observed spectrum
-				# check if there is a convolved spectrum for each res and lam_res combination
-				name_ext = f'_R{res[k]}at{lam_res[k]}um.nc'
-				spectrum_name_ext = spectra_name_full[i]+name_ext
-				if os.path.exists(spectrum_name_ext): # there is a convolved spectrum 
-					# read convolved spectrum
-					out_read_model_spectrum_conv = read_model_spectrum_conv(spectrum_name_ext)
-					# save each convolved spectrum in the list
-					wl_array_model_conv_each.append(out_read_model_spectrum_conv['wl_model']) # um
-					flux_array_model_conv_each.append(out_read_model_spectrum_conv['flux_model']) # erg/s/cm2/A
-				else: raise Exception(f'Convolved model spectrum {spectrum_name_ext} does not exits.')
-
-			# nested list with all convolved model spectra
-			wl_array_model_conv.append(wl_array_model_conv_each)
-			flux_array_model_conv.append(flux_array_model_conv_each)
-
-	#+++++++++++++++++++++++++++++++++
-	# resample the convolved model spectra in input spectra wavelength ranges
-
-	# initialize lists for resampled and convolved model spectra for all input spectra
-	wl_array_model_conv_resam = []
-	flux_array_model_conv_resam = []
-
-	# create a tqdm progress bar
-	resampling_bar = tqdm(total=N_model_spectra, desc='Resampling the spectra')
-	for i in range(N_model_spectra): # for each model spectrum
-		# update progress bar
-		resampling_bar.update(1)
-
-		# list to save a resampled and convolved model spectrum for the input spectra
-		wl_array_model_conv_resam_each = []
-		flux_array_model_conv_resam_each = []
-		for k in range(N_spectra): # for each input observed spectrum
-			mask = (wl_spectra[k]>wl_array_model_conv[i][k].min()) & (wl_spectra[k]<wl_array_model_conv[i][k].max()) # input wavelengths within model wavelength coverage
-			flux_array_model_conv_resam_each.append(spectres(wl_spectra[k][mask], wl_array_model_conv[i][k], flux_array_model_conv[i][k])) # resampled fluxes
+			# resample the convolved model spectrum to the wavelength data points in the observed spectra
+			mask = (wl_spectra[k]>wl_model.min()) & (wl_spectra[k]<wl_model.max()) # input wavelengths within model wavelength coverage
+			flux_array_model_conv_resam_each.append(spectres(wl_spectra[k][mask], wl_model, flux_model)) # resampled fluxes
 			wl_array_model_conv_resam_each.append(wl_spectra[k][mask]) # wavelengths for resampled fluxes
 
 		# nested list with all resampled and convolved model spectra
 		wl_array_model_conv_resam.append(wl_array_model_conv_resam_each)
 		flux_array_model_conv_resam.append(flux_array_model_conv_resam_each)
 
-	# close progress bar
-	resampling_bar.close()
+		# close progress bar
+		model_bar.close()
+
+	# re-arrange the list with convolved, resampled spectra to have each model in the first dimension
+	wl_arr = []
+	flux_arr = []
+	for i in range(N_model_spectra): # for each model spectrum 
+		wl_arr_each = []
+		flux_arr_each = []
+		for k in range(N_spectra): # for each input observed spectrum
+			wl_arr_each.append(wl_array_model_conv_resam[k][i])
+			flux_arr_each.append(flux_array_model_conv_resam[k][i])
+		wl_arr.append(wl_arr_each)
+		flux_arr.append(flux_arr_each)
+	wl_array_model_conv_resam = wl_arr
+	flux_array_model_conv_resam = flux_arr
+	
+	# when reading pre-computed convolved model spectra, remove the extended name added when saving the convolved models
+	# spectra_name in memory are the ones for the last input spectrum, but they have the same root name for all input spectra
+	if not skip_convolution: # avoid convolution, even if convolve was left as True, when skip_convolution is True
+		spectra_name_ori = []
+		for spectrum in spectra_name: # for each selected model spectrum
+			name = spectrum.split('_R')[0]
+			if name not in spectra_name_ori: # to avoid repeating the same model spectrum when inputting multiple observed spectra
+				spectra_name_ori.append(name)
+		spectra_name_full_ori = [model_dir[0]+spectrum for spectrum in spectra_name_ori] # spectra files with full path
+		# renaming
+		spectra_name = np.array(spectra_name_ori)
+		spectra_name_full = np.array(spectra_name_full_ori)
+		N_model_spectra = len(spectra_name)
 
 	#+++++++++++++++++++++++++++++++++
 	# minimize chi-square
@@ -271,7 +245,6 @@ def chi2(my_chi2):
 		flux_spectra_fit_each = []
 		eflux_spectra_fit_each = []
 		for k in range(N_spectra): # for each input observed spectrum
-			# mask to select data points within the fit range or model coverage range, whichever is narrower
 			mask_fit = (wl_spectra[k] >= max(fit_wl_range[k][0], wl_array_model_conv_resam[i][k].min())) & \
 			           (wl_spectra[k] <= min(fit_wl_range[k][1], wl_array_model_conv_resam[i][k].max()))
 			wl_spectra_fit_each.append(wl_spectra[k][mask_fit])
@@ -300,7 +273,7 @@ def chi2(my_chi2):
 		# nested list with all resampled and convolved model spectra in the fit range
 		wl_array_model_conv_resam_fit.append(wl_array_model_conv_resam_fit_each)
 		flux_array_model_conv_resam_fit.append(flux_array_model_conv_resam_fit_each)
-	
+
 	# initialize variables to save key parameters from the fit
 	scaling_fit = np.zeros(N_model_spectra) * np.nan
 	escaling_fit = np.zeros(N_model_spectra) * np.nan
@@ -480,7 +453,7 @@ def residuals_for_chi2(params, data, edata, model):
 	scaling = params['scaling']
 
 	residuals = np.array([]) # initialize numpy array to save array with residual
-	for i in range(len(data)): # for each input spectrum
+	for i in range(len(data)): # for each data point
 		res = (data[i]-scaling*model[i])/edata[i] # the square of this equation will be minimized by minner.minimize
 		residuals = np.concatenate([residuals, res])
 
