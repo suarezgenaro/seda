@@ -189,7 +189,6 @@ def chi2(my_chi2):
 					out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, lam_res=lam_res[k], res=res[k], 
 					                                          disp_wl_range=fit_wl_range[k], convolve_wl_range=convolve_wl_range, out_file=out_file)
 				
-				out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, res=res, lam_res=lam_res)
 				wl_model = out_convolve_spectrum['wl_conv']
 				flux_model = out_convolve_spectrum['flux_conv']
 
