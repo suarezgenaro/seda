@@ -91,22 +91,41 @@ class InputData:
 
 		self.N_spectra = N_spectra
 
+		# verify that all the mandatory parameters are given
 		# reshape some input parameters and define non-provided parameters in terms of other parameters
 		if fit_spectra:
+
 			# when one spectrum is given, convert the spectrum into a list
-			if not isinstance(wl_spectra, list): wl_spectra = [wl_spectra]
-			if not isinstance(flux_spectra, list): flux_spectra = [flux_spectra]
-			if not isinstance(eflux_spectra, list): eflux_spectra = [eflux_spectra]
+			# for wavelenghts
+			if wl_spectra is None: # if not provided
+				raise Exception(f'Parameter "wl_spectra" is missing.')
+			else: # if provided
+				if not isinstance(wl_spectra, list): wl_spectra = [wl_spectra]
+			# for fluxes
+			if flux_spectra is None: # if not provided
+				raise Exception(f'Parameter "flux_spectra" is missing.')
+			else: # if provided
+				if not isinstance(flux_spectra, list): flux_spectra = [flux_spectra]
+			# for flux errors
+			if eflux_spectra is None: # if not provided
+				raise Exception(f'Parameter "eflux_spectra" is missing.')
+			else: # if provided
+				if not isinstance(eflux_spectra, list): eflux_spectra = [eflux_spectra]
+
+			# if res is a scalar, convert it into an array
+			if res is None: # if not provided
+				raise Exception(f'Parameter "res" is missing.')
+			else: # if provided
+				if isinstance(res, (float, int)): res = np.array([res])
+
+			# if lam_res is a scalar, convert it into an array
+			if isinstance(lam_res, (float, int)): lam_res = np.array([lam_res])
 
 			# set lam_res if not provided
 			if lam_res is None: 
 				lam_res = []
 				for wl_spectrum in wl_spectra:
 					lam_res.append(set_lam_res(wl_spectrum))
-
-			# if res and lam_res are scalars, convert them into array
-			if isinstance(res, (float, int)): res = np.array([res])
-			if isinstance(lam_res, (float, int)): lam_res = np.array([lam_res])
 
 		# handle input parameters
 		# convert input spectra to numpy arrays, if they are astropy
