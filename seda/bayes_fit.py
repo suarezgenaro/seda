@@ -153,7 +153,7 @@ def bayes(my_bayes):
 		return lnlike
 
 	#+++++++++++++++++++++++++++++++++++++
-	print('\n   Running dynesty...')
+	print('\n   Starting dynesty...')
 	if dynamic_sampling:
 		# 'dynamic' nested sampling.
 		sampler = dynesty.DynamicNestedSampler(loglike, prior_transform, ndim, nlive=nlive)

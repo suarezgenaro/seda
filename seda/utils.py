@@ -553,6 +553,7 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 	grid_bar = tqdm(total=len(spectra_name), desc=desc)
 
 	# save model spectra for each combination of free parameter values
+	first_spec = True # reference to initialize arrays for store the grid in the first iteration with a model spectrum
 	for index in np.ndindex(arr.shape): # iterate over all possible combinations of the free parameter unique values
 		# update the progress bar
 		grid_bar.update(1)
@@ -600,18 +601,20 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 				wl_model = wl_resample[mask_fit]
 
 			# save spectrum for each combination
-			if not np.any(np.array(index)): # for the first parameters' combination
+			if first_spec: # for the first parameters' combination with a model spectrum
 				# define arrays to save the grid
 				# add a last dimension with the number of data points in the model spectrum subset
 				# it is better to initialize the arrays after the first iteration to consider the model spectrum 
 				# data points after resampling instead of using all data points in the original model spectrum
 				wl_grid = np.repeat(np.expand_dims(arr, -1), len(wl_model), axis=-1) # to save the wavelength at each grid point
 				flux_grid = np.repeat(np.expand_dims(arr, -1), len(wl_model), axis=-1) # to save the flux at each grid point
-						 
+
 				# save first spectrum
 				wl_grid[index] = wl_model
 				flux_grid[index] = flux_model
-			
+
+				first_spec = False # to avoid initializing grid arrays in future iterations
+
 			else: # all but first parameters' combinations	 
 				# ensure the new spectrum has the same number of data points as the first one read
 				if wl_model.shape!=wl_grid.shape[-1:]:
@@ -1093,7 +1096,7 @@ def app_to_abs_flux(flux, distance, eflux=0, edistance=0):
 	return out
 
 ##########################
-def spt_to_teff(spt, spt_type=None, ref=None):
+def spt_to_teff(spt, spt_type, ref=None):
 	'''
 	Description:
 	------------
@@ -1101,51 +1104,66 @@ def spt_to_teff(spt, spt_type=None, ref=None):
 
 	Parameters:
 	-----------
-	- spt : float or str
-		Spectral type that given as a float or string, as indicated in ``spt_type``.
+	- spt : float, str, array, or list
+		Spectral types given as conventional letters or number, as indicated in ``spt_type``.
 		Convention between spectral type an float: M9=9, L0=10, ..., T0=20, ...
-	- spt_type : str, optional (default 'float')
+	- spt_type : str
 		Label indicating whether the input spectral type is a string ('str') or a number ('float')
 	- ref : str, optional (default 'F15')
 		Reference for the spectral type-temperature relationships.
 		'F15': Filippazzo et al. (2015), valid for M6-T9 (6-29)
 
 	Returns:
-	- effective temperature (in K) corresponding to the input spectral type according to the ``ref`` reference.
+	- effective temperature (in K) corresponding to the input spectral types according to the ``ref`` reference.
 
 	Example:
 	--------
 	>>> import seda
 	>>> 
 	>>> # spectral type as a number
-	>>> spt = 15 # for an L5
-	>>> seda.spt_to_teff(spt) # Teff in K
-	    1581.053124999998
+	>>> spt = [15, 25] # for L5 and T5 types
+	>>> seda.spt_to_teff(spt, spt_type='float') # Teff in K
+	    array([1581.053125, 1033.328125])
 	>>> 
 	>>> # spectral type as a string
-	>>> spt = L5
-	>>> seda.spt_to_teff(spt, spt_typ='str') # Teff in K
-	    1581.053124999998
+	>>> spt = ['L5', 'T5']
+	>>> seda.spt_to_teff(spt, spt_type='str') # Teff in K
+	    array([1581.053125, 1033.328125])
 
 	Author: Genaro Suárez
 	'''
+
+	# make sure the input spt is a numpy array
+	spt = var_to_numpy(spt)
+
+	# verify that spt_type is provided
+	try: spt_type
+	except: raise Exception(f'"spt_type" must be provided')
 
 	# assigned default values
 	if spt_type is None: spt_type = 'float' # spectral type as float number
 	if ref is None: ref = 'F15' # Filippazzo et al. (2015)
 
-	# convert spectral type from string to a float
+	# save the original spt
+	spt_ori = spt.copy()
+
+	# if spt is provided as strings, convert it into a float
 	if spt_type=='str': 
-		spt = spt_str_to_float(spt)
-		
+		for i in range(len(spt)):
+			spt[i] = spt_str_to_float(spt[i])
+		# convert array of string to an array of floats
+		spt = spt.astype(float)
+
 	# verify the spectral type is within the valid range for the indicated relationship
 	# valid range for available relationships
 	if ref=='F15': spt_valid = ['M6', 'T9'] #[6, 29]
+
 	# verification
 	spt_valid_flt = [spt_str_to_float(spt_valid[0]), spt_str_to_float(spt_valid[1])]
-	if spt<spt_valid_flt[0] or spt>spt_valid_flt[1]: 
-		print(f'Caveat: spt={spt} is out of the coverage by "{ref}", so Teff was extrapolated.')
-		print(f'   The valid spt range is {spt_valid} ({spt_valid_flt})')
+	for i,sp in enumerate(spt):
+		if sp<spt_valid_flt[0] or sp>spt_valid_flt[1]: 
+			print(f'Caveat for spt={spt_ori[i]}: it is out of the "{ref}" coverage, so Teff was extrapolated.')
+			print(f'   The valid spt range is {spt_valid} ({spt_valid_flt})')
 
 	# coefficients of the polynomial
 	c0 = 4.747e+03
@@ -1182,6 +1200,15 @@ def var_to_list(x):
 	if isinstance(x, str): x = [x]
 	if isinstance(x, np.ndarray): x = x.tolist()
 	if isinstance(x, float): x = [x]
+
+	return x
+
+##########################
+# make sure a variable is a numpy array
+def var_to_numpy(x):
+
+	if isinstance(x, (str, int, float)): x = np.array([x])
+	if isinstance(x, list): x = np.array(x)
 
 	return x
 

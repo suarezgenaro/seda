@@ -228,13 +228,12 @@ class ModelOptions:
 
 		self.model = model
 		if model not in Models().available_models: raise Exception(f'Models "{model}" are not recognized. Available models are: \n          {models_valid}')
-		#self.R_range = R_range
 		self.params_ranges = params_ranges
 		self.path_save_spectra_conv = path_save_spectra_conv
 		self.skip_convolution = skip_convolution
 
 		# when only one directory with models is given
-		if not isinstance(model_dir, list): model_dir = [model_dir]
+		if not isinstance(model_dir, (list, np.ndarray)): model_dir = [model_dir]
 		self.model_dir = model_dir
 
 		print('\n   Model options loaded successfully')
