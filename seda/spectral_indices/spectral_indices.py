@@ -540,6 +540,99 @@ def ammonia_index(wl, flux, eflux, default='SM22', ammonia_window=None, ammonia_
 	return out
 
 ##########################
+def user_index(wl, flux, eflux, wl_in, wl_out, wl_window, index_name=None,
+	           plot=False, plot_title=None, plot_xrange=None, 
+	           plot_yrange=None, plot_save=False):
+	'''
+	Description:
+	------------
+		User-defined spectral index as the ratio between the mean fluxes out and within a spectra feature of interest.
+
+	Parameters:
+	-----------
+	- wl : array
+		Spectrum wavelengths in microns.
+	- flux : array
+		Spectrum fluxes in Jy.
+	- eflux : array
+		Spectrum flux errors in Jy.
+	- wl_in : float
+		Wavelength reference within the feature.
+	- wl_out : float
+		Wavelength reference out of the feature.
+	- wl_window : float
+		Wavelength window around ``wl_in`` and ``wl_out`` used to calculate average fluxes.
+	- index_name : str, optional
+		Name the user wants to give to the index to be included in the plot label and title (if not ``plot_title``).
+		If not provided, the string "User-defined" will be used.
+	- plot : {``True``, ``False``}, optional (default ``False``)
+		Plot (``True``) or do not plot (``False``) the user-defined index measurement.
+	- plot_title : str, optional
+		Plot title (default ``'User-defined Index Measurement'``.
+	- plot_xrange : list or array
+		Wavelength range (in microns) of the plot.
+	- plot_yrange : list or array
+		Flux range (in Jy) of the plot (default is the flux range in ``plot_xrange``).
+	- plot_save : {``True``, ``False``}, optional (default ``False``)
+		Save (``'True'``) or do not save (``'False'``) the resulting plot.
+
+	Returns:
+	--------
+	- Dictionary 
+		Dictionary with user-defined index parameters:
+			- ``'user_index'`` : user-defined index
+			- ``'euser_index'`` : user-defined index uncertainty
+			- ``'flux_in'`` : flux within the absorption
+			- ``'eflux_in'`` : flux uncertainty within the absorption
+			- ``'flux_out'`` : flux out of the absorption
+			- ``'eflux_out'`` : flux uncertainty out of the absorption
+			- ``'wl_in'`` : input ``wl_in``
+			- ``'wl_out'`` : input ``wl_out``
+			- ``'wl_window'`` : input ``wl_window``
+	- Plot of the user-defined index measurement that will be stored if ``plot_save``.
+
+	Author: Genaro Suárez
+	'''
+
+	# handle input spectrum
+	wl, flux, eflux = handle_input_spectrum(wl, flux, eflux)
+
+	# mean flux in the feature
+	mask_wl_in = (wl>=(wl_in-wl_window/2)) & (wl<=(wl_in+wl_window/2))
+	flux_in = np.mean(flux[mask_wl_in])
+	eflux_in_1 = np.std(flux[mask_wl_in]) / np.sqrt(flux[mask_wl_in].size) # due to the scatter of the data in the window
+	eflux_in_2 = flux_in * np.median(eflux[mask_wl_in]/flux[mask_wl_in]) # due to flux uncertainties
+	eflux_in = np.sqrt(eflux_in_1**2 + eflux_in_2**2) # addition in quadrature
+	
+	# mean flux out of the feature
+	mask_wl_out = np.where((wl>=(wl_out-wl_window/2)) & (wl<=(wl_out+wl_window/2)))[0]
+	flux_out = np.mean(flux[mask_wl_out])
+	eflux_out_1 = np.std(flux[mask_wl_out]) / np.sqrt(flux[mask_wl_out].size) # due to the scatter of the data in the window
+	eflux_out_2 = flux_out * np.median(eflux[mask_wl_out]/flux[mask_wl_out]) # due to flux uncertainties
+	eflux_out = np.sqrt(eflux_out_1**2 + eflux_out_2**2) # addition in quadrature
+
+	# defined index
+	user_index = flux_out / flux_in
+	euser_index = user_index * np.sqrt((eflux_in/flux_in)**2 + (eflux_out/flux_out)**2)
+
+	# output dictionary
+	out = {'user_index': user_index, 'euser_index': euser_index, 'flux_in': flux_in, 
+	       'eflux_in': eflux_in, 'flux_out': flux_out, 'eflux_out': eflux_out}
+	# add parameters used to measure the index
+	out['wl_in'] = wl_in
+	out['wl_out'] = wl_out
+	out['wl_window'] = wl_window
+	# add input spectrum
+	out['wl'] = wl
+	out['flux'] = flux
+	out['eflux'] = eflux
+	
+	# visualize how the silicate index was measured
+	if plot: plot_user_index(out, index_name, plot_xrange, plot_yrange, plot_title, plot_save)
+
+	return out
+
+##########################
 # plot the silicate index measurement
 def plot_silicate_index(out_silicate_index, plot_xrange=None, plot_yrange=None, plot_title=None, plot_save=True):
 
@@ -635,7 +728,10 @@ def plot_silicate_index(out_silicate_index, plot_xrange=None, plot_yrange=None, 
 	ax.errorbar(silicate_min, flux_silicate_min, yerr=eflux_silicate_min, 
 	            fmt='o', c='red', markersize=3.0, linewidth=1.0, capsize=3, capthick=1, zorder=3)
 	
-	plt.text(0.55, 0.8, 'Silicate index='+str(round(si_index,2))+'$\pm$'+str(round(esi_index,2)), transform=fig.transFigure, size=12)
+	# write the index value in the plot
+	label = 'Silicate index='+str(round(si_index,2))+'$\pm$'+str(round(esi_index,2))
+	plt.plot(0, 0, label=label)
+	plt.legend(handlelength=0, handletextpad=0)#, frameon=False
 	
 	plt.xlim(xmin, xmax)
 	plt.ylim(ymin, ymax)
@@ -644,7 +740,7 @@ def plot_silicate_index(out_silicate_index, plot_xrange=None, plot_yrange=None, 
 	ax.grid(True, which='both', color='gainsboro', alpha=0.5)
 	
 	plt.xlabel(r'$\lambda\ (\mu$m)', size=12)
-	plt.ylabel(r'$F_\nu\ (Jy)$', size=12)
+	plt.ylabel(r'$F_\nu$ (Jy)', size=12)
 	if plot_title is not None: plt.title(plot_title, size=12)
 	else: plt.title('Silicate Index Measurement', size=12)
 	
@@ -725,7 +821,11 @@ def plot_water_index(out_water_index, plot_xrange=None, plot_yrange=None, plot_t
 	ax.errorbar(water_max, flux_water_max, yerr=eflux_water_max, fmt='o', c='red', 
 	            markersize=3.0, linewidth=1.0, capsize=3, capthick=1, zorder=3)
 
-	plt.text(0.55, 0.8, 'Water index='+str(round(water_index,2))+'$\pm$'+str(round(ewater_index,2)), transform=fig.transFigure, size=12)
+	# write the index value in the plot
+	label = 'Water index='+str(round(water_index,2))+'$\pm$'+str(round(ewater_index,2))
+	plt.plot(0, 0, label=label)
+	plt.legend(handlelength=0, handletextpad=0)#, frameon=False
+	#plt.text(0.55, 0.8, 'Water index='+str(round(water_index,2))+'$\pm$'+str(round(ewater_index,2)), transform=fig.transFigure, size=12)
 	
 	plt.xlim(xmin, xmax)
 	plt.ylim(ymin, ymax)
@@ -734,7 +834,7 @@ def plot_water_index(out_water_index, plot_xrange=None, plot_yrange=None, plot_t
 	ax.grid(True, which='both', color='gainsboro', alpha=0.5)
 	
 	plt.xlabel(r'$\lambda\ (\mu$m)', size=12)
-	plt.ylabel(r'$F_\nu\ (Jy)$', size=12)
+	plt.ylabel(r'$F_\nu$ (Jy)', size=12)
 	if plot_title is not None: plt.title(plot_title, size=12)
 	else: plt.title('Water Index Measurement', size=12)
 	
@@ -803,7 +903,11 @@ def plot_methane_index(out_methane_index, plot_xrange=None, plot_yrange=None, pl
 	ax.errorbar(methane_in, flux_methane_in, yerr=eflux_methane_in, fmt='o', c='red', 
 	            markersize=3.0, linewidth=1.0, capsize=3, capthick=1, zorder=3)
 
-	plt.text(0.52, 0.15, 'Methane index='+str(round(methane_index,2))+'$\pm$'+str(round(emethane_index,2)), transform=fig.transFigure, size=12)
+	# write the index value in the plot
+	label = 'Methane index='+str(round(methane_index,2))+'$\pm$'+str(round(emethane_index,2))
+	plt.plot(0, 0, label=label)
+	plt.legend(handlelength=0, handletextpad=0)#, frameon=False
+	#plt.text(0.52, 0.15, 'Methane index='+str(round(methane_index,2))+'$\pm$'+str(round(emethane_index,2)), transform=fig.transFigure, size=12)
 	
 	plt.xlim(xmin, xmax)
 	plt.ylim(ymin, ymax)
@@ -812,7 +916,7 @@ def plot_methane_index(out_methane_index, plot_xrange=None, plot_yrange=None, pl
 	ax.grid(True, which='both', color='gainsboro', alpha=0.5)
 	
 	plt.xlabel(r'$\lambda\ (\mu$m)', size=12)
-	plt.ylabel(r'$F_\nu\ (Jy)$', size=12)
+	plt.ylabel(r'$F_\nu$ (Jy)', size=12)
 	if plot_title is not None: plt.title(plot_title, size=12)
 	else: plt.title('Methane Index Measurement', size=12)
 	
@@ -881,7 +985,11 @@ def plot_ammonia_index(out_ammonia_index, plot_xrange=None, plot_yrange=None, pl
 	ax.errorbar(ammonia_in, flux_ammonia_in, yerr=eflux_ammonia_in, fmt='o', c='red', 
 	            markersize=3.0, linewidth=1.0, capsize=3, capthick=1, zorder=3)
 
-	plt.text(0.52, 0.15, 'Ammonia index='+str(round(ammonia_index,2))+'$\pm$'+str(round(eammonia_index,2)), transform=fig.transFigure, size=12)
+	# write the index value in the plot
+	label = 'Ammonia index='+str(round(ammonia_index,2))+'$\pm$'+str(round(eammonia_index,2))
+	plt.plot(0, 0, label=label)
+	plt.legend(handlelength=0, handletextpad=0)#, frameon=False
+	#plt.text(0.52, 0.15, 'Ammonia index='+str(round(ammonia_index,2))+'$\pm$'+str(round(eammonia_index,2)), transform=fig.transFigure, size=12)
 	
 	plt.xlim(xmin, xmax)
 	plt.ylim(ymin, ymax)
@@ -890,7 +998,7 @@ def plot_ammonia_index(out_ammonia_index, plot_xrange=None, plot_yrange=None, pl
 	ax.grid(True, which='both', color='gainsboro', alpha=0.5)
 	
 	plt.xlabel(r'$\lambda\ (\mu$m)', size=12)
-	plt.ylabel(r'$F_\nu\ (Jy)$', size=12)
+	plt.ylabel(r'$F_\nu$ (Jy)', size=12)
 	if plot_title is not None: plt.title(plot_title, size=12)
 	else: plt.title('Ammonia Index Measurement', size=12)
 	
@@ -900,6 +1008,94 @@ def plot_ammonia_index(out_ammonia_index, plot_xrange=None, plot_yrange=None, pl
 
 	return
 
+##########################
+# plot the user index measurement
+def plot_user_index(out_user_index, index_name=None, plot_xrange=None, plot_yrange=None, plot_title=None, plot_save=True):
+
+	# read parameters of interest
+	wl = out_user_index['wl']
+	flux = out_user_index['flux']
+	eflux = out_user_index['eflux']
+	user_index = out_user_index['user_index']
+	euser_index = out_user_index['euser_index']
+	flux_in = out_user_index['flux_in']
+	eflux_in = out_user_index['eflux_in']
+	flux_out = out_user_index['flux_out']
+	eflux_out = out_user_index['eflux_out']
+	wl_window = out_user_index['wl_window']
+	wl_in = out_user_index['wl_in']
+	wl_out = out_user_index['wl_out']
+
+	#++++++++++++++++++++++++++++++
+	# plot silicate index measurement
+	fig, ax = plt.subplots()
+
+	if plot_xrange is None: xmin, xmax = wl.min(), wl.max()
+	else: xmin, xmax = plot_xrange
+	if plot_yrange is None:
+		mask = (wl>=xmin) & (wl<=xmax)
+		ymin, ymax = flux[mask].min(), flux[mask].max()
+	else: ymin, ymax = plot_yrange
+	
+	# indicate the regions to measure the silicate index
+	# in the absorption
+	ax.fill([wl_in-wl_window/2, wl_in-wl_window/2, 
+	        wl_in+wl_window/2, wl_in+wl_window/2], 
+	        [ymin, ymax, ymax, ymin], facecolor='silver', linewidth=1, zorder=2)
+	# out of the absorption
+	ax.fill([wl_out-wl_window/2, wl_out-wl_window/2, 
+	        wl_out+wl_window/2, wl_out+wl_window/2], 
+	        [ymin, ymax, ymax, ymin], facecolor='gainsboro', linewidth=1, zorder=2)
+
+	# plot spectrum
+	mask = wl>0
+	plt.plot(wl[mask], flux[mask])
+
+	# fluxes out of the absorption
+	mask_wl_out = (wl>=(wl_out-wl_window/2)) & (wl<=(wl_out+wl_window/2))
+	ax.errorbar(wl[mask_wl_out], flux[mask_wl_out], yerr=eflux[mask_wl_out], 
+	            fmt='o', c='gray', markersize=3.0, linewidth=1.0, capsize=3, capthick=1)
+	# fluxes in the absorption
+	mask_wl_in = (wl>=(wl_in-wl_window/2)) & (wl<=(wl_in+wl_window/2))
+	ax.errorbar(wl[mask_wl_in], flux[mask_wl_in], yerr=eflux[mask_wl_in],  
+	            fmt='o', c='gray', markersize=3.0, linewidth=1.0, capsize=3, capthick=1)
+
+	# mean flux out of the absorption
+	ax.errorbar(wl_out, flux_out, yerr=eflux_out, fmt='o', c='black', 
+	            markersize=3.0, linewidth=1.0, capsize=3, capthick=1, zorder=3)
+	# mean flux in the absorption
+	ax.errorbar(wl_in, flux_in, yerr=eflux_in, fmt='o', c='red', 
+	            markersize=3.0, linewidth=1.0, capsize=3, capthick=1, zorder=3)
+
+	# write the index value in the plot
+	if index_name is None:
+		label = f'User-defined index='+str(round(user_index,2))+'$\pm$'+str(round(euser_index,2))
+	else:
+		label = f'{index_name} index='+str(round(user_index,2))+'$\pm$'+str(round(euser_index,2))
+	plt.plot(0, 0, label=label)
+	plt.legend(handlelength=0, handletextpad=0)#, frameon=False
+	
+	plt.xlim(xmin, xmax)
+	plt.ylim(ymin, ymax)
+	ax.xaxis.set_minor_locator(AutoMinorLocator())
+	ax.yaxis.set_minor_locator(AutoMinorLocator())
+	ax.grid(True, which='both', color='gainsboro', alpha=0.5)
+	
+	plt.xlabel(r'$\lambda\ (\mu$m)', size=12)
+	plt.ylabel(r'$F_\nu$ (Jy)', size=12)
+	if plot_title is not None: 
+		plt.title(plot_title, size=12)
+	else: 
+		if index_name is None:
+			plt.title('User-defined Index Measurement', size=12)
+		else:
+			plt.title(f'{index_name} Index Measurement', size=12)
+	
+	if plot_save: plt.savefig('user_index_measurement.pdf', bbox_inches='tight')
+	plt.show()
+	plt.close()
+
+	return
 
 ##########################
 # manipulate input spectrum before measuring spectral indices
