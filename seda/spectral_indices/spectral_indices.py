@@ -546,7 +546,7 @@ def user_index(wl, flux, eflux, wl_in, wl_out, wl_window, index_name=None,
 	'''
 	Description:
 	------------
-		User-defined spectral index as the ratio between the mean fluxes out and within a spectra feature of interest.
+		Spectral index defined by the user as the ratio between the mean fluxes in and out of a spectral feature of interest.
 
 	Parameters:
 	-----------
