@@ -35,7 +35,7 @@ Code Workflow
 
 .. _seda_tools:
 
-Main Tools
+Useful Tools
 ----------
 :math:`\texttt{SEDA}` includes several useful functions that can be used separately:
   - :meth:`~seda.synthetic_photometry.synthetic_photometry.synthetic_photometry`: to calculate synthetic phothometry from spectra for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_ (see `tutorial_synthetic_photometry <https://seda.readthedocs.io/en/latest/notebooks/tutorial_synthetic_photometry.html>`_).
@@ -47,6 +47,7 @@ Main Tools
   - :meth:`~seda.utils.read_model_spectrum`: to read a synthetic spectrum from :ref:`models`.
   - :meth:`~seda.utils.generate_model_spectrum`: to generate a synthetic spectrum with any parameters (within the grid coverage) from the indicated atmospheric models using interpolation techniques.
   - :meth:`~seda.utils.app_to_abs_flux`: to convert apparent fluxes into absolute fluxes considering a distance.
+  - :meth:`~seda.utils.spt_to_teff`: to convert spectral types into effective temperature using relationships in the literature.
   - :meth:`~seda.utils.separate_params`: to extract parameters from model spectra file names.
   - :meth:`~seda.plots.plot_model_coverage` and :meth:`~seda.plots.plot_model_resolution`: to visualize parameters' coverage and resolution of :ref:`models` (see `tutorial_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_models_examination.html>`_ ).
 
