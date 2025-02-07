@@ -36,7 +36,7 @@ Code Workflow
 .. _seda_tools:
 
 Useful Tools
-----------
+------------
 :math:`\texttt{SEDA}` includes several useful functions that can be used separately:
   - :meth:`~seda.synthetic_photometry.synthetic_photometry.synthetic_photometry`: to calculate synthetic phothometry from spectra for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_ (see `tutorial_synthetic_photometry <https://seda.readthedocs.io/en/latest/notebooks/tutorial_synthetic_photometry.html>`_).
   - :meth:`~seda.spectral_indices.spectral_indices`: to measure the depth of mid-infrared absorption features, namely silicates at 9.3 microns (:meth:`~seda.spectral_indices.spectral_indices.silicate_index`), water at 6.25 microns (:meth:`~seda.spectral_indices.spectral_indices.water_index`), mathane at 7.65 microns (:meth:`~seda.spectral_indices.spectral_indices.methane_index`), and ammonia at 10.5 microns (:meth:`~seda.spectral_indices.spectral_indices.ammonia_index`) (see `tutorial_spectral_indices <https://seda.readthedocs.io/en/latest/notebooks/tutorial_spectral_indices.html>`_  and `spectral_indices <https://github.com/suarezgenaro/spectral_indices>`_).
