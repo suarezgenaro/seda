@@ -553,9 +553,9 @@ def user_index(wl, flux, eflux, wl_in, wl_out, wl_window, index_name=None,
 	- wl : array
 		Spectrum wavelengths in microns.
 	- flux : array
-		Spectrum fluxes in Jy.
+		Spectrum fluxes in any flux units.
 	- eflux : array
-		Spectrum flux errors in Jy.
+		Spectrum flux errors in the same units as ``flux``.
 	- wl_in : float
 		Wavelength reference within the feature.
 	- wl_out : float
@@ -570,9 +570,9 @@ def user_index(wl, flux, eflux, wl_in, wl_out, wl_window, index_name=None,
 	- plot_title : str, optional
 		Plot title (default ``'User-defined Index Measurement'``.
 	- plot_xrange : list or array
-		Wavelength range (in microns) of the plot.
+		Wavelength range (in microns) of the plot (default is the full ``wl`` range).
 	- plot_yrange : list or array
-		Flux range (in Jy) of the plot (default is the flux range in ``plot_xrange``).
+		Flux range (in ``flux`` units) of the plot (default is the flux range in ``plot_xrange``).
 	- plot_save : {``True``, ``False``}, optional (default ``False``)
 		Save (``'True'``) or do not save (``'False'``) the resulting plot.
 
