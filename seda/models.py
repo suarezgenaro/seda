@@ -473,6 +473,7 @@ def spectra_name_short(model, spectra_name):
 		if model=='Sonora_Diamondback': short_name.append(spectrum_name[:-5])
 		if model=='Sonora_Elf_Owl': short_name.append(spectrum_name[8:-3])
 		if model=='Sonora_Cholla': short_name.append(spectrum_name[:-5])
+		if model=='Sonora_Bobcat': short_name.append(spectrum_name[3:])
 		if model=='LB23': short_name.append(spectrum_name[:-3])
 		if model=='ATMO2020': short_name.append(spectrum_name.split('spec_')[1][:-4])
 		if model=='BT-Settl': short_name.append(spectrum_name[:-16])
