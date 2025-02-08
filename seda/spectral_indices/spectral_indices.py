@@ -796,6 +796,11 @@ def plot_water_index(out_water_index, plot_xrange=None, plot_yrange=None, plot_t
 	        water_min2+water_window/2, water_min2+water_window/2], 
 	        [ymin, ymax, ymax, ymin], facecolor='gainsboro', linewidth=1, zorder=2)
 
+	# plot flux uncertainty region
+	default_blue = plt.rcParams['axes.prop_cycle'].by_key()['color'][0] # default blue color
+	wl_region = np.append(wl, np.flip(wl))
+	flux_region = np.append(flux-eflux, np.flip(flux+eflux))
+	ax.fill(wl_region, flux_region, facecolor=default_blue, edgecolor=default_blue, linewidth=0, alpha=0.30, zorder=3)
 	# plot spectrum
 	mask = wl>0
 	plt.plot(wl[mask], flux[mask])
@@ -883,6 +888,11 @@ def plot_methane_index(out_methane_index, plot_xrange=None, plot_yrange=None, pl
 	        methane_out+methane_window/2, methane_out+methane_window/2], 
 	        [ymin, ymax, ymax, ymin], facecolor='gainsboro', linewidth=1, zorder=2)
 
+	# plot flux uncertainty region
+	default_blue = plt.rcParams['axes.prop_cycle'].by_key()['color'][0] # default blue color
+	wl_region = np.append(wl, np.flip(wl))
+	flux_region = np.append(flux-eflux, np.flip(flux+eflux))
+	ax.fill(wl_region, flux_region, facecolor=default_blue, edgecolor=default_blue, linewidth=0, alpha=0.30, zorder=3)
 	# plot spectrum
 	mask = wl>0
 	plt.plot(wl[mask], flux[mask])
@@ -965,6 +975,11 @@ def plot_ammonia_index(out_ammonia_index, plot_xrange=None, plot_yrange=None, pl
 	        ammonia_out+ammonia_window/2, ammonia_out+ammonia_window/2], 
 	        [ymin, ymax, ymax, ymin], facecolor='gainsboro', linewidth=1, zorder=2)
 
+	# plot flux uncertainty region
+	default_blue = plt.rcParams['axes.prop_cycle'].by_key()['color'][0] # default blue color
+	wl_region = np.append(wl, np.flip(wl))
+	flux_region = np.append(flux-eflux, np.flip(flux+eflux))
+	ax.fill(wl_region, flux_region, facecolor=default_blue, edgecolor=default_blue, linewidth=0, alpha=0.30, zorder=3)
 	# plot spectrum
 	mask = wl>0
 	plt.plot(wl[mask], flux[mask])
@@ -1047,6 +1062,11 @@ def plot_user_index(out_user_index, index_name=None, plot_xrange=None, plot_yran
 	        wl_out+wl_window/2, wl_out+wl_window/2], 
 	        [ymin, ymax, ymax, ymin], facecolor='gainsboro', linewidth=1, zorder=2)
 
+	# plot flux uncertainty region
+	default_blue = plt.rcParams['axes.prop_cycle'].by_key()['color'][0] # default blue color
+	wl_region = np.append(wl, np.flip(wl))
+	flux_region = np.append(flux-eflux, np.flip(flux+eflux))
+	ax.fill(wl_region, flux_region, facecolor=default_blue, edgecolor=default_blue, linewidth=0, alpha=0.30, zorder=3)
 	# plot spectrum
 	mask = wl>0
 	plt.plot(wl[mask], flux[mask])
