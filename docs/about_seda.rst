@@ -25,12 +25,23 @@ It typically indicates an issue with the installation of the numpy package. Pote
 
 - Reinstall Numpy:
 
-pip uninstall numpy
-pip install numpy
+.. code-block:: console
 
-- Update Packages
-pip uninstall numpy
-pip install numpy
+    $ pip uninstall numpy
+    $ pip install numpy
+
+- Update Packages: Make sure all your packages are up to date. You can update numpy and other dependencies by running:
+
+.. code-block:: console
+
+    $ pip install --upgrade numpy
+
+- Verify Installation: Sometimes, the installation might be corrupted. Verify that numpy is correctly installed by running:
+
+.. code-block:: console
+
+    $ import numpy
+    $ print(numpy.__version__)
 
 **2. Why after cloning SEDA to get an updated version my notebook still reads the old version?**
 
