@@ -19,11 +19,22 @@ Seda is a Spanish word that means silk, which motivates the :math:`\texttt{SEDA}
 
 FAQs
 ----
+**3. Error opening the generated pickle files: ModuleNotFoundError: No module named 'numpy._core' when openning pickle file.
+
+It typically indicates an issue with the installation of the numpy package. Potential solutions are:
+
+- Reinstall Numpy:
+
+pip uninstall numpy
+pip install numpy
+
+- Update Packages
+pip uninstall numpy
+pip install numpy
+
 **2. Why after cloning SEDA to get an updated version my notebook still reads the old version?**
 
-Try the following suggestions:
-  - Restart your notebook.
-  - Make sure you open your notebook on the seda environment.
+After cloning the repository, install it (follow the installation steps `here <https://seda.readthedocs.io/en/latest/installation.html>`__. Then restart your notebook and make sure it was opened on the seda environment.
 
 **1. Is there a way to run the code faster, specially the convolution of model spectra?**
 
