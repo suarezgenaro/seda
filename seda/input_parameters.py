@@ -1,11 +1,27 @@
 import numpy as np
 from astropy import units as u
+import os
+import re
 from .utils import *
 from .synthetic_photometry.synthetic_photometry import *
 from .models import *
 from sys import exit
 
-print('\n    SEDA package imported')
+#++++++++++++++++++++++++++++++++
+# message when importing the code
+#++++++++++++++++++++++++++++++++
+# read code version
+dir_path = os.path.dirname(os.path.realpath(__file__))
+version_string = open(os.path.join(dir_path, '_version.py')).read()
+VERS = r"^__version__ = ['\"]([^'\"]*)['\"]"
+mo = re.search(VERS, version_string, re.M)
+if mo:
+	__version__ = mo.group(1)
+else:
+	raise RuntimeError("Unable to find version string in %s." % (version_string,))
+
+print(f'\n    SEDA v{__version__} package imported')
+#print(f'\n    Welcome to SEDA {__version__}')
 
 #+++++++++++++++++++++++++++
 class InputData:
@@ -45,6 +61,8 @@ class InputData:
 		Wavelength of reference at which ``res`` is given (because resolution may change with wavelength).
 		For multiple input spectra, ``lam_res`` should be a list or array with a value for each spectrum.
 		Default is the integer closest to the median wavelength for each input spectrum.
+		If lam_res is provided, the values are also rounded to the nearest integer.
+		This will facilitate managing (saving and reading) convolved model spectra in ``seda.ModelOptions``.
 	- distance : float, optional
 		Target distance (in pc) used to derive radii from scaling factors for models.
 	- edistance : float, optional
@@ -120,12 +138,22 @@ class InputData:
 
 			# if lam_res is a scalar, convert it into an array
 			if isinstance(lam_res, (float, int)): lam_res = np.array([lam_res])
-
 			# set lam_res if not provided
 			if lam_res is None: 
 				lam_res = []
 				for wl_spectrum in wl_spectra:
 					lam_res.append(set_lam_res(wl_spectrum))
+			# convert lam_res to the nearest integer
+			if isinstance(lam_res, list):
+				for i,lam_res_each in enumerate(lam_res): # for each lam_res value
+					lam_res[i] = round(lam_res_each)
+			else:
+				lam_res = np.round(lam_res).astype(int)
+
+		# verify the wl_spectra, flux_spectra, eflux_spectra, and res have the same dimension
+		if len(flux_spectra)!=N_spectra: raise Exception(f'"flux_spectra" has fluxes for {len(flux_spectra)} spectra but {N_spectra} spectra are expected from "wl_spectra"')
+		if len(eflux_spectra)!=N_spectra: raise Exception(f'"eflux_spectra" has efluxes for {len(eflux_spectra)} spectra but {N_spectra} spectra are expected from "wl_spectra"')
+		if len(res)!=N_spectra: raise Exception(f'"res" has resolutions for {len(res)} spectra but {N_spectra} spectra are expected from "wl_spectra"')
 
 		# handle input parameters
 		# convert input spectra to numpy arrays, if they are astropy
@@ -167,6 +195,7 @@ class InputData:
 		self.eflux_spectra = eflux_spectra
 
 		print('\n   Input data loaded successfully')
+		print(f'      {N_spectra} input spectra')
 
 #+++++++++++++++++++++++++++
 class ModelOptions:
@@ -555,6 +584,8 @@ class BayesOptions:
 		# extract parameters for convenience
 		N_spectra = my_data.N_spectra
 		wl_spectra = my_data.wl_spectra
+		flux_spectra = my_data.flux_spectra
+		eflux_spectra = my_data.eflux_spectra
 		distance = my_data.distance
 		res = my_data.res
 		lam_res = my_data.lam_res
@@ -606,28 +637,32 @@ class BayesOptions:
 
 		# read model grid
 		if grid is None: 
-			# initialize list to save the resampled, convolved grid appropriate for each input spectrum
-			grid = []
+			# initialize list
+			grid = [] #  for the resampled, convolved grid appropriate for each input spectrum
+			filename_pattern = [] # for the filename pattern adequate for each input spectrum
 			for i in range(N_spectra): # for each input observed spectrum
 				# convolve the grid to the given res and lam_res for each input spectrum
 				# resample the convolved grid to the input wavelengths within the fit range for each input spectrum
 				print(f'\nFor input spectrum {i+1} of {N_spectra}')
 				if not skip_convolution: # read and convolve original model spectra
+					# set filename_pattern to look for model spectra
+					filename_pattern.append(Models(model).filename_pattern)
 					grid_each = read_grid(model=model, model_dir=model_dir, params_ranges=params_ranges, 
-					                 convolve=True, res=res[i], lam_res=lam_res[i], 
-					                 fit_wl_range=fit_wl_range[i], wl_resample=wl_spectra[i],
-					                 path_save_spectra_conv=path_save_spectra_conv)
+					                      convolve=True, res=res[i], lam_res=lam_res[i], 
+					                      fit_wl_range=fit_wl_range[i], wl_resample=wl_spectra[i],
+					                      path_save_spectra_conv=path_save_spectra_conv)
 				else: # read model spectra already convolved to the data resolution
 					# set filename_pattern to look for model spectra with the corresponding resolution
-					filename_pattern = Models(model).filename_pattern+f'_R{res[i]}at{lam_res[i]}um.nc'
+					filename_pattern.append(Models(model).filename_pattern+f'_R{res[i]}at{lam_res[i]}um.nc')
 					grid_each = read_grid(model=model, model_dir=model_dir, params_ranges=params_ranges, 
-					                 res=res[i], lam_res=lam_res[i], 
-					                 fit_wl_range=fit_wl_range[i], wl_resample=wl_spectra[i], 
-					                 skip_convolution=skip_convolution, filename_pattern=filename_pattern)
+					                      res=res[i], lam_res=lam_res[i], 
+					                      fit_wl_range=fit_wl_range[i], wl_resample=wl_spectra[i], 
+					                      skip_convolution=skip_convolution, filename_pattern=filename_pattern[i])
 					
 				# add resampled grid for each input spectrum to the same list
 				grid.append(grid_each)
 		self.grid = grid
+		self.filename_pattern = filename_pattern
 
 		# unique values for each model free parameter
 		params_unique = grid[0]['params_unique']
@@ -639,9 +674,25 @@ class BayesOptions:
 			params_priors[param] = np.array([params_unique[param].min(), params_unique[param].max()])
 
 		if distance is not None:
-			if R_range is None: raise Exception('Please provide the "R_range" parameter')
+			if R_range is None: raise Exception('Please provide the "R_range" parameter to sample the radius \n           or remove the "distance" parameter in seda.InputData')
 			params_priors['R'] = R_range
 
 		self.params_priors = params_priors
+
+		# cut input spectra to the wavelength region or model coverage for the fit
+		wl_spectra_fit = []
+		flux_spectra_fit = []
+		eflux_spectra_fit = []
+		for i in range(N_spectra): # for each input spectrum
+			mask_fit = (wl_spectra[i] >= max(fit_wl_range[i][0], grid[i]['wavelength'].min())) & \
+			           (wl_spectra[i] <= min(fit_wl_range[i][1], grid[i]['wavelength'].max()))
+	
+			wl_spectra_fit.append(wl_spectra[i][mask_fit])
+			flux_spectra_fit.append(flux_spectra[i][mask_fit])
+			eflux_spectra_fit.append(eflux_spectra[i][mask_fit])
+
+		self.wl_spectra_fit = wl_spectra_fit
+		self.flux_spectra_fit = flux_spectra_fit
+		self.eflux_spectra_fit = eflux_spectra_fit
 
 		print('\n   Bayes fit options loaded successfully')

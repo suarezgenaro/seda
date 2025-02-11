@@ -96,18 +96,21 @@ def bayes(my_bayes):
 	wl_spectra_max = my_bayes.wl_spectra_max
 	N_datapoints = my_bayes.N_datapoints
 	bayes_pickle_file = my_bayes.bayes_pickle_file
+	wl_obs = my_bayes.wl_spectra_fit
+	flux_obs = my_bayes.flux_spectra_fit
+	eflux_obs = my_bayes.eflux_spectra_fit
 
-	# cut input spectra to the fit range
-	wl_obs = []
-	flux_obs = []
-	eflux_obs = []
-	for i in range(N_spectra): # for each input spectrum
-		mask_fit = (wl_spectra[i] >= max(fit_wl_range[i][0], grid[i]['wavelength'].min())) & \
-		           (wl_spectra[i] <= min(fit_wl_range[i][1], grid[i]['wavelength'].max()))
-
-		wl_obs.append(wl_spectra[i][mask_fit])
-		flux_obs.append(flux_spectra[i][mask_fit])
-		eflux_obs.append(eflux_spectra[i][mask_fit])
+#	# cut input spectra to the fit range
+#	wl_obs = []
+#	flux_obs = []
+#	eflux_obs = []
+#	for i in range(N_spectra): # for each input spectrum
+#		mask_fit = (wl_spectra[i] >= max(fit_wl_range[i][0], grid[i]['wavelength'].min())) & \
+#		           (wl_spectra[i] <= min(fit_wl_range[i][1], grid[i]['wavelength'].max()))
+#
+#		wl_obs.append(wl_spectra[i][mask_fit])
+#		flux_obs.append(flux_spectra[i][mask_fit])
+#		eflux_obs.append(eflux_spectra[i][mask_fit])
 
 	# print priors
 	print(f'\n      Uniform priors:')
@@ -143,6 +146,7 @@ def bayes(my_bayes):
 			if distance is not None:
 				R = p[list(params_priors.keys()).index('R')] # sampling value for radius
 				scaling = (((R*u.R_jup).to(u.km) / (distance*u.pc).to(u.km))**2).value # scaling = (R/d)^2
+				#flux_model = scale_synthetic_spectrum(wl=wl_model, flux=flux_model, distance=distance, radius=R)
 			else:
 				scaling = np.sum(flux_obs[i]*flux_model/eflux_obs[i]**2) / np.sum(flux_model**2/eflux_obs[i]**2) # scaling that minimizes chi2
 			flux_model = scaling*flux_model

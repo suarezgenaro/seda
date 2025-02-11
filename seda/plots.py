@@ -35,7 +35,7 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, xlog=False, ylog=True, xrange
 		Plot (``True``) or do not include (``False``) model spectra with the original resolution.
 	- model_dir_ori : str, list, or array
 		Path to the directory (str, list, or array) or directories (as a list or array) containing the model spectra with the original resolution.
-		This parameter is needed to plot the original resolution spectra (if ``ori_res`` is True) when ``chi2_fit.chi2`` was run skipping the model spectra convolution (if ``skip_convolution`` is True).
+		This parameter is needed to plot the original resolution spectra (if ``ori_res`` is True) when ``seda.chi2`` was run skipping the model spectra convolution (if ``skip_convolution`` is True).
 	- out_file : str, optional
 		File name to save the figure (it can include a path e.g. my_path/figure.pdf). 
 		Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
@@ -92,7 +92,6 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, xlog=False, ylog=True, xrange
 
 	# plot flux uncertainty region
 	for k in range(N_spectra): # for each input observed spectrum
-		#mask = (flux_spectra[k]-eflux_spectra[k] > 0.1*flux_spectra[k].min()) & (wl_spectra[k]>=xrange[0]) & (wl_spectra[k]<=xrange[1])
 		mask = (wl_spectra[k]>=xrange[0]) & (wl_spectra[k]<=xrange[1])
 		wl_region = np.append(wl_spectra[k][mask], np.flip(wl_spectra[k][mask]))
 		flux_region = np.append(flux_spectra[k][mask]-eflux_spectra[k][mask], 
@@ -259,7 +258,8 @@ def plot_chi2_red(chi2_pickle_file, N_best_fits=1, xlog=False, ylog=False, out_f
 	plt.close('all')
 
 ##########################
-def plot_bayes_fit(bayes_pickle_file, xlog=False, ylog=True, xrange=None, yrange=None, ori_res=False, out_file=None, save=True):
+def plot_bayes_fit(bayes_pickle_file, xlog=False, ylog=True, xrange=None, yrange=None, 
+	               ori_res=False, model_dir_ori=None, out_file=None, save=True):
 	'''
 	Description:
 	------------
@@ -279,6 +279,9 @@ def plot_bayes_fit(bayes_pickle_file, xlog=False, ylog=True, xrange=None, yrange
 		Vertical range of the plot.
 	- ori_res : {``True``, ``False``}, optional (default ``False``)
 		Plot (``True``) or do not include (``False``) best model spectrum with its original resolution.
+	- model_dir_ori : str, list, or array
+		Path to the directory (str, list, or array) or directories (as a list or array) containing the model spectra with the original resolution.
+		This parameter is needed to plot the original resolution spectra (if ``ori_res`` is True) when ``seda.chi2`` was run skipping the model spectra convolution (if ``skip_convolution`` is True).
 	- out_file : str, optional
 		File name to save the figure (it can include a path e.g. my_path/figure.pdf). 
 		Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
@@ -307,6 +310,9 @@ def plot_bayes_fit(bayes_pickle_file, xlog=False, ylog=True, xrange=None, yrange
 	wl_spectra = out_bayes['my_bayes'].wl_spectra # input spectra
 	flux_spectra = out_bayes['my_bayes'].flux_spectra # input spectra
 	eflux_spectra = out_bayes['my_bayes'].eflux_spectra # input spectra
+	wl_spectra_fit = out_bayes['my_bayes'].wl_spectra_fit # input spectra in the fit range
+	flux_spectra_fit = out_bayes['my_bayes'].flux_spectra_fit # input spectra in the fit range
+	eflux_spectra_fit = out_bayes['my_bayes'].eflux_spectra_fit # input spectra in the fit range
 	N_spectra = out_bayes['my_bayes'].N_spectra
 	wl_spectra_min = out_bayes['my_bayes'].wl_spectra_min
 	wl_spectra_max = out_bayes['my_bayes'].wl_spectra_max
@@ -314,42 +320,26 @@ def plot_bayes_fit(bayes_pickle_file, xlog=False, ylog=True, xrange=None, yrange
 	fit_wl_range = out_bayes['my_bayes'].fit_wl_range
 
 	# read best fit
-	out_best_bayesian_fit = best_bayesian_fit(bayes_pickle_file)
-	# best fit with original resolution
-	wl_mod_scaled = out_best_bayesian_fit['wl_mod_scaled']
-	flux_mod_scaled = out_best_bayesian_fit['flux_mod_scaled']
-	# best fit convolved and resampled (one for each input spectrum)
-	wl_mod_conv_scaled_resam = out_best_bayesian_fit['wl_mod_conv_scaled_resam']
-	flux_mod_conv_scaled_resam = out_best_bayesian_fit['flux_mod_conv_scaled_resam']
+	out_best_bayesian_fit = best_bayesian_fit(bayes_pickle_file, ori_res=ori_res, model_dir_ori=model_dir_ori)
+	# best fit scaled, convolved, and resampled (one for each input spectrum)
+	wl_model = out_best_bayesian_fit['wl_model']
+	flux_model = out_best_bayesian_fit['flux_model']
 	params_med = out_best_bayesian_fit['params_med']
-
-	# round median parameters
-	params = Models(model).params # free parameters in the models
-	for i,param in enumerate(params_med): # for each sampled parameter
-		if param in params: # for free parameters in the model grid
-			params_med[param] = round(params_med[param], max_decimals(params[param])+1) # round to the precision (plus one decimal place) of the parameter in models
-		else: # parameters other than those in the grid (e.g. radius)
-			params_med[param] = round(params_med[param], 2) # consider two decimals
-
-	# wavelengths from input spectra in the fit range
-	wl_spectra_fit = []
-	flux_spectra_fit = []
-	for k in range(N_spectra): # for each input observed spectrum
-		mask_fit = (wl_spectra[k] >= max(fit_wl_range[k][0], wl_mod_conv_scaled_resam[k].min())) & \
-		           (wl_spectra[k] <= min(fit_wl_range[k][1], wl_mod_conv_scaled_resam[k].max()))
-		wl_spectra_fit.append(wl_spectra[k][mask_fit])
-		flux_spectra_fit.append(flux_spectra[k][mask_fit])
+	# best fit with original resolution
+	if ori_res:
+		wl_model_ori = out_best_bayesian_fit['wl_model_ori']
+		flux_model_ori = out_best_bayesian_fit['flux_model_ori']
 
 	# obtain residuals in linear and logarithmic-scale for fluxes in the fit range
 	flux_residuals = []
 	logflux_residuals = []
 	for k in range(N_spectra): # for each input observed spectrum
 		# linear scale
-		res_lin = flux_mod_conv_scaled_resam[k]- flux_spectra_fit[k]
+		res_lin = flux_model[k]- flux_spectra_fit[k]
 		flux_residuals.append(res_lin)
 		# log scale
 		mask_pos = flux_spectra_fit[k]>0 # mask to avoid negative input fluxes to obtain the logarithm
-		res_log = np.log10(flux_mod_conv_scaled_resam[k]) - np.log10(flux_spectra_fit[k][mask_pos])
+		res_log = np.log10(flux_model[k]) - np.log10(flux_spectra_fit[k][mask_pos])
 		logflux_residuals.append(res_log)
 
 	#------------------------
@@ -362,7 +352,7 @@ def plot_bayes_fit(bayes_pickle_file, xlog=False, ylog=True, xrange=None, yrange
 	# plot input spectra
 	for k in range(N_spectra): # for each input observed spectrum
 		# plot flux uncertainty region
-		mask = (flux_spectra[k]-eflux_spectra[k] > 0.1*flux_spectra[k].min()) & (wl_spectra[k]>=xrange[0]) & (wl_spectra[k]<=xrange[1])
+		mask = (wl_spectra[k]>=xrange[0]) & (wl_spectra[k]<=xrange[1])
 		wl_region = np.append(wl_spectra[k][mask], np.flip(wl_spectra[k][mask]))
 		flux_region = np.append(flux_spectra[k][mask]-eflux_spectra[k][mask], 
 		                        np.flip(flux_spectra[k][mask]+eflux_spectra[k][mask]))
@@ -373,8 +363,8 @@ def plot_bayes_fit(bayes_pickle_file, xlog=False, ylog=True, xrange=None, yrange
 
 	# plot best fit with original resolution
 	if ori_res:
-		mask = (wl_mod_scaled>=xrange[0]) & (wl_mod_scaled<=xrange[1])
-		ax[0].plot(wl_mod_scaled[mask], flux_mod_scaled[mask], color='silver',
+		mask = (wl_model_ori>=xrange[0]) & (wl_model_ori<=xrange[1])
+		ax[0].plot(wl_model_ori[mask], flux_model_ori[mask], color='silver',
 		           label='Model with original resolution', zorder=2, alpha=0.5)
 
 	# plot model spectrum
@@ -385,12 +375,12 @@ def plot_bayes_fit(bayes_pickle_file, xlog=False, ylog=True, xrange=None, yrange
 		for i,param in enumerate(params_med): # for each sampled parameter
 			if i==0: label += f'{param}{params_med[param]}'
 			else: label += f'_{param}{params_med[param]}'
-		mask = (wl_mod_conv_scaled_resam[k]>=xrange[0]) & (wl_mod_conv_scaled_resam[k]<=xrange[1])
+		mask = (wl_model[k]>=xrange[0]) & (wl_model[k]<=xrange[1])
 		if k==0: 
-			ax[0].plot(wl_mod_conv_scaled_resam[k][mask], flux_mod_conv_scaled_resam[k][mask], 
+			ax[0].plot(wl_model[k][mask], flux_model[k][mask], 
 			           color=color, label=label, zorder=4)
 		else:
-			ax[0].plot(wl_mod_conv_scaled_resam[k][mask], flux_mod_conv_scaled_resam[k][mask], 
+			ax[0].plot(wl_model[k][mask], flux_model[k][mask], 
 			           color=color, zorder=4)
 
 	ax[0].set_xlim(xrange[0], xrange[1])
