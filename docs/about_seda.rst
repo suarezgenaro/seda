@@ -51,7 +51,7 @@ It typically indicates an issue with the installation of the numpy package. Pote
 
 **2. Why after cloning SEDA to get an updated version my notebook still reads the old version?**
 
-After cloning the repository, install the code (follow the installation steps `here <https://seda.readthedocs.io/en/latest/installation.html>`__). Then restart your notebook and make sure it was opened on the seda environment. Verify the code version printed when importing the code or by typing ``seda.__version__`` in your notebook matches the latest version of the repository (`here <https://github.com/suarezgenaro/seda/releases>`__).
+After cloning the repository, install the code (follow the installation steps `here <https://seda.readthedocs.io/en/latest/installation.html>`__). Then restart your notebook and make sure it was opened on the seda environment. Verify the code version printed when importing SEDA or by typing ``seda.__version__`` in your notebook matches the `latest version of the repository <https://github.com/suarezgenaro/seda/releases>`__.
 
 **1. Is there a way to run the code faster, specially the convolution of model spectra?**
 
