@@ -19,6 +19,8 @@ Seda is a Spanish word that means silk, which motivates the :math:`\texttt{SEDA}
 
 FAQs
 ----
+**4. **
+
 **3. Error opening the generated pickle files: ModuleNotFoundError: No module named 'numpy._core' when openning pickle file.**
 
 It typically indicates an issue with the installation of the numpy package. Potential solutions are:
