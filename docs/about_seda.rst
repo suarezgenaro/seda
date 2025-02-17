@@ -21,7 +21,7 @@ FAQs
 ----
 .. **4. T**
 
-**4. Flux offset between best model fit and input data in the plot produced by `plot_bayes_fit`.**
+**4. Flux offset between best model fit and input data in the plot produced by ``plot_bayes_fit``.**
 
 It could be due to wrong input flux units given by ``flux_unit`` in ``seda.InputData`` or flux calibration issues in the input spectra. You could verify this by running the chi-square minimization (e.g. look at `this tutorial <https://seda.readthedocs.io/en/latest/notebooks/tutorial_chi2_fit_single_spectrum.html>`__) and providing a distance in `seda.InputData` so the code will estimate a radius from the scaling factor applied to the model spectra and the input distance. If the radius estimate (stored in the ascii table created when running the minimization) is too different from 1 Rjup, that may be an indication that the input spectra flux units or flux calibration are wrong. To inspect this potential flux issue, you could compare any available photometry in the wavelength coverage by the input spectra to synthetic photometry from the input spectra (to derive synthetic photometry look at `this tutorial <https://seda.readthedocs.io/en/latest/notebooks/tutorial_synthetic_photometry.html>`__). You could also run the nested sampling (``seda.bayes_fit``) without an input distance in ``seda.InputData`` so radius will not be sampled and the models will be scaled according to the a factor that minimizes their chi-square residuals, which will compansate any issues with the input fluxes.
 
@@ -51,7 +51,7 @@ It typically indicates an issue with the installation of the numpy package. Pote
 
 **2. Why after cloning SEDA to get an updated version my notebook still reads the old version?**
 
-After cloning the repository, install it (follow the installation steps `here <https://seda.readthedocs.io/en/latest/installation.html>`__). Then restart your notebook and make sure it was opened on the seda environment. Verify the code version printed when importing the code in your notebook or by typing `seda.__version__` matches the 
+After cloning the repository, install it (follow the installation steps `here <https://seda.readthedocs.io/en/latest/installation.html>`__). Then restart your notebook and make sure it was opened on the seda environment. Verify the code version printed when importing the code or by typing ``seda.__version__` in your notebook matches the latest version of the repository (`here <https://github.com/suarezgenaro/seda/releases>`__).
 
 **1. Is there a way to run the code faster, specially the convolution of model spectra?**
 
