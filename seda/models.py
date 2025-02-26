@@ -468,12 +468,44 @@ def read_model_spectrum_conv(spectrum_name_full, model_wl_range=None):
 	return out
 
 ##########################
-# read a PT profile from atmospheric models
-def read_PT_profile(spectrum_name_full, model):
+def read_PT_profile(filename, model):
+	'''
+	Description:
+	------------
+		Read a PT profile from atmospheric models
+
+	Parameters:
+	-----------
+	- model : str
+		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
+	- filename: str
+		Spectrum file name with full path.
+
+	Returns:
+	--------
+	Dictionary with model spectrum:
+		- ``'pressure'`` : pressure in bars
+		- ``'temperature'`` : temperature in K
+
+	Example:
+	--------
+	>>> import seda
+	>>> 
+	>>> # desired models and PT profile file
+	>>> model = 'Sonora_Diamondback'
+	>>> filename = 'my_path/Sonora_Diamondback/pressure-temperature_profiles/t1000g100f1_m-0.5_co1.0.pt' # change my_path accordingly
+	>>> 
+	>>> # read PT profile
+	>>> out = seda.read_PT_profile(filename=filename, model=model)
+	>>> P = out['pressure'] # pressure in bar
+	>>> T = out['temperature'] # temperature in K
+
+	Author: Genaro Suárez
+	'''
 	
 	# read PT profile
 	if (model == 'Sonora_Diamondback'):
-		spec_model = ascii.read(spectrum_name_full, data_start=2, format='no_header')
+		spec_model = ascii.read(filename, data_start=2, format='no_header')
 		P_model = spec_model['col2'] # bar
 		T_model = spec_model['col3'] # K
 
