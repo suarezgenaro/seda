@@ -41,6 +41,9 @@ Utils
 .. automodule:: seda.utils
     :members:
 
+.. automodule:: seda.models
+    :members:
+
 .. automodule:: seda.synthetic_photometry.synthetic_photometry
     :members:
 
