@@ -278,7 +278,7 @@ def plot_bayes_fit(bayes_pickle_file, xlog=False, ylog=True, xrange=None, yrange
 	- yrange : list or array, optional (default is full range in the input spectra)
 		Vertical range of the plot.
 	- ori_res : {``True``, ``False``}, optional (default ``False``)
-		Plot (``True``) or do not include (``False``) best model spectrum with its original resolution.
+		Plot (``True``) or do not include (``False``) the best model spectrum with its original resolution.
 	- model_dir_ori : str, list, or array
 		Path to the directory (str, list, or array) or directories (as a list or array) containing the model spectra with the original resolution.
 		This parameter is needed to plot the original resolution spectra (if ``ori_res`` is True) when ``seda.chi2`` was run skipping the model spectra convolution (if ``skip_convolution`` is True).
@@ -425,8 +425,9 @@ def plot_bayes_fit(bayes_pickle_file, xlog=False, ylog=True, xrange=None, yrange
 	return
 
 ##########################
-def plot_model_coverage(model, xparam, yparam, model_dir=None, xrange=None, yrange=None, 
-	                    xlog=False, ylog=False, out_file=None, save=False):
+def plot_model_coverage(model, xparam, yparam, model_dir=None, params_ranges=None, 
+	                    xrange=None, yrange=None, xlog=False, ylog=False, 
+	                    out_file=None, save=False):
 	'''
 	Description:
 	------------
@@ -443,6 +444,10 @@ def plot_model_coverage(model, xparam, yparam, model_dir=None, xrange=None, yran
 	- model_dir : str or list, optional
 		Path to the directory (str or list) or directories (as a list) containing model spectra (e.g., ``model_dir = ['path_1', 'path_2']``) to display their parameters coverage. 
 		If not provided, the code will read pre-saved pickle files the full coverage of ``model``.
+	- params_ranges : dictionary, optional
+		Minimum and maximum values for any model free parameters to select a model grid subset.
+		E.g., ``params_ranges = {'Teff': [1000, 1200], 'logg': [4., 5.]}`` to consider spectra within those Teff and logg ranges.
+		If a parameter range is not provided, the full range in ``model_dir`` or the pre-saved pickle files is considered.
 	- xrange : list or array, optional (default is full range in the input spectra)
 		Horizontal range of the plot.
 	- yrange : list or array, optional (default is full range in the input spectra)
@@ -481,7 +486,7 @@ def plot_model_coverage(model, xparam, yparam, model_dir=None, xrange=None, yran
 	# get the coverage of model free parameters
 	if model_dir is not None: # coverage from input model spectra
 		# values of free parameters in the spectra
-		params = select_model_spectra(model=model, model_dir=model_dir)['params']
+		params = select_model_spectra(model=model, model_dir=model_dir, params_ranges=params_ranges)['params']
 	else: # coverage of the full model grid
 		# open results from the chi square analysis
 		with open(f'{path_plots}/models_aux/model_coverage/{model}_free_parameters.pickle', 'rb') as file:

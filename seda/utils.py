@@ -740,9 +740,9 @@ def best_bayesian_fit(bayes_pickle_file, grid=None, model_dir_ori=None, ori_res=
 		Table with best model fit (if ``save_spectrum``).
 	- dictionary
 		Dictionary with the best model fit from the nested sampling:
-			- ``'wl_spectra'`` : wavelength in um of the input spectra.
-			- ``'flux_spectra'`` : fluxes in erg/cm^2/s/A of the input spectra.
-			- ``'eflux_spectra'`` : flux uncertainties in erg/cm^2/s/A of the input spectra.
+			- ``'wl_spectra_fit'`` : wavelength in um of the input spectra in ``fit_wl_range``.
+			- ``'flux_spectra_fit'`` : fluxes in erg/cm^2/s/A of the input spectra in ``fit_wl_range``.
+			- ``'eflux_spectra_fit'`` : flux uncertainties in erg/cm^2/s/A of the input spectra in ``fit_wl_range``.
 			- ``'params_med'`` : median values for sampled parameters.
 			- ``'wl_model'`` : wavelength in um of the best scaled, convolved, and resampled model fit
 			- ``'flux_model'`` : fluxes in erg/cm^2/s/A of the best scaled, convolved, and resampled model fit
@@ -957,7 +957,7 @@ def select_model_spectra(model, model_dir, params_ranges=None, filename_pattern=
 
 	if len(spectra_name_full)==0: 
 		# show up an error when there are no models in the indicated ranges
-		raise Exception(f'No model spectra in "model_dir": {model_dir} within the indicated parameter ranges params_ranges: {params_ranges}')
+		raise Exception(f'No model spectra in "model_dir": {model_dir} within params_ranges: {params_ranges}')
 	else: 
 		if not params_ranges: 
 			print(f'\n      {len(spectra_name)} model spectra')

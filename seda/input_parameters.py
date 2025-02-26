@@ -256,7 +256,8 @@ class ModelOptions:
 	             path_save_spectra_conv=None, skip_convolution=False):
 
 		self.model = model
-		if model not in Models().available_models: raise Exception(f'Models "{model}" are not recognized. Available models are: \n          {models_valid}')
+	
+		if model not in Models().available_models: raise Exception(f'Models "{model}" are not recognized. Available models are: \n          {Models().available_models}')
 		self.params_ranges = params_ranges
 		self.path_save_spectra_conv = path_save_spectra_conv
 		self.skip_convolution = skip_convolution

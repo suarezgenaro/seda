@@ -365,6 +365,9 @@ def read_model_spectrum(spectrum_name_full, model, model_wl_range=None):
 	Author: Genaro Suárez
 	'''
 
+	# verify the input model is available
+	if model not in Models().available_models: raise Exception(f'Models "{model}" are not recognized. Available models are: \n          {Models().available_models}')
+
 	# read model spectra files
 	if (model == 'Sonora_Diamondback'):
 		spec_model = ascii.read(spectrum_name_full, data_start=3, format='no_header')
@@ -461,6 +464,24 @@ def read_model_spectrum_conv(spectrum_name_full, model_wl_range=None):
 	flux_model_Jy = (flux_model*u.erg/u.s/u.cm**2/u.angstrom).to(u.Jy, equivalencies=u.spectral_density(wl_model*u.micron)).value
 
 	out = {'wl_model': wl_model, 'flux_model': flux_model, 'flux_model_Jy': flux_model_Jy}
+
+	return out
+
+##########################
+# read a PT profile from atmospheric models
+def read_PT_profile(spectrum_name_full, model):
+	
+	# read PT profile
+	if (model == 'Sonora_Diamondback'):
+		spec_model = ascii.read(spectrum_name_full, data_start=2, format='no_header')
+		P_model = spec_model['col2'] # bar
+		T_model = spec_model['col3'] # K
+
+	else:
+		raise Exception(f'"{model}" models are not recognized.')
+
+	# output dictionary
+	out = {'pressure': P_model, 'temperature': T_model}
 
 	return out
 
