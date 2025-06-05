@@ -1,4 +1,4 @@
-Synthetic spectra and their corresponding atmospheric models.
+Example of synthetic spectra and their corresponding atmospheric models.
 
 Sonora Diamondback model spectrum:     t1000g316f4_m0.0_co1.0.spec
 Sonora Elf Owl model spectrum:         spectra_logzz_4.0_teff_1200.0_grav_1000.0_mh_0.0_co_0.5.nc

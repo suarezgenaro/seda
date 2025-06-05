@@ -1,5 +1,5 @@
 SEDA: Spectral Energy Distribution Analyzer
-=======================================
+===========================================
 
 <p align="center">
     <img src="https://github.com/suarezgenaro/seda/blob/main/docs/SEDA_logo.png" title="SEDA logo" alt="Spitzer IRS spectra of ultracool objects" width="400">

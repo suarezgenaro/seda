@@ -6,7 +6,7 @@ from sys import exit
 ##########################
 def silicate_index(wl, flux, eflux, silicate_min=None, silicate_window=None, silicate_con1=None, 
 	               silicate_window_con1=None, silicate_con2=None, silicate_window_con2=None, default='SM23',
-	               plot=False, plot_title=None, plot_xrange=None, plot_yrange=None, plot_save=False):
+	               plot=False, plot_title=None, plot_xrange=None, plot_yrange=None, plot_save=False, plot_name=False):
 	'''
 	Description:
 	------------
@@ -45,6 +45,9 @@ def silicate_index(wl, flux, eflux, silicate_min=None, silicate_window=None, sil
 		Flux range (in Jy) of the plot (default is the flux range in ``plot_xrange``).
 	- plot_save : {``True``, ``False``}, optional (default ``False``)
 		Save (``'True'``) or do not save (``'False'``) the resulting plot.
+	- plot_name : str, optional
+		Filename to store the plot.
+		Default is ``'silicate_index_measurement.pdf'``.
 
 	Returns:
 	--------
@@ -199,13 +202,13 @@ def silicate_index(wl, flux, eflux, silicate_min=None, silicate_window=None, sil
 	out['eflux'] = eflux
 
 	# visualize how the silicate index was measured
-	if plot: plot_silicate_index(out, plot_xrange, plot_yrange, plot_title, plot_save)
+	if plot: plot_silicate_index(out, plot_xrange, plot_yrange, plot_title, plot_save, plot_name)
 
 	return out
 
 ##########################
 def water_index(wl, flux, eflux, default='SM22', water_window=None, water_max=None, water_min1=None, water_min2=None,
-	            plot=False, plot_title=None, plot_xrange=None, plot_yrange=None, plot_save=False):
+	            plot=False, plot_title=None, plot_xrange=None, plot_yrange=None, plot_save=False, plot_name=False):
 	'''
 	Description:
 	------------
@@ -240,6 +243,9 @@ def water_index(wl, flux, eflux, default='SM22', water_window=None, water_max=No
 		Flux range (in Jy) of the plot (default is the flux range in ``plot_xrange``).
 	- plot_save : {``True``, ``False``}, optional (default ``False``)
 		Save (``'True'``) or do not save (``'False'``) the resulting plot.
+	- plot_name : str, optional
+		Filename to store the plot.
+		Default is ``'water_index_measurement.pdf'``.
 
 	Returns:
 	--------
@@ -324,13 +330,13 @@ def water_index(wl, flux, eflux, default='SM22', water_window=None, water_max=No
 	out['eflux'] = eflux
 
 	# visualize how the silicate index was measured
-	if plot: plot_water_index(out, plot_xrange, plot_yrange, plot_title, plot_save)
+	if plot: plot_water_index(out, plot_xrange, plot_yrange, plot_title, plot_save, plot_name)
 
 	return out
 
 ##########################
 def methane_index(wl, flux, eflux, default='SM22', methane_window=None, methane_in=None, methane_out=None, 
-	              plot=False, plot_title=None, plot_xrange=None, plot_yrange=None, plot_save=False):
+	              plot=False, plot_title=None, plot_xrange=None, plot_yrange=None, plot_save=False, plot_name=False):
 	'''
 	Description:
 	------------
@@ -364,6 +370,9 @@ def methane_index(wl, flux, eflux, default='SM22', methane_window=None, methane_
 		Flux range (in Jy) of the plot (default is the flux range in ``plot_xrange``).
 	- plot_save : {``True``, ``False``}, optional (default ``False``)
 		Save (``'True'``) or do not save (``'False'``) the resulting plot.
+	- plot_name : str, optional
+		Filename to store the plot.
+		Default is ``'methane_index_measurement.pdf'``.
 
 	Returns:
 	--------
@@ -428,13 +437,13 @@ def methane_index(wl, flux, eflux, default='SM22', methane_window=None, methane_
 	out['eflux'] = eflux
 	
 	# visualize how the silicate index was measured
-	if plot: plot_methane_index(out, plot_xrange, plot_yrange, plot_title, plot_save)
+	if plot: plot_methane_index(out, plot_xrange, plot_yrange, plot_title, plot_save, plot_name)
 
 	return out
 
 ##########################
 def ammonia_index(wl, flux, eflux, default='SM22', ammonia_window=None, ammonia_in=None, ammonia_out=None, 
-	              plot=False, plot_title=None, plot_xrange=None, plot_yrange=None, plot_save=False):
+	              plot=False, plot_title=None, plot_xrange=None, plot_yrange=None, plot_save=False, plot_name=False):
 	'''
 	Description:
 	------------
@@ -469,6 +478,9 @@ def ammonia_index(wl, flux, eflux, default='SM22', ammonia_window=None, ammonia_
 		Flux range (in Jy) of the plot (default is the flux range in ``plot_xrange``).
 	- plot_save : {``True``, ``False``}, optional (default ``False``)
 		Save (``'True'``) or do not save (``'False'``) the resulting plot.
+	- plot_name : str, optional
+		Filename to store the plot.
+		Default is ``'ammonia_index_measurement.pdf'``.
 
 	Returns:
 	--------
@@ -535,14 +547,14 @@ def ammonia_index(wl, flux, eflux, default='SM22', ammonia_window=None, ammonia_
 	out['eflux'] = eflux
 	
 	# visualize how the silicate index was measured
-	if plot: plot_ammonia_index(out, plot_xrange, plot_yrange, plot_title, plot_save)
+	if plot: plot_ammonia_index(out, plot_xrange, plot_yrange, plot_title, plot_save, plot_name)
 
 	return out
 
 ##########################
 def user_index(wl, flux, eflux, wl_in, wl_out, wl_window, index_name=None,
 	           plot=False, plot_title=None, plot_xrange=None, 
-	           plot_yrange=None, plot_save=False):
+	           plot_yrange=None, plot_save=False, plot_name=False):
 	'''
 	Description:
 	------------
@@ -575,6 +587,9 @@ def user_index(wl, flux, eflux, wl_in, wl_out, wl_window, index_name=None,
 		Flux range (in ``flux`` units) of the plot (default is the flux range in ``plot_xrange``).
 	- plot_save : {``True``, ``False``}, optional (default ``False``)
 		Save (``'True'``) or do not save (``'False'``) the resulting plot.
+	- plot_name : str, optional
+		Filename to store the plot.
+		Default is ``'user_index_measurement.pdf'``.
 
 	Returns:
 	--------
@@ -628,13 +643,13 @@ def user_index(wl, flux, eflux, wl_in, wl_out, wl_window, index_name=None,
 	out['eflux'] = eflux
 	
 	# visualize how the silicate index was measured
-	if plot: plot_user_index(out, index_name, plot_xrange, plot_yrange, plot_title, plot_save)
+	if plot: plot_user_index(out, index_name, plot_xrange, plot_yrange, plot_title, plot_save, plot_name)
 
 	return out
 
 ##########################
 # plot the silicate index measurement
-def plot_silicate_index(out_silicate_index, plot_xrange=None, plot_yrange=None, plot_title=None, plot_save=True):
+def plot_silicate_index(out_silicate_index, plot_xrange=None, plot_yrange=None, plot_title=None, plot_save=True, plot_name=False):
 
 	# read parameters of interest
 	wl = out_silicate_index['wl']
@@ -744,7 +759,9 @@ def plot_silicate_index(out_silicate_index, plot_xrange=None, plot_yrange=None, 
 	if plot_title is not None: plt.title(plot_title, size=12)
 	else: plt.title('Silicate Index Measurement', size=12)
 	
-	if plot_save: plt.savefig('silicate_index_measurement.pdf', bbox_inches='tight')
+	if plot_save: 
+		if plot_name: plt.savefig(plot_name, bbox_inches='tight')
+		else: plt.savefig('silicate_index_measurement.pdf', bbox_inches='tight')
 	plt.show()
 	plt.close()
 
@@ -843,7 +860,9 @@ def plot_water_index(out_water_index, plot_xrange=None, plot_yrange=None, plot_t
 	if plot_title is not None: plt.title(plot_title, size=12)
 	else: plt.title('Water Index Measurement', size=12)
 	
-	if plot_save: plt.savefig('water_index_measurement.pdf', bbox_inches='tight')
+	if plot_save: 
+		if plot_name: plt.savefig(plot_name, bbox_inches='tight')
+		else: plt.savefig('water_index_measurement.pdf', bbox_inches='tight')
 	plt.show()
 	plt.close()
 
@@ -930,7 +949,9 @@ def plot_methane_index(out_methane_index, plot_xrange=None, plot_yrange=None, pl
 	if plot_title is not None: plt.title(plot_title, size=12)
 	else: plt.title('Methane Index Measurement', size=12)
 	
-	if plot_save: plt.savefig('methane_index_measurement.pdf', bbox_inches='tight')
+	if plot_save: 
+		if plot_name: plt.savefig(plot_name, bbox_inches='tight')
+		else: plt.savefig('methane_index_measurement.pdf', bbox_inches='tight')
 	plt.show()
 	plt.close()
 
@@ -1017,7 +1038,9 @@ def plot_ammonia_index(out_ammonia_index, plot_xrange=None, plot_yrange=None, pl
 	if plot_title is not None: plt.title(plot_title, size=12)
 	else: plt.title('Ammonia Index Measurement', size=12)
 	
-	if plot_save: plt.savefig('ammonia_index_measurement.pdf', bbox_inches='tight')
+	if plot_save: 
+		if plot_name: plt.savefig(plot_name, bbox_inches='tight')
+		else: plt.savefig('ammonia_index_measurement.pdf', bbox_inches='tight')
 	plt.show()
 	plt.close()
 

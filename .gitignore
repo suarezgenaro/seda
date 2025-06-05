@@ -1,14 +1,16 @@
-.ipynb_checkponts
-*/__pycache__
-./docs/notebooks/*chi2_minimization.dat
-./docs/notebooks/*.pickle
-./docs/notebooks/*.pdf
-./logo
-./aux
-./tmp
-./seda/synthetic_photometry/filter_transmissions
-./seda/synthetic_photometry/FPS_info.xml
-./seda/synthetic_photometry/tmp
-./docs/notebooks/tmp
-./seda/spectral_indices/aux
-./tests
+# folders
+__pycache__
+\.ipynb_checkpoints
+logo
+aux
+tmp
+tests
+docs/notebooks/old
+seda/synthetic_photometry/filter_transmissions
+# files
+headaches
+docs/notebooks/*.dat
+docs/notebooks/*.pickle
+docs/notebooks/*.pdf
+docs/aux_plots/*.ipynb
+seda/synthetic_photometry/FPS_info.xml

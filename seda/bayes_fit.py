@@ -15,14 +15,14 @@ def bayes(my_bayes):
 
 	Parameters:
 	-----------
-	- my_bayes : dictionary with returned parameters from ``input_parameters.BayesOptions``, which also includes the parameters from ``input_parameters.InputData`` and ``input_parameters.ModelOptions``.
+	- my_bayes : dictionary with returned parameters from ``seda.BayesOptions``, which also includes the parameters from ``seda.InputData`` and ``seda.ModelOptions``.
 
 	Returns:
 	--------
 	- '``model``\_bayesian\_sampling.pickle' : dictionary
 		Dictionary with: 
 			- 'my_bayes' input dictionary
-			- Dynesty output, which is an initialized instance of the chosen sampler using ``dynamic_sampling`` in ``input_parameters.BayesOptions``.
+			- Dynesty output, which is an initialized instance of the chosen sampler using ``dynamic_sampling`` in ``seda.BayesOptions``.
 
 	Example:
 	--------

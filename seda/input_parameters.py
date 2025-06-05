@@ -37,13 +37,13 @@ class InputData:
 	- fit_photometry : {``True``, ``False``}, optional (default ``False``)
 		Include (``True``) or do not include (``False``) photometry.
 	- wl_spectra : float array or list, optional (required if ``fit_spectra``)
-		Wavelength in um of the spectra for model comparisons.
+		Wavelength in micron of the spectra for model comparisons.
 		For multiple spectra, provide them as a list (e.g., ``wl_spectra = [wl_spectrum1, wl_spectrum2]``).
 	- flux_spectra : float array or list, optional (required if ``fit_spectra``)
 		Fluxes for the input spectra in units indicated by ``flux_unit``.
 		Use a list for multiple spectra (similar to ``wl_spectra``).
 	- eflux_spectra : float array or list, optional (required if ``fit_spectra``)
-		Fluxes uncertainties in erg/cm^2/s/A of the input spectra. 
+		Fluxes uncertainties in units indicated by ``flux_unit``.
 		Use a list for multiple spectra (similar to ``wl_spectra``).
 	- flux_unit : str, optional (default ``'erg/s/cm2/A'``)
 		Units of ``flux``: ``'Jy'``, ``'erg/s/cm2/A'``, or ``erg/s/cm2/um``.
@@ -100,6 +100,7 @@ class InputData:
 		self.filter_phot = filter_phot
 		self.distance = distance
 		self.edistance = edistance
+		self.flux_unit = flux_unit
 
 		# number of input spectra
 		if isinstance(wl_spectra, list): # when multiple spectra are provided
@@ -114,7 +115,7 @@ class InputData:
 		if fit_spectra:
 
 			# when one spectrum is given, convert the spectrum into a list
-			# for wavelenghts
+			# for wavelengths
 			if wl_spectra is None: # if not provided
 				raise Exception(f'Parameter "wl_spectra" is missing.')
 			else: # if provided
@@ -129,6 +130,31 @@ class InputData:
 				raise Exception(f'Parameter "eflux_spectra" is missing.')
 			else: # if provided
 				if not isinstance(eflux_spectra, list): eflux_spectra = [eflux_spectra]
+
+			# handle input parameters
+			for i in range(N_spectra):
+				# convert input spectra to numpy arrays, if they are astropy
+				wl_spectra[i] = astropy_to_numpy(wl_spectra[i])
+				flux_spectra[i] = astropy_to_numpy(flux_spectra[i])
+				eflux_spectra[i] = astropy_to_numpy(eflux_spectra[i])
+		
+				# remove NaN values
+				mask_nonan = (~np.isnan(wl_spectra[i])) & (~np.isnan(flux_spectra[i])) & (~np.isnan(eflux_spectra[i]))
+				wl_spectra[i] = wl_spectra[i][mask_nonan]
+				flux_spectra[i] = flux_spectra[i][mask_nonan]
+				eflux_spectra[i] = eflux_spectra[i][mask_nonan]
+
+				# remove negative fluxes
+				mask_noneg = flux_spectra[i]>0
+				wl_spectra[i] = wl_spectra[i][mask_noneg]
+				flux_spectra[i] = flux_spectra[i][mask_noneg]
+				eflux_spectra[i] = eflux_spectra[i][mask_noneg]
+
+				# ensure that wavelength is arranged in ascending order
+				sort_ind = np.argsort(wl_spectra[i])
+				wl_spectra[i] = wl_spectra[i][sort_ind ]
+				flux_spectra[i] = flux_spectra[i][sort_ind ]
+				eflux_spectra[i] = eflux_spectra[i][sort_ind ]
 
 			# if res is a scalar, convert it into an array
 			if res is None: # if not provided
@@ -150,43 +176,24 @@ class InputData:
 			else:
 				lam_res = np.round(lam_res).astype(int)
 
-		# verify the wl_spectra, flux_spectra, eflux_spectra, and res have the same dimension
-		if len(flux_spectra)!=N_spectra: raise Exception(f'"flux_spectra" has fluxes for {len(flux_spectra)} spectra but {N_spectra} spectra are expected from "wl_spectra"')
-		if len(eflux_spectra)!=N_spectra: raise Exception(f'"eflux_spectra" has efluxes for {len(eflux_spectra)} spectra but {N_spectra} spectra are expected from "wl_spectra"')
-		if len(res)!=N_spectra: raise Exception(f'"res" has resolutions for {len(res)} spectra but {N_spectra} spectra are expected from "wl_spectra"')
+			# verify the wl_spectra, flux_spectra, eflux_spectra, and res have the same dimension
+			if len(flux_spectra)!=N_spectra: raise Exception(f'"flux_spectra" has fluxes for {len(flux_spectra)} spectra but {N_spectra} spectra are expected from "wl_spectra"')
+			if len(eflux_spectra)!=N_spectra: raise Exception(f'"eflux_spectra" has efluxes for {len(eflux_spectra)} spectra but {N_spectra} spectra are expected from "wl_spectra"')
+			if len(res)!=N_spectra: raise Exception(f'"res" has resolutions for {len(res)} spectra but {N_spectra} spectra are expected from "wl_spectra"')
 
-		# handle input parameters
-		# convert input spectra to numpy arrays, if they are astropy
-		for i in range(N_spectra):
-			wl_spectra[i] = astropy_to_numpy(wl_spectra[i])
-			flux_spectra[i] = astropy_to_numpy(flux_spectra[i])
-			eflux_spectra[i] = astropy_to_numpy(eflux_spectra[i])
-		# remove NaN values
-		for i in range(N_spectra):
-			mask_nonan = (~np.isnan(wl_spectra[i])) & (~np.isnan(flux_spectra[i])) & (~np.isnan(eflux_spectra[i]))
-			wl_spectra[i] = wl_spectra[i][mask_nonan]
-			flux_spectra[i] = flux_spectra[i][mask_nonan]
-			eflux_spectra[i] = eflux_spectra[i][mask_nonan]
-		# remove negative fluxes
-		for i in range(N_spectra):
-			mask_noneg = flux_spectra[i]>0
-			wl_spectra[i] = wl_spectra[i][mask_noneg]
-			flux_spectra[i] = flux_spectra[i][mask_noneg]
-			eflux_spectra[i] = eflux_spectra[i][mask_noneg]
-
-		# set default flux_unit
-		if flux_unit is None: flux_unit='erg/s/cm2/A'
-		# convert input fluxes to erg/s/cm2/A, if need
-		if flux_unit=='Jy': # if fluxes are provided in Jy
-			for i in range(N_spectra):
-				out_convert_flux = convert_flux(flux=flux_spectra[i], eflux=eflux_spectra[i], 
-				                                wl=wl_spectra[i], unit_in='Jy', unit_out='erg/s/cm2/A')
-				flux_spectra[i] = out_convert_flux['flux_out']
-				eflux_spectra[i] = out_convert_flux['eflux_out']
-		if flux_unit=='erg/s/cm2/um': # if fluxes are provided in erg/s/cm2/um
-			for i in range(N_spectra):
-				flux_spectra[i] = (flux_spectra[i]*u.erg/u.s/u.cm**2/u.micron).to(u.erg/u.s/u.cm**2/u.angstrom).value # erg/s/cm2/A
-				eflux_spectra[i] = (eflux_spectra[i]*u.erg/u.s/u.cm**2/u.micron).to(u.erg/u.s/u.cm**2/u.angstrom).value # erg/s/cm2/A
+			# set default flux_unit
+			if flux_unit is None: flux_unit='erg/s/cm2/A'
+			# convert input fluxes to erg/s/cm2/A, if need
+			if flux_unit=='Jy': # if fluxes are provided in Jy
+				for i in range(N_spectra):
+					out_convert_flux = convert_flux(flux=flux_spectra[i], eflux=eflux_spectra[i], 
+					                                wl=wl_spectra[i], unit_in='Jy', unit_out='erg/s/cm2/A')
+					flux_spectra[i] = out_convert_flux['flux_out']
+					eflux_spectra[i] = out_convert_flux['eflux_out']
+			if flux_unit=='erg/s/cm2/um': # if fluxes are provided in erg/s/cm2/um
+				for i in range(N_spectra):
+					flux_spectra[i] = (flux_spectra[i]*u.erg/u.s/u.cm**2/u.micron).to(u.erg/u.s/u.cm**2/u.angstrom).value # erg/s/cm2/A
+					eflux_spectra[i] = (eflux_spectra[i]*u.erg/u.s/u.cm**2/u.micron).to(u.erg/u.s/u.cm**2/u.angstrom).value # erg/s/cm2/A
 
 		self.res = res
 		self.lam_res = lam_res
@@ -206,16 +213,20 @@ class ModelOptions:
 
 	Parameters:
 	-----------
-	- model : str
+	- model : str, optional (required if a model spectrum is not provided via `wl_model` and `flux_model` or for nested sampling)
 		Label for any of the available atmospheric models.
 		See more info in ``seda.Models``.
-	- model_dir : str, list, or array
+	- model_dir : str, list, or array, optional (required if a model spectrum is not provided via `wl_model` and `flux_model` or for nested sampling)
 		Path to the directory (str, list, or array) or directories (as a list or array) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
 		Avoid using paths with null spaces. 
 	- params_ranges : dictionary, optional
 		Minimum and maximum values for any free model parameters to select a model grid subset.
 		E.g., ``params_ranges = {'Teff': [1000, 1200], 'logg': [4., 5.]}`` to consider spectra within those Teff and logg ranges.
 		If a parameter range is not provided, the full range in ``model_dir`` is considered.
+	- wl_model : array, optional (required if `model_dir` is not provided)
+		Wavelengths in micron of model spectrum.
+	- flux_model : array, optional (required if `model_dir` is not provided)
+		Fluxes in erg/s/cm2/A of model spectrum.
 	- path_save_spectra_conv: str, optional
 		Directory path to store convolved model spectra. 
 		If not provided (default), the convolved spectra will not be saved. 
@@ -252,19 +263,29 @@ class ModelOptions:
 	Author: Genaro Suárez
 	'''
 
-	def __init__(self, model, model_dir, params_ranges=None,
+	def __init__(self, model=None, model_dir=None, params_ranges=None,
+		         wl_model=None, flux_model=None,
 	             path_save_spectra_conv=None, skip_convolution=False):
 
-		self.model = model
-	
-		if model not in Models().available_models: raise Exception(f'Models "{model}" are not recognized. Available models are: \n          {Models().available_models}')
-		self.params_ranges = params_ranges
-		self.path_save_spectra_conv = path_save_spectra_conv
-		self.skip_convolution = skip_convolution
+		# verify necessary input parameters are provided
+		if (model is None) & (model_dir is None): # when no model and model_dir parameters are provided
+			if wl_model is None: raise Exception(f'"wl_model" must be provided')
+			if flux_model is None: raise Exception(f'"flux_model" must be provided')
+		if (wl_model is None) & (flux_model is None): # when a model spectrum is not explicitly provided
+			if model is None: raise Exception(f'"model" must be provided')
+			if model_dir is None: raise Exception(f'"model_dir" must be provided')
+			if model not in Models().available_models: raise Exception(f'Models "{model}" are not recognized. Available models are: \n          {Models().available_models}')
 
 		# when only one directory with models is given
 		if not isinstance(model_dir, (list, np.ndarray)): model_dir = [model_dir]
+
+		self.model = model
 		self.model_dir = model_dir
+		self.params_ranges = params_ranges
+		self.wl_model = wl_model
+		self.flux_model = flux_model
+		self.path_save_spectra_conv = path_save_spectra_conv
+		self.skip_convolution = skip_convolution
 
 		print('\n   Model options loaded successfully')
 
@@ -281,30 +302,34 @@ class Chi2Options:
 		Output dictionary by ``input_parameters.InputData`` with input data.
 	- my_model : dictionary
 		Output dictionary by ``input_parameters.ModelOptions`` with model options.
-	- fit_wl_range : float array, optional
-		Minimum and maximum wavelengths (in microns) where each input spectrum will be compared to the models. E.g., ``fit_wl_range = np.array([fit_wl_min1, fit_wl_max1], [fit_wl_min2, fit_wl_max2])``. 
+	- fit_wl_range : float array or list, optional
+		Minimum and maximum wavelengths (in micron) where each input spectrum will be compared to the models. E.g., ``fit_wl_range = np.array([[fit_wl_min1, fit_wl_max1], [fit_wl_min2, fit_wl_max2]])``. 
 		This parameter is used if ``fit_spectra`` but ignored if only ``fit_photometry``. 
 		Default values are the minimum and the maximum wavelengths of each input spectrum.
+	- disp_wl_range : float array, optional
+		Minimum and maximum wavelengths (in micron) to compute the median wavelength dispersion of model spectra to convolve them.
+		It can take a set of values for each input spectrum e.g. ``disp_wl_range = np.array([[disp_wl_min1, disp_wl_max1], [disp_wl_min2, disp_wl_max2]])``.
+		Default values are ``fit_wl_range``.
 	- model_wl_range : array or list, optional
 		Minimum and maximum wavelength (in microns) to cut model spectra to keep only wavelengths of interest.
 		Default values are the minimum and maximum wavelengths covered by the input spectra with a padding to avoid the point below.
 		CAVEAT: the selected wavelength range of model spectra must cover the spectrophotometry used in the fit and a bit more (to avoid errors when resampling synthetic spectra using spectres).
-	- extinction_free_param : {``'yes'``, ``'no'``}, optional (default ``'no'``)
+	- extinction_free_param : {``True``, ``False``}, optional (default ``False``)
 		Extinction as a free parameter: 
-			- ``'no'``: null extinction is assumed and it will not change.
-			- ``'yes'``: null extinction is assumed and it varies to minimize chi square.
-	- scaling_free_param : {``'yes'``, ``'no'``}, optional (default ``'yes'``)
+			- ``'False'``: null extinction is assumed and it will not change.
+			- ``'True'``: null extinction is assumed and it varies to minimize chi-square.
+	- scaling_free_param : {``True``, ``False``}, optional (default ``True``)
 		Scaling as a free parameter: 
-			- ``'yes'``: to find the scaling that minimizes chi square for each model
-			- ``'no'``: to fix ``scaling`` if radius and distance are known
-	- scaling: float, optional (required if ``scaling_free_param='no'``)
-		Fixed scaling factor ((R/d)^2, R: object's radius, d: distance to the object) to be applied to model spectra
-	- avoid_IR_excess : {``'yes'``, ``'no'``}, optional (default ``'no'``)
-		Wavelengths longer than ``IR_excess_limit`` will (``'yes'``) or will not (``'no'``) be avoided in the fit in case infrared excesses are expected. 
+			- ``'True'``: to find the scaling that minimizes chi square for each model.
+			- ``'False'``: to fix ``scaling`` if radius and distance are known.
+	- scaling: float, optional (required if ``scaling_free_param='False'``)
+		Fixed scaling factor ((R/d)^2, R: object's radius, d: distance to the object) to be applied to model spectra.
+	- avoid_IR_excess : {``True``, ``False``}, optional (default ``False``)
+		Wavelengths longer than ``IR_excess_limit`` will (``'True'``) or will not (``'False'``) be avoided in the fit in case infrared excesses are expected. 
 	- IR_excess_limit : float, optional (default 3 um).
 		Shortest wavelength at which IR excesses are expected.
 	- save_results : {``True``, ``False``}, optional (default ``True``)
-		Save (``True``) or do not save (``False``) ``seda.chi2_fit`` results
+		Save (``True``) or do not save (``False``) ``seda.chi2_fit`` results.
 	- chi2_pickle_file : str, optional
 		Filename for the output dictionary stored as a pickle file, if ``save_results``.
 		Default name is '``model``\_chi2\_minimization.pickle'.
@@ -330,10 +355,12 @@ class Chi2Options:
 	'''
 
 	def __init__(self, my_data, my_model, 
-		fit_wl_range=None, model_wl_range=None, extinction_free_param='no', 
-		scaling_free_param='yes', scaling=None, 
-		avoid_IR_excess='no', IR_excess_limit=3, save_results=True,
+		fit_wl_range=None, disp_wl_range=None, model_wl_range=None, 
+		extinction_free_param=False, scaling_free_param=True, scaling=None, 
+		avoid_IR_excess=False, IR_excess_limit=3, save_results=True,
 		chi2_pickle_file=None, chi2_table_file=None):
+
+		ini_time_mychi2 = time.time() # to estimate the time elapsed running chi2
 
 		self.save_results = save_results
 		self.scaling_free_param = scaling_free_param
@@ -359,20 +386,27 @@ class Chi2Options:
 
 		# read parameters from ModelOptions
 		self.model = my_model.model
+		self.model_dir = my_model.model_dir
 		self.params_ranges = my_model.params_ranges
+		self.wl_model = my_model.wl_model
+		self.flux_model = my_model.flux_model
 		self.path_save_spectra_conv = my_model.path_save_spectra_conv
 		self.skip_convolution = my_model.skip_convolution
-		self.model_dir = my_model.model_dir
 
 		# extract parameters for convenience
 		N_spectra = my_data.N_spectra
 		wl_spectra = my_data.wl_spectra
+		flux_spectra = my_data.flux_spectra
+		eflux_spectra = my_data.eflux_spectra
 		res = my_data.res
 		lam_res = my_data.lam_res
 		model = my_model.model
 		model_dir = my_model.model_dir
+		wl_model = my_model.wl_model
+		flux_model = my_model.flux_model
 		params_ranges = my_model.params_ranges
 		skip_convolution = my_model.skip_convolution
+		path_save_spectra_conv = my_model.path_save_spectra_conv
 
 		# number of data points in the input spectra
 		out_input_data_stats = input_data_stats(wl_spectra=wl_spectra)
@@ -383,10 +417,14 @@ class Chi2Options:
 		# handle fit_wl_range
 		fit_wl_range = set_fit_wl_range(fit_wl_range=fit_wl_range, N_spectra=N_spectra, wl_spectra=wl_spectra)
 
+		# handle disp_wl_range
+		disp_wl_range = set_disp_wl_range(disp_wl_range=disp_wl_range, N_spectra=N_spectra, wl_spectra=wl_spectra)
+
 		# handle model_wl_range
 		model_wl_range = set_model_wl_range(model_wl_range=model_wl_range, wl_spectra_min=wl_spectra_min, wl_spectra_max=wl_spectra_max)
 
 		self.fit_wl_range = fit_wl_range
+		self.disp_wl_range = disp_wl_range
 		self.model_wl_range = model_wl_range
 		self.wl_spectra_min = wl_spectra_min
 		self.wl_spectra_max = wl_spectra_max
@@ -398,99 +436,192 @@ class Chi2Options:
 		if chi2_table_file is None: self.chi2_table_file = f'{model}_chi2_minimization.dat'
 		else: self.chi2_table_file = chi2_table_file
 
+		# when an input model spectrum is explicitly provided, convolve and resample it
+		if (wl_model is not None) & (flux_model is not None):
+			# convolve the model spectrum separately according to each input spectrum
 
-#		# initialize lists for resampled, convolved model spectra for all input spectra
-#		wl_array_model_conv_resam = []
-#		flux_array_model_conv_resam = []
-#		for k in range(N_spectra): # for each input observed spectrum
-#			print(f'\nFor input spectrum {k+1} of {N_spectra}')
-#
-#			# select files with spectra within the indicated ranges
-#			if not skip_convolution: # read and convolve original model spectra
-#				out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir, params_ranges=params_ranges)
-#			else: # read model spectra already convolved to the data resolution
-#				# set filename_pattern to look for model spectra with the corresponding resolution
-#				filename_pattern = Models(model).filename_pattern+f'_R{res[k]}at{lam_res[k]}um.nc'
-#				out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir, params_ranges=params_ranges, filename_pattern=filename_pattern)
-#			spectra_name_full = out_select_model_spectra['spectra_name_full']
-#			spectra_name = out_select_model_spectra['spectra_name']
-#			N_model_spectra = len(spectra_name) # number of selected model spectra
-#
-#			# create a tqdm progress bar
-#			if not skip_convolution: # read original model spectra
-#				model_bar = tqdm(total=N_model_spectra, desc='Reading, convolving, and resampling model spectra')
-#			else:
-#				model_bar = tqdm(total=N_model_spectra, desc='Reading and resampling model spectra')
-#
-#			# list to save a resampled and convolved model spectrum for the input spectra
-#			wl_array_model_conv_resam_each = []
-#			flux_array_model_conv_resam_each = []
-#			for i in range(N_model_spectra): # for each model spectrum
-#				# update progress bar
-#				model_bar.update(1)
-#		
-#				# read and convolve model spectra, if needed
-#				if not skip_convolution: # read original model spectra
-#					out_read_model_spectrum = read_model_spectrum(spectrum_name_full=spectra_name_full[i], model=model, model_wl_range=model_wl_range)
-#				else: # read model spectra already convolved to the data resolution
-#					out_read_model_spectrum = read_model_spectrum_conv(spectrum_name_full=spectra_name_full[i], model_wl_range=model_wl_range)
-#				wl_model = out_read_model_spectrum['wl_model'] # um
-#				flux_model = out_read_model_spectrum['flux_model'] # erg/s/cm2/A
-#		
-#				# convolve the model spectrum to the indicated resolution
-#				wl_array_model_conv_each = [] # to save each convolved spectrum 
-#				flux_array_model_conv_each = [] # to save each convolved spectrum 
-#				if not skip_convolution: # avoid convolution, even if convolve was left as True, when skip_convolution is True
-#					# convolve models in the full wavelength range of each input spectrum plus a padding
-#					convolve_wl_range = [0.9*wl_spectra[k].min(), 1.1*wl_spectra[k].max()]
-#			
-#					# convolve model spectrum according to the resolution and fit range of each input spectrum
-#					if path_save_spectra_conv is None: # do not save the convolved spectrum
-#						out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, lam_res=lam_res[k], res=res[k], 
-#						                                          disp_wl_range=fit_wl_range[k], convolve_wl_range=convolve_wl_range)
-#					else: # save convolved spectrum
-#						if not os.path.exists(path_save_spectra_conv): os.makedirs(path_save_spectra_conv) # make directory (if not existing) to store convolved spectra
-#						out_file = path_save_spectra_conv+spectra_name[i]+f'_R{res[k]}at{lam_res[k]}um.nc'
-#						out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, lam_res=lam_res[k], res=res[k], 
-#						                                          disp_wl_range=fit_wl_range[k], convolve_wl_range=convolve_wl_range, out_file=out_file)
-#					
-#					out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, res=res, lam_res=lam_res)
-#					wl_model = out_convolve_spectrum['wl_conv']
-#					flux_model = out_convolve_spectrum['flux_conv']
-#
-#				# resample the convolved model spectrum to the wavelength data points in the observed spectra
-#				mask = (wl_spectra[k]>wl_model.min()) & (wl_spectra[k]<wl_model.max()) # input wavelengths within model wavelength coverage
-#				flux_array_model_conv_resam_each.append(spectres(wl_spectra[k][mask], wl_model, flux_model)) # resampled fluxes
-#				wl_array_model_conv_resam_each.append(wl_spectra[k][mask]) # wavelengths for resampled fluxes
-#
-#			# nested list with all resampled and convolved model spectra
-#			wl_array_model_conv_resam.append(wl_array_model_conv_resam_each)
-#			flux_array_model_conv_resam.append(flux_array_model_conv_resam_each)
-#						
-#		# close progress bar
-#		model_bar.close()
-#
-#		self.wl_array_model_conv_resam = wl_array_model_conv_resam
-#		self.flux_array_model_conv_resam = flux_array_model_conv_resam
-#
-#		# when reading pre-computed convolved model spectra, remove the extended name added when saving the convolved models
-#		# spectra_name in memory are the ones for the last input spectrum, but they have the same root name for all input spectra
-#		spectra_name_ori = []
-#		for spectrum in spectra_name: # for each selected model spectrum
-#			name = spectrum.split('_R')[0]
-#			if name not in spectra_name_ori: # to avoid repeating the same model spectrum when inputting multiple observed spectra
-#				spectra_name_ori.append(name)
-#		spectra_name_full_ori = [model_dir[0]+spectrum for spectrum in spectra_name_ori] # spectra files with full path
-#		# renaming
-#		spectra_name = np.array(spectra_name_ori)
-#		spectra_name_full = np.array(spectra_name_full_ori)
-#		N_model_spectra = len(spectra_name)
-#
-#		self.spectra_name = spectra_name
-#		self.spectra_name_full = spectra_name_full
-#		self.N_model_spectra = N_model_spectra
+			# initialize lists to save a resampled and convolved model spectrum for each input spectrum
+			# and for all model spectra (one in this case), but to keep the format for the case of multiple model spectra
+			wl_array_model_conv_resam = []
+			flux_array_model_conv_resam = []
+			# initialize lists to save a resampled and convolved model spectrum for each input spectrum
+			wl_array_model_conv_resam_each = []
+			flux_array_model_conv_resam_each = []
+			for k in range(N_spectra): # for each input observed spectrum
+				# convolve model
+				# define convolving range as the full wavelength range of each input spectrum plus a padding
+				convolve_wl_range = add_pad(wl_spectra[k].min(), wl_spectra[k].max())
+				out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, lam_res=lam_res[k], res=res[k], 
+				                                          disp_wl_range=disp_wl_range[k], convolve_wl_range=convolve_wl_range)
+				# replace model spectrum by the convolved one
+				wl_model_conv = out_convolve_spectrum['wl_conv']
+				flux_model_conv = out_convolve_spectrum['flux_conv']
+
+				# resample the convolved model spectrum to the wavelength data points in the observed spectra
+				mask = (wl_spectra[k]>wl_model_conv.min()) & (wl_spectra[k]<wl_model_conv.max()) # input wavelengths within model wavelength coverage
+				flux_array_model_conv_resam_each.append(spectres(wl_spectra[k][mask], wl_model_conv, flux_model_conv)) # resampled fluxes
+				wl_array_model_conv_resam_each.append(wl_spectra[k][mask]) # wavelengths for resampled fluxes
+
+			# nested list with all resampled model spectra
+			wl_array_model_conv_resam.append(wl_array_model_conv_resam_each)
+			flux_array_model_conv_resam.append(flux_array_model_conv_resam_each)
+
+			N_model_spectra = 1 # number of model spectra
+
+		# when directories with spectra files are provided, read, convolve (if needed), and resample model spectra
+		if (model is not None) & (model_dir is not None):
+			# read the model spectra names in the input folders and meeting the indicated parameter ranges 
+			filename_pattern = Models(model).filename_pattern
+			out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir, params_ranges=params_ranges, filename_pattern=filename_pattern)
+			spectra_name_full = out_select_model_spectra['spectra_name_full']
+			spectra_name = out_select_model_spectra['spectra_name']
+			# for pre-convolved models, keep only the base name (without the part added to indicate the resolution and wavelength)
+			if skip_convolution: # when convolution is skipped
+				for i,spectrum_name in enumerate(spectra_name):
+					# spectrum file name without the extension added for the convolved version
+					basename = spectrum_name.split('_R')[0]
+					spectra_name[i] = basename
+					spectra_name_full[i] = model_dir[0]+spectra_name[i] # with full path (considering model_dir is a list).
+	
+				# remove duplicate spectrum file names due to having the same spectrum stored multiple times for different resolutions at different wavelenghts
+				spectra_name = np.unique(spectra_name)
+				spectra_name_full = np.unique(spectra_name_full)
+	
+			N_model_spectra = len(spectra_name) # number of selected model spectra
+	
+			# create a tqdm progress bar
+			if not skip_convolution: # read original model spectra
+				model_bar = tqdm(total=N_model_spectra, desc='Reading, convolving, and resampling model spectra')
+			else:
+				model_bar = tqdm(total=N_model_spectra, desc='Reading and resampling model spectra')
+		
+			# initialize lists to save a resampled and convolved model spectrum for each input spectrum
+			wl_array_model_conv_resam = []
+			flux_array_model_conv_resam = []
+		
+			# read, convolve, and resample model spectra accordingly for each input spectrum
+			if not skip_convolution: # do not avoid convolution
+				for i,spectrum_name in enumerate(spectra_name): # for each model spectrum
+					# update progress bar
+					model_bar.update(1)
+		
+					# read model spectrum with original resolution in the full model_wl_range_each
+					out_read_model_spectrum = read_model_spectrum(spectrum_name_full=spectra_name_full[i], model=model, model_wl_range=model_wl_range)
+					wl_model = out_read_model_spectrum['wl_model'] # um
+					flux_model = out_read_model_spectrum['flux_model'] # erg/s/cm2/A
+		
+					# convolve the model spectrum separately according to each input spectrum
+					wl_array_model_conv_resam_each = []
+					flux_array_model_conv_resam_each = []
+					for k in range(N_spectra): # for each input observed spectrum
+						# define convolving range as the full wavelength range of each input spectrum plus a padding
+						convolve_wl_range = add_pad(wl_spectra[k].min(), wl_spectra[k].max())
+		
+						# convolve model spectrum according to the resolution of each input spectrum
+						if path_save_spectra_conv is None: # do not save the convolved spectrum
+							out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, lam_res=lam_res[k], res=res[k], 
+							                                          disp_wl_range=disp_wl_range[k], convolve_wl_range=convolve_wl_range)
+						else: # save convolved spectrum
+							if not os.path.exists(path_save_spectra_conv): os.makedirs(path_save_spectra_conv) # make directory (if not existing) to store convolved spectra
+							out_file = path_save_spectra_conv+spectra_name[i]+f'_R{res[k]}at{lam_res[k]}um.nc'
+							out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, lam_res=lam_res[k], res=res[k], 
+							                                          disp_wl_range=disp_wl_range[k], convolve_wl_range=convolve_wl_range, out_file=out_file)
+						# replace model spectrum by the convolved one
+						wl_model_conv = out_convolve_spectrum['wl_conv']
+						flux_model_conv = out_convolve_spectrum['flux_conv']
+		
+						# resample the convolved model spectrum to the wavelength data points in the observed spectra
+						mask = (wl_spectra[k]>wl_model_conv.min()) & (wl_spectra[k]<wl_model_conv.max()) # input wavelengths within model wavelength coverage
+						flux_array_model_conv_resam_each.append(spectres(wl_spectra[k][mask], wl_model_conv, flux_model_conv)) # resampled fluxes
+						wl_array_model_conv_resam_each.append(wl_spectra[k][mask]) # wavelengths for resampled fluxes
+		
+					# nested list with all resampled model spectra
+					wl_array_model_conv_resam.append(wl_array_model_conv_resam_each)
+					flux_array_model_conv_resam.append(flux_array_model_conv_resam_each)
+		
+			else: # skip convolution
+				for i,spectrum_name in enumerate(spectra_name): # for each model spectrum
+					# update progress bar
+					model_bar.update(1)
+		
+					# read, convolve (if needed), and resample model spectra accordingly for each input spectrum
+					wl_array_model_conv_resam_each = []
+					flux_array_model_conv_resam_each = []
+					for k in range(N_spectra): # for each input observed spectrum
+						# read pre-convolved model spectrum for each input spectrum in its full wavelength range plus a padding
+						model_wl_range_each = add_pad(wl_spectra[k].min(), wl_spectra[k].max())
+						spectrum_name_full = spectra_name_full[i]+f'_R{res[k]}at{lam_res[k]}um.nc'
+						try: out_read_model_spectrum = read_model_spectrum_conv(spectrum_name_full=spectrum_name_full, model_wl_range=model_wl_range_each)
+						except: raise Exception(f'Convolved model spectrum {spectrum_name_full} does not exists.')
+						wl_model = out_read_model_spectrum['wl_model'] # um
+						flux_model = out_read_model_spectrum['flux_model'] # erg/s/cm2/A
+			
+						# resample the convolved model spectrum to the wavelength data points in the observed spectra
+						mask = (wl_spectra[k]>wl_model.min()) & (wl_spectra[k]<wl_model.max()) # input wavelengths within model wavelength coverage
+						flux_array_model_conv_resam_each.append(spectres(wl_spectra[k][mask], wl_model, flux_model)) # resampled fluxes
+						wl_array_model_conv_resam_each.append(wl_spectra[k][mask]) # wavelengths for resampled fluxes
+			
+					# nested list with all resampled model spectra
+					wl_array_model_conv_resam.append(wl_array_model_conv_resam_each)
+					flux_array_model_conv_resam.append(flux_array_model_conv_resam_each)
+		
+			# close progress bar
+			model_bar.close()
+	
+		# prepare input spectra and model spectra for the chi-square minimization
+		# cut input spectra to the wavelength region or model coverage for the fit
+		wl_spectra_fit = []
+		flux_spectra_fit = []
+		eflux_spectra_fit = []
+		for i in range(N_model_spectra): # for each model spectrum 
+			wl_spectra_fit_each = []
+			flux_spectra_fit_each = []
+			eflux_spectra_fit_each = []
+			for k in range(N_spectra): # for each input observed spectrum
+				mask_fit = (wl_spectra[k] >= max(fit_wl_range[k][0], wl_array_model_conv_resam[i][k].min())) & \
+				           (wl_spectra[k] <= min(fit_wl_range[k][1], wl_array_model_conv_resam[i][k].max()))
+				wl_spectra_fit_each.append(wl_spectra[k][mask_fit])
+				flux_spectra_fit_each.append(flux_spectra[k][mask_fit])
+				eflux_spectra_fit_each.append(eflux_spectra[k][mask_fit])
+			# nested list with input spectra in the fit range
+			# it will have a set of input spectra for each model spectrum, 
+			# which is convenient in case all model spectra do not necessary have the same wavelength coverage
+			wl_spectra_fit.append(wl_spectra_fit_each)
+			flux_spectra_fit.append(flux_spectra_fit_each)
+			eflux_spectra_fit.append(eflux_spectra_fit_each)
+
+		# cut model spectra to the wavelength region for the fit
+		wl_array_model_conv_resam_fit = []
+		flux_array_model_conv_resam_fit = []
+		for i in range(N_model_spectra): # for each model spectrum
+			wl_array_model_conv_resam_fit_each = []
+			flux_array_model_conv_resam_fit_each = []
+			for k in range(N_spectra): # for each input observed spectrum
+				# mask to select model wavelength points within the fit range
+				# if a model spectrum has a narrower coverage, so that will be the selected range for the fit
+				mask_fit = (wl_array_model_conv_resam[i][k]>=fit_wl_range[k][0]) & \
+				           (wl_array_model_conv_resam[i][k]<=fit_wl_range[k][1])
+				flux_array_model_conv_resam_fit_each.append(flux_array_model_conv_resam[i][k][mask_fit])
+				wl_array_model_conv_resam_fit_each.append(wl_array_model_conv_resam[i][k][mask_fit])
+			# nested list with all resampled and convolved model spectra in the fit range
+			wl_array_model_conv_resam_fit.append(wl_array_model_conv_resam_fit_each)
+			flux_array_model_conv_resam_fit.append(flux_array_model_conv_resam_fit_each)
+
+		self.N_model_spectra = N_model_spectra
+		if (model is not None) & (model_dir is not None):
+			self.spectra_name = spectra_name
+			self.spectra_name_full = spectra_name_full
+		self.wl_array_obs_fit = wl_spectra_fit
+		self.flux_array_obs_fit = flux_spectra_fit
+		self.eflux_array_obs_fit = eflux_spectra_fit
+		self.wl_array_model_conv_resam = wl_array_model_conv_resam
+		self.flux_array_model_conv_resam = flux_array_model_conv_resam
+		self.wl_array_model_conv_resam_fit = wl_array_model_conv_resam_fit
+		self.flux_array_model_conv_resam_fit = flux_array_model_conv_resam_fit
 
 		print('\n   Chi-square fit options loaded successfully')
+		fin_time_mychi2 = time.time()
+		print_time(fin_time_mychi2-ini_time_mychi2)
 
 #+++++++++++++++++++++++++++
 class BayesOptions:
@@ -509,6 +640,10 @@ class BayesOptions:
 		Minimum and maximum wavelengths (in microns) where model spectra will be compared to the data. 
 		This parameter is used if ``fit_spectra`` but ignored if only ``fit_photometry``. 
 		Default values are the minimum and the maximum wavelengths of each input spectrum. E.g., ``fit_wl_range = np.array([bayes_wl_min, bayes_wl_max])``. 
+	- disp_wl_range : float array, optional
+		Minimum and maximum wavelengths (in micron) to compute the median wavelength dispersion of model spectra to convolve them.
+		It can take a set of values for each input spectrum e.g. ``disp_wl_range = np.array([[disp_wl_min1, disp_wl_max1], [disp_wl_min2, disp_wl_max2]])``.
+		Default values are ``fit_wl_range``.
 	- model_wl_range : array or list, optional
 		Minimum and maximum wavelength (in microns) to cut model spectra (to make the code faster). 
 		Default values are the same as ``fit_wl_range`` with a padding to avoid the point below.
@@ -520,7 +655,7 @@ class BayesOptions:
 		If given, the grid nodes around the best fit will be used as ``params_ranges`` to select a grid subset and as sampling priors.
 		Otherwise, ``params_ranges`` provided in ``ModelOptions`` will be considered.
 	- grid: dictionary, optional
-		Model grid (``'wavelength'`` and ``'flux'``) generated by ``utils.read_grid`` to interpolate model spectra. 
+		Model grid (``'wavelength'`` and ``'flux'``) generated by ``seda.read_grid`` to interpolate model spectra. 
 		If not provided (default), then the grid is read (``model`` and ``model_dir`` must be provided). 
 		If provided, the code will skip reading the grid, which will save some time (a few minutes).
 	- dynamic_sampling: {``True``, ``False``}, optional (default ``True``). 
@@ -550,7 +685,8 @@ class BayesOptions:
 	Author: Genaro Suárez
 	'''
 
-	def __init__(self, my_data, my_model, fit_wl_range=None, model_wl_range=None, 
+	def __init__(self, my_data, my_model, 
+	             fit_wl_range=None, disp_wl_range=None, model_wl_range=None, 
 	             R_range=None, chi2_pickle_file=None, bayes_pickle_file=None,
 		         grid=None, dynamic_sampling=True, nlive=500, save_results=True):
 
@@ -605,10 +741,14 @@ class BayesOptions:
 		# handle fit_wl_range
 		fit_wl_range = set_fit_wl_range(fit_wl_range=fit_wl_range, N_spectra=N_spectra, wl_spectra=wl_spectra)
 
+		# handle disp_wl_range
+		disp_wl_range = set_disp_wl_range(disp_wl_range=disp_wl_range, N_spectra=N_spectra, wl_spectra=wl_spectra)
+
 		# handle model_wl_range
 		model_wl_range = set_model_wl_range(model_wl_range=model_wl_range, wl_spectra_min=wl_spectra_min, wl_spectra_max=wl_spectra_max)
 
 		self.fit_wl_range = fit_wl_range
+		self.disp_wl_range = disp_wl_range
 		self.model_wl_range = model_wl_range
 		self.wl_spectra_min = out_input_data_stats['wl_spectra_min']
 		self.wl_spectra_max = out_input_data_stats['wl_spectra_max']
@@ -649,8 +789,8 @@ class BayesOptions:
 					# set filename_pattern to look for model spectra
 					filename_pattern.append(Models(model).filename_pattern)
 					grid_each = read_grid(model=model, model_dir=model_dir, params_ranges=params_ranges, 
-					                      convolve=True, res=res[i], lam_res=lam_res[i], 
-					                      fit_wl_range=fit_wl_range[i], wl_resample=wl_spectra[i],
+					                      convolve=True, res=res[i], lam_res=lam_res[i], fit_wl_range=fit_wl_range[i], 
+					                      wl_resample=wl_spectra[i], disp_wl_range=disp_wl_range[i],
 					                      path_save_spectra_conv=path_save_spectra_conv)
 				else: # read model spectra already convolved to the data resolution
 					# set filename_pattern to look for model spectra with the corresponding resolution

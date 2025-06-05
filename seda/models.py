@@ -142,7 +142,7 @@ class Models:
 
 
 ##########################
-def separate_params(model, spectra_name, save_results=False):
+def separate_params(model, spectra_name, save_results=False, out_file=None):
 	'''
 	Description:
 	------------
@@ -156,6 +156,9 @@ def separate_params(model, spectra_name, save_results=False):
 		Model spectra names (without full path).
 	- save_results : {``True``, ``False``}, optional (default ``False``)
 		Save (``True``) or do not save (``False``) the output as a pickle file named '``model``\_free\_parameters.pickle'.
+	- out_file : str, optional
+		File name to save the results as a pickle file (it can include a path e.g. my_path/free\_params.pickle).
+		Default name is '``model``\_free_parameters.pickle' and is stored at the notebook location.
 
 	Returns:
 	--------
@@ -191,6 +194,25 @@ def separate_params(model, spectra_name, save_results=False):
 	# get parameters from model spectra names
 	# consider a way that also works when adding an additional string at the end of the name
 	# which is the case when convolved spectra are store and then read
+	if (model == 'Exo-REM'):
+		Teff_fit = np.zeros(len(spectra_name))
+		logg_fit = np.zeros(len(spectra_name))
+		Z_fit = np.zeros(len(spectra_name))
+		CtoO_fit = np.zeros(len(spectra_name))
+		for i in range(len(spectra_name)):
+			# Teff
+			Teff_fit[i] = float(spectra_name[i].split('_')[2][:-1]) # K
+			# logg
+			logg_fit[i] = float(spectra_name[i].split('_')[3][4:]) # g in cgs
+			# Z
+			Z_fit[i] = np.round(np.log10(float(spectra_name[i].split('_')[4][3:])),2) # 
+			# CtoO
+			CtoO_fit[i] = float(spectra_name[i].split('_')[5].split('.dat')[0][2:])
+		out['params']['Teff']= Teff_fit
+		out['params']['logg']= logg_fit
+		out['params']['Z']= Z_fit
+		out['params']['CtoO']= CtoO_fit
+
 	if (model == 'Sonora_Diamondback'):
 		Teff_fit = np.zeros(len(spectra_name))
 		logg_fit = np.zeros(len(spectra_name))
@@ -334,7 +356,8 @@ def separate_params(model, spectra_name, save_results=False):
 
 	# save output dictionary
 	if save_results:
-		with open(f'{model}_free_parameters.pickle', 'wb') as file:
+		if out_file is None: out_file = f'{model}_free_parameters.pickle'
+		with open(out_file, 'wb') as file:
 			pickle.dump(out, file)
 
 	return out
@@ -369,6 +392,9 @@ def read_model_spectrum(spectrum_name_full, model, model_wl_range=None):
 	if model not in Models().available_models: raise Exception(f'Models "{model}" are not recognized. Available models are: \n          {Models().available_models}')
 
 	# read model spectra files
+	if (model == 'Exo-REM'):
+		# reading how to convert fluxes in wavenumber units to fluxes in wavelength units
+		print('exit')
 	if (model == 'Sonora_Diamondback'):
 		spec_model = ascii.read(spectrum_name_full, data_start=3, format='no_header')
 		wl_model = spec_model['col1'] * u.micron # um (in vacuum?)

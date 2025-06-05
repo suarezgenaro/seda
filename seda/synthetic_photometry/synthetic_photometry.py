@@ -50,12 +50,14 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None):
 	>>> # obtain synthetic photometry and plot the results
 	>>> import seda
 	>>> 
-	>>> # assume we have read a wavelengths (wl in um), fluxes (in erg/s/cm2/A), and flux errors (eflux) for an input spectrum
-	>>>	# and we want synthetic photometry for several filters
+	>>> # assume we have read a wavelengths (wl in um), fluxes (in erg/s/cm2/A), 
+	>>> # and flux errors (eflux) for an input spectrum,
+	>>>	# and we would like synthetic photometry for several filters
 	>>> filters = (['2MASS/2MASS.J', 'Spitzer/IRAC.I1', 'WISE/WISE.W1']) # filters of interest
 	>>> 
 	>>>	# run the code
-	>>> out = seda.synthetic_photometry(wl=wl, flux=flux, eflux=eflux, flux_unit='erg/s/cm2/A', filters=filters)
+	>>> out = seda.synthetic_photometry(wl=wl, flux=flux, eflux=eflux, 
+	>>>                                 flux_unit='erg/s/cm2/A', filters=filters)
 	>>> 
 	>>> # visualize the derived synthetic fluxes
 	>>> seda.plot_synthetic_photometry(out)
@@ -69,11 +71,11 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None):
 	wl = astropy_to_numpy(wl)
 	flux = astropy_to_numpy(flux)
 
-	# remove nan flux values
-	mask_nonan = ~np.isnan(flux)
-	wl = wl[mask_nonan]
-	flux = flux[mask_nonan]
-	if eflux is not None: eflux = eflux[mask_nonan]
+	# remove nan and null flux values
+	mask = ~np.isnan(flux) & (flux!=0)
+	wl = wl[mask]
+	flux = flux[mask]
+	if eflux is not None: eflux = eflux[mask]
 
 	# when filters variable is given as a string, convert it into a list so len(filters) returns 1 rather than the string length
 	if type(filters) is str: filters = ([filters])
@@ -107,15 +109,15 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None):
 		# check first if the filter name is on SVO
 		if not filt in filterID: # if filter ID is not recognized
 			label[k] = 'unrecognizable'
-			print(f'Caveat: {filt} ID not recognized by SVO, so will be ignored')
+			print(f'   Caveat: {filt} ID not recognized by SVO, so will be ignored')
 		else: # if filter ID is a valid one
 			# read filter transmission
-			# check if the filter transmission exits locally already
+			# check if the filter transmission exists locally already
 			path_filter_transmissions = f'{path_synthetic_photometry}/filter_transmissions/'
 			if not os.path.exists(path_filter_transmissions): os.makedirs(path_filter_transmissions) # make directory (if not existing) to store filter transmissions
 			filter_transmission_name = filt.replace('/', '_')+'.dat' # when filter name includes '/' replace it by '_'
-			if not os.path.exists(path_filter_transmissions+filter_transmission_name): # filter transmission does not exits yet
-				print(f'\nreading and storing {filt} filter directly from SVO')
+			if not os.path.exists(path_filter_transmissions+filter_transmission_name): # filter transmission does not exist yet
+				print(f'   \nreading and storing {filt} filter directly from SVO')
 				# read filter transmission directly from SVO
 				page = f'http://svo2.cab.inta-csic.es/theory/fps/fps.php?ID={filt}'
 				filter_transmission = Table.read(page, format='votable')
@@ -131,35 +133,45 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None):
 			# verify that the spectrum fully covers the filter transmission
 			if ((filter_wl.max()<wl.min()) | (filter_wl.min()>wl.max())): # no spectral coverage for the filter
 				label[k] = 'none'
-				print(f'Caveat: No spectral coverage for {filt}, so will it be ignored')
+				print(f'   Caveat: No spectral coverage for {filt}, so will it be ignored')
 			else: # filter fully or partially covered
 				if (filter_wl.min()<wl.min()) & (filter_wl.max()>wl.min()): # blue-end of the filter partially covered
-					print(f'Caveat: No full spectral coverage for {filt}, so the synthetic photometry is a lower limit')
+					# fraction of the filter transmission cover by the data
+					area_total = np.trapz(filter_flux, filter_wl)
+					mask_cov = filter_wl>wl.min() # total area of the filter transmission
+					area_cov = np.trapz(filter_flux[mask_cov], filter_wl[mask_cov]) # area of the filter transmission within the data coverage
+					area_frac = 100.*area_cov/area_total # fraction of the filter transmission covered by the data
+					print(f'   Caveat: No full spectral coverage for {filt}, so the synthetic photometry is a lower limit')
+					print(f'      approx. {round(area_frac,2)}% of the filter transmission is covered by the data')
 					label[k] = 'incomplete'
+
 				if (filter_wl.max()>wl.max()) & (filter_wl.min()<wl.max()): # red-end of the filter partially covered
-					print(f'Caveat: No full spectral coverage for {filt}, so the synthetic photometry is a lower limit')
+					# fraction of the filter transmission cover by the data
+					area_total = np.trapz(filter_flux, filter_wl)
+					mask_cov = filter_wl<wl.max() # total area of the filter transmission
+					area_cov = np.trapz(filter_flux[mask_cov], filter_wl[mask_cov]) # area of the filter transmission within the data coverage
+					area_frac = 100.*area_cov/area_total # fraction of the filter transmission covered by the data
+					print(f'   Caveat: No full spectral coverage for {filt}, so the synthetic photometry is a lower limit')
+					print(f'      approx. {round(area_frac,2)}% of the filter transmission is covered by the data')
 					label[k] = 'incomplete'
 
 				# wavelength dispersion of the spectrum in the filter wavelength range
 				mask_wl = (wl>=filter_wl.min()) & (wl<=filter_wl.max())
 		
-				wl_disp = wl[mask_wl][1:] - wl[mask_wl][:-1] # (um) wavelength dispersion of spectra
-				wl_disp = np.append(wl_disp, wl_disp[-1]) # add an element equal to the last row to keep the same shape as the wl array
-
 				# synthetic photometry
 				# resample filter transmission to the spectrum wavelength
 				filter_flux_resam = np.interp(wl[mask_wl], filter_wl, filter_flux) # dimensionless
 
 				# normalize the transmission curve (it was dimensionless but now it has 1/um units)
-				filter_flux_resam_norm = filter_flux_resam / sum(filter_flux_resam*wl_disp) # 1/um
+				filter_flux_resam_norm = filter_flux_resam / np.trapz(filter_flux_resam, wl[mask_wl]) # 1/um
 
 				# synthetic flux density
-				syn_flux = sum(flux[mask_wl]*filter_flux_resam_norm*wl_disp) # in input flux units (erg/s/cm2/A or Jy)
+				syn_flux = np.trapz(flux[mask_wl]*filter_flux_resam_norm, wl[mask_wl]) # in input flux units (erg/s/cm2/A or Jy)
 				if eflux is not None: esyn_flux = np.median(eflux[mask_wl]/flux[mask_wl]) * syn_flux # synthetic flux error as the median fractional flux uncertainties in the filter passband
 
 				# compute the filter's effective wavelength and effective width
-				lambda_eff[k] = sum(wl[mask_wl]*filter_flux_resam*flux[mask_wl]*wl_disp) / sum(filter_flux_resam*flux[mask_wl]*wl_disp) # in um
-				width_eff[k] = sum(filter_flux_resam*wl_disp) / filter_flux_resam.max() # in um
+				lambda_eff[k] = np.trapz(wl[mask_wl]*filter_flux_resam*flux[mask_wl], wl[mask_wl]) / np.trapz(filter_flux_resam*flux[mask_wl], wl[mask_wl]) # in um
+				width_eff[k] = np.trapz(filter_flux_resam, wl[mask_wl]) / filter_flux_resam.max() # in um
 				
 				# convert flux into magnitudes
 				# first from erg/s/cm2/A to Jy (if needed) and then from Jy to mag
@@ -179,7 +191,7 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None):
 		
 				# from Jy to mag
 				mask = filterID==filt
-				if any(mask) is False: print(f'\nERROR: No zero point for filter {filt}'), exit()
+				if any(mask) is False: raise Exception(f'   \nERROR: No zero point for filter {filt}')
 				if eflux is not None:
 					out_flux_to_mag = flux_to_mag(flux=syn_flux_Jy[k], eflux=esyn_flux_Jy[k], filters=filt)
 					syn_mag[k] = out_flux_to_mag['mag'] # in mag
@@ -189,7 +201,7 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None):
 
 				zero_point[k] = ZeroPoint[mask][0] # in Jy
 
-				del filter_transmission # remove variable with filter transmission so it won't exit if an input filter name doesn't match an existing one
+				del filter_transmission # remove variable with filter transmission so it won't exist if an input filter name doesn't match an existing one
 
 	out_synthetic_photometry = {'syn_flux(Jy)': syn_flux_Jy, 'syn_flux(erg/s/cm2/A)': syn_flux_erg, 'syn_mag': syn_mag, 'lambda_eff(um)': lambda_eff, 
 	                            'width_eff(um)': width_eff, 'zero_point(Jy)': zero_point, 'label': label, 'transmission': transmission, 'wl': wl, 'flux': flux, 
@@ -368,7 +380,7 @@ def flux_to_mag(flux, filters, flux_unit='Jy', eflux=None, wl=None):
 	for k, filt in enumerate(filters): # iterate on each filter
 		# check first if the filter name is on SVO
 		if not filt in filterID: # if filter ID is not recognized
-			print(f'Caveat: {filt} ID not recognized by SVO, so will be ignored')
+			print(f'   Caveat: {filt} ID not recognized by SVO, so will be ignored')
 		else: # if filter ID is a valid one
 			mask = filterID==filt
 			zero_point[k] = ZeroPoint[mask][0]
@@ -473,7 +485,7 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, wl=None):
 	for k, filt in enumerate(filters): # iterate on each filter
 		# check first if the filter name is on SVO
 		if not filt in filterID: # if filter ID is not recognized
-			print(f'Caveat: {filt} ID not recognized by SVO, so will be ignored')
+			print(f'   Caveat: {filt} ID not recognized by SVO, so will be ignored')
 		else: # if filter ID is a valid one
 			mask = filterID==filt
 			zero_point[k] = ZeroPoint[mask][0]

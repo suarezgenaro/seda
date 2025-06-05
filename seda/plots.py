@@ -32,7 +32,7 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, xlog=False, ylog=True, xrange
 	- yrange : list or array, optional (default is full range in the input spectra)
 		Vertical range of the plot.
 	- ori_res : {``True``, ``False``}, optional (default ``False``)
-		Plot (``True``) or do not include (``False``) model spectra with the original resolution.
+		Plot (``True``) or do not plot (``False``) model spectra with the original resolution.
 	- model_dir_ori : str, list, or array
 		Path to the directory (str, list, or array) or directories (as a list or array) containing the model spectra with the original resolution.
 		This parameter is needed to plot the original resolution spectra (if ``ori_res`` is True) when ``seda.chi2`` was run skipping the model spectra convolution (if ``skip_convolution`` is True).
@@ -105,9 +105,9 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, xlog=False, ylog=True, xrange
 	if ori_res: # plot model spectra with the original resolution
 		for i in range(N_best_fits):
 			mask = (wl_model_best[i,:]>xrange[0]) & (wl_model_best[i,:]<xrange[1])
-			if i==0: ax[0].plot(wl_model_best[i,:][mask], flux_model_best[i,:][mask], linewidth=0.1, 
+			if i==0: ax[0].plot(wl_model_best[i,:][mask], flux_model_best[i,:][mask], linewidth=0.5, 
 			                    color='silver', label='Models with original resolution', zorder=2, alpha=0.5) # in erg/s/cm2
-			else: ax[0].plot(wl_model_best[i,:][mask], flux_model_best[i,:][mask], linewidth=0.1, 
+			else: ax[0].plot(wl_model_best[i,:][mask], flux_model_best[i,:][mask], linewidth=0.5, 
 			                 color='silver', zorder=2, alpha=0.5) # in erg/s/cm2
 
 	# plot best fits (convolved spectra)
@@ -278,7 +278,7 @@ def plot_bayes_fit(bayes_pickle_file, xlog=False, ylog=True, xrange=None, yrange
 	- yrange : list or array, optional (default is full range in the input spectra)
 		Vertical range of the plot.
 	- ori_res : {``True``, ``False``}, optional (default ``False``)
-		Plot (``True``) or do not include (``False``) the best model spectrum with its original resolution.
+		Plot (``True``) or do not plot (``False``) the best model spectrum with its original resolution.
 	- model_dir_ori : str, list, or array
 		Path to the directory (str, list, or array) or directories (as a list or array) containing the model spectra with the original resolution.
 		This parameter is needed to plot the original resolution spectra (if ``ori_res`` is True) when ``seda.chi2`` was run skipping the model spectra convolution (if ``skip_convolution`` is True).
@@ -364,7 +364,7 @@ def plot_bayes_fit(bayes_pickle_file, xlog=False, ylog=True, xrange=None, yrange
 	# plot best fit with original resolution
 	if ori_res:
 		mask = (wl_model_ori>=xrange[0]) & (wl_model_ori<=xrange[1])
-		ax[0].plot(wl_model_ori[mask], flux_model_ori[mask], color='silver',
+		ax[0].plot(wl_model_ori[mask], flux_model_ori[mask], color='silver', linewidth=0.5, 
 		           label='Model with original resolution', zorder=2, alpha=0.5)
 
 	# plot model spectrum
@@ -436,11 +436,11 @@ def plot_model_coverage(model, xparam, yparam, model_dir=None, params_ranges=Non
 	Parameters:
 	-----------
 	- model : str
-		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
+		Atmospheric models. See available models in ``seda.Models().available_models``.  
 	- xparam : str
-		Parameter in ``model`` to be plotted in the horizontal axis. `input_parameters.ModelOptions`` provides more details about available parameters for ``model``.
+		Parameter in ``model`` to be plotted in the horizontal axis. ``seda.Models('model').params_unique`` provides more details about available parameters for ``model``.
 	- yparam : str
-		Parameter in ``model`` to be plotted in the vertical axis. `input_parameters.ModelOptions`` provides more details about available parameters for ``model``.
+		Parameter in ``model`` to be plotted in the vertical axis. ``seda.Models('model').params_unique`` provides more details about available parameters for ``model``.
 	- model_dir : str or list, optional
 		Path to the directory (str or list) or directories (as a list) containing model spectra (e.g., ``model_dir = ['path_1', 'path_2']``) to display their parameters coverage. 
 		If not provided, the code will read pre-saved pickle files the full coverage of ``model``.
@@ -536,7 +536,7 @@ def plot_model_resolution(model, spectra_name_full, xlog=True, ylog=False, xrang
 	Parameters:
 	-----------
 	- model : str
-		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
+		Atmospheric models. See available models in ``seda.Models().available_models``.  
 	- spectra_name_full: str, list, or array
 		Spectra file names with full path.
 	- xlog : {``True``, ``False``}, optional (default ``True``)
@@ -686,12 +686,20 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False, 
 	filters = out_synthetic_photometry['filters'] # filters used to calculate synthetic photometry
 	eff_wl = out_synthetic_photometry['lambda_eff(um)'] # effective wavelength (um) for all filters
 	eff_width = out_synthetic_photometry['width_eff(um)'] # effective width (um) for all filters
-	flux_syn = out_synthetic_photometry['syn_flux(erg/s/cm2/A)'] # synthetic flux (erg/s/cm2/A) for all filters
-	eflux_syn = out_synthetic_photometry['esyn_flux(erg/s/cm2/A)'] # synthetic flux errors (erg/s/cm2/A) for all filters
-	flux_Jy_syn = out_synthetic_photometry['syn_flux(Jy)'] # synthetic flux (Jy) for all filters
-	eflux_Jy_syn = out_synthetic_photometry['esyn_flux(Jy)'] # synthetic flux errors (Jy) for all filters
+	# read synthetic fluxes in the units corresponding to the input spectrum
+	if flux_unit=='erg/s/cm2/A':
+		flux_syn = out_synthetic_photometry['syn_flux(erg/s/cm2/A)']
+		try: eflux_syn = out_synthetic_photometry['esyn_flux(erg/s/cm2/A)']
+		except: eflux_syn = np.repeat(0, len(flux_syn))
+	if flux_unit=='Jy':
+		flux_syn = out_synthetic_photometry['syn_flux(Jy)']
+		try: eflux_syn = out_synthetic_photometry['esyn_flux(Jy)'] # synthetic flux errors (Jy) for all filters
+		except: eflux_syn = np.repeat(0, len(flux_syn))
+
 	mag_syn = out_synthetic_photometry['syn_mag'] # synthetic magnitude for all filters
-	emag_syn = out_synthetic_photometry['esyn_mag'] # synthetic magnitude error for all filters
+	try: emag_syn = out_synthetic_photometry['esyn_mag'] # synthetic magnitude error for all filters
+	except: emag_syn = np.repeat(0, len(flux_syn))
+
 	label_syn = out_synthetic_photometry['label'] # label for synthetic photometry
 	transmission = out_synthetic_photometry['transmission'] # responses for each filter
 
@@ -737,6 +745,104 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False, 
 	
 	if save:
 		if out_file is None: plt.savefig('SED_synthetic_photometry.pdf', bbox_inches='tight')
+		else: plt.savefig(out_file, bbox_inches='tight')
+	plt.show()
+	plt.close()
+
+	return
+
+#########################
+def plot_full_SED(out_bol_lum, xlog=True, ylog=True, xrange=None, yrange=None, 
+	              spectra_label=None, model_label=None, out_file=None, save=True):
+	'''
+	Description:
+	------------
+		Plot full SED considering observed data completed with a model spectrum.
+
+	Parameters:
+	-----------
+	- out_bol_lum : dictionary
+		Output dictionary from `bol_lum`.
+	- xlog : {``True``, ``False``}, optional (default ``True``)
+		Use logarithmic (``True``) or linear (``False``) scale to plot the horizontal axis.
+	- ylog : {``True``, ``False``}, optional (default ``True``)
+		Use logarithmic (``True``) or linear (``False``) scale to plot the vertical axis.
+	- xrange : list or array, optional (default is full hybrid SED range)
+		Horizontal range of the plot.
+	- yrange : list or array, optional (default is full hybrid SED range)
+		Vertical range of the plot.
+	- spectra_label : list, optional
+		List of strings to label each input spectrum in the SED.
+		Default is 'Observed spectrum #i'.
+	- model_label : str, optional
+		String to label the model spectrum in the SED.
+		Default is 'Model spectrum'.
+	- out_file : str, optional
+		File name to save the figure (it can include a path e.g. my_path/figure.pdf). 
+		Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
+		Default name is 'Hybrid_SED.pdf'.
+	- save : {``True``, ``False``}, optional (default ``True``)
+		Save (``'True'``) or do not save (``'False'``) the resulting figure.
+
+	Returns:
+	--------
+	Plot of full SED from observations complemented with a model that will be stored if ``save`` with the name ``out_file``.
+
+	Example:
+	--------
+	>>> import seda
+	>>> 
+	>>> # plot and save a hybrid SED using observation and models
+	>>> # 'out_bol_lum' is the output of ``bol_lum``
+	>>> seda.plot_full_SED(out_bol_lum=out_bol_lum)
+
+	Author: Genaro Suárez
+	Date: 2025-06-01
+	'''
+
+	# extract relevant parameters
+	wl_spectra = out_bol_lum['wl_spectra']
+	flux_spectra = out_bol_lum['flux_spectra']
+	eflux_spectra = out_bol_lum['eflux_spectra']
+	wl_model = out_bol_lum['wl_model']
+	flux_model = out_bol_lum['flux_model']
+	wl_SED = out_bol_lum['wl_SED']
+	flux_SED = out_bol_lum['flux_SED']
+	eflux_SED = out_bol_lum['eflux_SED']
+	N_spectra = out_bol_lum['N_spectra']
+
+	#------------------------
+	# PLOT
+	# initialize plot for the SED
+	fig, ax = plt.subplots()
+
+	plt.plot(wl_SED, flux_SED, linewidth=1, color='black', label='Hybrid SED')
+
+	if model_label is None: label_mod = f'Model spectrum'
+	else: label_mod = model_label
+	plt.plot(wl_model, flux_model, '--', linewidth=0.5, color='silver', label=label_mod)
+	for i in range(N_spectra): # for each input spectrum
+		if spectra_label is None: label_obs = f'Observed spectrum #{i+1}'
+		else: label_obs = spectra_label[i]
+		plt.plot(wl_spectra[i], flux_spectra[i], linewidth=1, label=label_obs)
+
+	ax.xaxis.set_minor_locator(AutoMinorLocator())
+	ax.yaxis.set_minor_locator(AutoMinorLocator())
+	if xrange is not None: ax.set_xlim(xrange[0], xrange[1])
+	if yrange is not None: ax.set_ylim(yrange[0], yrange[1])
+	if xlog: plt.xscale('log')
+	if ylog: plt.yscale('log')
+	
+	ax.xaxis.set_major_formatter(StrMethodFormatter('{x:.0f}'))
+	
+	ax.grid(True, which='both', color='gainsboro', linewidth=0.5, alpha=0.5)
+	ax.legend()
+	
+	plt.xlabel(r'$\lambda\ (\mu$m)', size=12)
+	plt.ylabel(r'$F_\lambda\ ($erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)', size=12)
+
+	if save:
+		if out_file is None: plt.savefig(f'Hybrid_SED.pdf', bbox_inches='tight')
 		else: plt.savefig(out_file, bbox_inches='tight')
 	plt.show()
 	plt.close()
