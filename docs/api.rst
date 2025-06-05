@@ -50,6 +50,11 @@ Utils
 .. automodule:: seda.spectral_indices.spectral_indices
     :members:
 
+Physical Parameters
+-------------------
+.. automodule:: seda.phy_params
+    :members:
+
 Plots
 -----
 .. automodule:: seda.plots
