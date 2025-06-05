@@ -1300,6 +1300,7 @@ def parallax_to_distance(parallax, eparallax):
 		Parallax uncertainty in mas.
 
 	Returns:
+	--------
 	- distance : float, array
 		Distance in pc.
 	- edistance : float, array
