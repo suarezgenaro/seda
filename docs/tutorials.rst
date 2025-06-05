@@ -11,6 +11,7 @@ Tutorials
    notebooks/tutorial_models_examination.ipynb
    notebooks/tutorial_synthetic_photometry.ipynb
    notebooks/tutorial_spectral_indices.ipynb
+   notebooks/tutorial_bolometric_luminosity.ipynb
 
 **Chi-square minimization**
 
