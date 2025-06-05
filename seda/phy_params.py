@@ -262,7 +262,8 @@ def bol_lum(wl_spectra=None, flux_spectra=None, eflux_spectra=None, fit_pickle_f
 	elogLbol_tot = eLbol_tot/(Lbol_tot*np.log(10))
 
 	# print Lbol
-	print(f"\nlog(Lbol)={round(logLbol_tot,3)}\pm{round(logLbol_tot,3)}")
+	#print(f"\nlog(Lbol)={'{:.3f}'.format(round(logLbol_tot,3))}\pm'{:.3f}'.format(round(elogLbol_tot,3))}")
+	print('\nlog(Lbol) = {:.3f}'.format(round(logLbol_tot,3))+'\pm'+'{:.3f}'.format(round(elogLbol_tot,3)))
 
 	# fraction of the hybrid SED covered by the observations
 	completeness = 100*flux_tot_obs/flux_tot
