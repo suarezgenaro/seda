@@ -30,7 +30,6 @@ extensions = ['sphinx_rtd_theme',
               'sphinx.ext.napoleon', # preprocessor that converts docstrings to correct reStructuredText before autodoc processes them.
               'sphinx.ext.viewcode', # Add a link to the Python source code for classes, functions etc.
               'nbsphinx', # Integrate Jupyter Notebooks and Sphinx
-              'myst_nb',
               ]
 
 autosummary_generate = True  # Turn on sphinx.ext.autosummary
