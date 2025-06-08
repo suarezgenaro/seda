@@ -769,7 +769,7 @@ def plot_silicate_index(out_silicate_index, plot_xrange=None, plot_yrange=None, 
 
 ##########################
 # plot the water index measurement
-def plot_water_index(out_water_index, plot_xrange=None, plot_yrange=None, plot_title=None, plot_save=True):
+def plot_water_index(out_water_index, plot_xrange=None, plot_yrange=None, plot_title=None, plot_save=True, plot_name=False):
 
 	# read parameters of interest
 	wl = out_water_index['wl']
@@ -870,7 +870,7 @@ def plot_water_index(out_water_index, plot_xrange=None, plot_yrange=None, plot_t
 
 ##########################
 # plot the methane index measurement
-def plot_methane_index(out_methane_index, plot_xrange=None, plot_yrange=None, plot_title=None, plot_save=True):
+def plot_methane_index(out_methane_index, plot_xrange=None, plot_yrange=None, plot_title=None, plot_save=True, plot_name=False):
 
 	# read parameters of interest
 	wl = out_methane_index['wl']
@@ -959,7 +959,7 @@ def plot_methane_index(out_methane_index, plot_xrange=None, plot_yrange=None, pl
 
 ##########################
 # plot the ammonia index measurement
-def plot_ammonia_index(out_ammonia_index, plot_xrange=None, plot_yrange=None, plot_title=None, plot_save=True):
+def plot_ammonia_index(out_ammonia_index, plot_xrange=None, plot_yrange=None, plot_title=None, plot_save=True, plot_name=False):
 
 	# read parameters of interest
 	wl = out_ammonia_index['wl']
@@ -1048,7 +1048,7 @@ def plot_ammonia_index(out_ammonia_index, plot_xrange=None, plot_yrange=None, pl
 
 ##########################
 # plot the user index measurement
-def plot_user_index(out_user_index, index_name=None, plot_xrange=None, plot_yrange=None, plot_title=None, plot_save=True):
+def plot_user_index(out_user_index, index_name=None, plot_xrange=None, plot_yrange=None, plot_title=None, plot_save=True, plot_name=False):
 
 	# read parameters of interest
 	wl = out_user_index['wl']
@@ -1134,7 +1134,9 @@ def plot_user_index(out_user_index, index_name=None, plot_xrange=None, plot_yran
 		else:
 			plt.title(f'{index_name} Index Measurement', size=12)
 	
-	if plot_save: plt.savefig('user_index_measurement.pdf', bbox_inches='tight')
+	if plot_save: 
+		if plot_name: plt.savefig(plot_name, bbox_inches='tight')
+		else: plt.savefig('user_index_measurement.pdf', bbox_inches='tight')
 	plt.show()
 	plt.close()
 

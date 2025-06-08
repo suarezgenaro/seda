@@ -7,8 +7,9 @@ from .chi2_fit import *
 from sys import exit
 
 ##########################
-def bol_lum(wl_spectra=None, flux_spectra=None, eflux_spectra=None, fit_pickle_file=None, distance=None, edistance=None, 
-	        flux_unit=None, wl_model=None, flux_model=None, scale_model=True, convolve_model=True, res=None):
+def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=None, distance=None, edistance=None, 
+	        flux_unit=None, wl_model=None, flux_model=None, params=None, scale_model=True, convolve_model=True, 
+	        res=None, lam_res=None):
 	'''
 	Description:
 	------------
@@ -16,25 +17,30 @@ def bol_lum(wl_spectra=None, flux_spectra=None, eflux_spectra=None, fit_pickle_f
 
 	Parameters:
 	-----------
-	- wl_spectra : float array or list
+	- output_fit : dictionary or str, optional (required if no input model spectrum is provided)
+		Output dictionary with the results from ``chi2`` or ``bayes``.
+		It can be either the name of the pickle file or simply the output dictionary.
+	- wl_spectra : float array or list, optional (require if `output_chi2` is not provided)
 		Wavelength in micron of the spectra to construct an SED.
 		For multiple spectra, provide them as a list (e.g., ``wl_spectra = [wl_spectrum1, wl_spectrum2]``).
-	- flux_spectra : float array or list
+	- flux_spectra : float array or list, optional (require if `output_chi2` is not provided)
 		Fluxes for the input spectra in units indicated by ``flux_unit``.
 		Use a list for multiple spectra (similar to ``wl_spectra``).
-	- eflux_spectra : float array or list
+	- eflux_spectra : float array or list, optional (require if `output_chi2` is not provided)
 		Fluxes uncertainties in units indicated by ``flux_unit``.
 		Use a list for multiple spectra (similar to ``wl_spectra``).
 	- flux_unit : str, optional (default ``'erg/s/cm2/A'``)
 		Units of ``flux``: ``'Jy'``, ``'erg/s/cm2/A'``, or ``erg/s/cm2/um``.
-	- distance : float
+	- distance : float, optional (require if `output_chi2` is not provided)
 		Target distance (in pc) used to obtain luminosity from total flux.
-	- edistance : float
+	- edistance : float, optional (require if `output_chi2` is not provided)
 		Distance error (in pc).
 	- wl_model : array, optional (required if `model_dir` is not provided)
 		Wavelengths in micron of model spectrum to complement the input observed SED.
 	- flux_model : array, optional (required if `model_dir` is not provided)
 		Fluxes in erg/s/cm2/A of model spectrum to complement the input observed SED.
+	- params : dictionary, optional (require if `output_chi2` is not provided)
+		Value for each free parameter for the model spectrum used in the hybrid SED.
 	- scale_model : {``True``, ``False``}, optional (default ``True``)
 		Label to indicate if the input model spectrum needs to be scaled (``True``) by minimizing chi-square or it was already scaled (``False``).
 	- convolve_model : {``True``, ``False``}, optional (default ``True``)
@@ -71,6 +77,7 @@ def bol_lum(wl_spectra=None, flux_spectra=None, eflux_spectra=None, fit_pickle_f
 		- ``'wl_SED'`` : wavelengths in micron of the hybrid SED.
 		- ``'flux_SED'`` : fluxes in erg/s/cm2/A the hybrid SED.
 		- ``'eflux_SED'`` : fluxes uncertainties in erg/s/cm2/A the hybrid SED.
+		- ``'params'`` : dictionary with free parameter values for the model spectrum used in the hybrid SED.
 		- ``'wl_spectra'`` : input `wl_spectra`.
 		- ``'flux_spectra'`` : input `flux_spectra`.
 		- ``'eflux_spectra'`` : input `eflux_spectra`.
@@ -82,74 +89,85 @@ def bol_lum(wl_spectra=None, flux_spectra=None, eflux_spectra=None, fit_pickle_f
 	'''
 
 	# verify that necessary input parameters are provided
-	if (wl_spectra is None) & (fit_pickle_file is None):
-		raise Exception(f'"wl_spectra" or "fit_pickle_file" must be provided')
-	if (distance is None) & (fit_pickle_file is None):
-		raise Exception(f'"distance" or "fit_pickle_file" must be provided')
+	if (wl_spectra is None) & (output_fit is None):
+		raise Exception(f'"wl_spectra" or "output_fit" must be provided')
+	if (distance is None) & (output_fit is None):
+		raise Exception(f'"distance" or "output_fit" must be provided')
 
-	# number of input spectra
-	if isinstance(wl_spectra, list): # when multiple spectra are provided
-		N_spectra = len(wl_spectra) # number of input spectra
-	else: # when only one spectrum is provided
-		N_spectra = 1 # number of input spectra
+	if output_fit is not None: # output_fit is provided
+		# if results from the fits are provided as a pickle file, open it
+		try: # if given as a pickle file
+			with open(output_fit, 'rb') as file:
+				output_fit = pickle.load(file)
+		except: # if given as the output of chi2_fit
+			pass
 
-	# when a single spectrum is provided, convert it into a list, if needed
-	if wl_spectra is not None:
-		if not isinstance(wl_spectra, list): wl_spectra = [wl_spectra]
-	if flux_spectra is not None:
-		if not isinstance(flux_spectra, list): flux_spectra = [flux_spectra]
-	if eflux_spectra is not None:
-		if not isinstance(eflux_spectra, list): eflux_spectra = [eflux_spectra]
+		# open results from the chi square analysis
+		try:
+			output_fit['my_chi2']
+		except:
+			pass
+		else:
+			# extract relevant parameters
+			wl_spectra = output_fit['my_chi2'].wl_spectra # micron
+			flux_spectra = output_fit['my_chi2'].flux_spectra # erg/s/cm2/A
+			eflux_spectra = output_fit['my_chi2'].eflux_spectra # erg/s/cm2/A
+			distance = output_fit['my_chi2'].distance # pc
+			edistance = output_fit['my_chi2'].edistance # pc
+			model = output_fit['my_chi2'].model # pc
+			model_dir = output_fit['my_chi2'].model_dir # pc
+			N_spectra = output_fit['my_chi2'].N_spectra # pc
+			res = output_fit['my_chi2'].res # pc
+			lam_res = output_fit['my_chi2'].lam_res # pc
+	
+			# read the entire best fit model spectrum (the one stored in 
+			# output_fit was trimmed to the wavelength range of the data)
+			output_best_chi2_fits = best_chi2_fits(output_chi2=output_fit, N_best_fits=1, 
+			                                       model_dir_ori=model_dir, ori_res=True)
+			wl_model = output_best_chi2_fits['wl_model_best'][0] # um
+			flux_model = output_best_chi2_fits['flux_model_best'][0] # erg/s/cm2/A scaled to match the input spectra
+			spectra_name_best = output_best_chi2_fits['spectra_name_best'][0]
+			params = separate_params(model=model, spectra_name=spectra_name_best)['params']
+			# convert each parameter into float instead of array, as it contains only parameters for the best fit
+			for param in params:
+				params[param] = params[param][0]
 
-	# handle input spectra
-	for i in range(N_spectra):
-		# convert input spectra to numpy arrays, if they are astropy
-		wl_spectra[i] = astropy_to_numpy(wl_spectra[i])
-		flux_spectra[i] = astropy_to_numpy(flux_spectra[i])
-		eflux_spectra[i] = astropy_to_numpy(eflux_spectra[i])
+		# if the fit was done using a Bayesian sampling
+		try:
+			output_fit['my_bayes']
+		except:
+			pass
+		else:
+			# extract relevant parameters
+			wl_spectra = output_fit['my_bayes'].wl_spectra # micron
+			flux_spectra = output_fit['my_bayes'].flux_spectra # erg/s/cm2/A
+			eflux_spectra = output_fit['my_bayes'].eflux_spectra # erg/s/cm2/A
+			distance = output_fit['my_bayes'].distance # pc
+			edistance = output_fit['my_bayes'].edistance # pc
+			model = output_fit['my_bayes'].model # pc
+			model_dir = output_fit['my_bayes'].model_dir # pc
+			N_spectra = output_fit['my_bayes'].N_spectra # pc
+			res = output_fit['my_bayes'].res # pc
+			lam_res = output_fit['my_bayes'].lam_res # pc
 
-		# remove NaN values
-		mask_nonan = (~np.isnan(wl_spectra[i])) & (~np.isnan(flux_spectra[i])) & (~np.isnan(eflux_spectra[i]))
-		wl_spectra[i] = wl_spectra[i][mask_nonan]
-		flux_spectra[i] = flux_spectra[i][mask_nonan]
-		eflux_spectra[i] = eflux_spectra[i][mask_nonan]
+			# read the entire best fit model spectrum (the one stored in output_fit 
+			# was trimmed to the wavelength range of the data)
+			output_best_bayesian_fit = best_bayesian_fit(output_bayes=output_fit, 
+			                                             model_dir_ori=model_dir, ori_res=True)
+			wl_model = output_best_bayesian_fit['wl_model_ori'] # um
+			flux_model = output_best_bayesian_fit['flux_model_ori'] # erg/cm2/s/A
+			params = output_best_bayesian_fit['params_med']
 
-		# remove negative fluxes
-		mask_noneg = flux_spectra[i]>0
-		wl_spectra[i] = wl_spectra[i][mask_noneg]
-		flux_spectra[i] = flux_spectra[i][mask_noneg]
-		eflux_spectra[i] = eflux_spectra[i][mask_noneg]
-
-		# ensure that wavelength is arranged in ascending order
-		sort_ind = np.argsort(wl_spectra[i])
-		wl_spectra[i] = wl_spectra[i][sort_ind ]
-		flux_spectra[i] = flux_spectra[i][sort_ind ]
-		eflux_spectra[i] = eflux_spectra[i][sort_ind ]
-
-#	# open parameters from pickle file, if provided
-#	if fit_pickle_file:
-#		# open pickle file
-#		with open(fit_pickle_file, 'rb') as file:
-#			out_fit = pickle.load(file)
-#
-#		# extract input spectra
-#		wl_spectra = out_fit['my_fit'].wl_spectra # input spectra
-#		flux_spectra = out_fit['my_fit'].flux_spectra # input spectra
-#		eflux_spectra = out_fit['my_fit'].eflux_spectra # input spectra
-
-	# set default flux_unit
-	if flux_unit is None: flux_unit='erg/s/cm2/A'
-	# convert input fluxes to erg/s/cm2/A, if need
-	if flux_unit=='Jy': # if fluxes are provided in Jy
-		for i in range(N_spectra):
-			out_convert_flux = convert_flux(flux=flux_spectra[i], eflux=eflux_spectra[i], 
-			                                wl=wl_spectra[i], unit_in='Jy', unit_out='erg/s/cm2/A')
-			flux_spectra[i] = out_convert_flux['flux_out']
-			eflux_spectra[i] = out_convert_flux['eflux_out']
-	if flux_unit=='erg/s/cm2/um': # if fluxes are provided in erg/s/cm2/um
-		for i in range(N_spectra):
-			flux_spectra[i] = (flux_spectra[i]*u.erg/u.s/u.cm**2/u.micron).to(u.erg/u.s/u.cm**2/u.angstrom).value # erg/s/cm2/A
-			eflux_spectra[i] = (eflux_spectra[i]*u.erg/u.s/u.cm**2/u.micron).to(u.erg/u.s/u.cm**2/u.angstrom).value # erg/s/cm2/A
+	else: # no output_fit is provided
+		# handle input data
+		my_data = InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, eflux_spectra=eflux_spectra, 
+		                    flux_unit=flux_unit, res=res, distance=distance, edistance=edistance)
+		N_spectra = my_data.N_spectra
+		wl_spectra = my_data.wl_spectra # um
+		flux_spectra = my_data.flux_spectra # erg/cm2/s/A
+		eflux_spectra = my_data.eflux_spectra # erg/cm2/s/A
+		res = my_data.res # um
+		lam_res = my_data.lam_res # um
 
 	# integrate the input SED
 	flux_each = np.zeros(N_spectra)
@@ -188,11 +206,15 @@ def bol_lum(wl_spectra=None, flux_spectra=None, eflux_spectra=None, fit_pickle_f
 			# scale model fluxes
 			flux_model = out_chi2['scaling_fit']*flux_model
 
-#			# convolve scaled model, if requested
-#			if convolve_model:
-#				lam_res = out_chi2['my_chi2'].lam_res
-#				out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, lam_res=lam_res[0], res=res[0]) 
-#				flux_model = out_convolve_spectrum['flux_conv']
+			# convolve scaled model, if requested
+			# consider the lower resolution from the input observed spectra to convolve the entire model spectrum
+			mask = np.array(res)==min(res)
+			res_min = np.array(res)[mask][0]
+			lam_res_min = np.array(lam_res)[mask][0]
+			if convolve_model:
+				lam_res = out_chi2['my_chi2'].lam_res
+				out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, lam_res=lam_res_min, res=res_min) 
+				flux_model = out_convolve_spectrum['flux_conv']
 
 		N_spectra = my_data.N_spectra
 
@@ -247,7 +269,7 @@ def bol_lum(wl_spectra=None, flux_spectra=None, eflux_spectra=None, fit_pickle_f
 
 	# Lbol from the full SED
 	# total flux from
-	flux_tot = np.trapz(flux_SED, 1.e4*wl_SED) # erg/s/cm2
+	flux_tot = np.trapz(flux_SED, (wl_SED*u.um).to(u.angstrom).value) # erg/s/cm2
 	mask = ~np.isnan(eflux_SED)
 	#eflux_tot = np.median(eflux_SED[mask]/flux_SED[mask]) * flux_tot # keep fractional errors (errors from the spectrum with the most data points will dominate, as no error is associated to the model)
 	eflux_tot = np.sqrt(sum(eflux_each**2)) # (fractional errors from each input spectrum will have its contribution)
@@ -262,7 +284,6 @@ def bol_lum(wl_spectra=None, flux_spectra=None, eflux_spectra=None, fit_pickle_f
 	elogLbol_tot = eLbol_tot/(Lbol_tot*np.log(10))
 
 	# print Lbol
-	#print(f"\nlog(Lbol)={'{:.3f}'.format(round(logLbol_tot,3))}\pm'{:.3f}'.format(round(elogLbol_tot,3))}")
 	print('\nlog(Lbol) = {:.3f}'.format(round(logLbol_tot,3))+'\pm'+'{:.3f}'.format(round(elogLbol_tot,3)))
 
 	# fraction of the hybrid SED covered by the observations
@@ -289,7 +310,7 @@ def bol_lum(wl_spectra=None, flux_spectra=None, eflux_spectra=None, fit_pickle_f
 	       'flux_tot_obs': flux_tot_obs, 'eflux_tot_obs': eflux_tot_obs, 'Lbol_tot_obs': Lbol_tot_obs, 
 	       'eLbol_tot_obs': eLbol_tot_obs, 'logLbol_tot_obs': logLbol_tot_obs, 'elogLbol_tot_obs': elogLbol_tot_obs, 
 	       'contribution_percentage': contribution, 'contribution_percentage_obs': contribution_obs,
-	       'wl_SED': wl_SED, 'flux_SED': flux_SED, 'eflux_SED': eflux_SED,
+	       'wl_SED': wl_SED, 'flux_SED': flux_SED, 'eflux_SED': eflux_SED, 'params': params, 
 	       'wl_spectra': wl_spectra, 'flux_spectra': flux_spectra, 'eflux_spectra': eflux_spectra,
 	       'wl_model': wl_model, 'flux_model': flux_model,
 	       'N_spectra': N_spectra, 'completeness_obs': completeness}

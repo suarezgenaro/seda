@@ -10,7 +10,7 @@ from .utils import *
 from .models import *
 
 ##########################
-def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, xlog=False, ylog=True, xrange=None, yrange=None, 
+def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None, yrange=None, 
 	              ori_res=False, model_dir_ori=None, out_file=None, save=True):
 	'''
 	Description:
@@ -19,8 +19,9 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, xlog=False, ylog=True, xrange
 
 	Parameters:
 	-----------
-	- chi2_pickle_file : str
-		File name with the pickle file with results from the chi-square minimization.
+	- output_chi2 : dictionary or str
+		Output dictionary with the results from the chi-square minimization by ``chi2``.
+		It can be either the name of the pickle file or simply the output dictionary.
 	- N_best_fits : int 
 		Number (default 1) of best model fits for plotting.
 	- xlog : {``True``, ``False``}, optional (default ``False``)
@@ -39,7 +40,7 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, xlog=False, ylog=True, xrange
 	- out_file : str, optional
 		File name to save the figure (it can include a path e.g. my_path/figure.pdf). 
 		Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
-		Default name is 'SED_``model``_chi2.pdf', where ``model`` is read from ``chi2_pickle_file``.
+		Default name is 'SED_``model``_chi2.pdf', where ``model`` is read from ``output_chi2``.
 	- save : {``True``, ``False``}, optional (default ``True``)
 		Save (``'True'``) or do not save (``'False'``) the resulting figure.
 
@@ -53,35 +54,38 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, xlog=False, ylog=True, xrange
 	>>> 
 	>>> # plot and save the best three model fits from the model comparison to the ATMO 2020 models
 	>>> # 'ATMO2020_chi2_minimization.pickle' is the output by ``chi2_fit.chi2``.
-	>>> seda.plot_chi2_fit(chi2_pickle_file='ATMO2020_chi2_minimization.pickle', N_best_fits=3)
+	>>> seda.plot_chi2_fit(output_chi2='ATMO2020_chi2_minimization.pickle', N_best_fits=3)
 
 	Author: Genaro Suárez
 	'''
 
 	# read best fits
-	out_best_chi2_fits = best_chi2_fits(chi2_pickle_file=chi2_pickle_file, N_best_fits=N_best_fits, model_dir_ori=model_dir_ori, ori_res=ori_res)
-	spectra_name_best = out_best_chi2_fits['spectra_name_best']
-	chi2_red_fit_best = out_best_chi2_fits['chi2_red_fit_best']
+	output_best_chi2_fits = best_chi2_fits(output_chi2=output_chi2, N_best_fits=N_best_fits, model_dir_ori=model_dir_ori, ori_res=ori_res)
+	spectra_name_best = output_best_chi2_fits['spectra_name_best']
+	chi2_red_fit_best = output_best_chi2_fits['chi2_red_fit_best']
 	if ori_res:
-		wl_model_best = out_best_chi2_fits['wl_model_best']
-		flux_model_best = out_best_chi2_fits['flux_model_best']
-	wl_array_model_conv_resam_best = out_best_chi2_fits['wl_array_model_conv_resam_best']
-	flux_array_model_conv_resam_best = out_best_chi2_fits['flux_array_model_conv_resam_best']
-	wl_array_model_conv_resam_fit_best = out_best_chi2_fits['wl_array_model_conv_resam_fit_best']
-	flux_array_model_conv_resam_fit_best = out_best_chi2_fits['flux_array_model_conv_resam_fit_best']
-	flux_residuals_best = out_best_chi2_fits['flux_residuals_best']
-	logflux_residuals_best = out_best_chi2_fits['logflux_residuals_best']
+		wl_model_best = output_best_chi2_fits['wl_model_best']
+		flux_model_best = output_best_chi2_fits['flux_model_best']
+	wl_array_model_conv_resam_best = output_best_chi2_fits['wl_array_model_conv_resam_best']
+	flux_array_model_conv_resam_best = output_best_chi2_fits['flux_array_model_conv_resam_best']
+	wl_array_model_conv_resam_fit_best = output_best_chi2_fits['wl_array_model_conv_resam_fit_best']
+	flux_array_model_conv_resam_fit_best = output_best_chi2_fits['flux_array_model_conv_resam_fit_best']
+	flux_residuals_best = output_best_chi2_fits['flux_residuals_best']
+	logflux_residuals_best = output_best_chi2_fits['logflux_residuals_best']
 
 	# open results from the chi square analysis
-	with open(chi2_pickle_file, 'rb') as file:
-		out_chi2 = pickle.load(file)
-	model = out_chi2['my_chi2'].model
-	N_spectra = out_chi2['my_chi2'].N_spectra
-	wl_spectra = out_chi2['my_chi2'].wl_spectra
-	flux_spectra = out_chi2['my_chi2'].flux_spectra
-	eflux_spectra = out_chi2['my_chi2'].eflux_spectra
-	wl_spectra_min = out_chi2['my_chi2'].wl_spectra_min 
-	wl_spectra_max = out_chi2['my_chi2'].wl_spectra_max 
+	try: # if given as a pickle file
+		with open(output_chi2, 'rb') as file:
+			output_chi2 = pickle.load(file)
+	except: # if given as the output of chi2_fit
+		pass
+	model = output_chi2['my_chi2'].model
+	N_spectra = output_chi2['my_chi2'].N_spectra
+	wl_spectra = output_chi2['my_chi2'].wl_spectra
+	flux_spectra = output_chi2['my_chi2'].flux_spectra
+	eflux_spectra = output_chi2['my_chi2'].eflux_spectra
+	wl_spectra_min = output_chi2['my_chi2'].wl_spectra_min 
+	wl_spectra_max = output_chi2['my_chi2'].wl_spectra_max 
 
 	#------------------------
 	# initialize plot for best fits and residuals
@@ -168,7 +172,7 @@ def plot_chi2_fit(chi2_pickle_file, N_best_fits=1, xlog=False, ylog=True, xrange
 	return
 
 ##########################
-def plot_chi2_red(chi2_pickle_file, N_best_fits=1, xlog=False, ylog=False, out_file=None, save=True):
+def plot_chi2_red(output_chi2, N_best_fits=1, xlog=False, ylog=False, out_file=None, save=True):
 	'''
 	Description:
 	------------
@@ -176,8 +180,9 @@ def plot_chi2_red(chi2_pickle_file, N_best_fits=1, xlog=False, ylog=False, out_f
 
 	Parameters:
 	-----------
-	- chi2_pickle_file : str
-		File name with the pickle file with chi2 results.
+	- output_chi2 : dictionary or str
+		Output dictionary with the results from the chi-square minimization by ``chi2``.
+		It can be either the name of the pickle file or simply the output dictionary.
 	- N_best_fits : int 
 		Number (default 1) of best model fits for plotting.
 	- xlog : {``True``, ``False``}, optional (default ``False``)
@@ -187,7 +192,7 @@ def plot_chi2_red(chi2_pickle_file, N_best_fits=1, xlog=False, ylog=False, out_f
 	- out_file : str, optional
 		File name to save the figure (it can include a path e.g. my_path/figure.pdf). 
 		Note: use file formats (pdf, eps, or ps). Image formats do not work because the figure is saved in several pages, according to ``N_best_fits``.
-		Default name is 'SED_``model``_chi2.pdf', where ``model`` is read from ``chi2_pickle_file``.
+		Default name is 'SED_``model``_chi2.pdf', where ``model`` is read from ``output_chi2``.
 	- save : {``True``, ``False``}, optional (default ``True``)
 		Save (``'True'``) or do not save (``'False'``) the resulting figure.
 
@@ -201,24 +206,26 @@ def plot_chi2_red(chi2_pickle_file, N_best_fits=1, xlog=False, ylog=False, out_f
 	>>> 
 	>>> # plot and save the best three model fits from the model comparison to the ATMO 2020 models
 	>>> # 'ATMO2020_chi2_minimization.pickle' is the output by ``chi2_fit.chi2``.
-	>>> seda.plot_chi2_red(chi2_pickle_file='ATMO2020_chi2_minimization.pickle', N_best_fits=3)
+	>>> seda.plot_chi2_red(output_chi2='ATMO2020_chi2_minimization.pickle', N_best_fits=3)
 
 	Author: Genaro Suárez
 	'''
 
 	# read best fits
-	out_best_chi2_fits = best_chi2_fits(chi2_pickle_file=chi2_pickle_file, N_best_fits=N_best_fits)
-	spectra_name_best = out_best_chi2_fits['spectra_name_best']
-	chi2_red_fit_best = out_best_chi2_fits['chi2_red_fit_best']
-	chi2_red_wl_fit_best = out_best_chi2_fits['chi2_red_wl_fit_best']
-	wl_array_model_conv_resam_fit_best = out_best_chi2_fits['wl_array_model_conv_resam_fit_best']
+	output_best_chi2_fits = best_chi2_fits(output_chi2=output_chi2, N_best_fits=N_best_fits)
+	spectra_name_best = output_best_chi2_fits['spectra_name_best']
+	chi2_red_fit_best = output_best_chi2_fits['chi2_red_fit_best']
+	chi2_red_wl_fit_best = output_best_chi2_fits['chi2_red_wl_fit_best']
+	wl_array_model_conv_resam_fit_best = output_best_chi2_fits['wl_array_model_conv_resam_fit_best']
 
 	# open results from the chi square analysis
-	with open(chi2_pickle_file, 'rb') as file:
-		out_chi2 = pickle.load(file)
-
-	model = out_chi2['my_chi2'].model
-	N_spectra = out_chi2['my_chi2'].N_spectra
+	try: # if given as a pickle file
+		with open(output_chi2, 'rb') as file:
+			output_chi2 = pickle.load(file)
+	except: # if given as the output of chi2_fit
+		pass
+	model = output_chi2['my_chi2'].model
+	N_spectra = output_chi2['my_chi2'].N_spectra
 
 	if save:
 		if out_file is None: pdf_pages = PdfPages('chi2_'+model+'.pdf') # name of the pdf
@@ -258,7 +265,7 @@ def plot_chi2_red(chi2_pickle_file, N_best_fits=1, xlog=False, ylog=False, out_f
 	plt.close('all')
 
 ##########################
-def plot_bayes_fit(bayes_pickle_file, xlog=False, ylog=True, xrange=None, yrange=None, 
+def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None, 
 	               ori_res=False, model_dir_ori=None, out_file=None, save=True):
 	'''
 	Description:
@@ -267,8 +274,9 @@ def plot_bayes_fit(bayes_pickle_file, xlog=False, ylog=True, xrange=None, yrange
 
 	Parameters:
 	-----------
-	- bayes_pickle_file : str
-		File name with the pickle file with results from the Bayesian sampling.
+	- output_bayes : str
+		Output dictionary with the results from the nested sampling by ``bayes``.
+		It can be either the name of the pickle file or simply the output dictionary.
 	- xlog : {``True``, ``False``}, optional (default ``False``)
 		Use logarithmic (``True``) or linear (``False``) scale to plot the horizontal axis.
 	- ylog : {``True``, ``False``}, optional (default ``True``)
@@ -285,7 +293,7 @@ def plot_bayes_fit(bayes_pickle_file, xlog=False, ylog=True, xrange=None, yrange
 	- out_file : str, optional
 		File name to save the figure (it can include a path e.g. my_path/figure.pdf). 
 		Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
-		Default name is 'SED_``model``_bayes.pdf', where ``model`` is read from ``bayes_pickle_file``.
+		Default name is 'SED_``model``_bayes.pdf', where ``model`` is read from ``output_bayes``.
 	- save : {``True``, ``False``}, optional (default ``True``)
 		Save (``'True'``) or do not save (``'False'``) the resulting figure.
 
@@ -299,36 +307,39 @@ def plot_bayes_fit(bayes_pickle_file, xlog=False, ylog=True, xrange=None, yrange
 	>>> 
 	>>> # plot and save the best model fit from the Bayesian sampling to Sonora Elf Owl models
 	>>> # 'Sonora_Elf_Owl_bayesian_sampling.pickle' is the output by ``bayes_fit.bayes``.
-	>>> seda.plot_bayes_fit(bayes_pickle_file='Sonora_Elf_Owl_bayesian_sampling.pickle')
+	>>> seda.plot_bayes_fit(output_bayes='Sonora_Elf_Owl_bayesian_sampling.pickle')
 
 	Author: Genaro Suárez
 	'''
 
 	# open results from sampling
-	with open(bayes_pickle_file, 'rb') as file:
-		out_bayes = pickle.load(file)
-	wl_spectra = out_bayes['my_bayes'].wl_spectra # input spectra
-	flux_spectra = out_bayes['my_bayes'].flux_spectra # input spectra
-	eflux_spectra = out_bayes['my_bayes'].eflux_spectra # input spectra
-	wl_spectra_fit = out_bayes['my_bayes'].wl_spectra_fit # input spectra in the fit range
-	flux_spectra_fit = out_bayes['my_bayes'].flux_spectra_fit # input spectra in the fit range
-	eflux_spectra_fit = out_bayes['my_bayes'].eflux_spectra_fit # input spectra in the fit range
-	N_spectra = out_bayes['my_bayes'].N_spectra
-	wl_spectra_min = out_bayes['my_bayes'].wl_spectra_min
-	wl_spectra_max = out_bayes['my_bayes'].wl_spectra_max
-	model = out_bayes['my_bayes'].model
-	fit_wl_range = out_bayes['my_bayes'].fit_wl_range
+	try: # if given as a pickle file
+		with open(output_bayes, 'rb') as file:
+			output_bayes = pickle.load(file)
+	except: # if given as the output of chi2_fit
+		pass
+	wl_spectra = output_bayes['my_bayes'].wl_spectra # input spectra
+	flux_spectra = output_bayes['my_bayes'].flux_spectra # input spectra
+	eflux_spectra = output_bayes['my_bayes'].eflux_spectra # input spectra
+	wl_spectra_fit = output_bayes['my_bayes'].wl_spectra_fit # input spectra in the fit range
+	flux_spectra_fit = output_bayes['my_bayes'].flux_spectra_fit # input spectra in the fit range
+	eflux_spectra_fit = output_bayes['my_bayes'].eflux_spectra_fit # input spectra in the fit range
+	N_spectra = output_bayes['my_bayes'].N_spectra
+	wl_spectra_min = output_bayes['my_bayes'].wl_spectra_min
+	wl_spectra_max = output_bayes['my_bayes'].wl_spectra_max
+	model = output_bayes['my_bayes'].model
+	fit_wl_range = output_bayes['my_bayes'].fit_wl_range
 
 	# read best fit
-	out_best_bayesian_fit = best_bayesian_fit(bayes_pickle_file, ori_res=ori_res, model_dir_ori=model_dir_ori)
+	output_best_bayesian_fit = best_bayesian_fit(output_bayes, ori_res=ori_res, model_dir_ori=model_dir_ori)
 	# best fit scaled, convolved, and resampled (one for each input spectrum)
-	wl_model = out_best_bayesian_fit['wl_model']
-	flux_model = out_best_bayesian_fit['flux_model']
-	params_med = out_best_bayesian_fit['params_med']
+	wl_model = output_best_bayesian_fit['wl_model']
+	flux_model = output_best_bayesian_fit['flux_model']
+	params_med = output_best_bayesian_fit['params_med']
 	# best fit with original resolution
 	if ori_res:
-		wl_model_ori = out_best_bayesian_fit['wl_model_ori']
-		flux_model_ori = out_best_bayesian_fit['flux_model_ori']
+		wl_model_ori = output_best_bayesian_fit['wl_model_ori']
+		flux_model_ori = output_best_bayesian_fit['flux_model_ori']
 
 	# obtain residuals in linear and logarithmic-scale for fluxes in the fit range
 	flux_residuals = []
@@ -459,7 +470,7 @@ def plot_model_coverage(model, xparam, yparam, model_dir=None, params_ranges=Non
 	- out_file : str, optional
 		File name to save the figure (it can include a path e.g. my_path/figure.pdf). 
 		Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
-		Default name is '``model``_``xparam``_``yparam``.pdf', where ``model`` is read from ``chi2_pickle_file``.
+		Default name is '``model``_``xparam``_``yparam``.pdf'.
 	- save : {``True``, ``False``}, optional (default ``True``)
 		Save (``'True'``) or do not save (``'False'``) the resulting figure.
 
@@ -660,7 +671,7 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False, 
 	- out_file : str, optional
 		File name to save the figure (it can include a path e.g. my_path/figure.pdf). 
 		Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
-		Default name is 'SED_synthetic_photometry.pdf', where ``model`` is read from ``chi2_pickle_file``.
+		Default name is 'SED_synthetic_photometry.pdf', where ``model`` is read from ``out_synthetic_photometry``.
 	- save : {``True``, ``False``}, optional (default ``True``)
 		Save (``'True'``) or do not save (``'False'``) the resulting figure.
 
@@ -810,6 +821,7 @@ def plot_full_SED(out_bol_lum, xlog=True, ylog=True, xrange=None, yrange=None,
 	flux_SED = out_bol_lum['flux_SED']
 	eflux_SED = out_bol_lum['eflux_SED']
 	N_spectra = out_bol_lum['N_spectra']
+	params = out_bol_lum['params']
 
 	#------------------------
 	# PLOT
@@ -820,6 +832,10 @@ def plot_full_SED(out_bol_lum, xlog=True, ylog=True, xrange=None, yrange=None,
 
 	if model_label is None: label_mod = f'Model spectrum'
 	else: label_mod = model_label
+	param_label = ''
+	for param in params:
+		param_label += param+str(params[param])
+	label_mod = label_mod+f' ({param_label})'
 	plt.plot(wl_model, flux_model, '--', linewidth=0.5, color='silver', label=label_mod)
 	for i in range(N_spectra): # for each input spectrum
 		if spectra_label is None: label_obs = f'Observed spectrum #{i+1}'

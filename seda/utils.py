@@ -179,7 +179,7 @@ def print_time(time):
 	print(f'      elapsed time: {ftime} {unit}')
 
 ##########################
-def best_chi2_fits(chi2_pickle_file, N_best_fits=1, model_dir_ori=None, ori_res=None):
+def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False):
 	'''
 	Description:
 	------------
@@ -187,8 +187,9 @@ def best_chi2_fits(chi2_pickle_file, N_best_fits=1, model_dir_ori=None, ori_res=
 
 	Parameters:
 	-----------
-	- 'chi2_pickle_file' : dictionary
-		Pickle file with a dictionary with the results from the chi-square minimization by ``chi2_fit.chi2``.
+	- output_chi2 : dictionary or str
+		Output dictionary with the results from the chi-square minimization by ``chi2``.
+		It can be either the name of the pickle file or simply the output dictionary.
 	- N_best_fits : int, optional (default 1)
 		Number of best model fits to be read.
 	- ori_res : {``True``, ``False``}, optional (default ``False``)
@@ -216,24 +217,27 @@ def best_chi2_fits(chi2_pickle_file, N_best_fits=1, model_dir_ori=None, ori_res=
 	'''
 
 	# open results from the chi square analysis
-	with open(chi2_pickle_file, 'rb') as file:
-		out_chi2 = pickle.load(file)
-	model = out_chi2['my_chi2'].model
-	res = out_chi2['my_chi2'].res#[0] # resolution for the first input spectrum
-	lam_res = out_chi2['my_chi2'].lam_res#[0] # lam_resolution for the first input spectrum
-	N_model_spectra = out_chi2['N_model_spectra']
-	spectra_name_full = out_chi2['spectra_name_full']
-	spectra_name = out_chi2['spectra_name']
-	chi2_red_fit = out_chi2['chi2_red_fit']
-	chi2_red_wl_fit = out_chi2['chi2_red_wl_fit'] # list of reduced chi-square for each model compared
-	scaling_fit = out_chi2['scaling_fit']
-	wl_array_model_conv_resam = out_chi2['wl_array_model_conv_resam'] # wavelengths of resampled, convolved model spectra in the input spectra wavelength ranges
-	flux_array_model_conv_resam = out_chi2['flux_array_model_conv_resam'] # fluxes of resampled, convolved model spectra in the input spectra wavelength ranges
-	wl_array_model_conv_resam_fit = out_chi2['wl_array_model_conv_resam_fit'] # wavelengths of resampled, convolved model spectra within the fit ranges
-	flux_array_model_conv_resam_fit = out_chi2['flux_array_model_conv_resam_fit'] # fluxes of resampled, convolved model spectra within the fit ranges
-	flux_residuals = out_chi2['flux_residuals']
-	logflux_residuals = out_chi2['logflux_residuals']
-	skip_convolution = out_chi2['my_chi2'].skip_convolution
+	try: # if given as a pickle file
+		with open(output_chi2, 'rb') as file:
+			output_chi2 = pickle.load(file)
+	except: # if given as the output of chi2_fit
+		pass
+	model = output_chi2['my_chi2'].model
+	res = output_chi2['my_chi2'].res#[0] # resolution for the first input spectrum
+	lam_res = output_chi2['my_chi2'].lam_res#[0] # lam_resolution for the first input spectrum
+	N_model_spectra = output_chi2['N_model_spectra']
+	spectra_name_full = output_chi2['spectra_name_full']
+	spectra_name = output_chi2['spectra_name']
+	chi2_red_fit = output_chi2['chi2_red_fit']
+	chi2_red_wl_fit = output_chi2['chi2_red_wl_fit'] # list of reduced chi-square for each model compared
+	scaling_fit = output_chi2['scaling_fit']
+	wl_array_model_conv_resam = output_chi2['wl_array_model_conv_resam'] # wavelengths of resampled, convolved model spectra in the input spectra wavelength ranges
+	flux_array_model_conv_resam = output_chi2['flux_array_model_conv_resam'] # fluxes of resampled, convolved model spectra in the input spectra wavelength ranges
+	wl_array_model_conv_resam_fit = output_chi2['wl_array_model_conv_resam_fit'] # wavelengths of resampled, convolved model spectra within the fit ranges
+	flux_array_model_conv_resam_fit = output_chi2['flux_array_model_conv_resam_fit'] # fluxes of resampled, convolved model spectra within the fit ranges
+	flux_residuals = output_chi2['flux_residuals']
+	logflux_residuals = output_chi2['logflux_residuals']
+	skip_convolution = output_chi2['my_chi2'].skip_convolution
 
 	# select the best fits given by N_best_fits
 	if (N_best_fits > N_model_spectra): raise Exception(f"not enough model spectra (only {N_model_spectra}) in the fit to select {N_best_fits} best fits")
@@ -375,14 +379,19 @@ def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spect
 	'''
 
 	# verify there is an input value for each free parameter in the grid
-	params_models = Models(model).params # free parameters in the model grid
+	# parameter ranges covered by the model spectra in the input model_dir
+	if grid is None: # when no grid is provided, read the parameter ranges from the spectra in the input folders
+		params_models = select_model_spectra(model=model, model_dir=model_dir)['params']
+	else: # when a grid is provided, read the parameter ranges from the grid dictionary
+		params_models = grid['params_unique']
+
 	for param in params_models:
-		if param not in params: raise Exception(f'Provide "{param}" value in "params" because it is a free parameter in "{model}".')
+		if param not in params: raise Exception(f'Provide "{param}" value in "params" since it is a free parameter in "{model}".')
 
 	# verify that "params" are within the model grid coverage
 	for param in params:
 		if params[param]<params_models[param].min() or params[param]>params_models[param].max():
-			raise Exception(f'"{param}" value in "params" is out of the "{model}" grid coverage, which is [{params_models[param].min()}, {params_models[param].max()}]')
+			raise Exception(f'"{param}={params[param]}" value in "params" is out of the range covered by the "{model}" spectra in "model_dir", which is [{params_models[param].min()}, {params_models[param].max()}]')
 
 	# sort input params in the same order as the dictionary with free parameters returned by `separate_params`
 	params = reorder_dict(params, Models(model).free_params)
@@ -639,83 +648,7 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 	return out
 
 ##########################
-def params_ranges_sampling(chi2_pickle_file, N_best_fits=3):
-	'''
-	Description:
-	------------
-		Tolerance around the parameters for the best-fitting spectra to define the parameter ranges to estimate posteriors.
-
-	Parameters:
-	-----------
-	- 'chi2_pickle_file' : dictionary
-		Pickle file with a dictionary with the results from the chi-square minimization by ``chi2_fit.chi2``.
-	- N_best_fits : int, optional (default 3)
-		Number of best model fits to be read.
-
-	Returns:
-	--------
-	Dictionary with parameter ranges around the parameters of the best model fits. It considers half of the biggest step for each parameter around the median parameters from the best ``N_best_fits`` model fits.
-		``'Teff_range'`` : effective temperature range.
-		``'logg_range'`` : surface gravity (logg) range.
-		``'logKzz_range'`` : (if provided by ``model``) diffusion parameter (logKzz) range.
-		``'Z_range'`` : (if provided by ``model``) metallicity range.
-		``'CtoO_range'`` : (if provided by ``model``) C/O ratio range.
-
-	Example:
-	--------
-	>>> import seda
-	>>>
-	>>> # pickle file
-	>>> chi2_pickle_file = model+'_chi2_minimization.pickle'
-	>>> # read parameters' tolerance around the best model fits
-	>>> out_params_ranges_sampling = seda.params_ranges_sampling(chi2_pickle_file=chi2_pickle_file)
-
-	Author: Genaro Suárez
-	'''
-
-	# open results from the chi square analysis
-	with open(chi2_pickle_file, 'rb') as file:
-		out_chi2 = pickle.load(file)
-
-	model = out_chi2['my_chi2'].model
-
-	if (model=='Sonora_Elf_Owl'):
-		ind_best_fit = np.argsort(out_chi2['chi2_red_fit'])[:N_best_fits] # index of the three best-fitting spectra
-		# median parameter values from the best-fitting models
-		Teff_chi2 = np.median(out_chi2['Teff'][ind_best_fit])
-		logg_chi2 = np.median(out_chi2['logg'][ind_best_fit])
-		logKzz_chi2 = np.median(out_chi2['logKzz'][ind_best_fit])
-		Z_chi2 = np.median(out_chi2['Z'][ind_best_fit])
-		CtoO_chi2 = np.median(out_chi2['CtoO'][ind_best_fit])
-
-		# whole grid parameter ranges to avoid trying to generate a spectrum out of the grid
-		out_grid_ranges = grid_ranges(model)
-
-		# define the search tolerance for each parameter
-		Teff_search = (out_grid_ranges['Teff'][1:]-out_grid_ranges['Teff'][:-1]).max() / 2. # K (half of the biggest Teff step)
-		logg_search = (out_grid_ranges['logg'][1:]-out_grid_ranges['logg'][:-1]).max() / 2. # dex (half of the biggest logg step)
-		logKzz_search = (out_grid_ranges['logKzz'][1:]-out_grid_ranges['logKzz'][:-1]).max() / 2. # dex (half of the biggest logKzz step)
-		Z_search = (out_grid_ranges['Z'][1:]-out_grid_ranges['Z'][:-1]).max() / 2. # cgs (half of the biggest Z step)
-		CtoO_search = (out_grid_ranges['CtoO'][1:]-out_grid_ranges['CtoO'][:-1]).max() / 2. # relative to solar C/O (half of the biggest C/O step)
-	
-		# define the parameter ranges around the median from the best model fits
-		Teff_range_prior = [max(Teff_chi2-Teff_search, min(out_grid_ranges['Teff'])), 
-								min(Teff_chi2+Teff_search, max(out_grid_ranges['Teff']))]
-		logg_range_prior = [max(logg_chi2-logg_search, min(out_grid_ranges['logg'])), 
-								min(logg_chi2+logg_search, max(out_grid_ranges['logg']))]
-		logKzz_range_prior = [max(logKzz_chi2-logKzz_search, min(out_grid_ranges['logKzz'])), 
-								min(logKzz_chi2+logKzz_search, max(out_grid_ranges['logKzz']))]
-		Z_range_prior = [max(Z_chi2-Z_search, min(out_grid_ranges['Z'])), 
-								min(Z_chi2+Z_search, max(out_grid_ranges['Z']))]
-		CtoO_range_prior = [max(CtoO_chi2-CtoO_search, min(out_grid_ranges['CtoO'])), 
-								min(CtoO_chi2+CtoO_search, max(out_grid_ranges['CtoO']))]
-
-		out = {'Teff_range_prior': Teff_range_prior, 'logg_range_prior': logg_range_prior, 'logKzz_range_prior': logKzz_range_prior, 'Z_range_prior': Z_range_prior, 'CtoO_range_prior': CtoO_range_prior}
-
-	return out
-
-##########################
-def best_bayesian_fit(bayes_pickle_file, grid=None, model_dir_ori=None, ori_res=None, save_spectrum=False):
+def best_bayesian_fit(output_bayes, grid=None, model_dir_ori=None, ori_res=False, save_spectrum=False):
 	'''
 	Description:
 	------------
@@ -723,10 +656,9 @@ def best_bayesian_fit(bayes_pickle_file, grid=None, model_dir_ori=None, ori_res=
 
 	Parameters:
 	-----------
-	- 'bayes_pickle_file' : dictionary
-		Dictionary with ``bayes_fit.bayes`` output: 
-			- Output dictionary by ``seda.BayesOptions`` 
-			- Dynesty output.
+	- 'output_bayes' : dictionary or str
+		Output dictionary with the results from the nested sampling by ``bayes``.
+		It can be either the name of the pickle file or simply the output dictionary.
 	- grid : dictionary, optional
 		Model grid (``'wavelength'`` and ``'flux'``) generated by ``seda.read_grid`` for interpolations.
 		If not provided (default), then a grid subset with model spectra around the median posteriors is read.
@@ -746,37 +678,40 @@ def best_bayesian_fit(bayes_pickle_file, grid=None, model_dir_ori=None, ori_res=
 	- dictionary
 		Dictionary with the best model fit from the nested sampling:
 			- ``'wl_spectra_fit'`` : wavelength in um of the input spectra in ``fit_wl_range``.
-			- ``'flux_spectra_fit'`` : fluxes in erg/cm^2/s/A of the input spectra in ``fit_wl_range``.
-			- ``'eflux_spectra_fit'`` : flux uncertainties in erg/cm^2/s/A of the input spectra in ``fit_wl_range``.
+			- ``'flux_spectra_fit'`` : fluxes in erg/cm2/s/A of the input spectra in ``fit_wl_range``.
+			- ``'eflux_spectra_fit'`` : flux uncertainties in erg/cm2/s/A of the input spectra in ``fit_wl_range``.
 			- ``'params_med'`` : median values for sampled parameters.
 			- ``'wl_model'`` : wavelength in um of the best scaled, convolved, and resampled model fit
-			- ``'flux_model'`` : fluxes in erg/cm^2/s/A of the best scaled, convolved, and resampled model fit
+			- ``'flux_model'`` : fluxes in erg/cm2/s/A of the best scaled, convolved, and resampled model fit
 			- ``'wl_model_ori'`` : (if ``ori_res`` is ``True``) wavelength in um of the best scaled model fit with its original resolution
-			- ``'flux_model_ori'`` : (if ``ori_res`` is ``True``) fluxes in erg/cm^2/s/A of the best scaled model fit with its original resolution
+			- ``'flux_model_ori'`` : (if ``ori_res`` is ``True``) fluxes in erg/cm2/s/A of the best scaled model fit with its original resolution
 
 	Author: Genaro Suárez
 	'''
 
-	# open results from sampling
-	with open(bayes_pickle_file, 'rb') as file:
-		out_bayes = pickle.load(file)
-	model = out_bayes['my_bayes'].model
-	model_dir = out_bayes['my_bayes'].model_dir
-	filename_pattern = out_bayes['my_bayes'].filename_pattern
-	path_save_spectra_conv = out_bayes['my_bayes'].path_save_spectra_conv
-	skip_convolution = out_bayes['my_bayes'].skip_convolution
-	res = out_bayes['my_bayes'].res
-	lam_res = out_bayes['my_bayes'].lam_res
-	distance = out_bayes['my_bayes'].distance
-	wl_spectra_min = out_bayes['my_bayes'].wl_spectra_min
-	wl_spectra_max = out_bayes['my_bayes'].wl_spectra_max
-	wl_spectra_fit = out_bayes['my_bayes'].wl_spectra_fit
-	flux_spectra_fit = out_bayes['my_bayes'].flux_spectra_fit
-	eflux_spectra_fit = out_bayes['my_bayes'].eflux_spectra_fit
-	N_spectra = out_bayes['my_bayes'].N_spectra
-	fit_wl_range = out_bayes['my_bayes'].fit_wl_range
-	params_priors = out_bayes['my_bayes'].params_priors
-	out_dynesty = out_bayes['out_dynesty']
+	# open results from the nested sampling
+	try: # if given as a pickle file
+		with open(output_bayes, 'rb') as file:
+			output_bayes = pickle.load(file)
+	except: # if given as the output of bayes_fit
+		pass
+	model = output_bayes['my_bayes'].model
+	model_dir = output_bayes['my_bayes'].model_dir
+	filename_pattern = output_bayes['my_bayes'].filename_pattern
+	path_save_spectra_conv = output_bayes['my_bayes'].path_save_spectra_conv
+	skip_convolution = output_bayes['my_bayes'].skip_convolution
+	res = output_bayes['my_bayes'].res
+	lam_res = output_bayes['my_bayes'].lam_res
+	distance = output_bayes['my_bayes'].distance
+	wl_spectra_min = output_bayes['my_bayes'].wl_spectra_min
+	wl_spectra_max = output_bayes['my_bayes'].wl_spectra_max
+	wl_spectra_fit = output_bayes['my_bayes'].wl_spectra_fit
+	flux_spectra_fit = output_bayes['my_bayes'].flux_spectra_fit
+	eflux_spectra_fit = output_bayes['my_bayes'].eflux_spectra_fit
+	N_spectra = output_bayes['my_bayes'].N_spectra
+	fit_wl_range = output_bayes['my_bayes'].fit_wl_range
+	params_priors = output_bayes['my_bayes'].params_priors
+	out_dynesty = output_bayes['out_dynesty']
 
 	# compute median values for all sampled parameters
 	params_med = {}
@@ -816,7 +751,7 @@ def best_bayesian_fit(bayes_pickle_file, grid=None, model_dir_ori=None, ori_res=
 			# add resampled grid for each input spectrum to the same list
 			grid.append(grid_each)
 
-	# generate synthetic spectrum with the median parameter values for only the free parameters in the models
+	# generate a synthetic spectrum with the median parameter values for only the free parameters in the models
 	# (avoid radius, if included in params_med)
 	params = {}
 	for param in params_models: # for each free parameter in the grid

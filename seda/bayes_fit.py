@@ -85,7 +85,7 @@ def bayes(my_bayes):
 	fit_wl_range = my_bayes.fit_wl_range
 	model_wl_range = my_bayes.model_wl_range
 	R_range = my_bayes.R_range
-	chi2_pickle_file = my_bayes.chi2_pickle_file
+	#chi2_pickle_file = my_bayes.chi2_pickle_file
 	grid = my_bayes.grid
 	params_unique = my_bayes.params_unique
 	params_priors = my_bayes.params_priors

@@ -134,8 +134,6 @@ def chi2(my_chi2):
 	wl_spectra_min = my_chi2.wl_spectra_min
 	wl_spectra_max = my_chi2.wl_spectra_max
 	N_datapoints = my_chi2.N_datapoints
-	chi2_pickle_file = my_chi2.chi2_pickle_file
-	chi2_table_file = my_chi2.chi2_pickle_file
 	N_model_spectra = my_chi2.N_model_spectra
 	if (model is not None) & (model_dir is not None):
 		spectra_name = my_chi2.spectra_name
@@ -278,7 +276,7 @@ def chi2(my_chi2):
 	if (model is not None) & (model_dir is not None):
 		if save_results: # save table with model spectra sorted by chi square
 			# save output dictionary as pickle
-			with open(chi2_pickle_file, 'wb') as file:
+			with open(my_chi2.chi2_pickle_file, 'wb') as file:
 				# serialize and write the variable to the file
 				pickle.dump(out_chi2, file)
 			print('      chi-square minimization results saved successfully')
