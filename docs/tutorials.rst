@@ -3,7 +3,8 @@
 Tutorials
 =========
 
-**Miscellaneous**
+Miscellaneous
++++++++++++++
 
 .. toctree::
    :maxdepth: 1
@@ -13,7 +14,8 @@ Tutorials
    notebooks/tutorial_spectral_indices.ipynb
    notebooks/tutorial_bolometric_luminosity.ipynb
 
-**Chi-square minimization**
+Chi-square minimization
++++++++++++++++++++++++
 
 .. toctree::
    :maxdepth: 1
@@ -21,7 +23,8 @@ Tutorials
    notebooks/tutorial_chi2_fit_single_spectrum.ipynb
    notebooks/tutorial_chi2_fit_multiple_spectra.ipynb
 
-**Bayesian sampling**
+Bayesian sampling
++++++++++++++++++
 
 .. toctree::
    :maxdepth: 1
