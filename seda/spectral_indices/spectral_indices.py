@@ -35,6 +35,9 @@ def silicate_index(wl, flux, eflux, silicate_min=None, silicate_window=None, sil
 	- default : {``SM23``, ``SM22``}, optional (default ``SM23``)
 		Reference to set default parameters to measure the silicate index.
 		``SM23`` (default) for Suárez & Metchev (2023) and ``SM22`` for Suárez & Metchev (2022).
+	- continuum_scale : string
+		Label indicating the curve that will fit the continuum regions.
+		Default is "log".
 	- plot : {``True``, ``False``}, optional (default ``False``)
 		Plot (``True``) or do not plot (``False``) the silicate index measurement.
 	- plot_title : str, optional
@@ -119,23 +122,22 @@ def silicate_index(wl, flux, eflux, silicate_min=None, silicate_window=None, sil
 #	mask_silicate_con2 = (wl>=(silicate_con2-silicate_window_con2/2)) & (wl<=(silicate_con2+silicate_window_con2/2))
 
 	# fit a line to the continuum points
-	log_log_space = True # True or False to consider the log(flux)-log(lambda) space
 	#--------------------------------------
 	# fit a line to the continuum points in linear space
-#	if (log_log_space=='no'):
-#		mask_silicate_con1_con2 = np.concatenate((mask_silicate_con1, mask_silicate_con2)) # indices of the continuum data points on both regions
-#		fit, cov_fit = np.polyfit(wl[mask_silicate_con1_con2,i], flux[mask_silicate_con1_con2,i], 1, w=1./eflux[mask_silicate_con1_con2,i], cov=True) # weigh by the inverse of the error
-#		slope = fit[0] # slope of the histogram without any correction
-#		eslope = np.sqrt(cov_fit[0,0]) # error of the slope
-#		constant = fit[1]
-#		econstant = np.sqrt(cov_fit[1,1]) 
-#		# continuum at the point in of the absorption
-#		cont_silicate = slope*silicate_min + constant
-#		econt_silicate = (((slope+eslope)*silicate_min + constant) - ((slope-eslope)*silicate_min + constant)) / 2
+	if continuum_scale=='linear':
+		mask_silicate_con1_con2 = np.concatenate((mask_silicate_con1, mask_silicate_con2)) # indices of the continuum data points on both regions
+		fit, cov_fit = np.polyfit(wl[mask_silicate_con1_con2,i], flux[mask_silicate_con1_con2,i], 1, w=1./eflux[mask_silicate_con1_con2,i], cov=True) # weigh by the inverse of the error
+		slope = fit[0] # slope of the histogram without any correction
+		eslope = np.sqrt(cov_fit[0,0]) # error of the slope
+		constant = fit[1]
+		econstant = np.sqrt(cov_fit[1,1]) 
+		# continuum at the point in of the absorption
+		cont_silicate = slope*silicate_min + constant
+		econt_silicate = (((slope+eslope)*silicate_min + constant) - ((slope-eslope)*silicate_min + constant)) / 2
 
 	
 	# fit a line to the continuum points in the log(flux)-log(lambda) space
-	if log_log_space:
+	if continuum_scale=='log':
 		mask_silicate_con1_con2 = ((wl>=(silicate_con1-silicate_window_con1/2)) & (wl<=(silicate_con1+silicate_window_con1/2))) | \
 		                         ((wl>=(silicate_con2-silicate_window_con2/2)) & (wl<=(silicate_con2+silicate_window_con2/2))) # data points in both continuum regions
 		if (flux[mask_silicate_con1_con2].min()<=0): 
