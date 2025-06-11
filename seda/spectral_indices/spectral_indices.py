@@ -5,7 +5,7 @@ from sys import exit
 
 ##########################
 def silicate_index(wl, flux, eflux, silicate_min=None, silicate_window=None, silicate_con1=None, 
-	               silicate_window_con1=None, silicate_con2=None, silicate_window_con2=None, default='SM23',
+	               silicate_window_con1=None, silicate_con2=None, silicate_window_con2=None, default='SM23', continuum_scale='log',
 	               plot=False, plot_title=None, plot_xrange=None, plot_yrange=None, plot_save=False, plot_name=False):
 	'''
 	Description:
