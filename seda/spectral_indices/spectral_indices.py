@@ -125,8 +125,12 @@ def silicate_index(wl, flux, eflux, silicate_min=None, silicate_window=None, sil
 	#--------------------------------------
 	# fit a line to the continuum points in linear space
 	if continuum_scale=='linear':
-		mask_silicate_con1_con2 = np.concatenate((mask_silicate_con1, mask_silicate_con2)) # indices of the continuum data points on both regions
-		fit, cov_fit = np.polyfit(wl[mask_silicate_con1_con2,i], flux[mask_silicate_con1_con2,i], 1, w=1./eflux[mask_silicate_con1_con2,i], cov=True) # weigh by the inverse of the error
+		mask_silicate_con1_con2 = ((wl>=(silicate_con1-silicate_window_con1/2)) & (wl<=(silicate_con1+silicate_window_con1/2))) | \
+		                         ((wl>=(silicate_con2-silicate_window_con2/2)) & (wl<=(silicate_con2+silicate_window_con2/2))) # data points in both continuum regions
+		linear_wl = wl[mask_silicate_con1_con2]
+		linear_flux = flux[mask_silicate_con1_con2]
+		linear_eflux = eflux[mask_silicate_con1_con2]
+		fit, cov_fit = np.polyfit(linear_wl, linear_flux, 1, w=1./linear_eflux, cov=True) # weigh by the inverse of the error
 		slope = fit[0] # slope of the histogram without any correction
 		eslope = np.sqrt(cov_fit[0,0]) # error of the slope
 		constant = fit[1]
@@ -197,6 +201,7 @@ def silicate_index(wl, flux, eflux, silicate_min=None, silicate_window=None, sil
 	out['silicate_window_con1'] = silicate_window_con1
 	out['silicate_con2'] = silicate_con2
 	out['silicate_window_con2'] = silicate_window_con2
+	out['continuum_scale'] = continuum_scale
 	#out['log_log_space'] = log_log_space
 	# add input spectrum
 	out['wl'] = wl
@@ -679,6 +684,7 @@ def plot_silicate_index(out_silicate_index, plot_xrange=None, plot_yrange=None, 
 	# second window region for the continuum
 	silicate_con2 = out_silicate_index['silicate_con2'] # center (in um) of the long-wavelength continuum region
 	silicate_window_con2 = out_silicate_index['silicate_window_con2'] # window in um for the long-wavelength continuum region
+	continuum_scale = out_silicate_index['continuum_scale']
 
 	#++++++++++++++++++++++++++++++
 	# plot silicate index measurement
@@ -717,11 +723,17 @@ def plot_silicate_index(out_silicate_index, plot_xrange=None, plot_yrange=None, 
 	# plot spectrum
 	plt.plot(wl, flux, color=default_blue , zorder=3)
 	
-	# linear fit
-	xc_silicate = np.linspace(silicate_con1-silicate_window_con1/2., silicate_con2+silicate_window_con2/2., 100)
-	yc_silicate = 10**(slope*np.log10(xc_silicate) + constant)
-	ycu_silicate = 10**((slope+eslope)*np.log10(xc_silicate) + constant)
-	ycd_silicate = 10**((slope-eslope)*np.log10(xc_silicate) + constant)
+	# linear fit to the log(flux)-log(wl) space
+	if continuum_scale=='log':
+		xc_silicate = np.linspace(silicate_con1-silicate_window_con1/2., silicate_con2+silicate_window_con2/2., 100)
+		yc_silicate = 10**(slope*np.log10(xc_silicate) + constant)
+		ycu_silicate = 10**((slope+eslope)*np.log10(xc_silicate) + constant)
+		ycd_silicate = 10**((slope-eslope)*np.log10(xc_silicate) + constant)
+	if continuum_scale=='linear':
+		xc_silicate = np.linspace(silicate_con1-silicate_window_con1/2., silicate_con2+silicate_window_con2/2., 100)
+		yc_silicate = slope*xc_silicate + constant
+		ycu_silicate = (slope+eslope)*xc_silicate + constant
+		ycd_silicate = (slope-eslope)*xc_silicate + constant
 	ax.fill(np.append(xc_silicate, xc_silicate[::-1]), np.append(ycd_silicate, ycu_silicate[::-1]), 
 	        facecolor='gray', edgecolor='gray', linewidth=0, alpha=0.20)
 	ax.plot(xc_silicate, yc_silicate, '--', color='gray', linewidth=0.5)
