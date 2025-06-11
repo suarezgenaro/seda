@@ -36,7 +36,7 @@ def silicate_index(wl, flux, eflux, silicate_min=None, silicate_window=None, sil
 		Reference to set default parameters to measure the silicate index.
 		``SM23`` (default) for Suárez & Metchev (2023) and ``SM22`` for Suárez & Metchev (2022).
 	- continuum_scale : string
-		Label indicating the curve that will fit the continuum regions.
+		Label indicating the curve ("linear" or "log") that will fit the continuum regions.
 		Default is "log".
 	- plot : {``True``, ``False``}, optional (default ``False``)
 		Plot (``True``) or do not plot (``False``) the silicate index measurement.
