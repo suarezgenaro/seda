@@ -25,13 +25,13 @@ def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=Non
 	Parameters:
 	-----------
 	- wl : float array
-		W, optionalavelength (any length units) for the spectrum.
+		Wavelength (any length units) for the spectrum.
 	- flux : float array
 		Fluxes (any flux units) for the spectrum.
+	- res : float
+		Spectral resolution (at ``lam_res``) desired to smooth the input spectrum.
 	- eflux : float array, optional
 		Flux uncertainties (any flux units) for the spectrum.
-	- res : float
-		Spectral resolution (at ``lam_res``) of input spectra to smooth model spectra.
 	- lam_res : float, optional
 		Wavelength of reference at which ``res`` is given.
 		Default is the integer closest to the median wavelength of the spectrum.
@@ -76,12 +76,20 @@ def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=Non
 	>>>                                                eflux=eflux, res=res)
 
 	Author: Genaro Suárez
+	Date: 2020-03
 	'''
 
 	# convert input spectrum into numpy arrays if astropy
 	wl = astropy_to_numpy(wl)
 	flux = astropy_to_numpy(flux)
 	eflux = astropy_to_numpy(eflux)
+
+	# remove NaN values
+	if eflux is None: mask_nonan = (~np.isnan(wl)) & (~np.isnan(flux))
+	else: mask_nonan = (~np.isnan(wl)) & (~np.isnan(flux)) & (~np.isnan(eflux))
+	wl = wl[mask_nonan]
+	flux = flux[mask_nonan]
+	if eflux is not None: eflux = eflux[mask_nonan]
 
 	# set lam_res if not provided
 	if lam_res is None: lam_res = set_lam_res(wl)
@@ -214,6 +222,7 @@ def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False
 		- ``'params'`` : model free parameters
 
 	Author: Genaro Suárez
+	Date: 2024-10
 	'''
 
 	# open results from the chi square analysis
@@ -376,6 +385,7 @@ def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spect
 	>>>                                    params=params)
 
 	Author: Genaro Suárez
+	Date: 2025-03-14
 	'''
 
 	# verify there is an input value for each free parameter in the grid
@@ -518,6 +528,7 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 	>>>                                params_ranges=params_ranges)
 
 	Author: Genaro Suárez
+	Date: 2023-02
 	'''
 
 	ini_time_grid = time.time() # to estimate the time elapsed reading the grid
@@ -681,12 +692,15 @@ def best_bayesian_fit(output_bayes, grid=None, model_dir_ori=None, ori_res=False
 			- ``'flux_spectra_fit'`` : fluxes in erg/cm2/s/A of the input spectra in ``fit_wl_range``.
 			- ``'eflux_spectra_fit'`` : flux uncertainties in erg/cm2/s/A of the input spectra in ``fit_wl_range``.
 			- ``'params_med'`` : median values for sampled parameters.
+			- ``'params_confidence_interval'`` : confidence interval for sampled parameters.
+			- ``'confidence_interval(%)'`` : central percentage considered to calculate the confidence interval.
 			- ``'wl_model'`` : wavelength in um of the best scaled, convolved, and resampled model fit
 			- ``'flux_model'`` : fluxes in erg/cm2/s/A of the best scaled, convolved, and resampled model fit
 			- ``'wl_model_ori'`` : (if ``ori_res`` is ``True``) wavelength in um of the best scaled model fit with its original resolution
 			- ``'flux_model_ori'`` : (if ``ori_res`` is ``True``) fluxes in erg/cm2/s/A of the best scaled model fit with its original resolution
 
 	Author: Genaro Suárez
+	Date: 2024-09
 	'''
 
 	# open results from the nested sampling
@@ -713,18 +727,33 @@ def best_bayesian_fit(output_bayes, grid=None, model_dir_ori=None, ori_res=False
 	params_priors = output_bayes['my_bayes'].params_priors
 	out_dynesty = output_bayes['out_dynesty']
 
-	# compute median values for all sampled parameters
+	# compute median values and confidence intervals for all sampled parameters
+	conf_interval = 68 # 68% confidence interval
+
 	params_med = {}
+	params_conf = {}
 	for i,param in enumerate(params_priors): # for each parameter in the sampling
-		params_med[param] = np.median(out_dynesty.samples[:,i]) # add to the dictionary the median of each parameter
+		params_med[param] = np.median(out_dynesty.samples[:,i]) # add the median of each parameter to the dictionary 
+
+		quantile_low = 50 - conf_interval/2
+		quantile_high = 50 + conf_interval/2
+		params_quantile_low = np.percentile(out_dynesty.samples[:,i], quantile_low) # parameter value at quantile_low
+		params_quantile_high = np.percentile(out_dynesty.samples[:,i], quantile_high) # parameter value at quantile_high
+		params_conf[param] = [params_quantile_low, params_quantile_high] # add the confidence range of each parameter to the dictionary 
 
 	# round median parameters
 	params_models = Models(model).params_unique # free parameters in the models
 	for i,param in enumerate(params_med): # for each sampled parameter
 		if param in params_models: # for free parameters in the model grid
 			params_med[param] = round(params_med[param], max_decimals(params_models[param])+1) # round to the precision (plus one decimal place) of the parameter in models
+			conf_low = round(params_conf[param][0], max_decimals(params_models[param])+1)
+			conf_high = round(params_conf[param][1], max_decimals(params_models[param])+1)
+			params_conf[param] = [conf_low, conf_high]
 		else: # parameters other than those in the grid (e.g. radius)
 			params_med[param] = round(params_med[param], 2) # consider two decimals
+			conf_low = round(params_conf[param][0], 2)
+			conf_high = round(params_conf[param][1], 2)
+			params_conf[param] = [conf_low, conf_high]
 
 	# read grid, if needed
 	if grid is None:
@@ -794,7 +823,7 @@ def best_bayesian_fit(output_bayes, grid=None, model_dir_ori=None, ori_res=False
 
 	# output dictionary
 	out = {'wl_spectra_fit': wl_spectra_fit, 'flux_spectra_fit': flux_spectra_fit, 'eflux_spectra_fit': eflux_spectra_fit, 
-	       'wl_model': wl_scaled, 'flux_model': flux_scaled, 'params_med' : params_med}
+	       'wl_model': wl_scaled, 'flux_model': flux_scaled, 'params_med': params_med, 'params_confidence_interval': params_conf, 'confidence_interval(%)': conf_interval}
 	if ori_res:
 		out['wl_model_ori'] = wl_model_ori
 		out['flux_model_ori'] = flux_model_ori
@@ -847,6 +876,7 @@ def select_model_spectra(model, model_dir, params_ranges=None, filename_pattern=
 	>>>                                 params_ranges=params_ranges)
 
 	Author: Genaro Suárez
+	Date: 2020-05
 	'''
 
 	# make sure model_dir is a list
@@ -976,7 +1006,7 @@ def set_lam_res(wl_spectrum):
 	return lam_res
 
 ##########################
-def app_to_abs_flux(flux, distance, eflux=None, edistance=None):
+def app_to_abs_flux(flux, distance, eflux=None, edistance=None, reverse=False):
 	'''
 	Description:
 	------------
@@ -992,6 +1022,8 @@ def app_to_abs_flux(flux, distance, eflux=None, edistance=None):
 		Flux uncertainties (in any flux units).
 	- edistance : float, optional
 		Distance error (in pc).
+	- reverse : {``True``, ``False``}, optional (default ``False``)
+		Label to indicate if apparent fluxes are converted into absolute fluxes (``False``) or vice versa (``True``).
 
 	Returns:
 	--------
@@ -1023,6 +1055,7 @@ def app_to_abs_flux(flux, distance, eflux=None, edistance=None):
 	    'edistance': 0.06}
 
 	Author: Genaro Suárez
+	Date: 2025-05
 	'''
 
 	# set non-provided params
@@ -1033,27 +1066,46 @@ def app_to_abs_flux(flux, distance, eflux=None, edistance=None):
 	flux = astropy_to_numpy(flux)
 	eflux = astropy_to_numpy(eflux)
 
-	# absolute fluxes
-	flux_abs = (distance/10.)**2 * flux 
+	if not reverse: # apparent fluxes to absolute fluxes
+		# absolute fluxes
+		flux_abs = flux * (distance/10.)**2
+		# absolute flux errors
+		eflux_abs = flux_abs*np.sqrt((2.*edistance/distance)**2 + (eflux/flux)**2)
 
-	# absolute flux errors
-	eflux_abs = flux_abs*np.sqrt((2.*edistance/distance)**2 + (eflux/flux)**2)
+		# output dictionary
+		out = {'flux_app': flux, 'flux_abs': flux_abs}
+	
+		if isinstance(eflux, np.ndarray): # if eflux is an array
+			out['eflux_app'] = eflux
+			out['eflux_abs'] = eflux_abs
+		elif eflux!=0: # if flux is a float non-equal to zero
+			out['eflux_app'] = eflux
+			out['eflux_abs'] = eflux_abs
+		out['distance'] = distance
+		if edistance!=0:
+			out['edistance'] = edistance
+			out['eflux_abs'] = eflux_abs # if eflux_abs was stored above it would replace it without issues
 
-	# output dictionary
-	out = {'flux_app': flux, 'flux_abs': flux_abs}
+	else: # absolute fluxes to apparent fluxes
+		# apparent fluxes
+		flux_app = flux / (distance/10.)**2 
+		# absolute flux errors
+		eflux_app = flux_app*np.sqrt((2.*edistance/distance)**2 + (eflux/flux)**2)
 
-	if isinstance(eflux, np.ndarray): # if eflux is an array
-		out['eflux_app'] = eflux
-		out['eflux_abs'] = eflux_abs
-	elif eflux!=0: # if flux is a float non-equal to zero
-		out['eflux_app'] = eflux
-		out['eflux_abs'] = eflux_abs
+		# output dictionary
+		out = {'flux_app': flux_app, 'flux_abs': flux}
 
-	out['distance'] = distance
-	if edistance!=0:
-		out['edistance'] = edistance
-		out['eflux_abs'] = eflux_abs # if eflux_abs was stored above it would replace it without issues
-	    
+		if isinstance(eflux, np.ndarray): # if eflux is an array
+			out['eflux_app'] = eflux_app
+			out['eflux_abs'] = eflux
+		elif eflux!=0: # if flux is a float non-equal to zero
+			out['eflux_app'] = eflux_app
+			out['eflux_abs'] = eflux
+		out['distance'] = distance
+		if edistance!=0:
+			out['edistance'] = edistance
+			out['eflux_app'] = eflux_app # if eflux_app was stored above it would replace it without issues
+
 	return out
 
 ##########################
@@ -1076,11 +1128,11 @@ def app_to_abs_mag(magnitude, distance, emagnitude=None, edistance=None):
 
 	Returns:
 	--------
-	- Dictionary with absolute fluxes and input parameters:
-		- ``'flux_abs'`` : absolute fluxes in the same units as the input fluxes.
-		- ``'eflux_abs'`` : (if ``eflux`` or ``edistance`` is provided) absolute flux uncertainties.
-		- ``'flux_app'`` : input apparent fluxes.
-		- ``'eflux_app'`` : (if provided) input apparent flux errors.
+	- Dictionary with absolute mages and input parameters:
+		- ``'mag_abs'`` : absolute mages in the same units as the input mages.
+		- ``'emag_abs'`` : (if ``emag`` or ``edistance`` is provided) absolute mag uncertainties.
+		- ``'mag_app'`` : input apparent mages.
+		- ``'emag_app'`` : (if provided) input apparent mag errors.
 		- ``'distance'`` : input distance.
 		- ``'edistance'`` : (if provided) input distance error.
 
@@ -1154,6 +1206,7 @@ def spt_to_teff(spt, spt_type, ref=None):
 	- ref : str, optional (default 'F15')
 		Reference for the spectral type-temperature relationships.
 		'F15': Filippazzo et al. (2015), valid for M6-T9 (6-29)
+		'K21': Kirkpatrick et al. (2021), valid for M7-Y2 (7-32)
 
 	Returns:
 	- effective temperature (in K) corresponding to the input spectral types according to the ``ref`` reference.
@@ -1173,6 +1226,7 @@ def spt_to_teff(spt, spt_type, ref=None):
 	    array([1581.053125, 1033.328125])
 
 	Author: Genaro Suárez
+	Date: 2023-02
 	'''
 
 	# make sure the input spt is a numpy array
@@ -1199,6 +1253,7 @@ def spt_to_teff(spt, spt_type, ref=None):
 	# verify the spectral type is within the valid range for the indicated relationship
 	# valid range for available relationships
 	if ref=='F15': spt_valid = ['M6', 'T9'] #[6, 29]
+	if ref=='K21': spt_valid = ['M7', 'Y2'] #[7, 32] (Table 13 in K21 says the range is L0-Y2, but the fit in Fig. 22 covers M7-Y2)
 
 	# verification
 	spt_valid_flt = [spt_str_to_float(spt_valid[0]), spt_str_to_float(spt_valid[1])]
@@ -1207,16 +1262,38 @@ def spt_to_teff(spt, spt_type, ref=None):
 			print(f'Caveat for spt={spt_ori[i]}: it is out of the "{ref}" coverage, so Teff was extrapolated.')
 			print(f'   The valid spt range is {spt_valid} ({spt_valid_flt})')
 
-	# coefficients of the polynomial
-	c0 = 4.747e+03
-	c1 = -7.005e+02
-	c2 = 1.155e+02
-	c3 = -1.191e+01
-	c4 = 6.318e-01
-	c5 = -1.606e-02
-	c6 = 1.546e-04
+	# polynomial fits
+	if ref=='F15': 
+		# coefficients of the polynomial
+		c0 = 4.747e+03
+		c1 = -7.005e+02
+		c2 = 1.155e+02
+		c3 = -1.191e+01
+		c4 = 6.318e-01
+		c5 = -1.606e-02
+		c6 = 1.546e-04
+	
+		teff = c0 + c1*spt + c2*spt**2 + c3*spt**3 + c4*spt**4 + c5*spt**5 + c6*spt**6
 
-	teff = c0 + c1*spt + c2*spt**2 + c3*spt**3 + c4*spt**4 + c5*spt**5 + c6*spt**6
+	if ref=='K21': 
+		teff = np.zeros(len(spt))
+		for i,sp in enumerate(spt):
+			sp = sp-10 # L0 in K21 is 0 instead of 10 as in F15
+
+			if sp<=8.75: # L0-L8.75
+				c0 = 2.2375e+03
+				c1 = -1.4496e+02
+				c2 = 4.0301e+00
+			elif (sp>8.75) & (sp<=14.75): # L8.75-T4.75
+				c0 = 1.4379e+03
+				c1 = -1.8309e+01
+				c2 = 0
+			else: # T4.75-Y2
+				c0 = 5.1413e+03
+				c1 = -3.6865e+02
+				c2 = 6.7301e+00
+
+			teff[i] = c0 + c1*sp + c2*sp**2
 	
 	return teff
 
