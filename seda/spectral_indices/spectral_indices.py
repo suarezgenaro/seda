@@ -350,7 +350,8 @@ def methane_index(wl, flux, eflux, reference='SM22',
 		Wavelength window around ``methane_wl`` used to calculate average fluxes.
 	- continuum_wl : float, optional (default 9.9 um)
 		Wavelength reference of the feature continuum.
-		Note: the default value is slightly smaller than the 10 um value in Suárez & Metchev (2022) to avoid including fluxes at the beginning of the ammonia feature.
+		Note the default value is slightly smaller than the 10 um value in Suárez & Metchev (2022) 
+	    to avoid including fluxes at the beginning of the ammonia feature.
 	- continuum_window : float, optional (default 0.6 um)
 		Wavelength window around ``continuum_wl`` used to calculate the average continuum flux.
 	- plot : {``True``, ``False``}, optional (default ``False``)
