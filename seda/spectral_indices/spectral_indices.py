@@ -350,8 +350,7 @@ def methane_index(wl, flux, eflux, reference='SM22',
 		Wavelength window around ``methane_wl`` used to calculate average fluxes.
 	- continuum_wl : float, optional (default 9.9 um)
 		Wavelength reference of the feature continuum.
-		Note: the default value is slightly smaller than the 10 um value in Suárez & Metchev (2022) 
-	    to avoid including fluxes at the beginning of the ammonia feature.
+		Note: the default value is slightly smaller than the 10 um value in Suárez & Metchev (2022) to avoid including fluxes at the beginning of the ammonia feature.
 	- continuum_window : float, optional (default 0.6 um)
 		Wavelength window around ``continuum_wl`` used to calculate the average continuum flux.
 	- plot : {``True``, ``False``}, optional (default ``False``)
@@ -615,8 +614,7 @@ def user_index(wl, flux, eflux, feature_wl, feature_window,
 		Name the user wants to give to the index to be included in the plot label and title (if not ``plot_title``). 
 		If not provided, the string ``User-defined`` will be used.
 	- continuum_error : string, optional (required if ``continuum_fit!=None``; default ``fit``)
-		Label indicating the approach used to estimate the continuum flux uncertainty.
-		Available options are: 
+		Label indicating the approach used to estimate the continuum flux uncertainty. Available options are: 
 			- ``'fit'`` (default): from the error of the curve fit.
 			- ``'empirical'``: from the scatter of the data points and the typical flux errors in the continuum regions.
 	- continuum_fit : string, optional (required if ``continuum_fit!=None``)
