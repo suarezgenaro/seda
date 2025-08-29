@@ -42,6 +42,7 @@ def silicate_index(wl, flux, eflux, silicate_wl=None, silicate_window=None,
 	- continuum_error : string, optional (default ``fit``)
 		Label indicating the approach used to estimate the continuum flux uncertainty.
 		Available options are: 
+			- ``'fit'`` (default) : from the error of the curve fit.
 	- plot : {``True``, ``False``}, optional (default ``False``)
 		Plot (``True``) or do not plot (``False``) the silicate index measurement.
 	- plot_title : str, optional
