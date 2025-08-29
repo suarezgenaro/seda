@@ -21,6 +21,10 @@ FAQs
 ----
 .. **4. T**
 
+**6. How to interpret the output parameters from Dynesty in ``out_bayes['out_dynesty']``.**
+
+Look at `this Dynesty documentation <https://dynesty.readthedocs.io/en/stable/api.html#dynesty.results.Results>`__ explaining each output parameter.
+
 **5. Model spectra in the plots appear binned.**
 
 It may be caused by the resampling of model spectra to finer wavelength intervals than the original ones. In this case, the ``spectres`` package used for resampling returns either only flux values equal to the original values closest in wavelength (when the number of new wavelengths within two original wavelengths is even) or these values along with the mean flux of two consecutive original wavelengths (when the number of new wavelengths within two original wavelengths is odd). This leads to a 'histogram-like' appearance in the plot of the resampled fluxes (see plot below). This effect has been observed only for the low-resolution ATMO 2020 models when inputting a similar-resolution spectrum obtained by convolving a higher-resolution spectrum and keeping the same finer wavelength intervals.
