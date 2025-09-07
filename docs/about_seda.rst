@@ -21,6 +21,10 @@ FAQs
 ----
 .. **4. T**
 
+**7. Why do the residuals from the best fit to photometric data points not scatter around zero, but instead lie preferentially above or below it?**
+
+This may happen when one photometric magnitude has a significantly smaller uncertainty compared to the others. In such cases, the fit is dominated by this data point, forcing the best-fit model to match it, even if the remaining points lie systematically brighter or fainter than the model. To obtain residuals that scatter more symmetrically around zero, identify any magnitude with unusually small errors and consider either inflating its uncertainty or excluding it from the fit.
+
 **6. How to interpret the output parameters from Dynesty in ``out_bayes['out_dynesty']``.**
 
 Look at `this Dynesty documentation <https://dynesty.readthedocs.io/en/stable/api.html#dynesty.results.Results>`__ explaining each output parameter.
