@@ -4,11 +4,12 @@ import os
 import fnmatch
 import xarray
 import pickle
+from prettytable import PrettyTable
 #import itertools
 from spectres import spectres
 from astropy import units as u
 from astropy.io import ascii
-from astropy.table import Column, MaskedColumn
+from astropy.table import Column, MaskedColumn, Table
 from astropy.convolution import Gaussian1DKernel, convolve
 from scipy.interpolate import RegularGridInterpolator
 from tqdm.auto import tqdm
@@ -90,6 +91,9 @@ def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=Non
 	wl = wl[mask_nonan]
 	flux = flux[mask_nonan]
 	if eflux is not None: eflux = eflux[mask_nonan]
+
+	# stop if res=None (it can occur when other functions use this function)
+	if res is None: raise Exception(f'"res=None" is not allowed. It must take a value.')
 
 	# set lam_res if not provided
 	if lam_res is None: lam_res = set_lam_res(wl)
@@ -209,20 +213,26 @@ def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False
 	Returns:
 	--------
 	Dictionary with best model fits:
-		- ``'spectra_name_best'`` : model spectra names
-		- ``'chi2_red_fit_best'`` : reduced chi-square
-		- ``'wl_model_best'`` : (if ``ori_res``) wavelength (in um) of original model spectra.
-		- ``'flux_model_best'`` : (if ``ori_res``) fluxes (in erg/s/cm2/A) of original model spectra.
-		- ``'wl_array_model_conv_resam_best'`` : wavelength (in um) of resampled, convolved model spectra in the input spectra ranges.
-		- ``'flux_array_model_conv_resam_best'`` : fluxes (in erg/s/cm2/A) of resampled, convolved model spectra in the input spectra ranges.
-		- ``'wl_array_model_conv_resam_fit_best'`` : wavelength (in um) of resampled, convolved model spectra within the fit range.
-		- ``'flux_array_model_conv_resam_fit_best'`` : fluxes (in erg/s/cm2/A) of resampled, convolved model spectra within the fit range.
+		- ``'spectra_name_best'`` : model spectra names.
+		- ``'fit_spectra'``: label indicating whether spectra were fitted.
+		- ``'fit_photometry'``: label indicating whether photometry was fitted.
+		- ``'chi2_red_fit_best'`` : reduced chi-square.
+		- ``'chi2_red_wl_fit_best'`` : reduced chi-square as a function of wavelength.
 		- ``'flux_residuals_best'`` : flux residuals in linear scale between model and input spectra.
 		- ``'logflux_residuals_best'`` : flux residuals in log scale between model and input spectra.
+		- ``'wl_model_best'`` : (if ``ori_res``) wavelength (in um) of original model spectra.
+		- ``'flux_model_best'`` : (if ``ori_res``) fluxes (in erg/s/cm2/A) of original model spectra.
+		- ``'wl_array_model_conv_resam_best'`` : (if ``fit_spectra``) wavelength (in um) of resampled, convolved model spectra in the input spectra ranges.
+		- ``'flux_array_model_conv_resam_best'`` : (if ``fit_spectra``) fluxes (in erg/s/cm2/A) of resampled, convolved model spectra in the input spectra ranges.
+		- ``'wl_array_model_conv_resam_fit_best'`` : (if ``fit_spectra``) wavelength (in um) of resampled, convolved model spectra within the fit range.
+		- ``'flux_array_model_conv_resam_fit_best'`` : (if ``fit_spectra``) fluxes (in erg/s/cm2/A) of resampled, convolved model spectra within the fit range.
+		- ``'flux_syn_array_model_fit'`` : (if ``fit_photometry``) synthetic photometry (in erg/s/cm2/A) for the filters within the fit range.
+		- ``'lambda_eff_array_model_fit'`` : (if ``fit_photometry``) effective wavelength (in um) from model spectra for filters within the fit range.
+		- ``'widtheff_array_model_fit'`` : (if ``fit_photometry``) effective width (in um) from model spectra for filters within the fit range.
 		- ``'params'`` : model free parameters
 
 	Author: Genaro Suárez
-	Date: 2024-10
+	Date: 2024-10, 2025-09-07
 	'''
 
 	# open results from the chi square analysis
@@ -231,6 +241,8 @@ def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False
 			output_chi2 = pickle.load(file)
 	except: # if given as the output of chi2_fit
 		pass
+	fit_spectra = output_chi2['my_chi2'].fit_spectra
+	fit_photometry = output_chi2['my_chi2'].fit_photometry
 	model = output_chi2['my_chi2'].model
 	res = output_chi2['my_chi2'].res#[0] # resolution for the first input spectrum
 	lam_res = output_chi2['my_chi2'].lam_res#[0] # lam_resolution for the first input spectrum
@@ -240,28 +252,38 @@ def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False
 	chi2_red_fit = output_chi2['chi2_red_fit']
 	chi2_red_wl_fit = output_chi2['chi2_red_wl_fit'] # list of reduced chi-square for each model compared
 	scaling_fit = output_chi2['scaling_fit']
-	wl_array_model_conv_resam = output_chi2['wl_array_model_conv_resam'] # wavelengths of resampled, convolved model spectra in the input spectra wavelength ranges
-	flux_array_model_conv_resam = output_chi2['flux_array_model_conv_resam'] # fluxes of resampled, convolved model spectra in the input spectra wavelength ranges
-	wl_array_model_conv_resam_fit = output_chi2['wl_array_model_conv_resam_fit'] # wavelengths of resampled, convolved model spectra within the fit ranges
-	flux_array_model_conv_resam_fit = output_chi2['flux_array_model_conv_resam_fit'] # fluxes of resampled, convolved model spectra within the fit ranges
 	flux_residuals = output_chi2['flux_residuals']
 	logflux_residuals = output_chi2['logflux_residuals']
 	skip_convolution = output_chi2['my_chi2'].skip_convolution
+	if fit_spectra:
+		wl_array_model_conv_resam = output_chi2['wl_array_model_conv_resam'] # wavelengths of resampled, convolved model spectra in the input spectra wavelength ranges
+		flux_array_model_conv_resam = output_chi2['flux_array_model_conv_resam'] # fluxes of resampled, convolved model spectra in the input spectra wavelength ranges
+		wl_array_model_conv_resam_fit = output_chi2['wl_array_model_conv_resam_fit'] # wavelengths of resampled, convolved model spectra within the fit ranges
+		flux_array_model_conv_resam_fit = output_chi2['flux_array_model_conv_resam_fit'] # fluxes of resampled, convolved model spectra within the fit ranges
+	if fit_photometry:
+		flux_syn_array_model_fit = output_chi2['flux_syn_array_model_fit']
+		lambda_eff_array_model_fit = output_chi2['lambda_eff_array_model_fit']
+		width_eff_array_model_fit = output_chi2['width_eff_array_model_fit']
 
 	# select the best fits given by N_best_fits
-	if (N_best_fits > N_model_spectra): raise Exception(f"not enough model spectra (only {N_model_spectra}) in the fit to select {N_best_fits} best fits")
+	if (N_best_fits > N_model_spectra): raise Exception(f'not enough model spectra (only {N_model_spectra}) in the fit to select "N_best_fits={N_best_fits}" best fits')
 	sort_ind = np.argsort(chi2_red_fit)
 	chi2_red_fit_best = chi2_red_fit[sort_ind][:N_best_fits]
 	chi2_red_wl_fit_best = [chi2_red_wl_fit[i] for i in sort_ind][:N_best_fits]
 	scaling_fit_best = scaling_fit[sort_ind][:N_best_fits]
 	spectra_name_full_best = spectra_name_full[sort_ind][:N_best_fits]
 	spectra_name_best = spectra_name[sort_ind][:N_best_fits]
-	wl_array_model_conv_resam_best = [wl_array_model_conv_resam[i] for i in sort_ind][:N_best_fits]
-	flux_array_model_conv_resam_best = [flux_array_model_conv_resam[i] for i in sort_ind][:N_best_fits]
-	wl_array_model_conv_resam_fit_best = [wl_array_model_conv_resam_fit[i] for i in sort_ind][:N_best_fits]
-	flux_array_model_conv_resam_fit_best = [flux_array_model_conv_resam_fit[i] for i in sort_ind][:N_best_fits]
 	flux_residuals_best = [flux_residuals[i] for i in sort_ind][:N_best_fits]
 	logflux_residuals_best = [logflux_residuals[i] for i in sort_ind][:N_best_fits]
+	if fit_spectra:
+		wl_array_model_conv_resam_best = [wl_array_model_conv_resam[i] for i in sort_ind][:N_best_fits]
+		flux_array_model_conv_resam_best = [flux_array_model_conv_resam[i] for i in sort_ind][:N_best_fits]
+		wl_array_model_conv_resam_fit_best = [wl_array_model_conv_resam_fit[i] for i in sort_ind][:N_best_fits]
+		flux_array_model_conv_resam_fit_best = [flux_array_model_conv_resam_fit[i] for i in sort_ind][:N_best_fits]
+	if fit_photometry:
+		flux_syn_array_model_fit_best = [flux_syn_array_model_fit[i] for i in sort_ind][:N_best_fits]
+		lambda_eff_array_model_fit_best = [lambda_eff_array_model_fit[i] for i in sort_ind][:N_best_fits]
+		width_eff_array_model_fit_best = [width_eff_array_model_fit[i] for i in sort_ind][:N_best_fits]
 
 	# read parameters from file name for the best fits
 	out_separate_params = separate_params(model=model, spectra_name=spectra_name_best)
@@ -276,7 +298,7 @@ def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False
 				wl_model_best_lst.append(out_read_model_spectrum['wl_model'])
 				flux_model_best_lst.append(scaling_fit_best[i] * out_read_model_spectrum['flux_model']) # scaled fluxes
 		else: # when the convolution was skipped
-			if model_dir_ori is None: raise Exception(f"parameter 'model_dir_ori' is needed to read model spectra with the original resolution")
+			if model_dir_ori is None: raise Exception(f'parameter "model_dir_ori" is needed to read model spectra with the original resolution')
 			else:
 				out_select_model_spectra = select_model_spectra(model_dir=model_dir_ori, model=model) # all spectra in model_dir_ori
 				for i in range(N_best_fits):
@@ -286,7 +308,7 @@ def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False
 						out_read_model_spectrum = read_model_spectrum(spectrum_name_full=spectrum_name_full, model=model)
 						wl_model_best_lst.append(out_read_model_spectrum['wl_model'])
 						flux_model_best_lst.append(scaling_fit_best[i] * out_read_model_spectrum['flux_model']) # scaled fluxes
-					else: raise Exception(f"{spectrum_name} is not in {model_dir_ori}")
+					else: raise Exception(f'{spectrum_name} is not in {model_dir_ori}')
 
 		# convert list with models to a numpy array
 		# maximum number of data points
@@ -321,12 +343,20 @@ def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False
 #		#	wl_model_conv[:,i] = out_read_model_spectrum['wl_model']
 #		#	flux_model_conv[:,i] = out_read_model_spectrum['flux_model']
 
-	out = {'spectra_name_best': spectra_name_best, 'chi2_red_fit_best': chi2_red_fit_best, 'chi2_red_wl_fit_best': chi2_red_wl_fit_best, 
+	out = {'spectra_name_best': spectra_name_best, 'fit_spectra': fit_spectra, 'fit_photometry': fit_photometry,
+	       'chi2_red_fit_best': chi2_red_fit_best, 'chi2_red_wl_fit_best': chi2_red_wl_fit_best, 
 		   #'flux_model': flux_model, 'wl_model_conv': wl_model_conv, 'flux_model_conv': flux_model_conv}
 		   #'wl_model_conv': wl_array_model_conv_resam_best, 'flux_model_conv': flux_array_model_conv_resam_best,
-		   'wl_array_model_conv_resam_best': wl_array_model_conv_resam_best, 'flux_array_model_conv_resam_best': flux_array_model_conv_resam_best,
-		   'wl_array_model_conv_resam_fit_best': wl_array_model_conv_resam_fit_best, 'flux_array_model_conv_resam_fit_best': flux_array_model_conv_resam_fit_best,
 	       'flux_residuals_best': flux_residuals_best, 'logflux_residuals_best': logflux_residuals_best}
+	if fit_spectra:
+		out['wl_array_model_conv_resam_best'] = wl_array_model_conv_resam_best
+		out['flux_array_model_conv_resam_best'] = flux_array_model_conv_resam_best
+		out['wl_array_model_conv_resam_fit_best'] = wl_array_model_conv_resam_fit_best
+		out['flux_array_model_conv_resam_fit_best'] = flux_array_model_conv_resam_fit_best
+	if fit_photometry:
+		out['flux_syn_array_model_fit_best'] = flux_syn_array_model_fit_best
+		out['lambda_eff_array_model_fit_best'] = lambda_eff_array_model_fit_best
+		out['width_eff_array_model_fit_best'] = width_eff_array_model_fit_best
 	#if not skip_convolution or model_dir_ori is not None:
 	if ori_res:
 		out['wl_model_best'] = wl_model_best
@@ -811,7 +841,7 @@ def best_bayesian_fit(output_bayes, grid=None, model_dir_ori=None, ori_res=False
 	# read best fits with the original resolution
 	if ori_res:
 		if skip_convolution: # when the convolution was skipped
-			if model_dir_ori is None: raise Exception(f"parameter 'model_dir_ori' is needed to read model spectra with the original resolution")
+			if model_dir_ori is None: raise Exception(f'parameter "model_dir_ori" is needed to read model spectra with the original resolution')
 			else: model_dir = model_dir_ori
 		# generate spectrum
 		syn_spectrum = generate_model_spectrum(params=params, model=model, model_dir=model_dir)
@@ -949,6 +979,93 @@ def select_model_spectra(model, model_dir, params_ranges=None, filename_pattern=
 	return out
 
 ##########################
+def read_SVO_params(filters, params):
+	'''
+	Description:
+	------------
+		Read parameters of interest from SVO for a list of filters.
+
+	Parameters:
+	-----------
+	- filters : list or array
+		Filter names to retrieve parameters from SVO.
+	- params : list or array
+		Parameter of interest following SVO names. 
+
+	Returns:
+	--------
+	Dictionary with the parameters ``params`` for the input filters.
+
+	Example:
+	--------
+	>>> import seda
+	>>> 
+	>>> filters = ['2MASS/2MASS.J', '2MASS/2MASS.H', '2MASS/2MASS.Ks']
+	>>> params = ['filterID', 'WavelengthEff', 'WidthEff']
+	>>> seda.read_SVO_params(filters=filters, params=params)
+	    {'filterID': array(['2MASS/2MASS.J', '2MASS/2MASS.H', '2MASS/2MASS.Ks'], dtype=object),
+	     'WavelengthEff': array([12350., 16620., 21590.]),
+	     'WidthEff': array([1624.3190191 , 2509.40349871, 2618.86953322])}
+
+	Author: Genaro Suárez
+	Date: 2025-09-05
+	'''
+
+#	# verify input parameters are numpy arrays
+#	filters = var_to_numpy(filters)
+#	params = var_to_numpy(params)
+
+	# read SVO table
+	SVO_data = read_SVO_table()
+	SVO_filterID = SVO_data['filterID'] # SVO ID
+
+	# verify that all params are in SVO
+	params_good = []
+	params_bad = []
+	for param in params:
+		if param in SVO_data.colnames:
+			params_good.append(param)
+		else:
+			params_bad.append(param)
+	params = params_good
+	if len(params_bad)>0: print(f'Parameters {params_bad} are not in SVO, so will be ignored')
+
+	# indices in SVO matching input filters
+	mask = np.isin(SVO_filterID, filters)
+
+	# subset of the SVO table for the desired filters
+	# for clarity add the parameter 'filterID', if not requested
+	params_ori = params.copy() # copy to save input params recognized by SVO
+	if 'filterID' not in params: params.insert(0, 'filterID')
+	SVO_data_sel = SVO_data[mask][params]
+
+	# dictionary with the table subset
+	filters_params = {}
+	for param in params:
+		filters_params[param] = SVO_data_sel[param].data.data
+
+	# sort dictionary so filters_params['filterID'] is in the same order as input filters
+	# indices that sort filters_params['filterID']
+	sort_ind = np.array([], dtype=int) # initialize array of integers for indices
+	for i,filt in enumerate(filters):
+		if filt in filters_params['filterID']:
+			ind = np.where(filters_params['filterID']==filt)[0]
+			sort_ind = np.append(sort_ind, ind)
+	# sort dictionary
+	for param in params:
+		filters_params[param] = filters_params[param][sort_ind]
+
+	# input filters not in SVO
+	mask_noinSVO = ~np.isin(filters, filters_params['filterID'])
+	filters = var_to_numpy(filters)
+	if len(filters[mask_noinSVO])>0: print(f'Filters {filters[mask_noinSVO]} are not in SVO, so will be ingored')
+
+	# remove 'filterID' if it wasn't requested
+	if 'filterID' not in params_ori: del filters_params['filterID']
+
+	return filters_params
+
+##########################
 # set wavelength range for the model comparison via chi-square or Bayes techniques
 def set_fit_wl_range(fit_wl_range, N_spectra, wl_spectra):
 
@@ -989,6 +1106,39 @@ def set_model_wl_range(model_wl_range, wl_spectra_min, wl_spectra_max):
 #		model_wl_range[1] = 1.1*fit_wl_range.max() # add padding to longer wavelengths
 
 	return model_wl_range
+
+##########################
+# set wavelength range for photometry to cut models for comparisons via chi-square or Bayes techniques
+def set_fit_phot_range(fit_phot_range, filters):
+	if fit_phot_range is None: # define fit_phot_range when not provided
+		# get effective wavelengths from SVO for the input filters
+		SVO_data = read_SVO_table()
+		SVO_filterID = SVO_data['filterID'] # SVO ID
+		SVO_WavelengthEff = (SVO_data['WavelengthEff'].data*u.angstrom).to(u.micron).value # effective wavelength in um
+		matching_indices = []
+		for index, element in enumerate(SVO_filterID):
+			if element in filters:
+				matching_indices.append(SVO_WavelengthEff[index])
+		lambda_eff_SVO = np.array(matching_indices)
+		fit_phot_range = np.array([lambda_eff_SVO.min(), lambda_eff_SVO.max()])
+	elif isinstance(fit_phot_range, list): # when it is a list
+		fit_phot_range = np.array(fit_phot_range).reshape(1,2)
+
+	return fit_phot_range
+
+##########################
+# read the SVO table with filter properties and save it locally if it doesn't already exist
+def read_SVO_table():
+	path_synthetic_photometry = os.path.dirname(__file__)+'/'
+	# read zero points for each filter
+	svo_table = f'{path_synthetic_photometry}/FPS_info.xml'
+	if os.path.exists(svo_table): 
+		svo_data = Table.read(svo_table, format='votable') # open downloaded table with filters' info
+	else:
+		svo_data = Table.read('https://svo.cab.inta-csic.es/files/svo/Public/HowTo/FPS/FPS_info.xml', format='votable') # this SVO link will be updated as soon as new filters are added to FPS. 
+		svo_data.write(svo_table, format='votable') # save the table to avoid reading it from the web each time the code is run, which can take a few seconds
+
+	return svo_data
 
 ##########################
 # function to generate a padding on both sizes of a range
@@ -1339,6 +1489,91 @@ def parallax_to_distance(parallax, eparallax):
 	return distance, edistance
 
 ##########################
+def convert_photometric_table(table, save_table=False, table_name=None):
+	'''
+	Description:
+	------------
+		Convert a table with photometry in separate columns to a table with all magnitudes or fluxes in a column and all errors in another column. 
+
+	Parameters:
+	-----------
+	- table : astropy or dictionary
+		Table with photometric measurements and their corresponding errors listed in separate columns. 
+		The magnitude or flux columns must be labeled with the corresponding SVO filter names. 
+		The table must include only photometry, structured such that each magnitude or flux column is 
+		immediately followed by its associated error column i.e. magnitude1, error1, magnitude2, error2, etc.
+		Note: names of columns with photometric errors are irrelevant.
+	- save_table : {``True``, ``False``}, optional (default ``False``)
+		Locally store (``True``) or do not store (``False``) the output dictionary as an ascii table using PrettyTable.
+	- table_name : str, optional
+		File name to save the output table (it can include a path e.g. my_path/output_table.dat). 
+		Default name is 'photometry_prettytable.dat'.
+
+	Returns:
+	--------
+	Dictionary with three keys: SVO filter names, magnitudes or fluxes, and corresponding errors. 
+
+	Example:
+	--------
+	>>> import seda
+	>>> from astropy.io import ascii
+	>>> 
+	>>> # path to the seda package
+	>>> path_seda = os.path.dirname(os.path.dirname(seda.__file__))
+	>>> # read ascii table with photometry for 0415
+	>>> phot_file = path_seda+'/docs/notebooks/data/0415-0935_photometry.dat'
+	>>> photometry = ascii.read(phot_file)
+	>>> 
+	>>> # keep columns with magnitudes of interest
+	>>> photometry = photometry['2MASS/2MASS.J', '2MASS/2MASS.eJ', 
+	>>>                         '2MASS/2MASS.H', '2MASS/2MASS.eH', 
+	>>>                         '2MASS/2MASS.Ks', '2MASS/2MASS.eKs']
+	>>> 
+	>>> # convert table
+	>>> seda.convert_photometric_table(photometry)
+	    {'filters': array(['2MASS/2MASS.J', '2MASS/2MASS.H', '2MASS/2MASS.Ks'], dtype='<U32'),
+	     'phot': array([15.695, 15.537, 15.429]),
+	     'ephot': array([0.058, 0.113, 0.201])}
+
+	Author: Genaro Suárez
+	Date: 2025-09-07
+	'''
+
+	# initialize arrays to save filter names, values, and uncertainties
+	phot = np.array([])
+	ephot = np.array([])
+	filters = np.array([])
+	# create arrays for all values, errors, and filters
+	for i,col in enumerate(table.colnames): # for each column
+		if i%2 == 0: # only even columns (the ones with photometric values)
+			phot = np.append(phot, table[col])
+			filters = np.append(filters, col)
+		else: # odd columns (the ones with uncertainties)
+			ephot = np.append(ephot, table[col])
+
+	# save all as a dictionary
+	out = {'filters': filters, 'phot': phot, 'ephot': ephot}
+
+	if save_table:
+		# create a PrettyTable object
+		table = PrettyTable()
+		# add the dictionary keys as column headers
+		table.field_names = out.keys()
+		# add the dictionary values as rows
+		for row in zip(*out.values()):
+			table.add_row(row)
+		
+		# get the ASCII string representation
+		ascii_table = table.get_string()
+		
+		# save file
+		if table_name is None: table_name = 'photometry_prettytable.dat'
+		with open(table_name, 'w') as f:
+			f.write(ascii_table)
+
+	return out
+
+##########################
 # convert spectral type from string to float
 def spt_str_to_float(spt):
 
@@ -1461,7 +1696,7 @@ def max_decimals(arr):
 	return max_places
 
 #+++++++++++++++++++++++++++
-# reorder a dictionary according to a list with the order for the keys
+# reorder dictionary keys according to a list with the order for the keys
 def reorder_dict(data_dict, order_list):
 
 	reordered_dict = {}

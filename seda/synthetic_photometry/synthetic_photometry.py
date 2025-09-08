@@ -35,8 +35,10 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None):
 		- ``'syn_mag'`` : synthetic magnitudes.
 		- ``'esyn_mag'`` : synthetic magnitude errors (if input ``eflux`` is provided).
 		- ``'filters'`` : filters used to derive synthetic photometry.
-		- ``'lambda_eff(um)'`` : filters' effective wavelengths in microns.
-		- ``'width_eff(um)'`` : filters' effective width in micron.
+		- ``'lambda_eff(um)'`` : filters' effective wavelengths in microns computed using the input spectrum.
+		- ``'width_eff(um)'`` : filters' effective width in micron computed using the input spectrum.
+		- ``'lambda_eff_SVO(um)'`` : filters' effective wavelengths in microns from SVO.
+		- ``'width_eff(um)'`` : filters' effective width in micron from SVO.
 		- ``'zero_point(Jy)'`` : filters' zero points in Jy.
 		- ``'label'`` : label indicating if the filters are fully ('complete'), partially ('incomplete'), or no ('none') covered by the input spectrum or no recognized by SVO ('unrecognizable').
 		- ``'transmission'`` : dictionary with 2D arrays for the filter transmissions, where the first first entry is wavelength in microns and the second one is the transmission.
@@ -77,16 +79,11 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None):
 	flux = flux[mask]
 	if eflux is not None: eflux = eflux[mask]
 
-	# when filters variable is given as a string, convert it into a list so len(filters) returns 1 rather than the string length
+	# when parameter filters is given as a string, convert it into a list so len(filters) returns 1 rather than the string length
 	if type(filters) is str: filters = ([filters])
 
 	# read filters' transmission curves and zero points
-	svo_table = f'{path_synthetic_photometry}/FPS_info.xml'
-	if os.path.exists(svo_table): 
-		svo_data = Table.read(svo_table, format='votable') # open downloaded table with filters' info
-	else:
-		svo_data = Table.read('https://svo.cab.inta-csic.es/files/svo/Public/HowTo/FPS/FPS_info.xml', format='votable') # this SVO link will be updated as soon as new filters are added to FPS. 
-		svo_data.write(svo_table, format='votable') # save the table to avoid reading it from the web each time the code is run, which can take a few seconds
+	svo_data = read_SVO_table()
 	filterID = svo_data['filterID'] # SVO ID
 	ZeroPoint = svo_data['ZeroPoint'] # in Jy
 
@@ -100,6 +97,8 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None):
 	esyn_mag = np.zeros(len(filters)) * np.nan
 	lambda_eff = np.zeros(len(filters)) * np.nan
 	width_eff = np.zeros(len(filters)) * np.nan
+	lambda_eff_SVO = np.zeros(len(filters)) * np.nan
+	width_eff_SVO = np.zeros(len(filters)) * np.nan
 	zero_point = np.zeros(len(filters)) * np.nan
 	# initialize other variables
 	label = np.empty(len(filters), dtype=object) # to assign a label to each filter based on its spectral coverage
@@ -126,7 +125,7 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None):
 	
 			# read locally stored filter transmission
 			filter_transmission = ascii.read(path_filter_transmissions+filter_transmission_name)
-			filter_wl = filter_transmission['col1'] / 1e4 # in um
+			filter_wl = (filter_transmission['col1'].data*u.angstrom).to(u.micron).value # in um
 			filter_flux = filter_transmission['col2'] # filter transmission (named filter_flux just for ease)
 			transmission[filt] = np.array((filter_wl, filter_flux)) # save transmission to transmission dictionary
 		
@@ -155,7 +154,7 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None):
 					print(f'      approx. {round(area_frac,2)}% of the filter transmission is covered by the data')
 					label[k] = 'incomplete'
 
-				# wavelength dispersion of the spectrum in the filter wavelength range
+				# spectrum wavelengths within the filter wavelength range
 				mask_wl = (wl>=filter_wl.min()) & (wl<=filter_wl.max())
 		
 				# synthetic photometry
@@ -178,34 +177,33 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None):
 				if flux_unit=='erg/s/cm2/A':
 					syn_flux_Jy[k] = convert_flux(flux=syn_flux, wl=lambda_eff[k], unit_in='erg/s/cm2/A', unit_out='Jy')['flux_out'] # in Jy
 					if eflux is not None: esyn_flux_Jy[k] = esyn_flux/syn_flux * syn_flux_Jy[k] # in Jy
-		
+
 					syn_flux_erg[k] = syn_flux # in erg/s/cm2/A
 					if eflux is not None: esyn_flux_erg[k] = esyn_flux # in erg/s/cm2/A
-		
+
 				if flux_unit=='Jy': # convert Jy to erg/s/cm2/A to be an output
 					syn_flux_erg[k] = convert_flux(flux=syn_flux, wl=lambda_eff[k], unit_in='Jy', unit_out='erg/s/cm2/A')['flux_out'] # in erg/s/cm2/A
 					if eflux is not None: esyn_flux_erg[k] = esyn_flux/syn_flux * syn_flux_erg[k] # in erg/s/cm2/A
-		
+
 					syn_flux_Jy[k] = syn_flux # in Jy
 					if eflux is not None: esyn_flux_Jy[k] = esyn_flux # in Jy
 		
 				# from Jy to mag
 				mask = filterID==filt
 				if any(mask) is False: raise Exception(f'   \nERROR: No zero point for filter {filt}')
-				if eflux is not None:
-					out_flux_to_mag = flux_to_mag(flux=syn_flux_Jy[k], eflux=esyn_flux_Jy[k], filters=filt)
-					syn_mag[k] = out_flux_to_mag['mag'] # in mag
-					esyn_mag[k] = out_flux_to_mag['emag'] # in mag
-				else:
-					syn_mag[k] = flux_to_mag(flux=syn_flux_Jy[k], filters=filt)['mag'][0] # in mag
-
+				out_flux_to_mag = flux_to_mag(flux=syn_flux_Jy[k], eflux=esyn_flux_Jy[k], filters=filt)
+				syn_mag[k] = out_flux_to_mag['mag'] # in mag
+				if eflux is not None: esyn_mag[k] = out_flux_to_mag['emag'] # in mag
+				lambda_eff_SVO[k] = out_flux_to_mag['lambda_eff_SVO(um)'] # um
+				width_eff_SVO[k] = out_flux_to_mag['width_eff_SVO(um)'] # um
 				zero_point[k] = ZeroPoint[mask][0] # in Jy
 
 				del filter_transmission # remove variable with filter transmission so it won't exist if an input filter name doesn't match an existing one
 
 	out_synthetic_photometry = {'syn_flux(Jy)': syn_flux_Jy, 'syn_flux(erg/s/cm2/A)': syn_flux_erg, 'syn_mag': syn_mag, 'lambda_eff(um)': lambda_eff, 
-	                            'width_eff(um)': width_eff, 'zero_point(Jy)': zero_point, 'label': label, 'transmission': transmission, 'wl': wl, 'flux': flux, 
-	                            'flux_unit': flux_unit, 'filters': filters}
+	                            'width_eff(um)': width_eff, 'lambda_eff_SVO(um)': lambda_eff_SVO, 'width_eff_SVO(um)': width_eff_SVO, 
+	                            'zero_point(Jy)': zero_point, 'label': label, 'transmission': transmission, 
+	                            'wl': wl, 'flux': flux, 'flux_unit': flux_unit, 'filters': filters}
 	if eflux is not None: 
 		out_synthetic_photometry['esyn_flux(Jy)'] = esyn_flux_Jy
 		out_synthetic_photometry['esyn_flux(erg/s/cm2/A)'] = esyn_flux_erg
@@ -289,7 +287,7 @@ def convert_flux(flux, wl, unit_in, unit_out, eflux=None):
 	return out
 
 #+++++++++++++++++
-def flux_to_mag(flux, filters, flux_unit='Jy', eflux=None, wl=None):
+def flux_to_mag(flux, filters, flux_unit='Jy', eflux=None):
 	'''
 	Description:
 	------------
@@ -306,9 +304,6 @@ def flux_to_mag(flux, filters, flux_unit='Jy', eflux=None, wl=None):
 		Units of ``flux``: ``'Jy'`` or ``'erg/s/cm2/A'``.
 	- eflux : array, float, optional
  		Flux uncertainties for ``flux`` in ``unit_in``.
-	- wl : array, float, optional
-		Wavelengths (in microns) associated to ``filters``. 
-		It is required when ``flux_unit='erg/s/cm2/A'`` to convert it to Jy.
 
 	Returns:
 	--------
@@ -318,7 +313,9 @@ def flux_to_mag(flux, filters, flux_unit='Jy', eflux=None, wl=None):
 		- ``'flux'`` : input flux
 		- ``'eflux'`` : (if ``eflux``) input flux uncertainties
 		- ``'filters'`` : input filter IDs
-		- ``'zero_point'`` : filters' zero points in Jy 
+		- ``'zero_point(Jy)'`` : filters' zero points in Jy 
+		- ``'lambda_eff_SVO(um)'`` : effective wavelengths in microns from SVO
+		- ``'width_eff_SVO(um)'`` : effective width in microns from SVO
 
 	Example:
 	--------
@@ -332,9 +329,12 @@ def flux_to_mag(flux, filters, flux_unit='Jy', eflux=None, wl=None):
 	>>> 
 	>>> seda.flux_to_mag(flux=flux, eflux=eflux, filters=filters)
 		{'flux': array([0.005, 0.006]),
-		 'filters': ['2MASS/2MASS.J', '2MASS/2MASS.Ks'],
-		 'zero_point': array([1594. ,  666.8]),
 		 'mag': array([13.75879578, 12.61461085]),
+		 'filters': ['2MASS/2MASS.J', '2MASS/2MASS.Ks'],
+		 'zero_point(Jy)': array([1594. ,  666.8]),
+		 'flux_unit': 'Jy',
+		 'lambda_eff_SVO(um)': array([1.235, 2.159]),
+		 'width_eff_SVO(um)': array([0.1624319 , 0.26188695]),
 		 'eflux': array([0.0005, 0.0006]),
 		 'emag': array([0.10857362, 0.10857362])}
 
@@ -353,52 +353,54 @@ def flux_to_mag(flux, filters, flux_unit='Jy', eflux=None, wl=None):
 
 	# verify that flux and filters variables have the same size
 	if len(flux)!=len(filters): raise Exception('filters does not have the size as flux')
-	# verify that wl is provided if flux_unit is 'erg/s/cm2/A'
-	if (flux_unit=='erg/s/cm2/A') & (wl is None): raise Exception('the "wl" parameter is required to convert flux to Jy')
 
-	# convert erg/s/cm2/A to Jy if needed
-	if (flux_unit=='erg/s/cm2/A') & (wl is not None): 
-		flux = convert_flux(flux=flux, wl=wl, unit_in='erg/s/cm2/A', unit_out='Jy')['flux_out'] # in Jy
-		if eflux is not None: eflux = convert_flux(flux=flux, eflux=eflux, wl=wl, unit_in='erg/s/cm2/A', unit_out='Jy')['eflux_out'] # in Jy
-
-	path_synthetic_photometry = os.path.dirname(__file__)+'/'
-	# read zero points for each filter
-	svo_table = f'{path_synthetic_photometry}/FPS_info.xml'
-	if os.path.exists(svo_table): 
-		svo_data = Table.read(svo_table, format='votable') # open downloaded table with filters' info
-	else:
-		svo_data = Table.read('https://svo.cab.inta-csic.es/files/svo/Public/HowTo/FPS/FPS_info.xml', format='votable') # this SVO link will be updated as soon as new filters are added to FPS. 
-		svo_data.write(svo_table, format='votable') # save the table to avoid reading it from the web each time the code is run, which can take a few seconds
+	svo_data = read_SVO_table()
 	filterID = svo_data['filterID'] # SVO ID
 	ZeroPoint = svo_data['ZeroPoint'] # in Jy
+	WavelengthEff = svo_data['WavelengthEff'] # effective wavelength in A
+	WidthEff = svo_data['WidthEff'] # effective width in A
+
+	# save the input fluxes and errors because they are replaced by Jy units when given in erg/s/cm2/A
+	flux_ori = flux.copy()
+	if eflux is not None: eflux_ori = eflux.copy()
 
 	# initialize arrays to store relevant information
 	# assign NaN values to be the output for unrecognized filters by SVO
 	mag = np.zeros(len(filters)) * np.nan
 	if eflux is not None: emag = np.zeros(len(filters)) * np.nan
 	zero_point = np.zeros(len(filters)) * np.nan
+	wl_eff = np.zeros(len(filters)) * np.nan
+	width_eff = np.zeros(len(filters)) * np.nan
 	for k, filt in enumerate(filters): # iterate on each filter
 		# check first if the filter name is on SVO
 		if not filt in filterID: # if filter ID is not recognized
 			print(f'   Caveat: {filt} ID not recognized by SVO, so will be ignored')
 		else: # if filter ID is a valid one
 			mask = filterID==filt
-			zero_point[k] = ZeroPoint[mask][0]
+			zero_point[k] = ZeroPoint[mask][0] # in Jy
+			wl_eff[k] = (WavelengthEff[mask][0]*u.angstrom).to(u.micron).value # in um
+			width_eff[k] = (WidthEff[mask][0]*u.angstrom).to(u.micron).value # in um
+
+			# convert erg/s/cm2/A to Jy if needed
+			if (flux_unit=='erg/s/cm2/A'): 
+				flux[k] = convert_flux(flux=flux[k], wl=wl_eff[k], unit_in='erg/s/cm2/A', unit_out='Jy')['flux_out'] # in Jy
+				if eflux is not None: eflux[k] = convert_flux(flux=flux[k], eflux=eflux[k], wl=wl_eff[k], unit_in='erg/s/cm2/A', unit_out='Jy')['eflux_out'] # in Jy
 
 			# Jy to mag
 			mag[k] = -2.5*np.log10(flux[k]/zero_point[k]) # in mag
 			if eflux is not None: emag[k] = (2.5/np.log(10))*np.sqrt((eflux[k]/flux[k])**2)#+(ephot_F0/phot_F0)**2) # in mag
 
 	# output dictionary
-	out = {'flux': flux, 'mag': mag, 'filters': filters, 'zero_point': zero_point}
+	out = {'flux': flux_ori, 'mag': mag, 'filters': filters, 'zero_point(Jy)': zero_point, 'flux_unit': flux_unit,
+	       'lambda_eff_SVO(um)': wl_eff, 'width_eff_SVO(um)': width_eff}
 	if eflux is not None: 
-		out['eflux'] = eflux
+		out['eflux'] = eflux_ori
 		out['emag'] = emag
 
 	return out
 
 #+++++++++++++++++
-def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, wl=None):
+def mag_to_flux(mag, filters, flux_unit='Jy', emag=None):
 	'''
 	Description:
 	------------
@@ -415,9 +417,6 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, wl=None):
 		Units to return flux: ``'Jy'`` or ``'erg/s/cm2/A'``.
 	- emag : array, float, optional
  		Magnitude uncertainties for ``mag`` in mag.
-	- wl : array, float, optional
-		Wavelengths (in microns) associated to ``filters``. 
-		It is required when ``flux_unit='erg/s/cm2/A'`` to convert flux from Jy.
 
 	Returns:
 	--------
@@ -427,7 +426,9 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, wl=None):
 		- ``'mag'`` : input magnitudes
 		- ``'emag'`` : (if ``emag``) uncertainty of input magnitudes
 		- ``'filters'`` : input filter IDs
-		- ``'zero_point'`` : filters' zero points in Jy 
+		- ``'zero_point(Jy)'`` : filters' zero points in Jy 
+		- ``'lambda_eff_SVO(um)'`` : effective wavelengths in microns from SVO
+		- ``'width_eff_SVO(um)'`` : effective width in microns from SVO
 
 	Example:
 	--------
@@ -443,8 +444,10 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, wl=None):
 	    {'mag': array([15. , 15.5]),
 	     'flux': array([0.001594  , 0.00042072]),
 	     'filters': ['2MASS/2MASS.J', '2MASS/2MASS.Ks'],
-	     'zero_point': array([1594. ,  666.8]),
+	     'zero_point(Jy)': array([1594. ,  666.8]),
 	     'flux_unit': 'Jy',
+	     'lambda_eff_SVO(um)': array([1.235, 2.159]),
+	     'width_eff_SVO(um)': array([0.1624319 , 0.26188695]),
 	     'emag': array([1.5 , 1.55]),
 	     'eflux': array([0.00220219, 0.00060062])}
 
@@ -463,32 +466,29 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, wl=None):
 
 	# verify that mag and filters variables have the same size
 	if len(mag)!=len(filters): raise Exception('filters does not have the size as mag')
-	# verify that wl is provided if flux_unit is 'erg/s/cm2/A'
-	if (flux_unit=='erg/s/cm2/A') & (wl is None): raise Exception('the "wl" parameter is required to convert fluxes from Jy to erg/s/cm2/A')
 
-	path_synthetic_photometry = os.path.dirname(__file__)+'/'
-	# read zero points for each filter
-	svo_table = f'{path_synthetic_photometry}/FPS_info.xml'
-	if os.path.exists(svo_table): 
-		svo_data = Table.read(svo_table, format='votable') # open downloaded table with filters' info
-	else:
-		svo_data = Table.read('https://svo.cab.inta-csic.es/files/svo/Public/HowTo/FPS/FPS_info.xml', format='votable') # this SVO link will be updated as soon as new filters are added to FPS. 
-		svo_data.write(svo_table, format='votable') # save the table to avoid reading it from the web each time the code is run, which can take a few seconds
+	svo_data = read_SVO_table()
 	filterID = svo_data['filterID'] # SVO ID
-	ZeroPoint = svo_data['ZeroPoint'] # in Jy
+	ZeroPoint = svo_data['ZeroPoint'] # zero points in Jy
+	WavelengthEff = svo_data['WavelengthEff'] # effective wavelength in A
+	WidthEff = svo_data['WidthEff'] # effective width in A
 
 	# initialize arrays to store relevant information
 	# assign NaN values to be the output for unrecognized filters by SVO
 	flux = np.zeros(len(filters)) * np.nan
 	if emag is not None: eflux = np.zeros(len(filters)) * np.nan
 	zero_point = np.zeros(len(filters)) * np.nan
+	wl_eff = np.zeros(len(filters)) * np.nan
+	width_eff = np.zeros(len(filters)) * np.nan
 	for k, filt in enumerate(filters): # iterate on each filter
 		# check first if the filter name is on SVO
 		if not filt in filterID: # if filter ID is not recognized
-			print(f'   Caveat: {filt} ID not recognized by SVO, so will be ignored')
+			print(f'   Caveat: {filt} ID is not recognized by SVO, so will be ignored')
 		else: # if filter ID is a valid one
 			mask = filterID==filt
-			zero_point[k] = ZeroPoint[mask][0]
+			zero_point[k] = ZeroPoint[mask][0] # in Jy
+			wl_eff[k] = (WavelengthEff[mask][0]*u.angstrom).to(u.micron).value # in um
+			width_eff[k] = (WidthEff[mask][0]*u.angstrom).to(u.micron).value # in um
 
 			# mag to Jy
 			flux[k] = zero_point[k] * 10**(-mag[k]/2.5) # in Jy
@@ -496,13 +496,28 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, wl=None):
 
 			# convert flux from Jy to erg/s/cm2/A, if requested
 			if flux_unit=='erg/s/cm2/A':
-				flux[k] = convert_flux(flux=flux[k], wl=wl[k], unit_in='Jy', unit_out='erg/s/cm2/A')['flux_out'] # in erg/s/cm2/A
-				if emag is not None: eflux[k] = convert_flux(flux=flux[k], eflux=eflux[k], wl=wl[k], unit_in='Jy', unit_out='erg/s/cm2/A')['eflux_out'] # in erg/s/cm2/A
+				flux[k] = convert_flux(flux=flux[k], wl=wl_eff[k], unit_in='Jy', unit_out='erg/s/cm2/A')['flux_out'] # in erg/s/cm2/A
+				if emag is not None: eflux[k] = convert_flux(flux=flux[k], eflux=eflux[k], wl=wl_eff[k], unit_in='Jy', unit_out='erg/s/cm2/A')['eflux_out'] # in erg/s/cm2/A
 
 	# output dictionary
-	out = {'mag': mag, 'flux': flux, 'filters': filters, 'zero_point': zero_point, 'flux_unit': flux_unit}
+	out = {'mag': mag, 'flux': flux, 'filters': filters, 'zero_point(Jy)': zero_point, 'flux_unit': flux_unit, 
+	       'lambda_eff_SVO(um)': wl_eff, 'width_eff_SVO(um)': width_eff}
 	if eflux is not None: 
 		out['emag'] = emag
 		out['eflux'] = eflux
 
 	return out
+
+##+++++++++++++++++
+## read the SVO table with filter properties and save it locally if it doesn't already exist
+#def read_SVO_table():
+#	path_synthetic_photometry = os.path.dirname(__file__)+'/'
+#	# read zero points for each filter
+#	svo_table = f'{path_synthetic_photometry}/FPS_info.xml'
+#	if os.path.exists(svo_table): 
+#		svo_data = Table.read(svo_table, format='votable') # open downloaded table with filters' info
+#	else:
+#		svo_data = Table.read('https://svo.cab.inta-csic.es/files/svo/Public/HowTo/FPS/FPS_info.xml', format='votable') # this SVO link will be updated as soon as new filters are added to FPS. 
+#		svo_data.write(svo_table, format='votable') # save the table to avoid reading it from the web each time the code is run, which can take a few seconds
+#
+#	return svo_data

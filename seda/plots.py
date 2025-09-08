@@ -11,7 +11,7 @@ from .models import *
 
 ##########################
 def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None, yrange=None, 
-	              ori_res=False, model_dir_ori=None, out_file=None, save=True):
+	              ori_res=False, res=None, lam_res=None, model_dir_ori=None, out_file=None, save=True):
 	'''
 	Description:
 	------------
@@ -37,6 +37,12 @@ def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None
 	- model_dir_ori : str, list, or array
 		Path to the directory (str, list, or array) or directories (as a list or array) containing the model spectra with the original resolution.
 		This parameter is needed to plot the original resolution spectra (if ``ori_res`` is True) when ``seda.chi2`` was run skipping the model spectra convolution (if ``skip_convolution`` is True).
+	- res : float, optional
+		Spectral resolution (at ``lam_res``) desired to smooth model spectra with original resolution.
+		It is needed when only photometry is fit.
+	- lam_res : float, optional
+		Wavelength of reference at which ``res`` is given.
+		Default is the integer closest to the median wavelength of the spectrum.
 	- out_file : str, optional
 		File name to save the figure (it can include a path e.g. my_path/figure.pdf). 
 		Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
@@ -57,21 +63,29 @@ def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None
 	>>> seda.plot_chi2_fit(output_chi2='ATMO2020_chi2_minimization.pickle', N_best_fits=3)
 
 	Author: Genaro Suárez
+	Date: 2024-10, 2025-09-06
 	'''
 
 	# read best fits
 	output_best_chi2_fits = best_chi2_fits(output_chi2=output_chi2, N_best_fits=N_best_fits, model_dir_ori=model_dir_ori, ori_res=ori_res)
+	fit_spectra = output_best_chi2_fits['fit_spectra']
+	fit_photometry = output_best_chi2_fits['fit_photometry']
 	spectra_name_best = output_best_chi2_fits['spectra_name_best']
 	chi2_red_fit_best = output_best_chi2_fits['chi2_red_fit_best']
+	flux_residuals_best = output_best_chi2_fits['flux_residuals_best']
+	logflux_residuals_best = output_best_chi2_fits['logflux_residuals_best']
 	if ori_res:
 		wl_model_best = output_best_chi2_fits['wl_model_best']
 		flux_model_best = output_best_chi2_fits['flux_model_best']
-	wl_array_model_conv_resam_best = output_best_chi2_fits['wl_array_model_conv_resam_best']
-	flux_array_model_conv_resam_best = output_best_chi2_fits['flux_array_model_conv_resam_best']
-	wl_array_model_conv_resam_fit_best = output_best_chi2_fits['wl_array_model_conv_resam_fit_best']
-	flux_array_model_conv_resam_fit_best = output_best_chi2_fits['flux_array_model_conv_resam_fit_best']
-	flux_residuals_best = output_best_chi2_fits['flux_residuals_best']
-	logflux_residuals_best = output_best_chi2_fits['logflux_residuals_best']
+	if fit_spectra:
+		wl_array_model_conv_resam_best = output_best_chi2_fits['wl_array_model_conv_resam_best']
+		flux_array_model_conv_resam_best = output_best_chi2_fits['flux_array_model_conv_resam_best']
+		wl_array_model_conv_resam_fit_best = output_best_chi2_fits['wl_array_model_conv_resam_fit_best']
+		flux_array_model_conv_resam_fit_best = output_best_chi2_fits['flux_array_model_conv_resam_fit_best']
+	if fit_photometry:
+		flux_syn_array_model_fit_best = output_best_chi2_fits['flux_syn_array_model_fit_best']
+		lambda_eff_array_model_fit_best = output_best_chi2_fits['lambda_eff_array_model_fit_best']
+		width_eff_array_model_fit_best = output_best_chi2_fits['width_eff_array_model_fit_best']
 
 	# open results from the chi square analysis
 	try: # if given as a pickle file
@@ -80,30 +94,83 @@ def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None
 	except: # if given as the output of chi2_fit
 		pass
 	model = output_chi2['my_chi2'].model
-	N_spectra = output_chi2['my_chi2'].N_spectra
 	wl_spectra = output_chi2['my_chi2'].wl_spectra
 	flux_spectra = output_chi2['my_chi2'].flux_spectra
 	eflux_spectra = output_chi2['my_chi2'].eflux_spectra
-	wl_spectra_min = output_chi2['my_chi2'].wl_spectra_min 
-	wl_spectra_max = output_chi2['my_chi2'].wl_spectra_max 
+	phot = output_chi2['my_chi2'].phot
+	ephot = output_chi2['my_chi2'].ephot
+	filters = output_chi2['my_chi2'].filters
+	if fit_spectra: 
+		N_spectra = output_chi2['my_chi2'].N_spectra
+		wl_spectra_min = output_chi2['my_chi2'].wl_spectra_min 
+		wl_spectra_max = output_chi2['my_chi2'].wl_spectra_max 
+	if fit_photometry: 
+		phot_fit = output_chi2['my_chi2'].phot_fit
+		ephot_fit = output_chi2['my_chi2'].ephot_fit
+		filters_fit = output_chi2['my_chi2'].filters_fit
+		fit_phot_range = output_chi2['my_chi2'].fit_phot_range
+		lambda_eff_SVO = output_chi2['my_chi2'].lambda_eff_SVO
+		width_eff_SVO = output_chi2['my_chi2'].width_eff_SVO
+		lambda_eff_SVO_fit = output_chi2['my_chi2'].lambda_eff_SVO_fit
+		width_eff_SVO_fit = output_chi2['my_chi2'].width_eff_SVO_fit
 
 	#------------------------
 	# initialize plot for best fits and residuals
 	fig, ax = plt.subplots(2, sharex=True, gridspec_kw={'height_ratios': [1, 0.3], 'hspace': 0.0})
 
 	# set xrange equal to the input SED range, if not provided
-	if xrange is None: xrange = [wl_spectra_min, wl_spectra_max]
+	if xrange is None: 
+		if fit_spectra: 
+			xrange = [wl_spectra_min, wl_spectra_max]
+		if fit_photometry: 
+			mask_min = lambda_eff_SVO==lambda_eff_SVO.min()
+			mask_max = lambda_eff_SVO==lambda_eff_SVO.max()
+			xmin = lambda_eff_SVO[mask_min]-width_eff_SVO[mask_min]/2.
+			xmax = lambda_eff_SVO[mask_max]+width_eff_SVO[mask_max]/2
+			xrange = [0.99*xmin, 1.01*xmax]
 
-	# plot flux uncertainty region
-	for k in range(N_spectra): # for each input observed spectrum
-		mask = (wl_spectra[k]>=xrange[0]) & (wl_spectra[k]<=xrange[1])
-		wl_region = np.append(wl_spectra[k][mask], np.flip(wl_spectra[k][mask]))
-		flux_region = np.append(flux_spectra[k][mask]-eflux_spectra[k][mask], 
-		                        np.flip(flux_spectra[k][mask]+eflux_spectra[k][mask]))
-		ax[0].fill(wl_region, flux_region, facecolor='black', edgecolor='white', linewidth=1, alpha=0.30, zorder=3) # in erg/s/cm2
-		# plot observed spectra
-		if k==0: ax[0].plot(wl_spectra[k][mask], flux_spectra[k][mask], color='black', linewidth=1.0, label='Observed spectra', zorder=3) # in erg/s/cm2
-		else: ax[0].plot(wl_spectra[k][mask], flux_spectra[k][mask], color='black', linewidth=1.0, zorder=3) # in erg/s/cm2
+	 # short name for spectra to keep only relevant info
+	label_model = spectra_name_short(model=model, spectra_name=spectra_name_best)
+
+	# plot data
+	if fit_spectra: 
+		for k in range(N_spectra): # for each input observed spectrum
+			# plot flux uncertainty region
+			mask = (wl_spectra[k]>=xrange[0]) & (wl_spectra[k]<=xrange[1])
+			wl_region = np.append(wl_spectra[k][mask], np.flip(wl_spectra[k][mask]))
+			flux_region = np.append(flux_spectra[k][mask]-eflux_spectra[k][mask], 
+			                        np.flip(flux_spectra[k][mask]+eflux_spectra[k][mask]))
+			ax[0].fill(wl_region, flux_region, facecolor='black', edgecolor='white', linewidth=1, alpha=0.30, zorder=3) # in erg/s/cm2
+			# plot observed spectra
+			if k==0: ax[0].plot(wl_spectra[k][mask], flux_spectra[k][mask], color='black', linewidth=1.0, label='Observed spectra', zorder=3) # in erg/s/cm2
+			else: ax[0].plot(wl_spectra[k][mask], flux_spectra[k][mask], color='black', linewidth=1.0, zorder=3) # in erg/s/cm2
+	if fit_photometry: 
+		# observed photometry
+		# for photometry within the fit range, consider the effective wavelength and effective width from the best fit
+		# for photometry outside the fit range, consider the effective wavelength and effective width from SVO
+
+		# photometry out of the fit range and within plot range
+		mask_nofit = ~np.isin(filters, filters_fit) & (lambda_eff_SVO>=xrange[0]) & (lambda_eff_SVO<=xrange[1])
+		ax[0].errorbar(lambda_eff_SVO[mask_nofit], phot[mask_nofit], 
+		               xerr=width_eff_SVO[mask_nofit]/2., yerr=ephot[mask_nofit], 
+		               color='silver', fmt='.', markersize=1., capsize=2, elinewidth=1.0, 
+		               markeredgewidth=0.5, zorder=3)
+		# photometry within the fit range
+		mask = (lambda_eff_array_model_fit_best[0]>=xrange[0]) & (lambda_eff_array_model_fit_best[0]<=xrange[1])
+		ax[0].errorbar(lambda_eff_array_model_fit_best[0][mask], phot_fit[mask], 
+		               xerr=width_eff_array_model_fit_best[0][mask]/2., yerr=ephot_fit[mask], 
+		               color='black', fmt='.', markersize=1., capsize=2, elinewidth=1.0, 
+		               markeredgewidth=0.5, label='Observed photometry', zorder=3)
+		# synthetic photometry
+		for i in range(N_best_fits):
+			if ori_res: label = '' # so no label is shown
+			if not ori_res: label = label_model[i]+r' ($\chi^2_\nu=$'+str(round(chi2_red_fit_best[i],1))+')'
+			mask = (lambda_eff_array_model_fit_best[0]>=xrange[0]) & (lambda_eff_array_model_fit_best[0]<=xrange[1])
+			# consider the effective wavelength from the best fit
+			ax[0].errorbar(lambda_eff_array_model_fit_best[0][mask], flux_syn_array_model_fit_best[i][mask], 
+			               #xerr=width_eff_array_model_fit_best[0][mask]/2.,
+			               fmt='.', markersize=8., capsize=2, elinewidth=1.0, 
+			               markeredgewidth=0.5, label=label, zorder=4)
 
 	# plot best fits (original resolution spectra)
 	if ori_res: # plot model spectra with the original resolution
@@ -113,20 +180,31 @@ def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None
 			                    color='silver', label='Models with original resolution', zorder=2, alpha=0.5) # in erg/s/cm2
 			else: ax[0].plot(wl_model_best[i,:][mask], flux_model_best[i,:][mask], linewidth=0.5, 
 			                 color='silver', zorder=2, alpha=0.5) # in erg/s/cm2
-
-	# plot best fits (convolved spectra)
-	label_model = spectra_name_short(model=model, spectra_name=spectra_name_best) # short name for spectra to keep only relevant info
-	for i in range(N_best_fits): # for the best fits
-		for k in range(N_spectra): # for each input observed spectrum
-			label = label_model[i]+r' ($\chi^2_\nu=$'+str(round(chi2_red_fit_best[i],1))+')'
-			mask = (wl_array_model_conv_resam_fit_best[i][k]>=xrange[0]) & (wl_array_model_conv_resam_fit_best[i][k]<=xrange[1])
-			color = plt.rcParams['axes.prop_cycle'].by_key()['color'][i] # default color
-			if k==0: 
-				ax[0].plot(wl_array_model_conv_resam_fit_best[i][k][mask], flux_array_model_conv_resam_fit_best[i][k][mask], 
+		if fit_photometry and not fit_spectra:
+			# convolve spectra if requested (no convolved spectra are store when fitting only photometry)
+			for i in range(N_best_fits): # for the best fits
+				color = plt.rcParams['axes.prop_cycle'].by_key()['color'][i] # default color
+				out = convolve_spectrum(wl=wl_model_best[i], flux=flux_model_best[i], res=res, lam_res=lam_res, disp_wl_range=xrange, convolve_wl_range=xrange)
+				wl_model_best_conv = out['wl_conv']
+				flux_model_best_conv = out['flux_conv']
+				label = label_model[i]+r' ($\chi^2_\nu=$'+str(round(chi2_red_fit_best[i],1))+')'
+				mask = (wl_model_best_conv>xrange[0]) & (wl_model_best_conv<xrange[1])
+				ax[0].plot(wl_model_best_conv[mask], flux_model_best_conv[mask],
 				           '--', color=color, linewidth=1.0, label=label, zorder=4) # in erg/s/cm2
-			else: 
-				ax[0].plot(wl_array_model_conv_resam_fit_best[i][k][mask], flux_array_model_conv_resam_fit_best[i][k][mask], 
-				           '--', color=color, linewidth=1.0, zorder=4) # in erg/s/cm2
+	
+	# plot best fits (convolved spectra)
+	if fit_spectra: 
+		for i in range(N_best_fits): # for the best fits
+			for k in range(N_spectra): # for each input observed spectrum
+				label = label_model[i]+r' ($\chi^2_\nu=$'+str(round(chi2_red_fit_best[i],1))+')'
+				mask = (wl_array_model_conv_resam_fit_best[i][k]>=xrange[0]) & (wl_array_model_conv_resam_fit_best[i][k]<=xrange[1])
+				color = plt.rcParams['axes.prop_cycle'].by_key()['color'][i] # default color
+				if k==0: 
+					ax[0].plot(wl_array_model_conv_resam_fit_best[i][k][mask], flux_array_model_conv_resam_fit_best[i][k][mask], 
+					           '--', color=color, linewidth=1.0, label=label, zorder=4) # in erg/s/cm2
+				else: 
+					ax[0].plot(wl_array_model_conv_resam_fit_best[i][k][mask], flux_array_model_conv_resam_fit_best[i][k][mask], 
+					           '--', color=color, linewidth=1.0, zorder=4) # in erg/s/cm2
 
 	ax[0].set_xlim(xrange[0], xrange[1])
 	if yrange is not None: ax[0].set_ylim(yrange[0], yrange[1])
@@ -149,13 +227,20 @@ def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None
 	ax[1].plot([xrange[0], xrange[1]], [0, 0], '--', color='black', linewidth=1.)
 
 	for i in range(N_best_fits): # for best fits
-		for k in range(N_spectra): # for each input observed spectrum
-			color = plt.rcParams['axes.prop_cycle'].by_key()['color'][i] # default color
-			mask = (wl_array_model_conv_resam_fit_best[i][k]>=xrange[0]) & (wl_array_model_conv_resam_fit_best[i][k]<=xrange[1])
+		if fit_spectra:
+			for k in range(N_spectra): # for each input observed spectrum
+				color = plt.rcParams['axes.prop_cycle'].by_key()['color'][i] # default color
+				mask = (wl_array_model_conv_resam_fit_best[i][k]>=xrange[0]) & (wl_array_model_conv_resam_fit_best[i][k]<=xrange[1])
+				if ylog:
+					ax[1].plot(wl_array_model_conv_resam_fit_best[i][k][mask], logflux_residuals_best[i][k][mask], linewidth=1.0, color=color) # in erg/s/cm2
+				if not ylog:
+					ax[1].plot(wl_array_model_conv_resam_fit_best[i][k][mask], flux_residuals_best[i][k][mask], linewidth=1.0, color=color) # in erg/s/cm2
+		if fit_photometry:
+			mask = (lambda_eff_array_model_fit_best[0]>=xrange[0]) & (lambda_eff_array_model_fit_best[0]<=xrange[1])
 			if ylog:
-				ax[1].plot(wl_array_model_conv_resam_fit_best[i][k][mask], logflux_residuals_best[i][k][mask], linewidth=1.0, color=color) # in erg/s/cm2
+				ax[1].scatter(lambda_eff_array_model_fit_best[0][mask], logflux_residuals_best[i][mask], s=15, zorder=3)
 			if not ylog:
-				ax[1].plot(wl_array_model_conv_resam_fit_best[i][k][mask], flux_residuals_best[i][k][mask], linewidth=1.0, color=color) # in erg/s/cm2
+				ax[1].scatter(lambda_eff_array_model_fit_best[0][mask], flux_residuals_best[i][mask], s=15, zorder=3)
 
 	ax[1].yaxis.set_minor_locator(AutoMinorLocator())
 	ax[1].grid(True, which='both', color='gainsboro', linewidth=0.5, alpha=1.0)
@@ -209,14 +294,18 @@ def plot_chi2_red(output_chi2, N_best_fits=1, xlog=False, ylog=False, out_file=N
 	>>> seda.plot_chi2_red(output_chi2='ATMO2020_chi2_minimization.pickle', N_best_fits=3)
 
 	Author: Genaro Suárez
+	Date: 2024-10, 2025-09-07
 	'''
 
 	# read best fits
 	output_best_chi2_fits = best_chi2_fits(output_chi2=output_chi2, N_best_fits=N_best_fits)
+	fit_spectra = output_best_chi2_fits['fit_spectra']
+	fit_photometry = output_best_chi2_fits['fit_photometry']
 	spectra_name_best = output_best_chi2_fits['spectra_name_best']
 	chi2_red_fit_best = output_best_chi2_fits['chi2_red_fit_best']
 	chi2_red_wl_fit_best = output_best_chi2_fits['chi2_red_wl_fit_best']
-	wl_array_model_conv_resam_fit_best = output_best_chi2_fits['wl_array_model_conv_resam_fit_best']
+	if fit_spectra: wl_array_model_conv_resam_fit_best = output_best_chi2_fits['wl_array_model_conv_resam_fit_best']
+	if fit_photometry: lambda_eff_array_model_fit_best = output_best_chi2_fits['lambda_eff_array_model_fit_best']
 
 	# open results from the chi square analysis
 	try: # if given as a pickle file
@@ -225,7 +314,6 @@ def plot_chi2_red(output_chi2, N_best_fits=1, xlog=False, ylog=False, out_file=N
 	except: # if given as the output of chi2_fit
 		pass
 	model = output_chi2['my_chi2'].model
-	N_spectra = output_chi2['my_chi2'].N_spectra
 
 	if save:
 		if out_file is None: pdf_pages = PdfPages('chi2_'+model+'.pdf') # name of the pdf
@@ -234,14 +322,27 @@ def plot_chi2_red(output_chi2, N_best_fits=1, xlog=False, ylog=False, out_file=N
 	plot_title = spectra_name_short(model=model, spectra_name=spectra_name_best) # short name for spectra to keep only relevant info
 
 	for i in range(N_best_fits): # for best fits
-		wl_fit = np.array([]) # initialize numpy array to save array with data points in the fit
-		for k in range(N_spectra): # for each input observed spectrum
-			wl_fit = np.concatenate([wl_fit, wl_array_model_conv_resam_fit_best[i][k]])
-
 		fig, ax = plt.subplots()
 	
-		ax.plot(wl_fit, chi2_red_wl_fit_best[i], marker='x', markersize=5.0, linestyle='None')
-		ax.annotate(r' ($\chi^2_r=$'+str(round(chi2_red_fit_best[i],1))+')', xy=(0.75, .90), xycoords='axes fraction', ha='left', va='bottom', size=12, color='black')	
+		label = r' $\chi^2_r=$'+str(round(chi2_red_fit_best[i],1))
+
+		if fit_spectra:
+			wl_fit = np.array([]) # initialize numpy array to save wavelengths within the fit range of all input spectra as a single array
+			for k in range(output_chi2['my_chi2'].N_spectra): # for each input observed spectrum
+				wl_fit = np.concatenate([wl_fit, wl_array_model_conv_resam_fit_best[i][k]])
+
+			ax.plot(wl_fit, chi2_red_wl_fit_best[i], marker='x', markersize=5.0, linestyle='None')
+			plt.plot(wl_fit[0], chi2_red_wl_fit_best[i][0], label=label)
+
+		if fit_photometry:
+			ax.plot(lambda_eff_array_model_fit_best[0], chi2_red_wl_fit_best[i], 
+			        marker='x', markersize=5.0, linestyle='None', zorder=3)
+			# for the label
+			plt.plot(lambda_eff_array_model_fit_best[0][0], chi2_red_wl_fit_best[i][0], label=label)
+
+		# reference line at zero
+		xrange = plt.xlim()
+		ax.plot(xrange, [0, 0], '--', color='black', linewidth=1., zorder=1)
 
 		ax.xaxis.set_minor_locator(AutoMinorLocator())
 		ax.yaxis.set_minor_locator(AutoMinorLocator())
@@ -250,10 +351,12 @@ def plot_chi2_red(output_chi2, N_best_fits=1, xlog=False, ylog=False, out_file=N
 			ax.xaxis.set_major_formatter(StrMethodFormatter('{x:.0f}'))
 		if ylog: ax.set_yscale('log')
 
+		plt.xlim(xrange)
 		plt.grid(True, which='both', color='gainsboro', alpha=0.5)
 		plt.xlabel(r'$\lambda$ ($\mu$m)', size=12)
 		plt.ylabel(r'$\chi^2_r$', size=12)
 		plt.title(plot_title[i])
+		plt.legend(handlelength=0, handletextpad=0)#, frameon=False
 	
 		if save:
 			pdf_pages.savefig(fig, bbox_inches='tight')

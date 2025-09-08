@@ -98,21 +98,20 @@ def chi2(my_chi2):
 	print('\n   Running chi-square fitting...')
 
 	# load input parameters
-	# all are stored in my_chi2 but were defined in different classes
+	# all are stored in my_chi2 but they were defined in different classes
 	# from InputData
 	fit_spectra = my_chi2.fit_spectra
 	fit_photometry = my_chi2.fit_photometry
 	wl_spectra = my_chi2.wl_spectra
 	flux_spectra = my_chi2.flux_spectra
 	eflux_spectra = my_chi2.eflux_spectra
-	mag_phot = my_chi2.mag_phot
-	emag_phot = my_chi2.emag_phot
-	filter_phot = my_chi2.filter_phot
+	phot = my_chi2.phot
+	ephot = my_chi2.ephot
+	filters = my_chi2.filters
 	res = my_chi2.res
 	lam_res = my_chi2.lam_res
 	distance = my_chi2.distance
 	edistance = my_chi2.edistance
-	N_spectra = my_chi2.N_spectra
 	# from ModelOptions
 	model = my_chi2.model
 	model_dir = my_chi2.model_dir
@@ -131,22 +130,35 @@ def chi2(my_chi2):
 	fit_wl_range = my_chi2.fit_wl_range
 	model_wl_range = my_chi2.model_wl_range
 	disp_wl_range = my_chi2.disp_wl_range
-	wl_spectra_min = my_chi2.wl_spectra_min
-	wl_spectra_max = my_chi2.wl_spectra_max
-	N_datapoints = my_chi2.N_datapoints
 	N_model_spectra = my_chi2.N_model_spectra
 	if (model is not None) & (model_dir is not None):
 		spectra_name = my_chi2.spectra_name
 		spectra_name_full = my_chi2.spectra_name_full
-	wl_array_obs_fit = my_chi2.wl_array_obs_fit
-	flux_array_obs_fit = my_chi2.flux_array_obs_fit
-	eflux_array_obs_fit = my_chi2.eflux_array_obs_fit
-	# make deepcopy of the following attributes to avoid modifying the original ones (stores in my_chi2) 
-	# when updating the fluxing after applying the scaling factor
-	wl_array_model_conv_resam = copy.deepcopy(my_chi2.wl_array_model_conv_resam)
-	flux_array_model_conv_resam = copy.deepcopy(my_chi2.flux_array_model_conv_resam)
-	wl_array_model_conv_resam_fit = copy.deepcopy(my_chi2.wl_array_model_conv_resam_fit)
-	flux_array_model_conv_resam_fit = copy.deepcopy(my_chi2.flux_array_model_conv_resam_fit)
+	if fit_spectra:
+		N_spectra = my_chi2.N_spectra
+		wl_spectra_min = my_chi2.wl_spectra_min
+		wl_spectra_max = my_chi2.wl_spectra_max
+		N_datapoints = my_chi2.N_datapoints
+		wl_array_obs_fit = my_chi2.wl_array_obs_fit
+		flux_array_obs_fit = my_chi2.flux_array_obs_fit
+		eflux_array_obs_fit = my_chi2.eflux_array_obs_fit
+		# make deepcopy of the following attributes to avoid modifying the original ones (stores in my_chi2) 
+		# when updating the fluxing after applying the scaling factor
+		wl_array_model_conv_resam = copy.deepcopy(my_chi2.wl_array_model_conv_resam)
+		flux_array_model_conv_resam = copy.deepcopy(my_chi2.flux_array_model_conv_resam)
+		wl_array_model_conv_resam_fit = copy.deepcopy(my_chi2.wl_array_model_conv_resam_fit)
+		flux_array_model_conv_resam_fit = copy.deepcopy(my_chi2.flux_array_model_conv_resam_fit)
+	if fit_photometry:
+		flux_syn_array_model_fit = my_chi2.flux_syn_array_model_fit
+		lambda_eff_array_model_fit = my_chi2.lambda_eff_array_model_fit
+		width_eff_array_model_fit = my_chi2.width_eff_array_model_fit
+		lambda_eff_SVO = my_chi2.lambda_eff_SVO
+		width_eff_SVO = my_chi2.width_eff_SVO
+		phot_fit = my_chi2.phot_fit
+		ephot_fit = my_chi2.ephot_fit
+		filters_fit = my_chi2.filters_fit
+		lambda_eff_SVO_fit = my_chi2.lambda_eff_SVO_fit
+		width_eff_SVO_fit = my_chi2.width_eff_SVO_fit
 
 	# initialize variables to save key parameters from the fit
 	scaling_fit = np.zeros(N_model_spectra) * np.nan
@@ -173,9 +185,18 @@ def chi2(my_chi2):
 		if scaling_free_param: params.add('scaling', value=1e-20) # free parameter
 
 		# minimize chi square
-		data_fit = flux_array_obs_fit[i] # all input fluxes
-		edata_fit = eflux_array_obs_fit[i] # all input flux uncertainties
-		model_fit = flux_array_model_conv_resam_fit[i] # model fluxes from each resampled and convolved model spectrum
+		if fit_spectra and not fit_photometry:
+			data_fit = flux_array_obs_fit[i] # all input fluxes
+			edata_fit = eflux_array_obs_fit[i] # all input flux uncertainties
+			model_fit = flux_array_model_conv_resam_fit[i] # model fluxes from each resampled and convolved model spectrum
+		if fit_photometry and not fit_spectra:
+			data_fit = [phot_fit]
+			edata_fit = [ephot_fit]
+			model_fit = [flux_syn_array_model_fit[i]]
+#		if fit_photometry and fit_spectra:
+#			data_fit = 
+#			edata_fit = 
+#			model_fit = 
 
 		minner = Minimizer(residuals_for_chi2, params, fcn_args=(data_fit, edata_fit, model_fit))
 		out_lmfit = minner.minimize(method='leastsq') # 'leastsq': Levenberg-Marquardt (default)
@@ -196,6 +217,8 @@ def chi2(my_chi2):
 			for k in range(N_spectra): # for each input observed spectrum
 				flux_array_model_conv_resam[i][k] = flux_array_model_conv_resam[i][k] * scaling_fit[i]
 				flux_array_model_conv_resam_fit[i][k] = flux_array_model_conv_resam_fit[i][k] * scaling_fit[i]
+		if fit_photometry:
+			flux_syn_array_model_fit[i] = flux_syn_array_model_fit[i] * scaling_fit[i]
 
 	# close progress bar
 	chi2_bar.close()
@@ -233,14 +256,21 @@ def chi2(my_chi2):
 		out_chi2['wl_array_obs_fit'] = wl_array_obs_fit
 		out_chi2['flux_array_obs_fit'] = flux_array_obs_fit
 		out_chi2['eflux_array_obs_fit'] = eflux_array_obs_fit
-	#if fit_photometry: # when photometry is used in the fit
-	#	out_chi2['lambda_eff_mean'] = lambda_eff_mean
-	#	out_chi2['width_eff_mean'] = width_eff_mean
-	#	out_chi2['f_phot'] = f_phot
-	#	out_chi2['ef_phot'] = ef_phot
-	#	out_chi2['phot_synt'] = phot_synt
-	#	if (extinction_free_param=='yes'):
-	#		out_chi2['phot_synt_red'] = phot_synt_red
+	if fit_photometry: # when photometry is used in the fit
+		# photometric magnitudes within the wavelength range for the fit
+		out_chi2['phot_fit'] = phot_fit
+		out_chi2['ephot_fit'] = ephot_fit
+		out_chi2['filters_fit'] = filters_fit
+		# information from SVO for the selected filters
+		out_chi2['lambda_eff_SVO_fit'] = lambda_eff_SVO_fit
+		out_chi2['width_eff_SVO_fit'] = width_eff_SVO_fit
+		# information from model spectra for the selected filters
+		out_chi2['lambda_eff_array_model_fit'] = lambda_eff_array_model_fit
+		out_chi2['width_eff_array_model_fit'] = width_eff_array_model_fit
+		# synthetic photometry from each model for the selected filters
+		out_chi2['flux_syn_array_model_fit'] = flux_syn_array_model_fit
+		#if (extinction_free_param=='yes'):
+		#	out_chi2['phot_synt_red'] = phot_synt_red
 	if distance!=None: # when a radius was obtained
 		out_chi2['radius'] = radius
 		if edistance!=None:
@@ -252,17 +282,28 @@ def chi2(my_chi2):
 	for i in range(N_model_spectra): # for each model spectrum
 		flux_residuals_each = []
 		logflux_residuals_each = []
-		for k in range(N_spectra): # for each input observed spectrum
+		if fit_spectra: 
+			for k in range(N_spectra): # for each input observed spectrum
+				# linear scale
+				res_lin = flux_array_model_conv_resam_fit[i][k] - flux_array_obs_fit[i][k]
+				flux_residuals_each.append(res_lin)
+				# log scale
+				mask_pos = flux_array_obs_fit[i][k]>0 # mask to avoid negative input fluxes to obtain the logarithm
+				res_log = np.log10(flux_array_model_conv_resam_fit[i][k][mask_pos]) - np.log10(flux_array_obs_fit[i][k][mask_pos])
+				logflux_residuals_each.append(res_log)
+			# nested list with all resampled and convolved model spectra in the fit range
+			flux_residuals.append(flux_residuals_each)
+			logflux_residuals.append(logflux_residuals_each)
+		if fit_photometry: 
 			# linear scale
-			res_lin = flux_array_model_conv_resam_fit[i][k] - flux_array_obs_fit[i][k]
-			flux_residuals_each.append(res_lin)
+			res_lin = flux_syn_array_model_fit[i] - phot_fit
 			# log scale
-			mask_pos = flux_array_obs_fit[i][k]>0 # mask to avoid negative input fluxes to obtain the logarithm
-			res_log = np.log10(flux_array_model_conv_resam_fit[i][k][mask_pos]) - np.log10(flux_array_obs_fit[i][k][mask_pos])
-			logflux_residuals_each.append(res_log)
-		# nested list with all resampled and convolved model spectra in the fit range
-		flux_residuals.append(flux_residuals_each)
-		logflux_residuals.append(logflux_residuals_each)
+			mask_pos = phot_fit>0 # mask to avoid negative input fluxes to obtain the logarithm
+			res_log = np.log10(flux_syn_array_model_fit[i][mask_pos]) - np.log10(phot_fit[mask_pos])
+			# nested list with residuals for filters within the fit range for each model spectrum
+			flux_residuals.append(res_lin)
+			logflux_residuals.append(res_log)
+
 	out_chi2['flux_residuals'] = flux_residuals
 	out_chi2['logflux_residuals'] = logflux_residuals
 
@@ -430,17 +471,16 @@ def save_params(out_chi2):
 	return  
 
 ##########################
-def open_chi2_table(filename):
+def read_prettytable(filename):
 	'''
 	Description:
 	------------
-		Open ascii table with the results from chi-square minimization by ``seda.chi2``.
-
+		Read ascii table created with ``prettytable``.
 
 	Parameters:
 	-----------
 	- filename : str
-		Ascii file with the chi-square minimization results.
+		PrettyTable table.
 
 	Returns:
 	--------
@@ -469,6 +509,10 @@ def open_chi2_table(filename):
 
 		# read the cleaned data using ascii.read
 		table = ascii.read(lines_sel, format='fixed_width')
+
+		# remove last column with empty information
+		last_column_name = table.colnames[-1]
+		table.remove_column(last_column_name)
 
 	return table
 
