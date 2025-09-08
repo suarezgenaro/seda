@@ -87,6 +87,7 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 		- ``'flux_model'`` : input `flux_model` (if complement_SED).
 
 	Author: Genaro Suárez
+
 	Date: 2025-04-20
 	'''
 

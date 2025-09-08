@@ -77,6 +77,7 @@ def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=Non
 	>>>                                                eflux=eflux, res=res)
 
 	Author: Genaro Suárez
+
 	Date: 2020-03
 	'''
 
@@ -232,6 +233,7 @@ def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False
 		- ``'params'`` : model free parameters
 
 	Author: Genaro Suárez
+
 	Date: 2024-10, 2025-09-07
 	'''
 
@@ -415,6 +417,7 @@ def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spect
 	>>>                                    params=params)
 
 	Author: Genaro Suárez
+
 	Date: 2025-03-14
 	'''
 
@@ -558,6 +561,7 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 	>>>                                params_ranges=params_ranges)
 
 	Author: Genaro Suárez
+
 	Date: 2023-02
 	'''
 
@@ -730,6 +734,7 @@ def best_bayesian_fit(output_bayes, grid=None, model_dir_ori=None, ori_res=False
 			- ``'flux_model_ori'`` : (if ``ori_res`` is ``True``) fluxes in erg/cm2/s/A of the best scaled model fit with its original resolution
 
 	Author: Genaro Suárez
+
 	Date: 2024-09
 	'''
 
@@ -906,6 +911,7 @@ def select_model_spectra(model, model_dir, params_ranges=None, filename_pattern=
 	>>>                                 params_ranges=params_ranges)
 
 	Author: Genaro Suárez
+
 	Date: 2020-05
 	'''
 
@@ -1206,6 +1212,7 @@ def app_to_abs_flux(flux, distance, eflux=None, edistance=None, reverse=False):
 	    'edistance': 0.06}
 
 	Author: Genaro Suárez
+
 	Date: 2025-05
 	'''
 
@@ -1303,6 +1310,7 @@ def app_to_abs_mag(magnitude, distance, emagnitude=None, edistance=None):
 	     'edistance': 0.79}
 
 	Author: Genaro Suárez
+
 	Date: 2025-04-28
 	'''
 
@@ -1377,6 +1385,7 @@ def spt_to_teff(spt, spt_type, ref=None):
 	    array([1581.053125, 1033.328125])
 
 	Author: Genaro Suárez
+
 	Date: 2023-02
 	'''
 
@@ -1479,6 +1488,7 @@ def parallax_to_distance(parallax, eparallax):
 	    (5.707762557077626, 0.055383540793561434)
 
 	Author: Genaro Suárez
+
 	Date: 2025-04-28
 	'''
 
@@ -1537,6 +1547,7 @@ def convert_photometric_table(table, save_table=False, table_name=None):
 	     'ephot': array([0.058, 0.113, 0.201])}
 
 	Author: Genaro Suárez
+
 	Date: 2025-09-07
 	'''
 

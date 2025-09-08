@@ -63,6 +63,7 @@ def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None
 	>>> seda.plot_chi2_fit(output_chi2='ATMO2020_chi2_minimization.pickle', N_best_fits=3)
 
 	Author: Genaro Suárez
+
 	Date: 2024-10, 2025-09-06
 	'''
 
@@ -294,6 +295,7 @@ def plot_chi2_red(output_chi2, N_best_fits=1, xlog=False, ylog=False, out_file=N
 	>>> seda.plot_chi2_red(output_chi2='ATMO2020_chi2_minimization.pickle', N_best_fits=3)
 
 	Author: Genaro Suárez
+
 	Date: 2024-10, 2025-09-07
 	'''
 
@@ -911,6 +913,7 @@ def plot_full_SED(out_bol_lum, xlog=True, ylog=True, xrange=None, yrange=None,
 	>>> seda.plot_full_SED(out_bol_lum=out_bol_lum)
 
 	Author: Genaro Suárez
+
 	Date: 2025-06-01
 	'''
 
