@@ -1008,6 +1008,7 @@ def read_SVO_params(filters, params):
 	     'WidthEff': array([1624.3190191 , 2509.40349871, 2618.86953322])}
 
 	Author: Genaro Suárez
+
 	Date: 2025-09-05
 	'''
 
