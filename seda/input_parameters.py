@@ -285,9 +285,20 @@ class ModelOptions:
 		The convolved spectra will keep the same original names along with the ``res`` and ``lam_res`` parameters, e.g. 'original_spectrum_name_R100at1um.nc' for ``res=100`` and ``lam_res=1``.
 		They will be saved as netCDF with xarray (it produces lighter files compared to normal ASCII files).
 	- skip_convolution : {``True``, ``False``}, optional (default ``False``)
-		Convolution of model spectra (the slowest process in the code) can (``True``) or cannot (``False``) be avoided. 
+		Convolution of model spectra (the slowest process when fitting spectra) can (``True``) or cannot (``False``) be avoided. 
 		Once the code has be run and the convolved spectra were stored in ``path_save_spectra_conv``, the convolved grid can be reused for other input data with the same resolution as the convolved spectra.
 		If 'True', ``model_dir`` should include the previously convolved spectra for ``res`` at ``lam_res`` in ``input_parameters.InputData``. 
+	- path_save_syn_phot: str, optional
+		Directory path to store the synthetic fluxes (in erg/s/cm2/A).
+		If not provided (default), the synthetic photometry will not be saved. 
+		If the directory does not exist, it will be created. Otherwise, the photometry will be added to the existing folder.
+		The synthetic photometry for different filters derived from the same model spectrum will be saved in a single ASCII table, named after the model with the suffix "_syn_phot.dat".
+		If a synthetic photometry file for a given model spectrum already exists, it will be updated to include photometry for any new filters as needed.
+	- skip_syn_phot : {``True``, ``False``}, optional (default ``False``)
+		Synthetic photometry calculation (the lowest process when fitting photometry) can (``True``) or cannot (``False``) be avoided. 
+		Once the code has be run and the synthetic photometry was stored in ``path_save_syn_phot``, 
+		the synthetic values can be reused for other input photometric SEDs that use the same set of filters.
+		If 'True', ``model_dir`` should correspond to the directory with the synthetic photometry for ``filters`` in ``input_parameters.InputData``. 
 
 	Returns:
 	--------
@@ -316,7 +327,8 @@ class ModelOptions:
 
 	def __init__(self, model=None, model_dir=None, params_ranges=None,
 		         wl_model=None, flux_model=None,
-	             path_save_spectra_conv=None, skip_convolution=False):
+		         path_save_spectra_conv=None, skip_convolution=False,
+		         path_save_syn_phot=None, skip_syn_phot=False):
 
 		# verify necessary input parameters are provided
 		if (model is None) & (model_dir is None): # when no model and model_dir parameters are provided
@@ -337,6 +349,8 @@ class ModelOptions:
 		self.flux_model = flux_model
 		self.path_save_spectra_conv = path_save_spectra_conv
 		self.skip_convolution = skip_convolution
+		self.path_save_syn_phot = path_save_syn_phot
+		self.skip_syn_phot = skip_syn_phot
 
 		print('\n   Model options loaded successfully')
 
@@ -417,6 +431,8 @@ class Chi2Options:
 
 		ini_time_mychi2 = time.time() # to estimate the time elapsed running chi2
 
+		dir_sep = os.sep # directory separator for the current operating system
+
 		# associate input parameters as attributes
 		self.fit_wl_range = fit_wl_range
 		self.disp_wl_range = disp_wl_range
@@ -456,6 +472,8 @@ class Chi2Options:
 		self.flux_model = my_model.flux_model
 		self.path_save_spectra_conv = my_model.path_save_spectra_conv
 		self.skip_convolution = my_model.skip_convolution
+		self.path_save_syn_phot = my_model.path_save_syn_phot
+		self.skip_syn_phot = my_model.skip_syn_phot
 
 		# extract parameters for convenience
 		fit_spectra = my_data.fit_spectra
@@ -473,8 +491,10 @@ class Chi2Options:
 		wl_model = my_model.wl_model
 		flux_model = my_model.flux_model
 		params_ranges = my_model.params_ranges
-		skip_convolution = my_model.skip_convolution
 		path_save_spectra_conv = my_model.path_save_spectra_conv
+		skip_convolution = my_model.skip_convolution
+		path_save_syn_phot = my_model.path_save_syn_phot
+		skip_syn_phot = my_model.skip_syn_phot
 		if my_data.fit_spectra: N_spectra = my_data.N_spectra
 		if my_data.fit_photometry: 
 			lambda_eff_SVO = my_data.lambda_eff_SVO # in um
@@ -553,19 +573,26 @@ class Chi2Options:
 		# when directories with spectra files are provided, read, convolve (if needed), and resample model spectra
 		if (model is not None) & (model_dir is not None):
 			# read the model spectra names in the input folders and meeting the indicated parameter ranges 
-			filename_pattern = Models(model).filename_pattern
+			if not skip_convolution and not skip_syn_phot:
+				filename_pattern = Models(model).filename_pattern # to be used to select files with original names
+			else:
+				filename_pattern = Models(model).filename_pattern+'*' # to be used to select files with original names plus the suffix added when convolved spectra were saved
+
 			out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir, params_ranges=params_ranges, filename_pattern=filename_pattern)
 			spectra_name_full = out_select_model_spectra['spectra_name_full']
 			spectra_name = out_select_model_spectra['spectra_name']
-			# for pre-convolved models, keep only the base name (without the part added to indicate the resolution and wavelength)
-			if skip_convolution: # when convolution is skipped
+
+			if skip_convolution or skip_syn_phot:
+				# for the case of pre-convolved models or pre-computed synthetic photometry, 
+				# keep only the base name (without the suffix added after the original file names)
 				for i,spectrum_name in enumerate(spectra_name):
 					# spectrum file name without the extension added for the convolved version
-					basename = spectrum_name.split('_R')[0]
+					if fit_spectra: basename = spectrum_name.split('_R')[0]
+					if fit_photometry: basename = spectrum_name.split('_syn_phot')[0]
 					spectra_name[i] = basename
-					spectra_name_full[i] = model_dir[0]+spectra_name[i] # with full path (considering model_dir is a list).
-	
-				# remove duplicate spectrum file names due to having the same spectrum stored multiple times for different resolutions at different wavelenghts
+					spectra_name_full[i] = os.path.dirname(spectra_name_full[i])+dir_sep+spectra_name[i] # with full path (considering model_dir is a list).
+		
+				# remove duplicate spectrum file names due to having the same spectrum stored multiple times for different resolutions at different wavelengths
 				spectra_name = np.unique(spectra_name)
 				spectra_name_full = np.unique(spectra_name_full)
 	
@@ -664,31 +691,102 @@ class Chi2Options:
 				print(f'\n      {len(filters_fit)} of {len(filters)} input valid magnitudes within the fit range "fit_phot_range"')
 
 				# create a tqdm progress bar
-				model_bar = tqdm(total=N_model_spectra, desc='Deriving synthetic photometry from model spectra')
+				if not skip_syn_phot: # read original model spectra to then derive synthetic photometry
+					model_bar = tqdm(total=N_model_spectra, desc='Deriving synthetic photometry from model spectra')
+				else:
+					model_bar = tqdm(total=N_model_spectra, desc='Reading pre-computed synthetic photometry')
 
 				# initialize lists to save information for the synthetic photometry within the fit range from each input spectrum
 				flux_syn_array_model_fit = []
 				lambda_eff_array_model_fit = []
 				width_eff_array_model_fit = []
-				for i,spectrum_name in enumerate(spectra_name): # for each model spectrum
-					# update progress bar
-					model_bar.update(1)
 
-					# read model spectrum with original resolution in the full model_wl_range_each
-					out_read_model_spectrum = read_model_spectrum(spectrum_name_full=spectra_name_full[i], model=model, model_wl_range=model_wl_range)
-					wl_model = out_read_model_spectrum['wl_model'] # um
-					flux_model = out_read_model_spectrum['flux_model'] # erg/s/cm2/A
+				# read and derive synthetic photometry
+				if not skip_syn_phot: # do not avoid synthetic photometry calculation
+					for i,spectrum_name in enumerate(spectra_name): # for each model spectrum
+						# update progress bar
+						model_bar.update(1)
 
-					# derive synthetic photometry
-					out = synthetic_photometry(wl=wl_model, flux=flux_model, flux_unit='erg/s/cm2/A', filters=filters_fit)
-					flux_syn = out['syn_flux(erg/s/cm2/A)'] # erg/s/cm2/A
-					lambda_eff = out['lambda_eff(um)'] # um
-					width_eff = out['width_eff(um)'] # um
+						# read model spectrum with original resolution in the full model_wl_range_each
+						out_read_model_spectrum = read_model_spectrum(spectrum_name_full=spectra_name_full[i], model=model, model_wl_range=model_wl_range)
+						wl_model = out_read_model_spectrum['wl_model'] # um
+						flux_model = out_read_model_spectrum['flux_model'] # erg/s/cm2/A
 
-					# store filters' parameters in the lists
-					flux_syn_array_model_fit.append(flux_syn)
-					lambda_eff_array_model_fit.append(lambda_eff)
-					width_eff_array_model_fit.append(width_eff)
+						# derive synthetic photometry
+						out_syn_phot = synthetic_photometry(wl=wl_model, flux=flux_model, flux_unit='erg/s/cm2/A', filters=filters_fit)
+
+						# store filters' parameters in the lists
+						flux_syn_array_model_fit.append(out_syn_phot['syn_flux(erg/s/cm2/A)']) # erg/s/cm2/A
+						lambda_eff_array_model_fit.append(out_syn_phot['lambda_eff(um)']) # um
+						width_eff_array_model_fit.append(out_syn_phot['width_eff(um)']) # um
+
+						# store synthetic photometric
+						if path_save_syn_phot is not None:
+							file_name = path_save_syn_phot+spectra_name[i]+'_syn_phot.dat'
+							if not os.path.exists(file_name): # file with synthetic photometry does not exist yet
+								# make a dictionary with the parameters to be saved
+								dict_syn_phot = {}
+								keys = ['filters', 'syn_flux(erg/s/cm2/A)', 'lambda_eff(um)', 'width_eff(um)'] # parameters of interest
+								for key in keys:
+									if key=='filters':
+										dict_syn_phot[key] = out_syn_phot[key]
+									else:
+										dict_syn_phot[key] = np.round(out_syn_phot[key], 6) # keep six decimals
+								# sort dictionary with respect to filter name
+								sort_ind = np.argsort(dict_syn_phot['filters'])
+								for key in dict_syn_phot.keys():
+									dict_syn_phot[key] = dict_syn_phot[key][sort_ind]
+	
+								# save the dictionary as prettytable table
+								if not os.path.exists(path_save_syn_phot): os.makedirs(path_save_syn_phot) # make directory (if not existing) to store synthetic photometry
+								save_prettytable(my_dict=dict_syn_phot, table_name=file_name)
+	
+							else: # file already exist
+								# open file to see whether the flux for a given filter is already stored
+								dict_syn_phot = read_prettytable(file_name)
+							
+								for j, filt in enumerate(filters_fit): # for each filter used to derived synthetic photometry
+									if filt not in dict_syn_phot['filters']: # filter with synthetic photometry is not in the table
+										for key in dict_syn_phot.keys(): # for each parameter in the table
+											if key=='filters':
+												dict_syn_phot[key] = np.append(dict_syn_phot[key], out_syn_phot[key][j])
+											else:
+												dict_syn_phot[key] = np.append(dict_syn_phot[key], np.round(out_syn_phot[key][j], 6)) # keep six decimals
+							
+								# sort dictionary with respect to filter name
+								sort_ind = np.argsort(dict_syn_phot['filters'])
+								for key in dict_syn_phot.keys():
+									dict_syn_phot[key] = dict_syn_phot[key][sort_ind]
+							
+								# update the existing file with new synthetic photometry
+								save_prettytable(my_dict=dict_syn_phot, table_name=file_name)
+
+				else: # read pre-computed synthetic photometry
+					for i,spectrum_name_full in enumerate(spectra_name_full): # for each model spectrum
+						# update progress bar
+						model_bar.update(1)
+
+						out_syn_phot = read_prettytable(filename=spectrum_name_full+'_syn_phot.dat')
+
+						# get from the table only parameters for the input filters within the fit range
+						flux_syn_each = []
+						lambda_eff_each = []
+						width_eff_each = []
+						for filt in filters_fit:
+							if filt in out_syn_phot['filters']: # filter is in the table with synthetic photometry
+								ind = out_syn_phot['filters']==filt # index in the table for filter in the iteration
+								# store filters' parameters in the lists
+								flux_syn_each.append(out_syn_phot['syn_flux(erg/s/cm2/A)'][ind][0])
+								lambda_eff_each.append(out_syn_phot['lambda_eff(um)'][ind][0])
+								width_eff_each.append(out_syn_phot['width_eff(um)'][ind][0])
+								
+							else:
+								raise Exception(f'There is not synthetic photometry for filter "{filt}" and model "{spectra_name[i]}".')
+
+						# store filters' parameters in the lists
+						flux_syn_array_model_fit.append(np.array(flux_syn_each))
+						lambda_eff_array_model_fit.append(np.array(lambda_eff_each))
+						width_eff_array_model_fit.append(np.array(width_eff_each))
 
 				# close progress bar
 				model_bar.close()

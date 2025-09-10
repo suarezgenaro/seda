@@ -6,7 +6,7 @@ import numpy as np
 import os
 from sys import exit
 
-def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None): 
+def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, out_file=None): 
 	'''
 	Description:
 	------------
@@ -24,6 +24,10 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None):
 		Filters (following SVO filter IDs) to derive synthetic photometry.
 	- eflux : array (optional) 
 		Flux uncertainties in units specified by ``flux_unit``.
+	- out_file : str, optional
+		File name to save the synthetic photometry (in erg/s/cm2/A) as prettytable.
+		The file name can include a path e.g. my_path/syn_phot.dat
+		If not provided, the synthetic photometry will not be saved.
 
 	Returns:
 	--------
@@ -67,7 +71,8 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None):
 	Author: Genaro Suárez
 	'''
 
-	path_synthetic_photometry = os.path.dirname(__file__)+'/'
+	dir_sep = os.sep # directory separator for the current operating system
+	path_synthetic_photometry = os.path.dirname(__file__)+dir_sep
 
 	# input spectrum to numpy
 	wl = astropy_to_numpy(wl)
@@ -112,7 +117,7 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None):
 		else: # if filter ID is a valid one
 			# read filter transmission
 			# check if the filter transmission exists locally already
-			path_filter_transmissions = f'{path_synthetic_photometry}/filter_transmissions/'
+			path_filter_transmissions = f'{path_synthetic_photometry}filter_transmissions{dir_sep}'
 			if not os.path.exists(path_filter_transmissions): os.makedirs(path_filter_transmissions) # make directory (if not existing) to store filter transmissions
 			filter_transmission_name = filt.replace('/', '_')+'.dat' # when filter name includes '/' replace it by '_'
 			if not os.path.exists(path_filter_transmissions+filter_transmission_name): # filter transmission does not exist yet
@@ -209,6 +214,30 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None):
 		out_synthetic_photometry['esyn_flux(erg/s/cm2/A)'] = esyn_flux_erg
 		out_synthetic_photometry['esyn_mag'] = esyn_mag
 		out_synthetic_photometry['eflux'] = eflux
+
+	# save synthetic photometry
+	if out_file is not None:
+		# save file
+		file_name = spectrum_name_full+'_syn_phot.dat'
+		if not os.path.exists(file_name): # file with synthetic photometry does not exist yet
+			# save the photometry as prettytable table
+			seda.save_prettytable(my_dict=out_sel, table_name=file_name)
+		else: # file already exist
+			# open file to see whether the flux for a given filter is already stored
+			dict_syn_phot = seda.read_prettytable(file_name)
+		
+			for filt, flux in zip(out_sel['filters'], out_sel['syn_flux(erg/s/cm2/A)']): # for each filter used to derived synthetic photometry
+				if filt not in dict_syn_phot['filters']: # filters with synthetic photometry but not in the table
+					dict_syn_phot['filters'] = np.append(dict_syn_phot['filters'], filt)
+					dict_syn_phot['syn_flux(erg/s/cm2/A)'] = np.append(dict_syn_phot['syn_flux(erg/s/cm2/A)'], flux)
+		
+			# sort dictionary with respect to filter name
+			sort_ind = np.argsort(dict_syn_phot['filters'])
+			for key in dict_syn_phot.keys():
+				dict_syn_phot[key] = dict_syn_phot[key][sort_ind]
+		
+			# update the existing file with new synthetic photometry
+			seda.save_prettytable(my_dict=dict_syn_phot, table_name=file_name)
 
 	return out_synthetic_photometry 
 
@@ -507,17 +536,3 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None):
 		out['eflux'] = eflux
 
 	return out
-
-##+++++++++++++++++
-## read the SVO table with filter properties and save it locally if it doesn't already exist
-#def read_SVO_table():
-#	path_synthetic_photometry = os.path.dirname(__file__)+'/'
-#	# read zero points for each filter
-#	svo_table = f'{path_synthetic_photometry}/FPS_info.xml'
-#	if os.path.exists(svo_table): 
-#		svo_data = Table.read(svo_table, format='votable') # open downloaded table with filters' info
-#	else:
-#		svo_data = Table.read('https://svo.cab.inta-csic.es/files/svo/Public/HowTo/FPS/FPS_info.xml', format='votable') # this SVO link will be updated as soon as new filters are added to FPS. 
-#		svo_data.write(svo_table, format='votable') # save the table to avoid reading it from the web each time the code is run, which can take a few seconds
-#
-#	return svo_data

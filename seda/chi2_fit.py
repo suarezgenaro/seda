@@ -6,7 +6,6 @@ import pickle
 import copy
 from spectres import spectres
 from tqdm.auto import tqdm
-from prettytable import PrettyTable
 from astropy.io import ascii
 from astropy.table import vstack
 from lmfit import Minimizer, minimize, Parameters, report_fit # model fit for non-linear least-squares problems
@@ -453,68 +452,11 @@ def save_params(out_chi2):
 		my_dict['eR'] = np.round(eR,3) # radius error
 	my_dict['iterations'] = iterations.astype(int) # iterations in the minimization
 
-	# create a PrettyTable object
-	table = PrettyTable()
-	# add the dictionary keys as column headers
-	table.field_names = my_dict.keys()
-	# add the dictionary values as rows
-	for row in zip(*my_dict.values()):
-		table.add_row(row)
-	
-	# get the ASCII string representation
-	ascii_table = table.get_string()
-	
-	# save file
-	with open(out_chi2['my_chi2'].chi2_table_file, 'w') as f:
-		f.write(ascii_table)
+	# save dictionary as a PrettyTable table
+	table_name = out_chi2['my_chi2'].chi2_table_file
+	save_prettytable(my_dict=my_dict, table_name=table_name)
 
 	return  
-
-##########################
-def read_prettytable(filename):
-	'''
-	Description:
-	------------
-		Read ascii table created with ``prettytable``.
-
-	Parameters:
-	-----------
-	- filename : str
-		PrettyTable table.
-
-	Returns:
-	--------
-	Astropy table with the information in the input file.
-
-	Example:
-	--------
-	>>> import seda
-	>>> 
-	>>> out = seda.open_chi2_table('Sonora_Elf_Owl_chi2_minimization_multiple_spectra.dat')
-
-	Author: Rocio Kiman
-	'''
-
-	# open table content
-	with open(filename, 'r') as f:
-
-		# read all lines
-		lines = f.readlines()
-
-		# keep only lines that do not start with "+"
-		lines_sel = []
-		for line in lines:
-			if not line.startswith('+'):
-				lines_sel.append(line)
-
-		# read the cleaned data using ascii.read
-		table = ascii.read(lines_sel, format='fixed_width')
-
-		# remove last column with empty information
-		last_column_name = table.colnames[-1]
-		table.remove_column(last_column_name)
-
-	return table
 
 ##########################
 # number of elements in a nested list

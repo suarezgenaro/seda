@@ -927,7 +927,7 @@ def select_model_spectra(model, model_dir, params_ranges=None, filename_pattern=
 		for param in params_ranges:
 			if len(params_ranges[param])!=2: raise Exception(f'{param} in "params_ranges" must have two values (minimum and maximum), but {len(params_ranges[param])} values were given')
 	# if params_ranges is not provided, define params_ranges as an empty dictionary
-	if params_ranges is None: params_ranges = {}
+	if params_ranges is None: params_ranges = {} # empty dictionary
 	# if filename_pattern is not provided, consider the common pattern in original file names
 	if filename_pattern is None: filename_pattern = Models(model).filename_pattern
 
@@ -1136,9 +1136,10 @@ def set_fit_phot_range(fit_phot_range, filters):
 ##########################
 # read the SVO table with filter properties and save it locally if it doesn't already exist
 def read_SVO_table():
-	path_synthetic_photometry = os.path.dirname(__file__)+'/'
+	dir_sep = os.sep # directory separator for the current operating system
+	path_synthetic_photometry = os.path.dirname(__file__)+dir_sep
 	# read zero points for each filter
-	svo_table = f'{path_synthetic_photometry}/FPS_info.xml'
+	svo_table = f'{path_synthetic_photometry}synthetic_photometry{dir_sep}FPS_info.xml'
 	if os.path.exists(svo_table): 
 		svo_data = Table.read(svo_table, format='votable') # open downloaded table with filters' info
 	else:
@@ -1508,7 +1509,7 @@ def convert_photometric_table(table, save_table=False, table_name=None):
 
 	Parameters:
 	-----------
-	- table : astropy or dictionary
+	- table : astropy table
 		Table with photometric measurements and their corresponding errors listed in separate columns. 
 		The magnitude or flux columns must be labeled with the corresponding SVO filter names. 
 		The table must include only photometry, structured such that each magnitude or flux column is 
@@ -1566,24 +1567,83 @@ def convert_photometric_table(table, save_table=False, table_name=None):
 	# save all as a dictionary
 	out = {'filters': filters, 'phot': phot, 'ephot': ephot}
 
-	if save_table:
-		# create a PrettyTable object
-		table = PrettyTable()
-		# add the dictionary keys as column headers
-		table.field_names = out.keys()
-		# add the dictionary values as rows
-		for row in zip(*out.values()):
-			table.add_row(row)
-		
-		# get the ASCII string representation
-		ascii_table = table.get_string()
-		
-		# save file
+	if save_table: 
 		if table_name is None: table_name = 'photometry_prettytable.dat'
-		with open(table_name, 'w') as f:
-			f.write(ascii_table)
+		save_prettytable(my_dict=out, table_name=table_name)
 
 	return out
+
+##########################
+def read_prettytable(filename):
+	'''
+	Description:
+	------------
+		Read ascii table created with ``prettytable``.
+
+	Parameters:
+	-----------
+	- filename : str
+		PrettyTable table.
+
+	Returns:
+	--------
+	Astropy table with the information in the input file.
+
+	Example:
+	--------
+	>>> import seda
+	>>> 
+	>>> out = seda.open_chi2_table('Sonora_Elf_Owl_chi2_minimization_multiple_spectra.dat')
+
+	Author: Rocio Kiman
+	'''
+
+	# open table content
+	with open(filename, 'r') as f:
+
+		# read all lines
+		lines = f.readlines()
+
+		# keep only lines that do not start with "+"
+		lines_sel = []
+		for line in lines:
+			if not line.startswith('+'):
+				lines_sel.append(line)
+
+		# read the cleaned data using ascii.read
+		table = ascii.read(lines_sel, format='fixed_width')
+
+		# remove last column with empty information
+		last_column_name = table.colnames[-1]
+		table.remove_column(last_column_name)
+
+		# convert table into a dictionary
+		my_dict = {}
+		for col in table.columns:
+			my_dict[col] = table[col].data
+
+	return my_dict
+
+##########################
+# save dictionary as ascii table using prettytable
+def save_prettytable(my_dict, table_name):
+
+	# create a PrettyTable object
+	table = PrettyTable()
+
+	# add the dictionary keys as column headers
+	table.field_names = my_dict.keys()
+
+	# add the dictionary values as rows
+	for row in zip(*my_dict.values()):
+		table.add_row(row)
+	
+	# get the ASCII string representation
+	ascii_table = table.get_string()
+
+	# save file
+	with open(table_name, 'w') as f:
+		f.write(ascii_table)
 
 ##########################
 # convert spectral type from string to float
