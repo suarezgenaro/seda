@@ -1716,10 +1716,12 @@ def merge_MRS(fits_files):
 def fill_gap_spectrum(wl, flux, eflux, disp_threshold=None):
 	'''
 	Description:
+	------------
 		Function to identify and fill a gap in a spectrum.
 		It does a linear interpolation between the median flux before and after the gap and fill the gap with data points with the median wavelength step.
 
 	Parameters:
+	-----------
 	- wl : array
 		Wavelength (any units) of input spectrum.
 	- flux : array
