@@ -4,6 +4,7 @@ import os
 import fnmatch
 import xarray
 import pickle
+import astropy
 from prettytable import PrettyTable
 #import itertools
 from spectres import spectres
@@ -15,6 +16,7 @@ from scipy.interpolate import RegularGridInterpolator
 from tqdm.auto import tqdm
 from sys import exit
 from .models import *
+from specutils import Spectrum1D
 
 ##########################
 def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=None, convolve_wl_range=None, out_file=None):
@@ -726,6 +728,7 @@ def best_bayesian_fit(output_bayes, grid=None, model_dir_ori=None, ori_res=False
 			- ``'flux_spectra_fit'`` : fluxes in erg/cm2/s/A of the input spectra in ``fit_wl_range``.
 			- ``'eflux_spectra_fit'`` : flux uncertainties in erg/cm2/s/A of the input spectra in ``fit_wl_range``.
 			- ``'params_med'`` : median values for sampled parameters.
+			- ``'params_errors'`` : lower and upper parameter errors considering the confidence interval ``params_confidence_interval``.
 			- ``'params_confidence_interval'`` : confidence interval for sampled parameters.
 			- ``'confidence_interval(%)'`` : central percentage considered to calculate the confidence interval.
 			- ``'wl_model'`` : wavelength in um of the best scaled, convolved, and resampled model fit
@@ -767,28 +770,43 @@ def best_bayesian_fit(output_bayes, grid=None, model_dir_ori=None, ori_res=False
 
 	params_med = {}
 	params_conf = {}
+	params_errors = {}
 	for i,param in enumerate(params_priors): # for each parameter in the sampling
+		# percentiles
 		params_med[param] = np.median(out_dynesty.samples[:,i]) # add the median of each parameter to the dictionary 
-
 		quantile_low = 50 - conf_interval/2
 		quantile_high = 50 + conf_interval/2
 		params_quantile_low = np.percentile(out_dynesty.samples[:,i], quantile_low) # parameter value at quantile_low
 		params_quantile_high = np.percentile(out_dynesty.samples[:,i], quantile_high) # parameter value at quantile_high
 		params_conf[param] = [params_quantile_low, params_quantile_high] # add the confidence range of each parameter to the dictionary 
+		# lower and upper errors
+		lower = params_med[param] - params_quantile_low
+		upper = params_quantile_high - params_med[param] 
+		params_errors[param] = [lower, upper]
 
 	# round median parameters
 	params_models = Models(model).params_unique # free parameters in the models
 	for i,param in enumerate(params_med): # for each sampled parameter
 		if param in params_models: # for free parameters in the model grid
+			# percentiles
 			params_med[param] = round(params_med[param], max_decimals(params_models[param])+1) # round to the precision (plus one decimal place) of the parameter in models
 			conf_low = round(params_conf[param][0], max_decimals(params_models[param])+1)
 			conf_high = round(params_conf[param][1], max_decimals(params_models[param])+1)
 			params_conf[param] = [conf_low, conf_high]
+			# errors
+			lower = round(params_errors[param][0], max_decimals(params_models[param])+1)
+			upper = round(params_errors[param][1], max_decimals(params_models[param])+1)
+			params_errors[param] = [lower, upper]
 		else: # parameters other than those in the grid (e.g. radius)
+			# percentiles
 			params_med[param] = round(params_med[param], 2) # consider two decimals
 			conf_low = round(params_conf[param][0], 2)
 			conf_high = round(params_conf[param][1], 2)
 			params_conf[param] = [conf_low, conf_high]
+			# errors
+			lower = round(params_errors[param][0], 2)
+			upper = round(params_errors[param][1], 2)
+			params_errors[param] = [lower, upper]
 
 	# read grid, if needed
 	if grid is None:
@@ -858,7 +876,8 @@ def best_bayesian_fit(output_bayes, grid=None, model_dir_ori=None, ori_res=False
 
 	# output dictionary
 	out = {'wl_spectra_fit': wl_spectra_fit, 'flux_spectra_fit': flux_spectra_fit, 'eflux_spectra_fit': eflux_spectra_fit, 
-	       'wl_model': wl_scaled, 'flux_model': flux_scaled, 'params_med': params_med, 'params_confidence_interval': params_conf, 'confidence_interval(%)': conf_interval}
+	       'wl_model': wl_scaled, 'flux_model': flux_scaled, 'params_med': params_med, 'params_errors': params_errors, 
+		   'params_confidence_interval': params_conf, 'confidence_interval(%)': conf_interval}
 	if ori_res:
 		out['wl_model_ori'] = wl_model_ori
 		out['flux_model_ori'] = flux_model_ori
@@ -1360,7 +1379,7 @@ def spt_to_teff(spt, spt_type, ref=None):
 	-----------
 	- spt : float, str, array, or list
 		Spectral types given as conventional letters or number, as indicated in ``spt_type``.
-		Convention between spectral type an float: M9=9, L0=10, ..., T0=20, ...
+		Convention between spectral type and float: M9=9, L0=10, ..., T0=20, ...
 	- spt_type : str
 		Label indicating whether the input spectral type is a string ('str') or a number ('float')
 	- ref : str, optional (default 'F15')
@@ -1493,6 +1512,10 @@ def parallax_to_distance(parallax, eparallax):
 	Date: 2025-04-28
 	'''
 
+	# convert input arrays into numpy array, if needed
+	parallax = astropy_to_numpy(parallax )
+	eparallax = astropy_to_numpy(eparallax )
+
 	distance = 1000. / parallax # in pc
 
 	if eparallax is not None:
@@ -1574,6 +1597,212 @@ def convert_photometric_table(table, save_table=False, table_name=None):
 	return out
 
 ##########################
+def merge_MRS(fits_files):
+	'''
+	Description:
+	------------
+		Merge spectra from different MRS channels and grating settings
+
+	Parameters:
+	-----------
+	- fits_files : array, list
+		File names (with full path) to the spectra to be merged.
+		It is not necessary to include all four channels and three grating settings (short, medium, and long).
+		The function works with any combination of channels and grating settings.
+
+	Returns:
+	--------
+	Dictionary with the merged spectrum: 
+		- ``'channel_grating'``: channel-grating setting label
+		- ``'channel_grating_range'``: wavelength range used for each channel-grating setting
+		- ``'wl_merge'``: wavelength value at which two consecutive overlapping spectra where merged
+		- ``'wl'``: wavelength in micron of the merged spectrum
+		- ``'flux_Jy'``: flux in Jy of the merged spectrum
+		- ``'eflux_Jy'``: flux uncertainties in Jy of the merged spectrum
+		- ``'flux_erg/s/cm2/A'``: flux in erg/s/cm2/A of the merged spectrum
+		- ``'eflux_erg/s/cm2/A'``: flux uncertainties in erg/s/cm2/A of the merged spectrum
+
+	Example:
+	--------
+	>>> import seda
+	>>>
+	>>> # list of fits files to be merge
+	>>> fits_files = ['jw05474-o001_t001_miri_ch1-long_x1d.fits', 'jw05474-o001_t001_miri_ch1-medium_x1d.fits', 'jw05474-o001_t001_miri_ch1-short_x1d.fits', \
+	>>>               'jw05474-o001_t001_miri_ch2-long_x1d.fits', 'jw05474-o001_t001_miri_ch2-medium_x1d.fits', 'jw05474-o001_t001_miri_ch2-short_x1d.fits', \
+	>>>               'jw05474-o001_t001_miri_ch3-long_x1d.fits', 'jw05474-o001_t001_miri_ch3-medium_x1d.fits', 'jw05474-o001_t001_miri_ch3-short_x1d.fits']
+	>>> # merge files
+	>>> out_merge_MRS = seda.merge_MRS(fits_files)
+
+	Author: Genaro Suárez
+
+	Date: 2025-10-13
+	'''
+
+	# directory separator for the current operating system
+	dir_sep = os.sep
+
+	# convert to numpy array if input files are a list
+	if isinstance (fits_files, list): fits_files = np.array(fits_files)
+
+	# combine channels
+	file_wl_min = np.zeros(len(fits_files))
+	for i,file in enumerate(fits_files):	  
+		# minimum wavelength cover by each fits file
+		file_wl_min[i] = Spectrum1D.read(file).wavelength.to(u.um).value.min()
+
+	# rearrange fits files from the one covering the minimum 
+	# wavelength to the one with the maximum wavelength
+	mask_ind = np.argsort(file_wl_min)
+	fits_files = fits_files[mask_ind]
+
+	# read each fits file
+	wl_MRS_each = []
+	flux_MRS_each = []
+	eflux_MRS_each = []
+	for i,file in enumerate(fits_files):
+		out_read_JWST_spectrum = Spectrum1D.read(file)
+		wl_MRS_each.append(out_read_JWST_spectrum.wavelength.to(u.um).value) # um
+		flux_MRS_each.append(out_read_JWST_spectrum.flux.value) # Jy
+		eflux_MRS_each.append(out_read_JWST_spectrum.uncertainty.array) # Jy
+
+	# merge all fits file spectra
+	wl_MRS = np.array([])
+	flux_MRS = np.array([])
+	eflux_MRS = np.array([])
+	wl_merge = np.zeros(len(fits_files)-1)
+	channel_grating_range = np.zeros((len(fits_files), 2))
+	channel_grating = np.array([])
+	for i,file in enumerate(fits_files):
+		sfile = file.split(dir_sep)[-1] # file name without full path
+		channel_grating = np.append(channel_grating, sfile.split('_')[-2]) # label with corresponding channel and grating setting
+
+		# mean wavelength in the overlapping region between two consecutive individual spectra
+		if i<(len(fits_files)-1): # avoid last spectrum 
+			wl_min_overlap = wl_MRS_each[i+1].min()
+			wl_max_overlap = wl_MRS_each[i].max()
+			wl_merge[i] = np.mean([wl_min_overlap, wl_max_overlap])
+
+		if i==0: # for the first spectrum
+			mask = wl_MRS_each[i]<=wl_merge[i]
+			channel_grating_range[i,:] = np.array([wl_MRS_each[i].min(), wl_merge[i]])
+		elif i==(len(fits_files))-1: # for the last spectrum
+			mask = wl_MRS_each[i]>wl_merge[i-1]
+			channel_grating_range[i,:] = np.array([wl_merge[i-1], wl_MRS_each[i].max()])
+		else: # for intermediate spectra
+			mask = (wl_MRS_each[i]<=wl_merge[i]) & (wl_MRS_each[i]>wl_merge[i-1])
+			channel_grating_range[i,:] = np.array([wl_merge[i-1], wl_merge[i]])
+		wl_MRS = np.append(wl_MRS, wl_MRS_each[i][mask])
+		flux_MRS = np.append(flux_MRS, flux_MRS_each[i][mask])
+		eflux_MRS = np.append(eflux_MRS, eflux_MRS_each[i][mask])
+
+	# sort wl_MRS
+	sort_ind = np.argsort(wl_MRS)
+	wl_MRS = wl_MRS[sort_ind]
+	flux_Jy_MRS = flux_MRS[sort_ind]
+	eflux_Jy_MRS = eflux_MRS[sort_ind]
+
+	# convert fluxes from Jy to erg/s/cm2/A
+	flux_MRS = (flux_Jy_MRS*u.Jy).to(u.erg/u.s/u.cm**2/u.angstrom, equivalencies=u.spectral_density(wl_MRS*u.micron)).value
+	eflux_MRS = (eflux_Jy_MRS*u.Jy).to(u.erg/u.s/u.cm**2/u.angstrom, equivalencies=u.spectral_density(wl_MRS*u.micron)).value
+
+	# output dictionary
+	out = {'channel_grating': channel_grating, 'channel_grating_range': channel_grating_range, 'wl_merge': wl_merge, 
+	       'wl': wl_MRS, 'flux_Jy': flux_Jy_MRS, 'eflux_Jy': eflux_Jy_MRS,
+	       'flux_erg/s/cm2/A': flux_MRS, 'eflux_erg/s/cm2/A': eflux_MRS}
+
+	return out
+
+##########################
+def fill_gap_spectrum(wl, flux, eflux, disp_threshold=None):
+	'''
+	Description:
+		Function to identify and fill a gap in a spectrum.
+		It does a linear interpolation between the median flux before and after the gap and fill the gap with data points with the median wavelength step.
+
+	Parameters:
+	- wl : array
+		Wavelength (any units) of input spectrum.
+	- flux : array
+		Fluxes (any units) of input spectrum.
+	- eflux : array
+		Flux uncertainties (any units) of input spectrum.
+	- disp_threshold : float, optional
+		Wavelength dispersion threshold used to identify gaps. 
+		Data points with a dispersion above this limit are classified as gaps.
+		Default value is 50.
+
+	Returns:
+	--------
+	Dictionary with:
+		- ``'gap_region'``: minimum and maximum wavelengths of the gap
+		- ``'wl_nogap'``: wavelengths after filling the gap
+		- ``'flux_nogap'``: fluxes after filling the gap
+		- ``'eflux_nogap'``: flux errors after filling the gap
+
+	Author: Genaro Suárez
+
+	Date: 2025-01-04
+	'''
+
+	if disp_threshold is None: disp_threshold=50
+
+	# find the gap
+	wl_disp = wl[1:] - wl[:-1] # (um) wavelength dispersion of spectra
+	wl_disp = np.append(wl_disp, wl_disp[-1]) # add an element equal to the last row to keep the same shape as wl
+
+	# identify gaps in the data
+	mask = wl_disp>=disp_threshold*np.median(wl_disp)
+
+	if np.any(mask): # gaps detected
+		if np.sum(mask)==1: # only one gap detected
+			# wl array index at the beginning and end of the gap
+			wl_gap_before_ind = np.where(wl_disp==wl_disp[mask])[0][0]
+			wl_gap_after_ind = wl_gap_before_ind+1
+
+			# wavelength right before and after the gap
+			wl_gap_before = wl[wl_gap_before_ind]
+			wl_gap_after = wl[wl_gap_after_ind]
+			wl_gap_size = wl_gap_after - wl_gap_before # size of the gap
+
+			print(f'A gap was identified between {wl_gap_before} and {wl_gap_after} micron')
+
+		else: # more than one gap detected
+			print(f'{np.sum(mask)} paps detected')
+
+	else: raise Exception(f'No gap found in the spectrum')
+		
+	# median flux before and after the gap
+	pad_gap = 20 # number of data points to obtain the median flux before and after the gap
+	flux_gap_before_median = np.median(flux[wl_gap_before_ind-pad_gap:wl_gap_before_ind])
+	flux_gap_after_median = np.median(flux[wl_gap_after_ind:wl_gap_after_ind+pad_gap])
+
+	# data to fill the gap
+	wl_gap = np.arange(wl_gap_before, wl_gap_after, np.median(wl_disp)) # wavelengths with the median wavelength step
+	flux_gap = ((flux_gap_after_median-flux_gap_before_median)/(wl_gap_after-wl_gap_before)) * (wl_gap-wl_gap_after) + flux_gap_after_median # fluxes from a line fit
+	# flux errors in a window before and after the gap
+	eflux_window = eflux[wl_gap_before_ind-pad_gap:wl_gap_after_ind+pad_gap]
+	if isinstance(eflux_window, astropy.table.column.MaskedColumn): # in case there are masked values in flux error window
+		unmasked = np.logical_not(eflux_window.mask).nonzero()
+		eflux_gap_median = np.median(eflux_window[unmasked])
+	else: eflux_gap_median = np.median(eflux_window)
+	eflux_gap = np.repeat(eflux_gap_median, len(flux_gap))
+
+	# attached interpolation to the NIRSpec spectrum
+	wl_nogap = np.append(wl.data, wl_gap)
+	flux_nogap = np.append(flux.data, flux_gap)
+	eflux_nogap = np.append(eflux.data.data, eflux_gap)
+	
+	# sort wl
+	sort_wl = np.argsort(wl_nogap)
+	wl_nogap = wl_nogap[sort_wl]
+	flux_nogap = flux_nogap[sort_wl]
+	eflux_nogap = eflux_nogap[sort_wl]
+
+	out = {'gap_region': np.array([wl_gap_before, wl_gap_after]), 'wl_nogap': wl_nogap, 'flux_nogap': flux_nogap, 'eflux_nogap': eflux_nogap}
+
+	return out
+
+##########################
 def read_prettytable(filename):
 	'''
 	Description:
@@ -1596,6 +1825,8 @@ def read_prettytable(filename):
 	>>> out = seda.open_chi2_table('Sonora_Elf_Owl_chi2_minimization_multiple_spectra.dat')
 
 	Author: Rocio Kiman
+
+	Date: 2025-02-11
 	'''
 
 	# open table content

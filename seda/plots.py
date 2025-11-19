@@ -599,6 +599,10 @@ def plot_model_coverage(model, xparam, yparam, model_dir=None, params_ranges=Non
 
 	path_plots = os.path.dirname(__file__)
 
+	# verify model is recognized
+	available_models = Models().available_models
+	if model not in available_models: raise Exception(f'"{model}" models are not recognized. Available models: \n          {available_models}')
+
 	# get the coverage of model free parameters
 	if model_dir is not None: # coverage from input model spectra
 		# values of free parameters in the spectra

@@ -319,7 +319,7 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 	       'logLbol_tot': logLbol_tot, 'elogLbol_tot': elogLbol_tot}
 
 	if complement_SED: # if the SED will be complemented with a model spectrum
-		out_chi2.update({'flux_tot_obs': flux_tot_obs, 'eflux_tot_obs': eflux_tot_obs, 'Lbol_tot_obs': Lbol_tot_obs, 
+		out.update({'flux_tot_obs': flux_tot_obs, 'eflux_tot_obs': eflux_tot_obs, 'Lbol_tot_obs': Lbol_tot_obs, 
 		                 'eLbol_tot_obs': eLbol_tot_obs, 'logLbol_tot_obs': logLbol_tot_obs, 'elogLbol_tot_obs': elogLbol_tot_obs, 
 		                 'contribution_percentage': contribution, 'contribution_percentage_obs': contribution_obs,
 		                 'wl_SED': wl_SED, 'flux_SED': flux_SED, 'eflux_SED': eflux_SED, 'params': params, 
