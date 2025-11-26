@@ -53,4 +53,5 @@ seda = [
   "models_aux/model_coverage/*",
   "models_aux/model_specifics/*",
   "models_aux/model_spectra/*",
+  "models_aux/*.pickle",
 ]
