@@ -2,28 +2,12 @@ import numpy as np
 from astropy import units as u
 import os
 import re
+from importlib import metadata as _md
 from .utils import *
 from .synthetic_photometry.synthetic_photometry import *
 from .models import *
 from sys import exit
 
-#++++++++++++++++++++++++++++++++
-# message when importing the code
-#++++++++++++++++++++++++++++++++
-# read code version
-dir_path = os.path.dirname(os.path.realpath(__file__))
-version_string = open(os.path.join(dir_path, '_version.py')).read()
-VERS = r"^__version__ = ['\"]([^'\"]*)['\"]"
-mo = re.search(VERS, version_string, re.M)
-if mo:
-	__version__ = mo.group(1)
-else:
-	raise RuntimeError("Unable to find version string in %s." % (version_string,))
-
-print(f'\n    SEDA v{__version__} package imported')
-#print(f'\n    Welcome to SEDA {__version__}')
-
-#+++++++++++++++++++++++++++
 class InputData:
 	'''
 	Description:
