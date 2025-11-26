@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "seda"
 description = "SEDA: Spectral Energy Distribution Analyzer for forward modeling and empirical analyses of ultracool objects"
 readme = "README.md"
-# Use dynamic version from `seda/_version.py`
+# Use dynamic version from setuptools-scm (written to seda/_version.py)
 dynamic = ["version"]
 keywords = [
   "ultracool objects", "low mass stars", "brown dwarfs", "gas giant planets",
