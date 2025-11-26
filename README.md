@@ -15,13 +15,14 @@ Installation and Build
 SEDA uses a `pyproject.toml` (PEP 621) configuration with setuptools. To install, use the following commands in a terminal:
 
 ```zsh
-# Upgrade build tooling
-python -m pip install --upgrade pip build
+python -m pip install .
 ```
 
 Developer notes
 ---------------
 ```zsh
+# Upgrade build tooling
+python -m pip install --upgrade pip build
 
 # Install in editable mode
 python -m pip install -e .
