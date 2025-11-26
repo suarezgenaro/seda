@@ -21,6 +21,9 @@ dist/
 .eggs/
 *.egg
 
+# Auto-generated version file (setuptools-scm)
+seda/_version.py
+
 # Packaging/installer
 pip-wheel-metadata/
 

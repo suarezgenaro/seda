@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61", "wheel"]
+requires = ["setuptools>=61", "setuptools-scm>=8", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -41,11 +41,11 @@ docs = [
 [project.urls]
 Homepage = "https://github.com/suarezgenaro/seda"
 
+[tool.setuptools_scm]
+write_to = "seda/_version.py"
+
 [tool.setuptools]
 include-package-data = true
-
-[tool.setuptools.dynamic]
-version = { attr = "seda._version.__version__" }
 
 [tool.setuptools.package-data]
 # Mirror setup.py's package_data config
