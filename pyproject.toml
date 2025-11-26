@@ -41,18 +41,11 @@ docs = [
 [project.urls]
 Homepage = "https://github.com/suarezgenaro/seda"
 
-[tool.setuptools.license]
-license-files = ["LICENSE"]
-
 [tool.setuptools]
 include-package-data = true
 
 [tool.setuptools.dynamic]
 version = { attr = "seda._version.__version__" }
-
-[tool.setuptools.packages.find]
-# Discover the top-level package and its submodules
-include = ["seda", "seda.*"]
 
 [tool.setuptools.package-data]
 # Mirror setup.py's package_data config
