@@ -52,7 +52,6 @@ __pycache__
 logo
 aux
 tmp
-tests
 docs/notebooks/old
 seda/synthetic_photometry/filter_transmissions
 # files
