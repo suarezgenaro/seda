@@ -1,6 +1,9 @@
-# include auxiliary files
-#recursive-include aux
-#include seda/aux/__init__.py
+# Include auxiliary model assets packaged under `seda/models_aux`
+recursive-include seda/models_aux/model_coverage *
+recursive-include seda/models_aux/model_specifics *
+recursive-include seda/models_aux/model_spectra *
 include seda/models_aux/*.pickle
-#include seda/aux/model_coverage/*
-#include seda/aux/model_spectra/*
+
+# Include README and license
+include README.md
+include LICENSE
