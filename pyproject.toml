@@ -13,7 +13,7 @@ keywords = [
   "spectroscopy", "photometry", "atmospheres", "astronomy", "astrophysics"
 ]
 authors = [{ name = "Genaro Suárez", email = "gsuarez2405@gmail.com" }]
-license = { expression = "MIT" }
+license = "MIT"
 requires-python = ">=3.8"
 dependencies = [
   "astropy",
