@@ -18,28 +18,4 @@ SEDA uses a `pyproject.toml` (PEP 621) configuration with setuptools. To install
 python -m pip install .
 ```
 
-Developer notes
----------------
-```zsh
-# Upgrade build tooling
-python -m pip install --upgrade pip build
-
-# Install in editable mode
-python -m pip install -e .
-
-# Install with tools needed to build the docs 
-python -m pip install -e .[docs]
-
-# Build source distribution and wheel
-python -m build
-```
-
-To run the docs locally (optional):
-
-```zsh
-python -m pip install -e .[docs]
-pushd docs
-make html
-open _build/html/index.html
-popd
-```
+For developer notes and advanced installation (editable installs, building wheels, building docs), see docs/installation.rst or read it online at https://seda.readthedocs.io/en/latest/installation.html

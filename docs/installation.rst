@@ -40,3 +40,35 @@ Dependencies
 :math:`\texttt{SEDA}` has been tested in Python 3.9, 3.10, and 3.11 security versions as of Nov. 2024.
 
 :math:`\texttt{SEDA}` has been tested in Linux (Ubuntu 22.04), Windows, and macOS.
+
+
+Developer Installation
+----------------------
+
+To set up a development environment:
+
+.. code-block:: console
+
+    $ git fork https://github.com/suarezgenaro/seda.git
+    $ git clone <your-fork-url>
+    $ cd seda
+    $ pip install -e .[docs]
+    $ pre-commit install
+
+Run the test suite:
+
+.. code-block:: console
+
+    $ pytest
+
+
+Build the Documentation
+-----------------------
+
+Build HTML docs:
+
+.. code-block:: console
+
+    $ sphinx-build -b html docs docs/_build/html
+
+Open the generated documentation in your web browser.
