@@ -322,7 +322,6 @@ class ModelOptions:
 	-----------
 	Input parameters.
 		All input parameters are stored as attributes with their default values if not specified.
-	Other parameters:
 
 	Example:
 	--------
