@@ -408,6 +408,10 @@ class Chi2Options:
 		This parameters is different to the weighting that comes from the observed flux uncertainties in the chi-square statistics definition.
 		``weight_label`` allows assigning different relative weight to photometry and spectra (when ``fit_spectra`` and ``fit_photometry`` are enable),
 		ensuring that photometric measurements do not have a negligible contribution to the chi-square, considering that photometric SEDs typically contain far fewer data points than spectroscopic SEDs.
+		Available options are:
+			- ``'dataset'`` (default): each dataset, whether photometric or spectroscopic, is assigned a weight equal to the inverse of its total number of data points. All data contribute the same, despite having very different numbers of points.
+			- ``'width'``: each point is weighted by wavelength resolution (wavelength step) for spectra or filter effective width for photometry. Broader filters receive larger weights, but the overall contribution of photometry may still differ from that of spectra.
+			- ``'none'``: apply the same weight to all input data points, which is equivalent to using no weighting at all (beyond the uncertainty-based weighting). Large datasets such as high-resolution spectra will dominate.
 	- extinction_free_param : {``True``, ``False``}, optional (default ``False``)
 		Extinction as a free parameter: 
 			- ``'False'``: null extinction is assumed and it will not change.
@@ -982,12 +986,9 @@ class BayesOptions:
 		``weight_label`` allows assigning different relative weight to photometry and spectra (when ``fit_spectra`` and ``fit_photometry`` are enable),
 		ensuring that photometric measurements do not have a negligible contribution to the chi-square, considering that photometric SEDs typically contain far fewer data points than spectroscopic SEDs.
 		Available options are:
-			- ``'dataset'`` (default): each dataset, whether photometric or spectroscopic, is assigned a weight equal to the inverse of its total number of data points. 
-			All data contribute the same, despite having very different numbers of points.
-			- ``'width'``: each point is weighted by wavelength resolution (wavelength step) for spectra or filter effective width for photometry.
-			Broader filters receive larger weights, but the overall contribution of photometry may still differ from that of spectra.
-			- ``'none'``: apply the same weight to all input data points, which is equivalent to using no weighting at all (beyond the uncertainty-based weighting).
-			Large datasets such as high-resolution spectra will dominate.
+			- ``'dataset'`` (default): each dataset, whether photometric or spectroscopic, is assigned a weight equal to the inverse of its total number of data points. All data contribute the same, despite having very different numbers of points.
+			- ``'width'``: each point is weighted by wavelength resolution (wavelength step) for spectra or filter effective width for photometry. Broader filters receive larger weights, but the overall contribution of photometry may still differ from that of spectra.
+			- ``'none'``: apply the same weight to all input data points, which is equivalent to using no weighting at all (beyond the uncertainty-based weighting). Large datasets such as high-resolution spectra will dominate.
 	- R_range: float array, optional (used in ``bayes_fit``)
 		Minimum and maximum radius values to sample the posterior for radius. It requires the parameter ``distance`` in `input_parameters.InputData`.
 	- 'chi2_pickle_file' : dictionary, optional
