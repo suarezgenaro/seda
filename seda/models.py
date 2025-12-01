@@ -389,7 +389,7 @@ def read_model_spectrum(spectrum_name_full, model, model_wl_range=None):
 	'''
 
 	# verify the input model is available
-	if model not in Models().available_models: raise Exception(f'Models "{model}" are not recognized. Available models are: \n          {Models().available_models}')
+	if model not in Models().available_models: raise Exception(f'Models "{model}" are not recognized. Available models: \n          {Models().available_models}')
 
 	# read model spectra files
 	if (model == 'Exo-REM'):
@@ -400,13 +400,13 @@ def read_model_spectrum(spectrum_name_full, model, model_wl_range=None):
 		wl_model = spec_model['col1'] * u.micron # um (in vacuum?)
 		wl_model = vac_to_air(wl_model).value # um in the air
 		flux_model = spec_model['col2'] * u.W/u.m**2/u.m # W/m2/m
-		flux_model = flux_model.to(u.erg/u.s/u.cm**2/u.angstrom).value # erg/s/cm2/A
+		flux_model = flux_model.to(u.erg/u.s/u.cm**2/(u.nm*0.1)).value # erg/s/cm2/A
 	if (model == 'Sonora_Elf_Owl'):
 		spec_model = xarray.open_dataset(spectrum_name_full) # Sonora Elf Owl model spectra have NetCDF Data Format data
 		wl_model = spec_model['wavelength'].data * u.micron # um
 		wl_model = wl_model.value
 		flux_model = spec_model['flux'].data * u.erg/u.s/u.cm**2/u.cm # erg/s/cm2/cm
-		flux_model = flux_model.to(u.erg/u.s/u.cm**2/u.angstrom).value # erg/s/cm2/A
+		flux_model = flux_model.to(u.erg/u.s/u.cm**2/(u.nm*0.1)).value # erg/s/cm2/A
 	if (model == 'LB23'):
 		spec_model = ascii.read(spectrum_name_full)
 		wl_model = spec_model['LAMBDA(mic)'] # micron
@@ -424,22 +424,22 @@ def read_model_spectrum(spectrum_name_full, model, model_wl_range=None):
 		wl_model = spec_model['col1'] * u.micron # um (in vacuum?)
 		wl_model = vac_to_air(wl_model).value # um in the air
 		flux_model = spec_model['col2'] * u.W/u.m**2/u.m # W/m2/m
-		flux_model = flux_model.to(u.erg/u.s/u.cm**2/u.angstrom).value # erg/s/cm2/A
+		flux_model = flux_model.to(u.erg/u.s/u.cm**2/(u.nm*0.1)).value # erg/s/cm2/A
 	if (model == 'Sonora_Bobcat'):
 		spec_model = ascii.read(spectrum_name_full, data_start=2, format='no_header')
 		wl_model = spec_model['col1'] * u.micron # um (in vacuum?)
 		wl_model = vac_to_air(wl_model).value # um in the air
 		flux_model = spec_model['col2'] * u.erg/u.s/u.cm**2/u.Hz # erg/s/cm2/Hz
-		flux_model = flux_model.to(u.erg/u.s/u.cm**2/u.angstrom, equivalencies=u.spectral_density( wl_model * u.micron)).value # erg/s/cm2/A
+		flux_model = flux_model.to(u.erg/u.s/u.cm**2/(u.nm*0.1), equivalencies=u.spectral_density( wl_model * u.micron)).value # erg/s/cm2/A
 	if (model == 'ATMO2020'):
 		spec_model = ascii.read(spectrum_name_full, format='no_header')
 		wl_model = spec_model['col1'] * u.micron # um (in vacuum)
 		wl_model = vac_to_air(wl_model).value # um in the air
 		flux_model = spec_model['col2'] * u.W/u.m**2/u.micron # W/m2/micron
-		flux_model = flux_model.to(u.erg/u.s/u.cm**2/u.angstrom).value # erg/s/cm2/A
+		flux_model = flux_model.to(u.erg/u.s/u.cm**2/(u.nm*0.1)).value # erg/s/cm2/A
 	if (model == 'BT-Settl'):
 		spec_model = ascii.read(spectrum_name_full, format='no_header')
-		wl_model = (spec_model['col1']*u.angstrom).to(u.micron) # um (in vacuum)
+		wl_model = (spec_model['col1']*(u.nm*0.1)).to(u.micron) # um (in vacuum)
 		wl_model = vac_to_air(wl_model).value # um in the air
 		flux_model = spec_model['col2'] * u.erg/u.s/u.cm**2/u.Hz # erg/s/cm2/Hz (to an unknown distance). 10**(F_lam + DF) to convert to erg/s/cm2/A
 		DF= -8.0
@@ -450,7 +450,7 @@ def read_model_spectrum(spectrum_name_full, model, model_wl_range=None):
 		#wl_model = vac_to_air(wl_model).value # um in the air
 		wl_model = wl_model.value # um
 		flux_model = spec_model['col2'] * u.erg/u.s/u.cm**2/u.Hz # erg/s/cm2/Hz (to an unknown distance)
-		flux_model = flux_model.to(u.erg/u.s/u.cm**2/u.angstrom, equivalencies=u.spectral_density(wl_model*u.micron)).value # erg/s/cm2/A
+		flux_model = flux_model.to(u.erg/u.s/u.cm**2/(u.nm*0.1), equivalencies=u.spectral_density(wl_model*u.micron)).value # erg/s/cm2/A
 
 	# sort the array. For BT-Settl is recommended by Allard in her webpage and some models are sorted from higher to smaller wavelengths.
 	sort_index = np.argsort(wl_model)
@@ -464,7 +464,7 @@ def read_model_spectrum(spectrum_name_full, model, model_wl_range=None):
 		flux_model = flux_model[mask]
 
 	# obtain fluxes in Jy
-	flux_model_Jy = (flux_model*u.erg/u.s/u.cm**2/u.angstrom).to(u.Jy, equivalencies=u.spectral_density(wl_model*u.micron)).value
+	flux_model_Jy = (flux_model*u.erg/u.s/u.cm**2/(u.nm*0.1)).to(u.Jy, equivalencies=u.spectral_density(wl_model*u.micron)).value
 
 	out = {'wl_model': wl_model, 'flux_model': flux_model, 'flux_model_Jy': flux_model_Jy}
 
@@ -487,7 +487,7 @@ def read_model_spectrum_conv(spectrum_name_full, model_wl_range=None):
 		flux_model = flux_model[mask]
 
 	# obtain fluxes in Jy
-	flux_model_Jy = (flux_model*u.erg/u.s/u.cm**2/u.angstrom).to(u.Jy, equivalencies=u.spectral_density(wl_model*u.micron)).value
+	flux_model_Jy = (flux_model*u.erg/u.s/u.cm**2/(u.nm*0.1)).to(u.Jy, equivalencies=u.spectral_density(wl_model*u.micron)).value
 
 	out = {'wl_model': wl_model, 'flux_model': flux_model, 'flux_model_Jy': flux_model_Jy}
 
