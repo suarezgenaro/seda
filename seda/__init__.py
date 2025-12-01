@@ -10,7 +10,7 @@ from .spectral_indices.spectral_indices import *
 
 try:
 	from ._version import __version__
-except Exception:
+except (ImportError, ModuleNotFoundError):  
 	__version__ = "0.0.0+local"
 
 print(f'\n    SEDA v{__version__} package imported')
