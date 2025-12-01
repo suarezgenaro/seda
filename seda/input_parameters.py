@@ -318,8 +318,8 @@ class ModelOptions:
 		the synthetic values can be reused for other input photometric SEDs that use the same set of filters.
 		If 'True', ``model_dir`` should correspond to the directory with the synthetic photometry for ``filters`` in ``input_parameters.InputData``. 
 
-	Attributes
-	----------
+	Attributes:
+	-----------
 	Input parameters.
 		All input parameters are stored as attributes with their default values if not specified.
 	Other parameters:
@@ -437,8 +437,8 @@ class Chi2Options:
 		Filename for an output ascii table (if ``save_results``) with relevant information from the fit.
 		Default name is '``model``\_chi2\_minimization.dat'.
 
-	Attributes
-	----------
+	Attributes:
+	-----------
 	Input parameters either from this class or attributes from the ``InputData`` and ``ModelOptions`` classes.
 		All input parameters are stored as attributes with their default values if not specified.
 	Other parameters
@@ -1020,8 +1020,8 @@ class BayesOptions:
 		Filename for the output dictionary stored as a pickle file, if ``save_results``.
 		Default name is '``model``\_bayesian\_sampling.pickle'.
 
-	Attributes
-	----------
+	Attributes:
+	-----------
 	Input parameters either from this class or attributes from the ``InputData`` and ``ModelOptions`` classes.
 		All input parameters are stored as attributes with their default values if not specified.
 	Other parameters
