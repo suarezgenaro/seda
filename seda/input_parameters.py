@@ -78,8 +78,8 @@ class InputData:
 	- edistance : float, optional
 		Distance error (in pc).
 
-	Attributes
-	----------
+	Attributes:
+	-----------
 	Input parameters.
 		All input parameters are stored as attributes with their default values if not specified.
 		Units:
