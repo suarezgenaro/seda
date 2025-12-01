@@ -410,8 +410,8 @@ class Chi2Options:
 		ensuring that photometric measurements do not have a negligible contribution to the chi-square, considering that photometric SEDs typically contain far fewer data points than spectroscopic SEDs.
 
 		Available options are:
-		- ``'dataset'`` (default): 
-			Each dataset, whether photometric or spectroscopic, is assigned a weight equal to the inverse of its total number of data points. All data contribute the same, despite having very different numbers of points.
+		- ``'dataset'`` (default) 
+		  Each dataset, whether photometric or spectroscopic, is assigned a weight equal to the inverse of its total number of data points. All data contribute the same, despite having very different numbers of points.
 
 		- ``'width'``: each point is weighted by wavelength resolution (wavelength step) for spectra or filter effective width for photometry. Broader filters receive larger weights, but the overall contribution of photometry may still differ from that of spectra.
 		- ``'none'``: apply the same weight to all input data points, which is equivalent to using no weighting at all (beyond the uncertainty-based weighting). Large datasets such as high-resolution spectra will dominate.
