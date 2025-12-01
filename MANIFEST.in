@@ -1,9 +1,0 @@
-# Include auxiliary model assets packaged under `seda/models_aux`
-recursive-include seda/models_aux/model_coverage *
-recursive-include seda/models_aux/model_specifics *
-recursive-include seda/models_aux/model_spectra *
-include seda/models_aux/*.pickle
-
-# Include README and license
-include README.md
-include LICENSE
