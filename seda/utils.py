@@ -15,7 +15,8 @@ from astropy.convolution import Gaussian1DKernel, convolve
 from scipy.interpolate import RegularGridInterpolator
 from tqdm.auto import tqdm
 from sys import exit
-from .models import *
+from . import models
+from .synthetic_photometry.synthetic_photometry import synthetic_photometry
 from specutils import Spectrum1D
 
 ##########################
@@ -75,8 +76,8 @@ def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=Non
 	>>> # desired resolution
 	>>> res = 50 # resolution of 50
 	>>>
-	>>> out_convolve_spectrum = seda.convolve_spectrum(wl=wl, flux=flux, 
-	>>>                                                eflux=eflux, res=res)
+	>>> out_convolve_spectrum = seda.utils.convolve_spectrum(wl=wl, flux=flux, 
+	>>>                                                      eflux=eflux, res=res)
 
 	Author: Genaro Suárez
 
@@ -211,7 +212,7 @@ def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False
 		Read (``True``) or do not read (``False``) model spectra with the original resolution.
 	- model_dir_ori : str, list, or array
 		Path to the directory (str, list, or array) or directories (as a list or array) containing the model spectra with the original resolution.
-		This parameter is needed if ``ori_res=True`` and `seda.chi2` was run skipping the model spectra convolution (if `skip_convolution=True``).
+		This parameter is needed if ``ori_res=True`` and `seda.chi2_fit.chi2` was run skipping the model spectra convolution (if `skip_convolution=True``).
 
 	Returns:
 	--------
@@ -221,17 +222,19 @@ def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False
 		- ``'fit_photometry'``: label indicating whether photometry was fitted.
 		- ``'chi2_red_fit_best'`` : reduced chi-square.
 		- ``'chi2_red_wl_fit_best'`` : reduced chi-square as a function of wavelength.
-		- ``'flux_residuals_best'`` : flux residuals in linear scale between model and input spectra.
-		- ``'logflux_residuals_best'`` : flux residuals in log scale between model and input spectra.
 		- ``'wl_model_best'`` : (if ``ori_res``) wavelength (in um) of original model spectra.
 		- ``'flux_model_best'`` : (if ``ori_res``) fluxes (in erg/s/cm2/A) of original model spectra.
 		- ``'wl_array_model_conv_resam_best'`` : (if ``fit_spectra``) wavelength (in um) of resampled, convolved model spectra in the input spectra ranges.
 		- ``'flux_array_model_conv_resam_best'`` : (if ``fit_spectra``) fluxes (in erg/s/cm2/A) of resampled, convolved model spectra in the input spectra ranges.
 		- ``'wl_array_model_conv_resam_fit_best'`` : (if ``fit_spectra``) wavelength (in um) of resampled, convolved model spectra within the fit range.
 		- ``'flux_array_model_conv_resam_fit_best'`` : (if ``fit_spectra``) fluxes (in erg/s/cm2/A) of resampled, convolved model spectra within the fit range.
-		- ``'flux_syn_array_model_fit'`` : (if ``fit_photometry``) synthetic photometry (in erg/s/cm2/A) for the filters within the fit range.
-		- ``'lambda_eff_array_model_fit'`` : (if ``fit_photometry``) effective wavelength (in um) from model spectra for filters within the fit range.
-		- ``'widtheff_array_model_fit'`` : (if ``fit_photometry``) effective width (in um) from model spectra for filters within the fit range.
+		- ``'flux_residuals_spec_best'`` : (if ``fit_spectra``) flux residuals in linear scale between model and input spectra.
+		- ``'logflux_residuals_spec_best'`` : (if ``fit_spectra``) flux residuals in log scale between model and input spectra.
+		- ``'flux_syn_array_model_fit_best'`` : (if ``fit_photometry``) synthetic photometry (in erg/s/cm2/A) for the filters within the fit range.
+		- ``'lambda_eff_array_model_fit_best'`` : (if ``fit_photometry``) effective wavelength (in um) from model spectra for filters within the fit range.
+		- ``'width_eff_array_model_fit_best'`` : (if ``fit_photometry``) effective width (in um) from model spectra for filters within the fit range.
+		- ``'flux_residuals_phot_best'`` : (if ``fit_photometry``) flux residuals in linear scale between model and input spectra.
+		- ``'logflux_residuals_phot_best'`` : (if ``fit_photometry``) flux residuals in log scale between model and input spectra.
 		- ``'params'`` : model free parameters
 
 	Author: Genaro Suárez
@@ -256,41 +259,53 @@ def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False
 	chi2_red_fit = output_chi2['chi2_red_fit']
 	chi2_red_wl_fit = output_chi2['chi2_red_wl_fit'] # list of reduced chi-square for each model compared
 	scaling_fit = output_chi2['scaling_fit']
-	flux_residuals = output_chi2['flux_residuals']
-	logflux_residuals = output_chi2['logflux_residuals']
 	skip_convolution = output_chi2['my_chi2'].skip_convolution
 	if fit_spectra:
-		wl_array_model_conv_resam = output_chi2['wl_array_model_conv_resam'] # wavelengths of resampled, convolved model spectra in the input spectra wavelength ranges
-		flux_array_model_conv_resam = output_chi2['flux_array_model_conv_resam'] # fluxes of resampled, convolved model spectra in the input spectra wavelength ranges
-		wl_array_model_conv_resam_fit = output_chi2['wl_array_model_conv_resam_fit'] # wavelengths of resampled, convolved model spectra within the fit ranges
-		flux_array_model_conv_resam_fit = output_chi2['flux_array_model_conv_resam_fit'] # fluxes of resampled, convolved model spectra within the fit ranges
+		wl_array_model_conv_resam = output_chi2['my_chi2'].wl_array_model_conv_resam # wavelengths of resampled, convolved model spectra in the input spectra wavelength ranges
+		#flux_array_model_conv_resam = output_chi2['my_chi2'].flux_array_model_conv_resam # fluxes of resampled, convolved model spectra in the input spectra wavelength ranges
+		flux_array_model_conv_resam_scaled	= output_chi2['flux_array_model_conv_resam_scaled'] # fluxes of resampled, convolved, scaled model spectra in the input spectra wavelength ranges
+		wl_array_model_conv_resam_fit = output_chi2['my_chi2'].wl_array_model_conv_resam_fit # wavelengths of resampled, convolved model spectra within the fit ranges
+		#flux_array_model_conv_resam_fit = output_chi2['my_chi2'].flux_array_model_conv_resam_fit # fluxes of resampled, convolved model spectra within the fit ranges
+		flux_array_model_conv_resam_scaled_fit = output_chi2['flux_array_model_conv_resam_scaled_fit'] # fluxes of resampled, convolved, scaled model spectra within the fit ranges
+		flux_residuals_spec = output_chi2['flux_residuals_spec']
+		logflux_residuals_spec = output_chi2['logflux_residuals_spec']
 	if fit_photometry:
-		flux_syn_array_model_fit = output_chi2['flux_syn_array_model_fit']
-		lambda_eff_array_model_fit = output_chi2['lambda_eff_array_model_fit']
-		width_eff_array_model_fit = output_chi2['width_eff_array_model_fit']
+		flux_syn_array_model_scaled_fit = output_chi2['flux_syn_array_model_scaled_fit']
+		#flux_syn_array_model_fit = output_chi2['my_chi2'].flux_syn_array_model_fit
+		lambda_eff_array_model_fit = output_chi2['my_chi2'].lambda_eff_array_model_fit
+		width_eff_array_model_fit = output_chi2['my_chi2'].width_eff_array_model_fit
+		flux_residuals_phot = output_chi2['flux_residuals_phot']
+		logflux_residuals_phot = output_chi2['logflux_residuals_phot']
 
 	# select the best fits given by N_best_fits
-	if (N_best_fits > N_model_spectra): raise Exception(f'not enough model spectra (only {N_model_spectra}) in the fit to select "N_best_fits={N_best_fits}" best fits')
+	if (N_best_fits > N_model_spectra): 
+		raise Exception(f'not enough model spectra (only {N_model_spectra}) in '
+		                f'the fit to select "N_best_fits={N_best_fits}" best fits')
 	sort_ind = np.argsort(chi2_red_fit)
 	chi2_red_fit_best = chi2_red_fit[sort_ind][:N_best_fits]
 	chi2_red_wl_fit_best = [chi2_red_wl_fit[i] for i in sort_ind][:N_best_fits]
 	scaling_fit_best = scaling_fit[sort_ind][:N_best_fits]
 	spectra_name_full_best = spectra_name_full[sort_ind][:N_best_fits]
 	spectra_name_best = spectra_name[sort_ind][:N_best_fits]
-	flux_residuals_best = [flux_residuals[i] for i in sort_ind][:N_best_fits]
-	logflux_residuals_best = [logflux_residuals[i] for i in sort_ind][:N_best_fits]
 	if fit_spectra:
 		wl_array_model_conv_resam_best = [wl_array_model_conv_resam[i] for i in sort_ind][:N_best_fits]
-		flux_array_model_conv_resam_best = [flux_array_model_conv_resam[i] for i in sort_ind][:N_best_fits]
+		#flux_array_model_conv_resam_best = [flux_array_model_conv_resam[i] for i in sort_ind][:N_best_fits]
+		flux_array_model_conv_resam_scaled_best = [flux_array_model_conv_resam_scaled[i] for i in sort_ind][:N_best_fits]
 		wl_array_model_conv_resam_fit_best = [wl_array_model_conv_resam_fit[i] for i in sort_ind][:N_best_fits]
-		flux_array_model_conv_resam_fit_best = [flux_array_model_conv_resam_fit[i] for i in sort_ind][:N_best_fits]
+		#flux_array_model_conv_resam_fit_best = [flux_array_model_conv_resam_fit[i] for i in sort_ind][:N_best_fits]
+		flux_array_model_conv_resam_scaled_fit_best = [flux_array_model_conv_resam_scaled_fit[i] for i in sort_ind][:N_best_fits]
+		flux_residuals_spec_best = [flux_residuals_spec[i] for i in sort_ind][:N_best_fits]
+		logflux_residuals_spec_best = [logflux_residuals_spec[i] for i in sort_ind][:N_best_fits]
 	if fit_photometry:
-		flux_syn_array_model_fit_best = [flux_syn_array_model_fit[i] for i in sort_ind][:N_best_fits]
+		#flux_syn_array_model_fit_best = [flux_syn_array_model_fit[i] for i in sort_ind][:N_best_fits]
+		flux_syn_array_model_scaled_fit_best = [flux_syn_array_model_scaled_fit[i] for i in sort_ind][:N_best_fits]
 		lambda_eff_array_model_fit_best = [lambda_eff_array_model_fit[i] for i in sort_ind][:N_best_fits]
 		width_eff_array_model_fit_best = [width_eff_array_model_fit[i] for i in sort_ind][:N_best_fits]
+		flux_residuals_phot_best = [flux_residuals_phot[i] for i in sort_ind][:N_best_fits]
+		logflux_residuals_phot_best = [logflux_residuals_phot[i] for i in sort_ind][:N_best_fits]
 
 	# read parameters from file name for the best fits
-	out_separate_params = separate_params(model=model, spectra_name=spectra_name_best)
+	out_separate_params = models.separate_params(model=model, spectra_name=spectra_name_best)
 
 	# read best fits with the original resolution
 	if ori_res:
@@ -298,7 +313,7 @@ def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False
 		flux_model_best_lst = []
 		if not skip_convolution: # when the convolution was not skipped
 			for i in range(N_best_fits):
-				out_read_model_spectrum = read_model_spectrum(spectrum_name_full=spectra_name_full_best[i], model=model)
+				out_read_model_spectrum = models.read_model_spectrum(spectrum_name_full=spectra_name_full_best[i], model=model)
 				wl_model_best_lst.append(out_read_model_spectrum['wl_model'])
 				flux_model_best_lst.append(scaling_fit_best[i] * out_read_model_spectrum['flux_model']) # scaled fluxes
 		else: # when the convolution was skipped
@@ -309,7 +324,7 @@ def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False
 					spectrum_name = spectra_name_best[i].split('_R')[0] # convolved spectrum name without additions to match original resolution name
 					if spectrum_name in out_select_model_spectra['spectra_name']: # if the i best fit is in the model_dir_ori folder 
 						spectrum_name_full = out_select_model_spectra['spectra_name_full'][out_select_model_spectra['spectra_name']==spectrum_name][0]
-						out_read_model_spectrum = read_model_spectrum(spectrum_name_full=spectrum_name_full, model=model)
+						out_read_model_spectrum = models.read_model_spectrum(spectrum_name_full=spectrum_name_full, model=model)
 						wl_model_best_lst.append(out_read_model_spectrum['wl_model'])
 						flux_model_best_lst.append(scaling_fit_best[i] * out_read_model_spectrum['flux_model']) # scaled fluxes
 					else: raise Exception(f'{spectrum_name} is not in {model_dir_ori}')
@@ -343,24 +358,30 @@ def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False
 #		#	wl_model_conv[:,i] = out_convolve_spectrum['wl_conv']
 #		#	flux_model_conv[:,i] = out_convolve_spectrum['flux_conv']
 #		#else:
-#		#	out_read_model_spectrum = read_model_spectrum_conv(spectrum_name_full=spectra_name_full_best[i])
+#		#	out_read_model_spectrum = models.read_model_spectrum_conv(spectrum_name_full=spectra_name_full_best[i])
 #		#	wl_model_conv[:,i] = out_read_model_spectrum['wl_model']
 #		#	flux_model_conv[:,i] = out_read_model_spectrum['flux_model']
 
 	out = {'spectra_name_best': spectra_name_best, 'fit_spectra': fit_spectra, 'fit_photometry': fit_photometry,
-	       'chi2_red_fit_best': chi2_red_fit_best, 'chi2_red_wl_fit_best': chi2_red_wl_fit_best, 
+	       'chi2_red_fit_best': chi2_red_fit_best, 'chi2_red_wl_fit_best': chi2_red_wl_fit_best}
 		   #'flux_model': flux_model, 'wl_model_conv': wl_model_conv, 'flux_model_conv': flux_model_conv}
 		   #'wl_model_conv': wl_array_model_conv_resam_best, 'flux_model_conv': flux_array_model_conv_resam_best,
-	       'flux_residuals_best': flux_residuals_best, 'logflux_residuals_best': logflux_residuals_best}
 	if fit_spectra:
 		out['wl_array_model_conv_resam_best'] = wl_array_model_conv_resam_best
-		out['flux_array_model_conv_resam_best'] = flux_array_model_conv_resam_best
+		#out['flux_array_model_conv_resam_best'] = flux_array_model_conv_resam_best
+		out['flux_array_model_conv_resam_scaled_best'] = flux_array_model_conv_resam_scaled_best
 		out['wl_array_model_conv_resam_fit_best'] = wl_array_model_conv_resam_fit_best
-		out['flux_array_model_conv_resam_fit_best'] = flux_array_model_conv_resam_fit_best
+		#out['flux_array_model_conv_resam_fit_best'] = flux_array_model_conv_resam_fit_best
+		out['flux_array_model_conv_resam_scaled_fit_best'] = flux_array_model_conv_resam_scaled_fit_best
+		out['flux_residuals_spec_best'] = flux_residuals_spec_best
+		out['logflux_residuals_spec_best'] = logflux_residuals_spec_best
 	if fit_photometry:
-		out['flux_syn_array_model_fit_best'] = flux_syn_array_model_fit_best
+		#out['flux_syn_array_model_fit_best'] = flux_syn_array_model_fit_best
+		out['flux_syn_array_model_scaled_fit_best'] = flux_syn_array_model_scaled_fit_best
 		out['lambda_eff_array_model_fit_best'] = lambda_eff_array_model_fit_best
 		out['width_eff_array_model_fit_best'] = width_eff_array_model_fit_best
+		out['flux_residuals_phot_best'] = flux_residuals_phot_best
+		out['logflux_residuals_phot_best'] = logflux_residuals_phot_best
 	#if not skip_convolution or model_dir_ori is not None:
 	if ori_res:
 		out['wl_model_best'] = wl_model_best
@@ -383,9 +404,9 @@ def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spect
 		E.g., ``params = {'Teff': 1010, 'logg': 4.2, 'Z': 0.1, 'fsed': 2.2}`` for a model grid with those free parameters.
 	- model : str
 		Atmospheric models to generate the synthetic spectrum. 
-		See available models in ``seda.Models().available_models``.  
+		See available models in ``seda.models.Models().available_models``.  
 	- grid : dictionary, optional
-		Model grid (``'wavelength'`` and ``'flux'``) generated by ``seda.read_grid`` for interpolations.
+		Model grid (``'wavelength'`` and ``'flux'``) generated by ``seda.utils.read_grid`` for interpolations.
 		If not provided (default), then the grid is read (``model``, ``model_dir``, ``Teff_range`` and ``logg_range`` must be provided). 
 		If provided, the code will skip reading the grid, which will save some time (a few minutes).
 	- model_dir : str or list, optional
@@ -415,8 +436,8 @@ def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spect
 	>>> params = {'Teff': 765, 'logg': 4.15, 'logKzz': 5.2, 'Z': 0.2, 'CtoO': 1.2}
 	>>> 
 	>>> # generate model spectrum
-	>>> out = seda.generate_model_spectrum(model=model, model_dir=model_dir, 
-	>>>                                    params=params)
+	>>> out = seda.utils.generate_model_spectrum(model=model, model_dir=model_dir, 
+	>>>                                          params=params)
 
 	Author: Genaro Suárez
 
@@ -436,10 +457,11 @@ def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spect
 	# verify that "params" are within the model grid coverage
 	for param in params:
 		if params[param]<params_models[param].min() or params[param]>params_models[param].max():
-			raise Exception(f'"{param}={params[param]}" value in "params" is out of the range covered by the "{model}" spectra in "model_dir", which is [{params_models[param].min()}, {params_models[param].max()}]')
+			raise Exception(f'"{param}={params[param]}" value in "params" is out of the range covered by the "{model}" '
+			                f'spectra in "model_dir", which is [{params_models[param].min()}, {params_models[param].max()}]')
 
-	# sort input params in the same order as the dictionary with free parameters returned by `separate_params`
-	params = reorder_dict(params, Models(model).free_params)
+	# sort input params in the same order as the dictionary with free parameters returned by `models.separate_params`
+	params = reorder_dict(params, models.Models(model).free_params)
 
 	# read model grid if not provided
 	if grid is None:
@@ -461,10 +483,10 @@ def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spect
 	spectra_flux = interp_flux(list(params.values()))[0,:] # to return a 1D array
 	spectra_wl = interp_wl(list(params.values()))[0,:] # to return a 1D array
 	
-	# reverse array to sort wavelength from shortest to longest
-	ind_sort = np.argsort(spectra_wl)
-	spectra_wl = spectra_wl[ind_sort]
-	spectra_flux = spectra_flux[ind_sort]
+	## reverse array to sort wavelength from shortest to longest
+	#ind_sort = np.argsort(spectra_wl)
+	#spectra_wl = spectra_wl[ind_sort]
+	#spectra_flux = spectra_flux[ind_sort]
 
 	# store generated spectrum
 	if save_spectrum:
@@ -492,12 +514,12 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 	'''
 	Description:
 	------------
-		Read a model grid constrained by input parameters.
+		Read a model grid of spectra constrained by input parameters.
 
 	Parameters:
 	-----------
 	- model : str
-		Atmospheric models. See available models in ``seda.Models().available_models``.  
+		Atmospheric models. See available models in ``seda.models.Models().available_models``.  
 	- model_dir : str or list
 		Path to the directory (str or list) or directories (as a list) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
 	- params_ranges : dictionary, optional
@@ -516,6 +538,10 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 		Minimum and maximum wavelength (in microns) to cut model spectra to keep only wavelengths of interest.
 		Default values are the minimum and maximum wavelengths in ``wl_resample``, if provided, with a padding to avoid issues with the resampling.
 		Otherwise, ``model_wl_range=None``, so model spectra will not be trimmed.
+	- fit_phot_range : float array or list, optional
+		Minimum and maximum wavelengths (in micron) where photometry will be compared to the models. E.g., ``fit_phot_range = np.array([fit_phot_min1, fit_phot_max1])``. 
+		This parameter is used if ``fit_photometry`` but ignored if only ``fit_spectra``. 
+		Default values are the minimum and the maximum of the filter effective wavelengths from SVO.
 	- res : float, optional (required if ``convolve``).
 		Spectral resolution (at ``lam_res``) to smooth model spectra.
 	- lam_res : float, optional.
@@ -531,7 +557,7 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 		Once the code has be run and the convolved spectra were stored in ``path_save_spectra_conv``, the convolved grid can be reused for other input data with the same resolution as the convolved spectra.
 	- filename_pattern : str, optional
 		Pattern to select only files including it.
-		Default is a common pattern in all spectra original filenames in ``model``, as indicated by ``Models(model).filename_pattern``.
+		Default is a common pattern in all spectra original filenames in ``model``, as indicated by ``models.Models(model).filename_pattern``.
 	- path_save_spectra_conv: str, optional
 		Directory path to store convolved model spectra. 
 		If not provided (default), the convolved spectra will not be saved. 
@@ -541,7 +567,7 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 
 	Returns:
 	--------
-	Dictionary with the (convolved and resampled, if requested) model grid:
+	Dictionary with the model grid either convolved and resampled (if requested) or synthetic photometry:
 		- ``'wavelength'`` : wavelengths in microns for the model spectra in the grid.
 		- ``'flux'`` : fluxes in erg/s/cm2/A for the model spectra in the grid.
 		- ``'params_unique'`` : dictionary with unique (non-repetitive) values for each model free parameter
@@ -559,8 +585,8 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 	>>> params_ranges = {'Teff': [700, 900], 'logg': [4.0, 5.0]}
 	>>>
 	>>> # read the grid
-	>>> out_read_grid = seda.read_grid(model=model, model_dir=model_dir, 
-	>>>                                params_ranges=params_ranges)
+	>>> out_read_grid = seda.utils.read_grid(model=model, model_dir=model_dir, 
+	>>>                                      params_ranges=params_ranges)
 
 	Author: Genaro Suárez
 
@@ -575,11 +601,6 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 		# handle model_wl_range
 		model_wl_range = set_model_wl_range(model_wl_range=model_wl_range, wl_spectra_min=fit_wl_range.min(), wl_spectra_max=fit_wl_range.max())
 	
-#	# set model_wl_range in case wl_resample is given
-#	if wl_resample is not None:
-#		#model_wl_range = set_model_wl_range(model_wl_range=model_wl_range, fit_wl_range=fit_wl_range)
-#		model_wl_range = set_model_wl_range(model_wl_range=model_wl_range, wl_spectra_min=wl_spectra_min, wl_spectra_max=wl_spectra_max)
-
 	# read the model spectra names and their parameters in the input folders and meeting the indicated parameters ranges 
 	out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir, params_ranges=params_ranges, filename_pattern=filename_pattern)
 	spectra_name_full = out_select_model_spectra['spectra_name_full']
@@ -633,10 +654,10 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 			# read the spectrum with the parameter combination in the iteration and cut it to model_wl_range (default value: fit_wl_range plus padding)
 			spectrum_name_full = spectra_name_full[mask][0]
 			if not skip_convolution: # read model spectra with original resolution
-				out_read_model_spectrum = read_model_spectrum(spectrum_name_full=spectrum_name_full, model=model, 
+				out_read_model_spectrum = models.read_model_spectrum(spectrum_name_full=spectrum_name_full, model=model, 
 				                                              model_wl_range=model_wl_range)
 			else: # read precomputed convolved model spectra
-				out_read_model_spectrum = read_model_spectrum_conv(spectrum_name_full=spectrum_name_full, model_wl_range=model_wl_range)
+				out_read_model_spectrum = models.read_model_spectrum_conv(spectrum_name_full=spectrum_name_full, model_wl_range=model_wl_range)
 			wl_model = out_read_model_spectrum['wl_model'] # in um
 			flux_model = out_read_model_spectrum['flux_model'] # in erg/s/cm2/A
 
@@ -648,8 +669,6 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 					if not os.path.exists(path_save_spectra_conv): os.makedirs(path_save_spectra_conv) # make directory (if not existing) to store convolved spectra
 					out_file = path_save_spectra_conv+spectra_name[mask][0]+f'_R{res}at{lam_res}um.nc'
 					out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, res=res, lam_res=lam_res, disp_wl_range=disp_wl_range, out_file=out_file)
-
-#				out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, res=res, lam_res=lam_res)
 				wl_model = out_convolve_spectrum['wl_conv']
 				flux_model = out_convolve_spectrum['flux_conv']
 
@@ -694,6 +713,218 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 
 	return out
 
+##################################################
+def read_grid_phot(model, model_dir, filters, params_ranges=None, fit_phot_range=None, 
+	               skip_syn_phot=False, model_wl_range=None, path_save_syn_phot=None):
+	               
+	'''
+	Description:
+	------------
+		Read a model grid of synthetic photometry constrained by input parameters.
+
+	Parameters:
+	-----------
+	- model : str
+		Atmospheric models. See available models in ``seda.models.Models().available_models``.  
+	- model_dir : str or list
+		Path to the directory (str or list) or directories (as a list) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
+	- params_ranges : dictionary, optional
+		Minimum and maximum values for any model free parameters to select a model grid subset.
+		E.g., ``params_ranges = {'Teff': [1000, 1200], 'logg': [4., 5.]}`` to consider spectra within those Teff and logg ranges.
+		If a parameter range is not provided, the full range in ``model_dir`` is considered.
+	- model_wl_range : float array (optional)
+		Minimum and maximum wavelength (in microns) to cut model spectra to keep only wavelengths of interest.
+		Default values are the minimum and maximum wavelengths in ``wl_resample``, if provided, with a padding to avoid issues with the resampling.
+		Otherwise, ``model_wl_range=None``, so model spectra will not be trimmed.
+	- fit_phot_range : float array or list, optional
+		Minimum and maximum wavelengths (in micron) where photometry will be compared to the models. E.g., ``fit_phot_range = np.array([fit_phot_min1, fit_phot_max1])``. 
+		This parameter is used if ``fit_photometry`` but ignored if only ``fit_spectra``. 
+		Default values are the minimum and the maximum of the filter effective wavelengths from SVO.
+	- filters : float array
+		Filters to derive synthetic photometry following SVO filter IDs 
+		http://svo2.cab.inta-csic.es/theory/fps/
+	- path_save_syn_phot: str, optional
+		Directory path to store the synthetic fluxes (in erg/s/cm2/A).
+		If not provided (default), the synthetic photometry will not be saved. 
+		If the directory does not exist, it will be created. Otherwise, the photometry will be added to the existing folder.
+		The synthetic photometry for different filters derived from the same model spectrum will be saved in a single ASCII table, named after the model with the suffix "_syn_phot.dat".
+		If a synthetic photometry file for a given model spectrum already exists, it will be updated to include photometry for any new filters as needed.
+	- skip_syn_phot : {``True``, ``False``}, optional (default ``False``)
+		Synthetic photometry calculation (the lowest process when fitting photometry) can (``True``) or cannot (``False``) be avoided. 
+		If 'True', ``model_dir`` should correspond to the directory with the synthetic photometry for ``filters`` in ``input_parameters.InputData``. 
+
+	Returns:
+	--------
+	Dictionary with the model grid either convolved and resampled (if requested) or synthetic photometry:
+		- ``'wavelength'`` : wavelengths in microns for the model spectra in the grid.
+		- ``'flux'`` : fluxes in erg/s/cm2/A for synthetic photometry in the grid.
+		- ``'params_unique'`` : dictionary with unique (non-repetitive) values for each model free parameter
+
+	Example:
+	--------
+	>>> import seda
+	>>>
+	>>> # models
+	>>> model = 'Sonora_Elf_Owl'
+	>>> model_dir = ['my_path/Sonora_Elf_Owl/spectra/output_700.0_800.0/',
+	>>>              'my_path/Sonora_Elf_Owl/spectra/output_850.0_950.0/']
+	>>> 
+	>>> # set ranges for some (Teff and logg) free parameters to select only a grid subset
+	>>> params_ranges = {'Teff': [700, 900], 'logg': [4.0, 5.0]}
+	>>>
+	>>> # read the grid
+	>>> out_read_grid = seda.utils.read_grid_phot(model=model, model_dir=model_dir, 
+	>>>                                           params_ranges=params_ranges)
+
+	Author: Genaro Suárez
+
+	Date: 2025-11-22
+	'''
+
+	ini_time_grid = time.time() # to estimate the time elapsed reading the grid
+
+	# read the model spectra names and their parameters in the input folders and meeting the indicated parameters ranges 
+	out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir, params_ranges=params_ranges)
+	spectra_name_full = out_select_model_spectra['spectra_name_full']
+	spectra_name = out_select_model_spectra['spectra_name']
+	params = out_select_model_spectra['params']
+
+	# unique values for each free parameter in the selected spectra
+	params_unique = {} # initialize dictionary
+	for param in params.keys():
+		params_unique[param] = np.unique(params[param]) # save unique values for each free parameter
+
+	# create an array with as many dimensions as the number of free parameters in the models 
+	# and each dimension's size as the number of unique values for the corresponding parameter
+	arr = np.array(0.)*np.nan # initialize float array of NaNs with dimension zero
+	for param in params.keys(): # for each free parameter
+		dim_size = len(params_unique[param]) # number of unique values in each parameter
+		new_dim = np.expand_dims(arr, -1) # add a dimension (at the end)
+		arr = np.repeat(new_dim, dim_size, axis=-1) # change size of new dimension
+
+	# load model grid with the selected synthetic fluxes
+	# create a tqdm progress bar
+	desc = 'Deriving synthetic photometry from model spectra'
+	grid_bar = tqdm(total=len(spectra_name), desc=desc)
+
+	# save synthetic fluxes for each combination of free parameter values
+	# define arrays to save the grid
+	# add a last dimension with the number of synthetic fluxes
+	wl_grid = np.repeat(np.expand_dims(arr, -1), len(filters), axis=-1) # to save the effective wavelength at each grid point
+	flux_grid = np.repeat(np.expand_dims(arr, -1), len(filters), axis=-1) # to save the synthetic flux at each grid point
+	first_spec = True # reference to read effective wavelengths from the first spectrum only
+	for index in np.ndindex(arr.shape): # iterate over all possible combinations of the free parameter unique values
+		# update the progress bar
+		grid_bar.update(1)
+
+		# mask to select the corresponding spectrum for each combination of parameters
+		mask = np.ones(len(spectra_name), bool) # initialize mask with Trues
+		for i,param in enumerate(params.keys()): # for each free parameter
+			mask &= params[param]==params_unique[param][index[i]] # apply criteria to the mask and update it
+
+		# verify if there is a model spectrum for the combination of parameters
+		if not np.any(mask): # if there is not a spectrum
+			print('   Caveat: No spectrum in "model_dir" for the combination:')
+			for i,param in enumerate(params.keys()):
+				print(f'	  {param}={params_unique[param][index[i]]}')
+		else: # if there is a spectrum
+			# read the spectrum with the parameter combination in the iteration and cut it to model_wl_range (default value: fit_wl_range plus padding)
+			spectrum_name_full = spectra_name_full[mask][0]
+			spectrum_name = spectra_name[mask][0]
+
+			if not skip_syn_phot: # do not avoid synthetic photometry calculation
+				# read model spectrum with original resolution in the full model_wl_range_each
+				out_read_model_spectrum = models.read_model_spectrum(spectrum_name_full=spectrum_name_full, model=model, model_wl_range=model_wl_range)
+				wl_model = out_read_model_spectrum['wl_model'] # um
+				flux_model = out_read_model_spectrum['flux_model'] # erg/s/cm2/A
+				
+				# derive synthetic photometry
+				out_syn_phot = synthetic_photometry(wl=wl_model, flux=flux_model, flux_unit='erg/s/cm2/A', filters=filters)
+				flux_syn = out_syn_phot['syn_flux(erg/s/cm2/A)'] # erg/s/cm2/A
+
+				# estimate filters' effective wavelengths from the first spectrum to be the wavelength reference
+				if first_spec:
+					lambda_eff = out_syn_phot['lambda_eff(um)'] # um
+					first_spec =  False # to avoid estimating effective wavelengths again
+
+				# store synthetic photometric
+				if path_save_syn_phot is not None:
+					file_name = path_save_syn_phot+spectra_name[i]+'_syn_phot.dat'
+					if not os.path.exists(file_name): # file with synthetic photometry does not exist yet
+						# make a dictionary with the parameters to be saved
+						dict_syn_phot = {}
+						keys = ['filters', 'syn_flux(erg/s/cm2/A)', 'lambda_eff(um)', 'width_eff(um)'] # parameters of interest
+						for key in keys:
+							if key=='filters':
+								dict_syn_phot[key] = out_syn_phot[key]
+							else:
+								dict_syn_phot[key] = np.round(out_syn_phot[key], 6) # keep six decimals
+						# sort dictionary with respect to filter name
+						sort_ind = np.argsort(dict_syn_phot['filters'])
+						for key in dict_syn_phot.keys():
+							dict_syn_phot[key] = dict_syn_phot[key][sort_ind]
+
+						# save the dictionary as prettytable table
+						if not os.path.exists(path_save_syn_phot): os.makedirs(path_save_syn_phot) # make directory (if not existing) to store synthetic photometry
+						save_prettytable(my_dict=dict_syn_phot, table_name=file_name)
+
+					else: # file already exist
+						# open file to see whether the flux for a given filter is already stored
+						dict_syn_phot = read_prettytable(file_name)
+
+						for j, filt in enumerate(filters_fit): # for each filter used to derived synthetic photometry
+							if filt not in dict_syn_phot['filters']: # filter with synthetic photometry is not in the table
+								for key in dict_syn_phot.keys(): # for each parameter in the table
+									if key=='filters':
+										dict_syn_phot[key] = np.append(dict_syn_phot[key], out_syn_phot[key][j])
+									else:
+										dict_syn_phot[key] = np.append(dict_syn_phot[key], np.round(out_syn_phot[key][j], 6)) # keep six decimals
+
+						# sort dictionary with respect to filter name
+						sort_ind = np.argsort(dict_syn_phot['filters'])
+						for key in dict_syn_phot.keys():
+							dict_syn_phot[key] = dict_syn_phot[key][sort_ind]
+
+						# update the existing file with new synthetic photometry
+						save_prettytable(my_dict=dict_syn_phot, table_name=file_name)
+
+			else: # read pre-computed synthetic photometry
+				out_syn_phot = read_prettytable(filename=spectrum_name_full+'_syn_phot.dat')
+
+				# get from the table only parameters for the input filters within the fit range
+				flux_syn_each = []
+				lambda_eff_each = []
+				for filt in filters_fit:
+					if filt in out_syn_phot['filters']: # filter is in the table with synthetic photometry
+						ind = out_syn_phot['filters']==filt # index in the table for filter in the iteration
+						# store filters' parameters in the lists
+						flux_syn_each.append(out_syn_phot['syn_flux(erg/s/cm2/A)'][ind][0]) # erg/s/cm2/A
+						lambda_eff_each.append(out_syn_phot['lambda_eff(um)'][ind][0]) # um
+
+					else:
+						raise Exception(f'There is not synthetic photometry for filter "{filt}" and model "{spectrum_name}".')
+
+				# store filters' parameters in the lists
+				flux_syn = np.array(flux_syn_each)
+				# consider the effective wavelengths from the first model as wavelength references
+				if first_spec:
+					lambda_eff = np.array(lambda_eff_each)
+					first_spec =  False # to avoid estimating effective wavelengths again
+
+			# save synthetic fluxes for each combination
+			wl_grid[index] = lambda_eff
+			flux_grid[index] = flux_syn
+
+	# close the progress bar
+	grid_bar.close()
+
+	fin_time_grid = time.time()
+	print_time(fin_time_grid-ini_time_grid)
+
+	out = {'wavelength': wl_grid, 'flux': flux_grid, 'params_unique': params_unique}
+
+	return out
+
 ##########################
 def best_bayesian_fit(output_bayes, grid=None, model_dir_ori=None, ori_res=False, save_spectrum=False):
 	'''
@@ -707,14 +938,14 @@ def best_bayesian_fit(output_bayes, grid=None, model_dir_ori=None, ori_res=False
 		Output dictionary with the results from the nested sampling by ``bayes``.
 		It can be either the name of the pickle file or simply the output dictionary.
 	- grid : dictionary, optional
-		Model grid (``'wavelength'`` and ``'flux'``) generated by ``seda.read_grid`` for interpolations.
+		Model grid (``'wavelength'`` and ``'flux'``) generated by ``seda.utils.read_grid`` for interpolations.
 		If not provided (default), then a grid subset with model spectra around the median posteriors is read.
 		If provided, the code will skip reading the grid, which will save some time.
 	- ori_res : {``True``, ``False``}, optional (default ``False``)
 		Read (``True``) or do not read (``False``) model spectrum for the best fit with the original resolution.
 	- model_dir_ori : str, list, or array
 		Path to the directory (str, list, or array) or directories (as a list or array) containing the model spectra with the original resolution.
-		This parameter is needed if ``ori_res=True`` and `seda.bayes` was run skipping the model spectra convolution (if `skip_convolution=True``).
+		This parameter is needed if ``ori_res=True`` and `seda.bayes_fit.bayes` was run skipping the model spectra convolution (if `skip_convolution=True``).
 	- save_spectrum : {``True``, ``False``}, optional (default ``False``)
 		Save (``True``) or do not save (``False``) best model fit from the nested sampling.
 
@@ -724,17 +955,19 @@ def best_bayesian_fit(output_bayes, grid=None, model_dir_ori=None, ori_res=False
 		Table with best model fit (if ``save_spectrum``).
 	- dictionary
 		Dictionary with the best model fit from the nested sampling:
-			- ``'wl_spectra_fit'`` : wavelength in um of the input spectra in ``fit_wl_range``.
-			- ``'flux_spectra_fit'`` : fluxes in erg/cm2/s/A of the input spectra in ``fit_wl_range``.
-			- ``'eflux_spectra_fit'`` : flux uncertainties in erg/cm2/s/A of the input spectra in ``fit_wl_range``.
+			- ``'wl_spectra_fit'`` : (if ``fit_spectra``) wavelength in um of the input spectra within ``fit_wl_range``.
+			- ``'flux_spectra_fit'`` : (if ``fit_spectra``) fluxes in erg/cm2/s/A of the input spectra within ``fit_wl_range``.
+			- ``'eflux_spectra_fit'`` : (if ``fit_spectra``) flux uncertainties in erg/cm2/s/A of the input spectra within ``fit_wl_range``.
+			- ``'phot_fit'`` : (if ``fit_photometry``) flux in erg/cm2/s/A of the input photometry within ``fit_wl_range``.
+			- ``'ephot_fit'`` : (if ``fit_photometry``) flux uncertainties in erg/cm2/s/A of the input photometry within ``fit_wl_range``.
 			- ``'params_med'`` : median values for sampled parameters.
 			- ``'params_errors'`` : lower and upper parameter errors considering the confidence interval ``params_confidence_interval``.
 			- ``'params_confidence_interval'`` : confidence interval for sampled parameters.
 			- ``'confidence_interval(%)'`` : central percentage considered to calculate the confidence interval.
-			- ``'wl_model'`` : wavelength in um of the best scaled, convolved, and resampled model fit
+			- ``'wl_model'`` : wavelength in um of the best scaled model fit (convolved, and resampled when fit_spectra or synthetic fluxes when fit_spectra) within ``fit_wl_range``.
 			- ``'flux_model'`` : fluxes in erg/cm2/s/A of the best scaled, convolved, and resampled model fit
-			- ``'wl_model_ori'`` : (if ``ori_res`` is ``True``) wavelength in um of the best scaled model fit with its original resolution
-			- ``'flux_model_ori'`` : (if ``ori_res`` is ``True``) fluxes in erg/cm2/s/A of the best scaled model fit with its original resolution
+			- ``'wl_model_best'`` : (if ``ori_res`` is ``True``) wavelength in um of the best scaled model fit with its original resolution
+			- ``'flux_model_best'`` : (if ``ori_res`` is ``True``) fluxes in erg/cm2/s/A of the best scaled model fit with its original resolution
 
 	Author: Genaro Suárez
 
@@ -747,6 +980,8 @@ def best_bayesian_fit(output_bayes, grid=None, model_dir_ori=None, ori_res=False
 			output_bayes = pickle.load(file)
 	except: # if given as the output of bayes_fit
 		pass
+	fit_spectra = output_bayes['my_bayes'].fit_spectra
+	fit_photometry = output_bayes['my_bayes'].fit_photometry
 	model = output_bayes['my_bayes'].model
 	model_dir = output_bayes['my_bayes'].model_dir
 	filename_pattern = output_bayes['my_bayes'].filename_pattern
@@ -755,12 +990,20 @@ def best_bayesian_fit(output_bayes, grid=None, model_dir_ori=None, ori_res=False
 	res = output_bayes['my_bayes'].res
 	lam_res = output_bayes['my_bayes'].lam_res
 	distance = output_bayes['my_bayes'].distance
-	wl_spectra_min = output_bayes['my_bayes'].wl_spectra_min
-	wl_spectra_max = output_bayes['my_bayes'].wl_spectra_max
-	wl_spectra_fit = output_bayes['my_bayes'].wl_spectra_fit
-	flux_spectra_fit = output_bayes['my_bayes'].flux_spectra_fit
-	eflux_spectra_fit = output_bayes['my_bayes'].eflux_spectra_fit
-	N_spectra = output_bayes['my_bayes'].N_spectra
+	if fit_spectra:
+		wl_spectra_min = output_bayes['my_bayes'].wl_spectra_min
+		wl_spectra_max = output_bayes['my_bayes'].wl_spectra_max
+		wl_spectra_fit = output_bayes['my_bayes'].wl_spectra_fit
+		flux_spectra_fit = output_bayes['my_bayes'].flux_spectra_fit
+		eflux_spectra_fit = output_bayes['my_bayes'].eflux_spectra_fit
+		N_spectra = output_bayes['my_bayes'].N_spectra
+	if fit_photometry:
+		phot_fit = output_bayes['my_bayes'].phot_fit
+		ephot_fit = output_bayes['my_bayes'].ephot_fit
+		filters_fit = output_bayes['my_bayes'].filters_fit
+		lambda_eff_SVO_fit = output_bayes['my_bayes'].lambda_eff_SVO_fit
+		width_eff_SVO_fit = output_bayes['my_bayes'].width_eff_SVO_fit
+	fit_phot_range = output_bayes['my_bayes'].fit_phot_range
 	fit_wl_range = output_bayes['my_bayes'].fit_wl_range
 	params_priors = output_bayes['my_bayes'].params_priors
 	out_dynesty = output_bayes['out_dynesty']
@@ -785,7 +1028,7 @@ def best_bayesian_fit(output_bayes, grid=None, model_dir_ori=None, ori_res=False
 		params_errors[param] = [lower, upper]
 
 	# round median parameters
-	params_models = Models(model).params_unique # free parameters in the models
+	params_models = models.Models(model).params_unique # free parameters in the models
 	for i,param in enumerate(params_med): # for each sampled parameter
 		if param in params_models: # for free parameters in the model grid
 			# percentiles
@@ -816,22 +1059,37 @@ def best_bayesian_fit(output_bayes, grid=None, model_dir_ori=None, ori_res=False
 			params_ranges[param] = find_two_nearest(params_models[param], params_med[param])
 
 		# read grid, convolve it (if not skip_convolution), and resample it to the input spectra
-		grid = [] #  to save a grid appropriate for each input spectrum
-		for i in range(N_spectra): # for each input observed spectrum
-			print(f'\nFor input spectrum {i+1} of {N_spectra}')
-			if not skip_convolution: # read and convolve original model spectra
-				grid_each = read_grid(model=model, model_dir=model_dir, params_ranges=params_ranges, 
-				                      convolve=True, res=res[i], lam_res=lam_res[i], 
-				                      fit_wl_range=fit_wl_range[i], wl_resample=wl_spectra_fit[i])
-			else: # read model spectra already convolved to the data resolution
-				# set filename_pattern to look for model spectra with the corresponding resolution
-				filename_pattern.append(Models(model).filename_pattern+f'_R{res[i]}at{lam_res[i]}um.nc')
-				grid_each = read_grid(model=model, model_dir=model_dir, params_ranges=params_ranges, 
-				                      res=res[i], lam_res=lam_res[i], 
-				                      fit_wl_range=fit_wl_range[i], wl_resample=wl_spectra_fit[i], 
-				                      skip_convolution=skip_convolution, filename_pattern=filename_pattern[i])
-			# add resampled grid for each input spectrum to the same list
-			grid.append(grid_each)
+		if fit_spectra:
+			grid_spec = [] #  to save a grid appropriate for each input spectrum
+			for i in range(N_spectra): # for each input observed spectrum
+				print(f'\nFor input spectrum {i+1} of {N_spectra}')
+				if not skip_convolution: # read and convolve original model spectra
+					grid_each = read_grid(model=model, model_dir=model_dir, params_ranges=params_ranges, 
+					                      convolve=True, res=res[i], lam_res=lam_res[i], 
+					                      fit_wl_range=fit_wl_range[i], wl_resample=wl_spectra_fit[i])
+				else: # read model spectra already convolved to the data resolution
+					# set filename_pattern to look for model spectra with the corresponding resolution
+					filename_pattern.append(models.Models(model).filename_pattern+f'_R{res[i]}at{lam_res[i]}um.nc')
+					grid_each = read_grid(model=model, model_dir=model_dir, params_ranges=params_ranges, 
+					                      res=res[i], lam_res=lam_res[i], 
+					                      fit_wl_range=fit_wl_range[i], wl_resample=wl_spectra_fit[i], 
+					                      skip_convolution=skip_convolution, filename_pattern=filename_pattern[i])
+				# add resampled grid for each input spectrum to the same list
+				grid_spec.append(grid_each)
+
+		if fit_photometry:
+			# set filename_pattern to look for model spectra
+			filename_pattern = [models.Models(model).filename_pattern]
+			grid_phot = read_grid_phot(model=model, model_dir=model_dir, params_ranges=params_ranges, filters=filters_fit)
+			grid_phot = [grid_phot] # grid as list to follow structure from then fit_spectra
+
+		# define grid depending whether spectra and/or photometry were provided
+		if fit_spectra and not fit_photometry:
+			grid = grid_spec
+		if not fit_spectra and fit_photometry:
+			grid = grid_phot 
+		if fit_spectra and fit_photometry:
+			grid = grid_spec + grid_phot 
 
 	# generate a synthetic spectrum with the median parameter values for only the free parameters in the models
 	# (avoid radius, if included in params_med)
@@ -840,7 +1098,7 @@ def best_bayesian_fit(output_bayes, grid=None, model_dir_ori=None, ori_res=False
 		params[param] = params_med[param]
 	wl = []
 	flux = []
-	for i in range(N_spectra): # for each input observed spectrum
+	for i in range(len(grid)): # for each input observed spectrum
 		syn_spectrum = generate_model_spectrum(params=params, model=model, grid=grid[i])
 		wl.append(syn_spectrum['wavelength'])
 		flux.append(syn_spectrum['flux'])
@@ -849,13 +1107,13 @@ def best_bayesian_fit(output_bayes, grid=None, model_dir_ori=None, ori_res=False
 	if distance is not None: # when radius was constrained
 		wl_scaled = []
 		flux_scaled = []
-		for i in range(N_spectra): # for each input observed spectrum
+		for i in range(len(grid)): # for each input observed spectrum
 			flux_scaled.append(scale_synthetic_spectrum(wl=wl[i], flux=flux[i], distance=distance, radius=params_med['R']))
 			wl_scaled.append(wl[i])
 	else: # when radius was not constrained
 		wl_scaled = []
 		flux_scaled = []
-		for i in range(N_spectra): # for each input observed spectrum
+		for i in range(len(grid)): # for each input observed spectrum
 			# DOUBLE CHECK
 			scaling = np.sum(flux_obs[i]*flux/eflux_obs[i]**2) / np.sum(flux_model**2/eflux_obs[i]**2) # scaling that minimizes chi2
 			flux_scaled.append(scaling*flux)
@@ -868,19 +1126,25 @@ def best_bayesian_fit(output_bayes, grid=None, model_dir_ori=None, ori_res=False
 			else: model_dir = model_dir_ori
 		# generate spectrum
 		syn_spectrum = generate_model_spectrum(params=params, model=model, model_dir=model_dir)
-		wl_model_ori = syn_spectrum['wavelength']
-		flux_model_ori = syn_spectrum['flux']
+		wl_model_best = syn_spectrum['wavelength']
+		flux_model_best = syn_spectrum['flux']
 
 		# scale synthetic spectrum
-		flux_model_ori = scale_synthetic_spectrum(wl=wl_model_ori, flux=flux_model_ori, distance=distance, radius=params_med['R'])
+		flux_model_best = scale_synthetic_spectrum(wl=wl_model_best, flux=flux_model_best, distance=distance, radius=params_med['R'])
 
 	# output dictionary
-	out = {'wl_spectra_fit': wl_spectra_fit, 'flux_spectra_fit': flux_spectra_fit, 'eflux_spectra_fit': eflux_spectra_fit, 
-	       'wl_model': wl_scaled, 'flux_model': flux_scaled, 'params_med': params_med, 'params_errors': params_errors, 
+	out = {'wl_model': wl_scaled, 'flux_model': flux_scaled, 'params_med': params_med, 'params_errors': params_errors, 
 		   'params_confidence_interval': params_conf, 'confidence_interval(%)': conf_interval}
+	if fit_spectra:
+		out['wl_spectra_fit'] = wl_spectra_fit
+		out['flux_spectra_fit'] = flux_spectra_fit
+		out['eflux_spectra_fit'] = eflux_spectra_fit
+	if fit_photometry:
+		out['phot_fit'] = phot_fit
+		out['ephot_fit'] = ephot_fit
 	if ori_res:
-		out['wl_model_ori'] = wl_model_ori
-		out['flux_model_ori'] = flux_model_ori
+		out['wl_model_best'] = wl_model_best
+		out['flux_model_best'] = flux_model_best
 
 	return out
 
@@ -894,7 +1158,7 @@ def select_model_spectra(model, model_dir, params_ranges=None, filename_pattern=
 	Parameters:
 	-----------
 	- model : str
-		Atmospheric models. See available models in ``seda.Models().available_models``.  
+		Atmospheric models. See available models in ``seda.models.Models().available_models``.  
 	- model_dir : str or list
 		Path to the directory (str or list) or directories (as a list) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
 	- params_ranges : dictionary, optional
@@ -903,7 +1167,7 @@ def select_model_spectra(model, model_dir, params_ranges=None, filename_pattern=
 		If a parameter range is not provided, the full range in ``model_dir`` is considered.
 	- filename_pattern : str, optional
 		Pattern to select only files including it.
-		Default is a common pattern in all spectra original filenames in ``model``, as indicated by ``Models(model).filename_pattern``.
+		Default is a common pattern in all spectra original filenames in ``model``, as indicated by ``models.Models(model).filename_pattern``.
 	- save_results : {``True``, ``False``}, optional (default ``False``)
 		Save (``True``) or do not save (``False``) the output as a pickle file named '``model``\_free\_parameters.pickle'.
 	- out_file : str, optional
@@ -915,7 +1179,7 @@ def select_model_spectra(model, model_dir, params_ranges=None, filename_pattern=
 	Dictionary with the parameters:
 		- ``spectra_name``: selected model spectra names.
 		- ``spectra_name_full``: selected model spectra names with full path.
-		- ``params``: parameters for the selected model spectra, as given by the ``seda.separate_params`` output dictionary.
+		- ``params``: parameters for the selected model spectra, as given by the ``seda.models.separate_params`` output dictionary.
 
 	Example:
 	--------
@@ -926,8 +1190,8 @@ def select_model_spectra(model, model_dir, params_ranges=None, filename_pattern=
 	>>>              'my_path/output_700.0_800.0/'] # folders to seek model spectra
 	>>> # set ranges for some (Teff and logg) free parameters to select only a grid subset
 	>>> params_ranges = {'Teff': [700, 900], 'logg': [4.0, 5.0]}
-	>>> out = seda.select_model_spectra(model=model, model_dir=model_dir,
-	>>>                                 params_ranges=params_ranges)
+	>>> out = seda.utils.select_model_spectra(model=model, model_dir=model_dir,
+	>>>                                       params_ranges=params_ranges)
 
 	Author: Genaro Suárez
 
@@ -944,11 +1208,13 @@ def select_model_spectra(model, model_dir, params_ranges=None, filename_pattern=
 	# if params_ranges is provided, verified that there is a minimum and a maximum values for each provided parameter
 	if params_ranges is not None:
 		for param in params_ranges:
-			if len(params_ranges[param])!=2: raise Exception(f'{param} in "params_ranges" must have two values (minimum and maximum), but {len(params_ranges[param])} values were given')
+			if len(params_ranges[param])!=2: 
+				raise Exception(f'{param} in "params_ranges" must have two values (minimum and maximum), '
+				                f'but {len(params_ranges[param])} values were given')
 	# if params_ranges is not provided, define params_ranges as an empty dictionary
 	if params_ranges is None: params_ranges = {} # empty dictionary
 	# if filename_pattern is not provided, consider the common pattern in original file names
-	if filename_pattern is None: filename_pattern = Models(model).filename_pattern
+	if filename_pattern is None: filename_pattern = models.Models(model).filename_pattern
 
 	# to store files in model_dir
 	files = [] # with full path
@@ -961,7 +1227,7 @@ def select_model_spectra(model, model_dir, params_ranges=None, filename_pattern=
 			files_short.append(file)
 
 	# read free parameters from each model spectrum
-	out_separate_params = separate_params(model=model, spectra_name=files_short)
+	out_separate_params = models.separate_params(model=model, spectra_name=files_short)
 	params_spectra = out_separate_params['params']
 
 	# select spectra within the desired parameter ranges
@@ -997,7 +1263,7 @@ def select_model_spectra(model, model_dir, params_ranges=None, filename_pattern=
 	spectra_name = np.array(spectra_name)
 
 	# separate parameters from selected spectra
-	out_separate_params = separate_params(model=model, spectra_name=spectra_name, save_results=save_results, out_file=out_file)
+	out_separate_params = models.separate_params(model=model, spectra_name=spectra_name, save_results=save_results, out_file=out_file)
 
 	out = {'spectra_name_full': spectra_name_full, 'spectra_name': spectra_name, 'params': out_separate_params['params']}
 
@@ -1027,7 +1293,7 @@ def read_SVO_params(filters, params):
 	>>> 
 	>>> filters = ['2MASS/2MASS.J', '2MASS/2MASS.H', '2MASS/2MASS.Ks']
 	>>> params = ['filterID', 'WavelengthEff', 'WidthEff']
-	>>> seda.read_SVO_params(filters=filters, params=params)
+	>>> seda.utils.read_SVO_params(filters=filters, params=params)
 	    {'filterID': array(['2MASS/2MASS.J', '2MASS/2MASS.H', '2MASS/2MASS.Ks'], dtype=object),
 	     'WavelengthEff': array([12350., 16620., 21590.]),
 	     'WidthEff': array([1624.3190191 , 2509.40349871, 2618.86953322])}
@@ -1140,7 +1406,7 @@ def set_fit_phot_range(fit_phot_range, filters):
 		# get effective wavelengths from SVO for the input filters
 		SVO_data = read_SVO_table()
 		SVO_filterID = SVO_data['filterID'] # SVO ID
-		SVO_WavelengthEff = (SVO_data['WavelengthEff'].data*u.angstrom).to(u.micron).value # effective wavelength in um
+		SVO_WavelengthEff = u.Quantity(SVO_data['WavelengthEff'].data, u.nm*0.1).to(u.micron).value # effective wavelength in um
 		matching_indices = []
 		for index, element in enumerate(SVO_filterID):
 			if element in filters:
@@ -1223,7 +1489,7 @@ def app_to_abs_flux(flux, distance, eflux=None, edistance=None, reverse=False):
 	>>> eflux = 0.01 # mJy
 	>>> 
 	>>> # convert fluxes
-	>>> seda.app_to_abs_flux(flux=flux, distance=d, eflux=eflux, edistance=ed)
+	>>> seda.utils.app_to_abs_flux(flux=flux, distance=d, eflux=eflux, edistance=ed)
 	    {'flux_app': 2.1,
 	    'flux_abs': 0.525,
 	    'eflux_app': 0.01,
@@ -1320,7 +1586,7 @@ def app_to_abs_mag(magnitude, distance, emagnitude=None, edistance=None):
 	>>> magnitude, emagnitude = 17.05, 0.03 # mag
 	>>> distance, edistance = 14.43, 0.79 # pc
 	>>>
-	>>> seda.app_to_abs_mag(magnitude=magnitude, emagnitude=emagnitude, 
+	>>> seda.utils.app_to_abs_mag(magnitude=magnitude, emagnitude=emagnitude, 
 	>>>                     distance=distance, edistance=edistance)
 	    {'mag_app': 17.05,
 	     'mag_abs': 16.253668344532528,
@@ -1396,12 +1662,12 @@ def spt_to_teff(spt, spt_type, ref=None):
 	>>> 
 	>>> # spectral type as a number
 	>>> spt = [15, 25] # for L5 and T5 types
-	>>> seda.spt_to_teff(spt, spt_type='float') # Teff in K
+	>>> seda.utils.spt_to_teff(spt, spt_type='float') # Teff in K
 	    array([1581.053125, 1033.328125])
 	>>> 
 	>>> # spectral type as a string
 	>>> spt = ['L5', 'T5']
-	>>> seda.spt_to_teff(spt, spt_type='str') # Teff in K
+	>>> seda.utils.spt_to_teff(spt, spt_type='str') # Teff in K
 	    array([1581.053125, 1033.328125])
 
 	Author: Genaro Suárez
@@ -1504,7 +1770,7 @@ def parallax_to_distance(parallax, eparallax):
 	>>> parallax = 175.2 # mas
 	>>> eparallax = 1.7 # mas
 	>>> # distance
-	>>> seda.parallax_to_distance(parallax=parallax, eparallax=eparallax)
+	>>> seda.utils.parallax_to_distance(parallax=parallax, eparallax=eparallax)
 	    (5.707762557077626, 0.055383540793561434)
 
 	Author: Genaro Suárez
@@ -1565,7 +1831,7 @@ def convert_photometric_table(table, save_table=False, table_name=None):
 	>>>                         '2MASS/2MASS.Ks', '2MASS/2MASS.eKs']
 	>>> 
 	>>> # convert table
-	>>> seda.convert_photometric_table(photometry)
+	>>> seda.utils.convert_photometric_table(photometry)
 	    {'filters': array(['2MASS/2MASS.J', '2MASS/2MASS.H', '2MASS/2MASS.Ks'], dtype='<U32'),
 	     'phot': array([15.695, 15.537, 15.429]),
 	     'ephot': array([0.058, 0.113, 0.201])}
@@ -1631,7 +1897,7 @@ def merge_MRS(fits_files):
 	>>>               'jw05474-o001_t001_miri_ch2-long_x1d.fits', 'jw05474-o001_t001_miri_ch2-medium_x1d.fits', 'jw05474-o001_t001_miri_ch2-short_x1d.fits', \
 	>>>               'jw05474-o001_t001_miri_ch3-long_x1d.fits', 'jw05474-o001_t001_miri_ch3-medium_x1d.fits', 'jw05474-o001_t001_miri_ch3-short_x1d.fits']
 	>>> # merge files
-	>>> out_merge_MRS = seda.merge_MRS(fits_files)
+	>>> out_merge_MRS = seda.utils.merge_MRS(fits_files)
 
 	Author: Genaro Suárez
 
@@ -1702,8 +1968,8 @@ def merge_MRS(fits_files):
 	eflux_Jy_MRS = eflux_MRS[sort_ind]
 
 	# convert fluxes from Jy to erg/s/cm2/A
-	flux_MRS = (flux_Jy_MRS*u.Jy).to(u.erg/u.s/u.cm**2/u.angstrom, equivalencies=u.spectral_density(wl_MRS*u.micron)).value
-	eflux_MRS = (eflux_Jy_MRS*u.Jy).to(u.erg/u.s/u.cm**2/u.angstrom, equivalencies=u.spectral_density(wl_MRS*u.micron)).value
+	flux_MRS = (flux_Jy_MRS*u.Jy).to(u.erg/u.s/u.cm**2/(u.nm*0.1), equivalencies=u.spectral_density(wl_MRS*u.micron)).value
+	eflux_MRS = (eflux_Jy_MRS*u.Jy).to(u.erg/u.s/u.cm**2/(u.nm*0.1), equivalencies=u.spectral_density(wl_MRS*u.micron)).value
 
 	# output dictionary
 	out = {'channel_grating': channel_grating, 'channel_grating_range': channel_grating_range, 'wl_merge': wl_merge, 
@@ -1824,7 +2090,7 @@ def read_prettytable(filename):
 	--------
 	>>> import seda
 	>>> 
-	>>> out = seda.open_chi2_table('Sonora_Elf_Owl_chi2_minimization_multiple_spectra.dat')
+	>>> out = seda.utils.open_chi2_table('Sonora_Elf_Owl_chi2_minimization_multiple_spectra.dat')
 
 	Author: Rocio Kiman
 

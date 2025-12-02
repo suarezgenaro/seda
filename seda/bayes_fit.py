@@ -21,7 +21,7 @@ def bayes(my_bayes):
 	--------
 	- '``model``\_bayesian\_sampling.pickle' : dictionary
 		Dictionary with: 
-			- 'my_bayes' input dictionary
+			- ``'my_bayes'`` input dictionary returned by ``input_parameters.BayesOptions``.
 			- Dynesty output, which is an initialized instance of the chosen sampler using ``dynamic_sampling`` in ``seda.BayesOptions``.
 
 	Example:
@@ -61,21 +61,20 @@ def bayes(my_bayes):
 	print('\n   Estimate Bayesian posteriors')
 
 	# load input parameters
-	# all are stored in my_chi2 but were defined in different classes
+	# all are stored in my_bayes but were defined in different classes
 	# from InputData
 	fit_spectra = my_bayes.fit_spectra
 	fit_photometry = my_bayes.fit_photometry
 	wl_spectra = my_bayes.wl_spectra
 	flux_spectra = my_bayes.flux_spectra
 	eflux_spectra = my_bayes.eflux_spectra
-	mag_phot = my_bayes.mag_phot
-	emag_phot = my_bayes.emag_phot
-	filter_phot = my_bayes.filter_phot
+#	phot = my_bayes.phot
+#	ephot = my_bayes.ephot
+#	filters = my_bayes.filters
 	res = my_bayes.res
 	lam_res = my_bayes.lam_res
 	distance = my_bayes.distance
 	edistance = my_bayes.edistance
-	N_spectra = my_bayes.N_spectra
 	# from ModelOptions
 	model = my_bayes.model
 	model_dir = my_bayes.model_dir
@@ -92,31 +91,46 @@ def bayes(my_bayes):
 	dynamic_sampling = my_bayes.dynamic_sampling
 	ndim = my_bayes.ndim
 	nlive = my_bayes.nlive
-	wl_spectra_min = my_bayes.wl_spectra_min
-	wl_spectra_max = my_bayes.wl_spectra_max
-	N_datapoints = my_bayes.N_datapoints
 	bayes_pickle_file = my_bayes.bayes_pickle_file
-	wl_obs = my_bayes.wl_spectra_fit
-	flux_obs = my_bayes.flux_spectra_fit
-	eflux_obs = my_bayes.eflux_spectra_fit
+	if fit_spectra:
+#		N_spectra = my_bayes.N_spectra
+#		wl_spectra_min = my_bayes.wl_spectra_min
+#		wl_spectra_max = my_bayes.wl_spectra_max
+#		N_datapoints = my_bayes.N_datapoints
+		wl_obs_spec = my_bayes.wl_spectra_fit
+		flux_obs_spec = my_bayes.flux_spectra_fit
+		eflux_obs_spec = my_bayes.eflux_spectra_fit
+		weight_spec_fit = my_bayes.weight_spec_fit 
+	if fit_photometry:
+		# redefine them as lists to keep format when fit_spectra
+		wl_obs_phot = [my_bayes.lambda_eff_SVO_fit]
+		flux_obs_phot = [my_bayes.phot_fit]
+		eflux_obs_phot = [my_bayes.ephot_fit]
+#		filters_fit = my_bayes.filters_fit
+		weight_phot_fit = my_bayes.weight_phot_fit 
 
-#	# cut input spectra to the fit range
-#	wl_obs = []
-#	flux_obs = []
-#	eflux_obs = []
-#	for i in range(N_spectra): # for each input spectrum
-#		mask_fit = (wl_spectra[i] >= max(fit_wl_range[i][0], grid[i]['wavelength'].min())) & \
-#		           (wl_spectra[i] <= min(fit_wl_range[i][1], grid[i]['wavelength'].max()))
-#
-#		wl_obs.append(wl_spectra[i][mask_fit])
-#		flux_obs.append(flux_spectra[i][mask_fit])
-#		eflux_obs.append(eflux_spectra[i][mask_fit])
+	# set input flux depending whether spectra and/or photometry were provided
+	if fit_spectra and not fit_photometry:
+		wl_obs = wl_obs_spec
+		flux_obs = flux_obs_spec
+		eflux_obs = eflux_obs_spec
+		weights = weight_spec_fit
+	if not fit_spectra and fit_photometry:
+		wl_obs = wl_obs_phot
+		flux_obs = flux_obs_phot
+		eflux_obs = eflux_obs_phot
+		weights = [weight_phot_fit]
+	if fit_spectra and fit_photometry:
+		wl_obs = wl_obs_spec + wl_obs_phot
+		flux_obs = flux_obs_spec + flux_obs_phot
+		eflux_obs = eflux_obs_spec + eflux_obs_phot
+		weights = weight_spec_fit + [weight_phot_fit]
 
 	# print priors
 	print(f'\n      Uniform priors:')
 	for param in params_priors:
 		print(f'         {param} range = {params_priors[param]}')
-	
+
 	#------------------
 	def prior_transform(p):
 		# p (sampler's live points) takes random values between 0 and 1 for each free parameter
@@ -136,10 +150,11 @@ def bayes(my_bayes):
 				params[param] = p[i]
 		
 		lnlike = 0.0 # initialize the log-likelihood variable
-		for i in range(N_spectra): # for each input spectrum
+
+		for i in range(len(flux_obs)): # for each input spectrum and/or photometric set
 			# generate a model with the sampled parameters 
 			# (the model will have the resolution and be resampled to the fit region for each input spectrum)
-			out_generate_model_spectrum = generate_model_spectrum(params=params, model=model, model_dir=model_dir, grid=grid[i])
+			out_generate_model_spectrum = generate_model_spectrum(params=params, model=model, grid=grid[i])#, model_dir=model_dir)
 			flux_model = out_generate_model_spectrum['flux']
 
 			# scaled model spectrum
@@ -148,10 +163,11 @@ def bayes(my_bayes):
 				scaling = (((R*u.R_jup).to(u.km) / (distance*u.pc).to(u.km))**2).value # scaling = (R/d)^2
 				#flux_model = scale_synthetic_spectrum(wl=wl_model, flux=flux_model, distance=distance, radius=R)
 			else:
-				scaling = np.sum(flux_obs[i]*flux_model/eflux_obs[i]**2) / np.sum(flux_model**2/eflux_obs[i]**2) # scaling that minimizes chi2
+				#scaling = np.sum(flux_obs[i]*flux_model/eflux_obs[i]**2) / np.sum(flux_model**2/eflux_obs[i]**2) # scaling that minimizes chi2
+				scaling = np.sum(weights[i]*flux_obs[i]*flux_model/eflux_obs[i]**2) / np.sum(weights[i]*flux_model**2/eflux_obs[i]**2) # scaling that minimizes chi2
 			flux_model = scaling*flux_model
 
-			residual2 = (flux_obs[i] - flux_model)**2 / eflux_obs[i]**2
+			residual2 = weights[i] * ((flux_obs[i] - flux_model)**2 / eflux_obs[i]**2)
 			lnlike += -0.5 * np.sum(residual2 + np.log(2*np.pi*eflux_obs[i]**2))
 
 		return lnlike

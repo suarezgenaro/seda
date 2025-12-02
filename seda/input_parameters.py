@@ -2,9 +2,11 @@ import numpy as np
 from astropy import units as u
 import os
 import re
-from .utils import *
-from .synthetic_photometry.synthetic_photometry import *
-from .models import *
+from tqdm.auto import tqdm 
+from spectres import spectres
+from . import utils
+from . import models
+from .synthetic_photometry import synthetic_photometry
 from sys import exit
 
 #++++++++++++++++++++++++++++++++
@@ -21,14 +23,20 @@ else:
 	raise RuntimeError("Unable to find version string in %s." % (version_string,))
 
 print(f'\n    SEDA v{__version__} package imported')
-#print(f'\n    Welcome to SEDA {__version__}')
 
-#+++++++++++++++++++++++++++
+#++++++++++++++++++++++++++++++++
+# module-level constants
+#++++++++++++++++++++++++++++++++
+allowed_weights = {"none", "dataset", "width"}
+
+#++++++++++++++++++++++++++++++++
+# main classes
+#++++++++++++++++++++++++++++++++
 class InputData:
 	'''
 	Description:
 	------------
-		Define input data.
+		Define input data for fitting (spectra and/or photometry).
 	
 	Parameters:
 	-----------
@@ -70,10 +78,20 @@ class InputData:
 	- edistance : float, optional
 		Distance error (in pc).
 
-	Returns:
-	--------
-	- Dictionary with all (provided and default) input data parameters.
-
+	Attributes:
+	-----------
+	Input parameters.
+		All input parameters are stored as attributes with their default values if not specified.
+		Units:
+		- ``flux_spectra``, ``eflux_spectra``, ``Phot``, and ``ephot`` attributes are stored in erg/s/cm2/A.
+	Other parameters
+		N_spectra : int
+			Number of input spectra (if ``fit_spectra``).
+		lambda_eff_SVO : float array
+			Effective wavelengths from the SVO for filters (if ``fit_photometry``).
+		width_eff_SVO : float array
+			Effective widths from the SVO for filters (if ``fit_photometry``).
+	
 	Example:
 	--------
 	>>> import seda
@@ -133,9 +151,9 @@ class InputData:
 			# handle input parameters
 			for i in range(N_spectra):
 				# convert input spectra to numpy arrays, if they are astropy
-				wl_spectra[i] = astropy_to_numpy(wl_spectra[i])
-				flux_spectra[i] = astropy_to_numpy(flux_spectra[i])
-				eflux_spectra[i] = astropy_to_numpy(eflux_spectra[i])
+				wl_spectra[i] = utils.astropy_to_numpy(wl_spectra[i])
+				flux_spectra[i] = utils.astropy_to_numpy(flux_spectra[i])
+				eflux_spectra[i] = utils.astropy_to_numpy(eflux_spectra[i])
 		
 				# remove NaN values
 				mask_nonan = (~np.isnan(wl_spectra[i])) & (~np.isnan(flux_spectra[i])) & (~np.isnan(eflux_spectra[i]))
@@ -167,7 +185,7 @@ class InputData:
 			if lam_res is None: 
 				lam_res = []
 				for wl_spectrum in wl_spectra:
-					lam_res.append(set_lam_res(wl_spectrum))
+					lam_res.append(utils.set_lam_res(wl_spectrum))
 			# convert lam_res to the nearest integer
 			if isinstance(lam_res, list):
 				for i,lam_res_each in enumerate(lam_res): # for each lam_res value
@@ -185,14 +203,14 @@ class InputData:
 			# convert input fluxes to erg/s/cm2/A, if needed
 			if flux_unit=='Jy': # if fluxes are provided in Jy
 				for i in range(N_spectra):
-					out_convert_flux = convert_flux(flux=flux_spectra[i], eflux=eflux_spectra[i], 
-					                                wl=wl_spectra[i], unit_in='Jy', unit_out='erg/s/cm2/A')
+					out_convert_flux = synthetic_photometry.convert_flux(flux=flux_spectra[i], eflux=eflux_spectra[i], 
+					                                                     wl=wl_spectra[i], unit_in='Jy', unit_out='erg/s/cm2/A')
 					flux_spectra[i] = out_convert_flux['flux_out']
 					eflux_spectra[i] = out_convert_flux['eflux_out']
 			if flux_unit=='erg/s/cm2/um': # if fluxes are provided in erg/s/cm2/um
 				for i in range(N_spectra):
-					flux_spectra[i] = (flux_spectra[i]*u.erg/u.s/u.cm**2/u.micron).to(u.erg/u.s/u.cm**2/u.angstrom).value # erg/s/cm2/A
-					eflux_spectra[i] = (eflux_spectra[i]*u.erg/u.s/u.cm**2/u.micron).to(u.erg/u.s/u.cm**2/u.angstrom).value # erg/s/cm2/A
+					flux_spectra[i] = (flux_spectra[i]*u.erg/u.s/u.cm**2/u.micron).to(u.erg/u.s/u.cm**2/(u.nm*0.1)).value # erg/s/cm2/A
+					eflux_spectra[i] = (eflux_spectra[i]*u.erg/u.s/u.cm**2/u.micron).to(u.erg/u.s/u.cm**2/(u.nm*0.1)).value # erg/s/cm2/A
 
 		# add spectroscopic input data as attributes
 		self.res = res
@@ -204,12 +222,12 @@ class InputData:
 		# handle input photometry
 		if fit_photometry:
 			# if input photometry arrays are lists or astropy varaibles, convert them into numpy array
-			phot = var_to_numpy(phot)
-			phot = astropy_to_numpy(phot)
-			ephot = var_to_numpy(ephot)
-			ephot = astropy_to_numpy(ephot)
-			filters = var_to_numpy(filters)
-			filters = astropy_to_numpy(filters)
+			phot = utils.var_to_numpy(phot)
+			phot = utils.astropy_to_numpy(phot)
+			ephot = utils.var_to_numpy(ephot)
+			ephot = utils.astropy_to_numpy(ephot)
+			filters = utils.var_to_numpy(filters)
+			filters = utils.astropy_to_numpy(filters)
 
 			# remove magnitudes with null magnitude errors (usually upper limits)
 			mask_nonull = ephot!=0
@@ -220,27 +238,27 @@ class InputData:
 
 			# obtain relevant parameters from SVO for input filters
 			params = ['WavelengthEff', 'WidthEff']
-			out = read_SVO_params(filters=filters, params=params)
-			lambda_eff_SVO = (out['WavelengthEff']*u.angstrom).to(u.micron).value # in um
-			width_eff_SVO = (out['WidthEff']*u.angstrom).to(u.micron).value # in um
+			out = utils.read_SVO_params(filters=filters, params=params)
+			lambda_eff_SVO = u.Quantity(out['WavelengthEff'].data, u.nm*0.1).to(u.micron).value # in um
+			width_eff_SVO = u.Quantity(out['WidthEff'].data, u.nm*0.1).to(u.micron).value # in um
 
 			# set default phot_unit
 			if phot_unit is None: phot_unit='mag'
 			# convert input photometry to erg/s/cm2/A, if needed
 			if phot_unit=='mag': # if photometry given in magnitudes
-				out_mag_to_flux = mag_to_flux(mag=phot, emag=ephot, filters=filters, 
-				                                   flux_unit='erg/s/cm2/A')
+				out_mag_to_flux = synthetic_photometry.mag_to_flux(mag=phot, emag=ephot, filters=filters, 
+				                                                   flux_unit='erg/s/cm2/A')
 				phot = out_mag_to_flux['flux']
 				ephot = out_mag_to_flux['eflux']
 			if phot_unit=='Jy': # if photometry is given in Jy
 				# effective wavelength of the filters is needed
-				out_convert_flux = convert_flux(flux=phot, eflux=ephot, wl=lambda_eff_SVO, 
-				                                unit_in='Jy', unit_out='erg/s/cm2/A')
+				out_convert_flux = synthetic_photometry.convert_flux(flux=phot, eflux=ephot, wl=lambda_eff_SVO, 
+				                                                     unit_in='Jy', unit_out='erg/s/cm2/A')
 				phot = out_convert_flux['flux_out']
 				ephot = out_convert_flux['eflux_out']
 			if phot_unit=='erg/s/cm2/um': # if photometry is given in erg/s/cm2/um
-				phot = (phot*u.erg/u.s/u.cm**2/u.micron).to(u.erg/u.s/u.cm**2/u.angstrom).value # erg/s/cm2/A
-				ephot = (ephot*u.erg/u.s/u.cm**2/u.micron).to(u.erg/u.s/u.cm**2/u.angstrom).value # erg/s/cm2/A
+				phot = (phot*u.erg/u.s/u.cm**2/u.micron).to(u.erg/u.s/u.cm**2/(u.nm*0.1)).value # erg/s/cm2/A
+				ephot = (ephot*u.erg/u.s/u.cm**2/u.micron).to(u.erg/u.s/u.cm**2/(u.nm*0.1)).value # erg/s/cm2/A
 
 			# add some exclusive photometric parameters as attributes
 			self.lambda_eff_SVO = lambda_eff_SVO
@@ -266,7 +284,7 @@ class ModelOptions:
 	-----------
 	- model : str, optional (required if a model spectrum is not provided via `wl_model` and `flux_model` or for nested sampling)
 		Label for any of the available atmospheric models.
-		See more info in ``seda.Models``.
+		See more info in ``seda.models.Models``.
 	- model_dir : str, list, or array, optional (required if a model spectrum is not provided via `wl_model` and `flux_model` or for nested sampling)
 		Path to the directory (str, list, or array) or directories (as a list or array) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
 		Avoid using paths with null spaces. 
@@ -300,10 +318,10 @@ class ModelOptions:
 		the synthetic values can be reused for other input photometric SEDs that use the same set of filters.
 		If 'True', ``model_dir`` should correspond to the directory with the synthetic photometry for ``filters`` in ``input_parameters.InputData``. 
 
-	Returns:
-	--------
-	Dictionary with all (provided and default) model option parameters plus the following parameters:
-		- ...
+	Attributes:
+	-----------
+	Input parameters.
+		All input parameters are stored as attributes with their default values if not specified.
 
 	Example:
 	--------
@@ -337,7 +355,8 @@ class ModelOptions:
 		if (wl_model is None) & (flux_model is None): # when a model spectrum is not explicitly provided
 			if model is None: raise Exception(f'"model" must be provided')
 			if model_dir is None: raise Exception(f'"model_dir" must be provided')
-			if model not in Models().available_models: raise Exception(f'Models "{model}" are not recognized. Available models are: \n          {Models().available_models}')
+			if model not in models.Models().available_models: raise Exception(f'Models "{model}" are not recognized. Available models:'
+			                                                                  f'\n{models.Models().available_models}')
 
 		# when only one directory with models is given
 		if not isinstance(model_dir, (list, np.ndarray)): model_dir = [model_dir]
@@ -383,6 +402,17 @@ class Chi2Options:
 		Minimum and maximum wavelengths (in micron) where photometry will be compared to the models. E.g., ``fit_phot_range = np.array([fit_phot_min1, fit_phot_max1])``. 
 		This parameter is used if ``fit_photometry`` but ignored if only ``fit_spectra``. 
 		Default values are the minimum and the maximum of the filter effective wavelengths from SVO.
+	- weight_label : str, optional (default ``dataset``)
+		Weight applied to each input data point (photometric and spectroscopic) when minimizing the chi-square statistics.
+		This parameters is different to the weighting that comes from the observed flux uncertainties in the chi-square statistics definition.
+		``weight_label`` allows assigning different relative weight to photometry and spectra (when ``fit_spectra`` and ``fit_photometry`` are enable),
+		ensuring that photometric measurements do not have a negligible contribution to the chi-square, considering that photometric SEDs typically contain far fewer data points than spectroscopic SEDs.
+
+		Available options are:
+
+		- ``'dataset'`` (default): each dataset, whether photometric or spectroscopic, is assigned a weight equal to the inverse of its total number of data points. All data contribute the same, despite having very different numbers of points.
+		- ``'width'``: each point is weighted by wavelength resolution (wavelength step) for spectra or filter effective width for photometry. Broader filters receive larger weights, but the overall contribution of photometry may still differ from that of spectra.
+		- ``'none'``: apply the same weight to all input data points, which is equivalent to using no weighting at all (beyond the uncertainty-based weighting). Large datasets such as high-resolution spectra will dominate.
 	- extinction_free_param : {``True``, ``False``}, optional (default ``False``)
 		Extinction as a free parameter: 
 			- ``'False'``: null extinction is assumed and it will not change.
@@ -406,9 +436,60 @@ class Chi2Options:
 		Filename for an output ascii table (if ``save_results``) with relevant information from the fit.
 		Default name is '``model``\_chi2\_minimization.dat'.
 
-	Returns:
-	--------
-	- Dictionary with all (provided and default) chi-square fit option parameters.
+	Attributes:
+	-----------
+	Input parameters either from this class or attributes from the ``InputData`` and ``ModelOptions`` classes.
+		All input parameters are stored as attributes with their default values if not specified.
+	Other parameters
+		spectra_name : numpy array
+			File names of selected model spectra
+		spectra_name_full : numpy array
+			File names of selected model spectra with full absolute path.
+		if ``fit_spectra``:
+			wl_spectra_min : float
+				Minimum wavelength from the input spectra.
+			wl_spectra_max : float
+				Maximum wavelength from the input spectra.
+			N_datapoints : int
+				Total number of data points in all input spectra.
+			N_model_spectra : int
+				Number of model spectra selected within ``fit_wl_range``.
+			wl_array_obs_fit : list
+				Nested list input spectra wavelengths within ``fit_wl_range`` for each selected model spectrum.
+				This is convenient because model spectra do not necessary all have the same wavelength coverage.
+			flux_array_obs_fit : list
+				Nested list with input spectra fluxes (in erg/s/cm2/A) within ``fit_wl_range`` for each selected model spectrum.
+			eflux_array_obs_fit  : list
+				Nested list with input spectra flux uncertainties (in erg/s/cm2/A) within ``fit_wl_range`` for each selected model spectrum.
+			wl_array_model_conv_resam : list
+				Nested list with wavelengths for the selected model spectra convolved using ``res`` and ``lam_res`` and resampled (based on the input wavelengths) within ``model_wl_range``.
+			flux_array_model_conv_resam : list
+				Nested list with fluxes (in erg/s/cm2/A) for the selected model spectra convolved using ``res`` and ``lam_res`` and resampled (based on the input wavelengths) within ``model_wl_range``.
+			wl_array_model_conv_resam_fit : list
+				Same as ``wl_array_model_conv_resam`` but within ``fit_wl_range``.
+			flux_array_model_conv_resam_fit :
+				Same as ``flux_array_model_conv_resam`` but within ``fit_wl_range``.
+			weight_spec_fit : list
+				Nested list with the weights assigned to each spectroscopic data point within the fit range considering the equation chi2 = weight * (data-model)^2 / edata^2.
+		if ``fit_photometry``:
+			phot_fit : numpy array
+				Input photometry ``phot`` (in erg/s/cm2/A) within ``fit_phot_range``.
+			ephot_fit : numpy array
+				Input photometry errors ``ephot`` (in erg/s/cm2/A) within ``fit_phot_range``.
+			filters_fit : numpy array
+				Input filters ``filters`` within ``fit_phot_range``.
+			lambda_eff_SVO_fit : numpy array
+				Effective wavelengths from SVO for ``filters_fit``.
+			width_eff_SVO_fit : numpy array
+				Effective widths from SVO for ``filters_fit``.
+			flux_syn_array_model_fit : list
+				Nested list with synthetic fluxes (in erg/s/cm2/A) for ``filters_fit`` for each selected model spectrum.
+			lambda_eff_array_model_fit : numpy array
+				Effective wavelengths (in micron) from the spectrum for ``filters_fit`` for each selected model spectrum.
+			width_eff_array_model_fit : numpy array
+				Effective width (in micron) from the spectrum for ``filters_fit`` for each selected model spectrum.
+			weight_phot_fit : list
+				Nested list with the weights assigned to each photometric data point within the fit range considering the equation chi2 = weight * (data-model)^2 / edata^2.
 
 	Example:
 	--------
@@ -422,14 +503,20 @@ class Chi2Options:
 
 	Author: Genaro Suárez
 	'''
+#		The available options are:
+#		- ``"dataset"``  
+#		  Each dataset (photometric or spectroscopic) is assigned a weight equal  
+#		  to the inverse of the total number of its data points.  
+#		  All datasets contribute equally, regardless of size.
+
 
 	def __init__(self, my_data, my_model, 
-		fit_wl_range=None, disp_wl_range=None, model_wl_range=None, fit_phot_range=None,
-		extinction_free_param=False, scaling_free_param=True, scaling=None, 
-		avoid_IR_excess=False, IR_excess_limit=3, save_results=True,
+		fit_wl_range=None, disp_wl_range=None, model_wl_range=None, fit_phot_range=None, 
+		weight_label='dataset', extinction_free_param=False, scaling_free_param=True, 
+		scaling=None, avoid_IR_excess=False, IR_excess_limit=3, save_results=True,
 		chi2_pickle_file=None, chi2_table_file=None):
 
-		ini_time_mychi2 = time.time() # to estimate the time elapsed running chi2
+		ini_time_mychi2 = utils.time.time() # to estimate the time elapsed running chi2
 
 		dir_sep = os.sep # directory separator for the current operating system
 
@@ -437,6 +524,7 @@ class Chi2Options:
 		self.fit_wl_range = fit_wl_range
 		self.disp_wl_range = disp_wl_range
 		self.model_wl_range = model_wl_range
+		self.fit_phot_range = fit_phot_range
 		self.save_results = save_results
 		self.scaling_free_param = scaling_free_param
 		self.scaling = scaling
@@ -495,27 +583,31 @@ class Chi2Options:
 		skip_convolution = my_model.skip_convolution
 		path_save_syn_phot = my_model.path_save_syn_phot
 		skip_syn_phot = my_model.skip_syn_phot
-		if my_data.fit_spectra: N_spectra = my_data.N_spectra
-		if my_data.fit_photometry: 
+		if fit_spectra: N_spectra = my_data.N_spectra
+		if fit_photometry: 
 			lambda_eff_SVO = my_data.lambda_eff_SVO # in um
 			width_eff_SVO = my_data.width_eff_SVO # in um
+
+		# handle input parameters
+		if weight_label not in allowed_weights: 
+			raise Exception(f'"{weight_label}" is not recognized for the parameter "weight_label". '
+			                f'Available options: {sorted(allowed_weights)}.')
+		self.weight_label = weight_label
 
 		# handle input spectra
 		if fit_spectra:
 			# number of data points in the input spectra
-			out_input_data_stats = input_data_stats(wl_spectra=wl_spectra)
+			out_input_data_stats = utils.input_data_stats(wl_spectra=wl_spectra)
 			wl_spectra_min = out_input_data_stats['wl_spectra_min']
 			wl_spectra_max = out_input_data_stats['wl_spectra_max']
 			N_datapoints = out_input_data_stats['N_datapoints']
 
 			# handle fit_wl_range
-			fit_wl_range = set_fit_wl_range(fit_wl_range=fit_wl_range, N_spectra=N_spectra, wl_spectra=wl_spectra)
-	
+			fit_wl_range = utils.set_fit_wl_range(fit_wl_range=fit_wl_range, N_spectra=N_spectra, wl_spectra=wl_spectra)
 			# handle disp_wl_range
-			disp_wl_range = set_disp_wl_range(disp_wl_range=disp_wl_range, N_spectra=N_spectra, wl_spectra=wl_spectra)
-	
+			disp_wl_range = utils.set_disp_wl_range(disp_wl_range=disp_wl_range, N_spectra=N_spectra, wl_spectra=wl_spectra)
 			# handle model_wl_range
-			model_wl_range = set_model_wl_range(model_wl_range=model_wl_range, wl_spectra_min=wl_spectra_min, wl_spectra_max=wl_spectra_max)
+			model_wl_range = utils.set_model_wl_range(model_wl_range=model_wl_range, wl_spectra_min=wl_spectra_min, wl_spectra_max=wl_spectra_max)
 	
 			# define parameters as attributes (the ones already as attributes will be replaced by the updated parameter values)
 			self.fit_wl_range = fit_wl_range
@@ -528,8 +620,7 @@ class Chi2Options:
 		# handle input photometry
 		if fit_photometry:
 			# handle fit_phot_range
-			fit_phot_range = set_fit_phot_range(fit_phot_range=fit_phot_range, filters=filters)
-
+			fit_phot_range = utils.set_fit_phot_range(fit_phot_range=fit_phot_range, filters=filters)
 			self.fit_phot_range = fit_phot_range
 
 		# file name to save the chi2 results as a pickle
@@ -552,9 +643,9 @@ class Chi2Options:
 			for k in range(N_spectra): # for each input observed spectrum
 				# convolve model
 				# define convolving range as the full wavelength range of each input spectrum plus a padding
-				convolve_wl_range = add_pad(wl_spectra[k].min(), wl_spectra[k].max())
-				out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, lam_res=lam_res[k], res=res[k], 
-				                                          disp_wl_range=disp_wl_range[k], convolve_wl_range=convolve_wl_range)
+				convolve_wl_range = utils.add_pad(wl_spectra[k].min(), wl_spectra[k].max())
+				out_convolve_spectrum = utils.convolve_spectrum(wl=wl_model, flux=flux_model, lam_res=lam_res[k], res=res[k], 
+				                                                disp_wl_range=disp_wl_range[k], convolve_wl_range=convolve_wl_range)
 				# replace model spectrum by the convolved one
 				wl_model_conv = out_convolve_spectrum['wl_conv']
 				flux_model_conv = out_convolve_spectrum['flux_conv']
@@ -574,11 +665,11 @@ class Chi2Options:
 		if (model is not None) & (model_dir is not None):
 			# read the model spectra names in the input folders and meeting the indicated parameter ranges 
 			if not skip_convolution and not skip_syn_phot:
-				filename_pattern = Models(model).filename_pattern # to be used to select files with original names
+				filename_pattern = models.Models(model).filename_pattern # to be used to select files with original names
 			else:
-				filename_pattern = Models(model).filename_pattern+'*' # to be used to select files with original names plus the suffix added when convolved spectra were saved
+				filename_pattern = models.Models(model).filename_pattern+'*' # to be used to select files with original names plus the suffix added when convolved spectra were saved
 
-			out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir, params_ranges=params_ranges, filename_pattern=filename_pattern)
+			out_select_model_spectra = utils.select_model_spectra(model=model, model_dir=model_dir, params_ranges=params_ranges, filename_pattern=filename_pattern)
 			spectra_name_full = out_select_model_spectra['spectra_name_full']
 			spectra_name = out_select_model_spectra['spectra_name']
 
@@ -590,8 +681,8 @@ class Chi2Options:
 					if fit_spectra: basename = spectrum_name.split('_R')[0]
 					if fit_photometry: basename = spectrum_name.split('_syn_phot')[0]
 					spectra_name[i] = basename
-					spectra_name_full[i] = os.path.dirname(spectra_name_full[i])+dir_sep+spectra_name[i] # with full path (considering model_dir is a list).
-		
+					spectra_name_full[i] = os.path.dirname(spectra_name_full[i])+dir_sep+spectra_name[i] # with full path
+
 				# remove duplicate spectrum file names due to having the same spectrum stored multiple times for different resolutions at different wavelengths
 				spectra_name = np.unique(spectra_name)
 				spectra_name_full = np.unique(spectra_name_full)
@@ -616,8 +707,8 @@ class Chi2Options:
 						# update progress bar
 						model_bar.update(1)
 
-						# read model spectrum with original resolution in the full model_wl_range_each
-						out_read_model_spectrum = read_model_spectrum(spectrum_name_full=spectra_name_full[i], model=model, model_wl_range=model_wl_range)
+						# read model spectrum with original resolution in the full model_wl_range
+						out_read_model_spectrum = models.read_model_spectrum(spectrum_name_full=spectra_name_full[i], model=model, model_wl_range=model_wl_range)
 						wl_model = out_read_model_spectrum['wl_model'] # um
 						flux_model = out_read_model_spectrum['flux_model'] # erg/s/cm2/A
 
@@ -626,52 +717,52 @@ class Chi2Options:
 						flux_array_model_conv_resam_each = []
 						for k in range(N_spectra): # for each input observed spectrum
 							# define convolving range as the full wavelength range of each input spectrum plus a padding
-							convolve_wl_range = add_pad(wl_spectra[k].min(), wl_spectra[k].max())
+							convolve_wl_range = utils.add_pad(wl_spectra[k].min(), wl_spectra[k].max())
 
 							# convolve model spectrum according to the resolution of each input spectrum
 							if path_save_spectra_conv is None: # do not save the convolved spectrum
-								out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, lam_res=lam_res[k], res=res[k], 
-								                                          disp_wl_range=disp_wl_range[k], convolve_wl_range=convolve_wl_range)
+								out_convolve_spectrum = utils.convolve_spectrum(wl=wl_model, flux=flux_model, lam_res=lam_res[k], res=res[k], 
+								                                                disp_wl_range=disp_wl_range[k], convolve_wl_range=convolve_wl_range)
 							else: # save convolved spectrum
 								if not os.path.exists(path_save_spectra_conv): os.makedirs(path_save_spectra_conv) # make directory (if not existing) to store convolved spectra
 								out_file = path_save_spectra_conv+spectra_name[i]+f'_R{res[k]}at{lam_res[k]}um.nc'
-								out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, lam_res=lam_res[k], res=res[k], 
-								                                          disp_wl_range=disp_wl_range[k], convolve_wl_range=convolve_wl_range, out_file=out_file)
+								out_convolve_spectrum = utils.convolve_spectrum(wl=wl_model, flux=flux_model, lam_res=lam_res[k], res=res[k], 
+								                                                disp_wl_range=disp_wl_range[k], convolve_wl_range=convolve_wl_range, out_file=out_file)
 							# replace model spectrum by the convolved one
 							wl_model_conv = out_convolve_spectrum['wl_conv']
 							flux_model_conv = out_convolve_spectrum['flux_conv']
-			
+
 							# resample the convolved model spectrum to the wavelength data points in the observed spectra
 							mask = (wl_spectra[k]>wl_model_conv.min()) & (wl_spectra[k]<wl_model_conv.max()) # input wavelengths within model wavelength coverage
 							flux_array_model_conv_resam_each.append(spectres(wl_spectra[k][mask], wl_model_conv, flux_model_conv)) # resampled fluxes
 							wl_array_model_conv_resam_each.append(wl_spectra[k][mask]) # wavelengths for resampled fluxes
-			
+
 						# nested list with all resampled model spectra
 						wl_array_model_conv_resam.append(wl_array_model_conv_resam_each)
 						flux_array_model_conv_resam.append(flux_array_model_conv_resam_each)
-			
+
 				else: # skip convolution
 					for i,spectrum_name in enumerate(spectra_name): # for each model spectrum
 						# update progress bar
 						model_bar.update(1)
-			
-						# read, convolve (if needed), and resample model spectra accordingly for each input spectrum
+
+						# read and resample model spectra accordingly for each input spectrum
 						wl_array_model_conv_resam_each = []
 						flux_array_model_conv_resam_each = []
 						for k in range(N_spectra): # for each input observed spectrum
 							# read pre-convolved model spectrum for each input spectrum in its full wavelength range plus a padding
-							model_wl_range_each = add_pad(wl_spectra[k].min(), wl_spectra[k].max())
+							model_wl_range_each = utils.add_pad(wl_spectra[k].min(), wl_spectra[k].max())
 							spectrum_name_full = spectra_name_full[i]+f'_R{res[k]}at{lam_res[k]}um.nc'
-							try: out_read_model_spectrum = read_model_spectrum_conv(spectrum_name_full=spectrum_name_full, model_wl_range=model_wl_range_each)
+							try: out_read_model_spectrum = models.read_model_spectrum_conv(spectrum_name_full=spectrum_name_full, model_wl_range=model_wl_range_each)
 							except: raise Exception(f'Convolved model spectrum {spectrum_name_full} does not exists.')
 							wl_model = out_read_model_spectrum['wl_model'] # um
 							flux_model = out_read_model_spectrum['flux_model'] # erg/s/cm2/A
-				
+
 							# resample the convolved model spectrum to the wavelength data points in the observed spectra
 							mask = (wl_spectra[k]>wl_model.min()) & (wl_spectra[k]<wl_model.max()) # input wavelengths within model wavelength coverage
 							flux_array_model_conv_resam_each.append(spectres(wl_spectra[k][mask], wl_model, flux_model)) # resampled fluxes
 							wl_array_model_conv_resam_each.append(wl_spectra[k][mask]) # wavelengths for resampled fluxes
-				
+
 						# nested list with all resampled model spectra
 						wl_array_model_conv_resam.append(wl_array_model_conv_resam_each)
 						flux_array_model_conv_resam.append(flux_array_model_conv_resam_each)
@@ -688,6 +779,7 @@ class Chi2Options:
 				filters_fit = filters[mask_fit]
 				lambda_eff_SVO_fit = lambda_eff_SVO[mask_fit]
 				width_eff_SVO_fit = width_eff_SVO[mask_fit]
+
 				print(f'\n      {len(filters_fit)} of {len(filters)} input valid magnitudes within the fit range "fit_phot_range"')
 
 				# create a tqdm progress bar
@@ -708,12 +800,12 @@ class Chi2Options:
 						model_bar.update(1)
 
 						# read model spectrum with original resolution in the full model_wl_range_each
-						out_read_model_spectrum = read_model_spectrum(spectrum_name_full=spectra_name_full[i], model=model, model_wl_range=model_wl_range)
+						out_read_model_spectrum = models.read_model_spectrum(spectrum_name_full=spectra_name_full[i], model=model, model_wl_range=model_wl_range)
 						wl_model = out_read_model_spectrum['wl_model'] # um
 						flux_model = out_read_model_spectrum['flux_model'] # erg/s/cm2/A
 
 						# derive synthetic photometry
-						out_syn_phot = synthetic_photometry(wl=wl_model, flux=flux_model, flux_unit='erg/s/cm2/A', filters=filters_fit)
+						out_syn_phot = synthetic_photometry.synthetic_photometry(wl=wl_model, flux=flux_model, flux_unit='erg/s/cm2/A', filters=filters_fit)
 
 						# store filters' parameters in the lists
 						flux_syn_array_model_fit.append(out_syn_phot['syn_flux(erg/s/cm2/A)']) # erg/s/cm2/A
@@ -736,15 +828,15 @@ class Chi2Options:
 								sort_ind = np.argsort(dict_syn_phot['filters'])
 								for key in dict_syn_phot.keys():
 									dict_syn_phot[key] = dict_syn_phot[key][sort_ind]
-	
+
 								# save the dictionary as prettytable table
 								if not os.path.exists(path_save_syn_phot): os.makedirs(path_save_syn_phot) # make directory (if not existing) to store synthetic photometry
 								save_prettytable(my_dict=dict_syn_phot, table_name=file_name)
-	
+
 							else: # file already exist
 								# open file to see whether the flux for a given filter is already stored
 								dict_syn_phot = read_prettytable(file_name)
-							
+
 								for j, filt in enumerate(filters_fit): # for each filter used to derived synthetic photometry
 									if filt not in dict_syn_phot['filters']: # filter with synthetic photometry is not in the table
 										for key in dict_syn_phot.keys(): # for each parameter in the table
@@ -752,12 +844,12 @@ class Chi2Options:
 												dict_syn_phot[key] = np.append(dict_syn_phot[key], out_syn_phot[key][j])
 											else:
 												dict_syn_phot[key] = np.append(dict_syn_phot[key], np.round(out_syn_phot[key][j], 6)) # keep six decimals
-							
+
 								# sort dictionary with respect to filter name
 								sort_ind = np.argsort(dict_syn_phot['filters'])
 								for key in dict_syn_phot.keys():
 									dict_syn_phot[key] = dict_syn_phot[key][sort_ind]
-							
+
 								# update the existing file with new synthetic photometry
 								save_prettytable(my_dict=dict_syn_phot, table_name=file_name)
 
@@ -779,7 +871,7 @@ class Chi2Options:
 								flux_syn_each.append(out_syn_phot['syn_flux(erg/s/cm2/A)'][ind][0])
 								lambda_eff_each.append(out_syn_phot['lambda_eff(um)'][ind][0])
 								width_eff_each.append(out_syn_phot['width_eff(um)'][ind][0])
-								
+
 							else:
 								raise Exception(f'There is not synthetic photometry for filter "{filt}" and model "{spectra_name[i]}".')
 
@@ -831,6 +923,12 @@ class Chi2Options:
 				wl_array_model_conv_resam_fit.append(wl_array_model_conv_resam_fit_each)
 				flux_array_model_conv_resam_fit.append(flux_array_model_conv_resam_fit_each)
 
+		# set weights for the fit
+		out_compute_weights = compute_weights(fit_spectra=fit_spectra, fit_photometry=fit_photometry, weight_label=weight_label, 
+		                                      wl_spectra_fit=wl_spectra_fit[0], width_eff_SVO_fit=width_eff_SVO_fit)
+		weight_spec_fit = out_compute_weights['weight_spec_fit']
+		weight_phot_fit = out_compute_weights['weight_phot_fit']
+
 		# assign some attributes
 		self.N_model_spectra = N_model_spectra
 		if (model is not None) & (model_dir is not None):
@@ -844,6 +942,7 @@ class Chi2Options:
 			self.flux_array_model_conv_resam = flux_array_model_conv_resam
 			self.wl_array_model_conv_resam_fit = wl_array_model_conv_resam_fit
 			self.flux_array_model_conv_resam_fit = flux_array_model_conv_resam_fit
+			self.weight_spec_fit = weight_spec_fit
 		if fit_photometry:
 			self.flux_syn_array_model_fit = flux_syn_array_model_fit
 			self.lambda_eff_array_model_fit = lambda_eff_array_model_fit
@@ -853,10 +952,11 @@ class Chi2Options:
 			self.filters_fit = filters_fit
 			self.lambda_eff_SVO_fit = lambda_eff_SVO_fit
 			self.width_eff_SVO_fit = width_eff_SVO_fit
+			self.weight_phot_fit = weight_phot_fit
 
 		print('\n   Chi-square fit options loaded successfully')
-		fin_time_mychi2 = time.time()
-		print_time(fin_time_mychi2-ini_time_mychi2)
+		fin_time_mychi2 = utils.time.time()
+		utils.print_time(fin_time_mychi2-ini_time_mychi2)
 
 #+++++++++++++++++++++++++++
 class BayesOptions:
@@ -883,6 +983,21 @@ class BayesOptions:
 		Minimum and maximum wavelength (in microns) to cut model spectra (to make the code faster). 
 		Default values are the same as ``fit_wl_range`` with a padding to avoid the point below.
 		CAVEAT: the selected wavelength range of model spectra must cover the spectrophotometry used in the fit and a bit more (to avoid errors when resampling synthetic spectra using spectres)
+	- fit_phot_range : float array or list, optional
+		Minimum and maximum wavelengths (in micron) where photometry will be compared to the models. E.g., ``fit_phot_range = np.array([fit_phot_min1, fit_phot_max1])``. 
+		This parameter is used if ``fit_photometry`` but ignored if only ``fit_spectra``. 
+		Default values are the minimum and the maximum of the filter effective wavelengths from SVO.
+	- weight_label : str, optional (default ``dataset``)
+		Weight applied to each input data point (photometric and spectroscopic) when minimizing the chi-square statistics.
+		This parameters is different to the weighting that comes from the observed flux uncertainties in the chi-square statistics definition.
+		``weight_label`` allows assigning different relative weight to photometry and spectra (when ``fit_spectra`` and ``fit_photometry`` are enable),
+		ensuring that photometric measurements do not have a negligible contribution to the chi-square, considering that photometric SEDs typically contain far fewer data points than spectroscopic SEDs.
+
+		Available options are:
+
+		- ``'dataset'`` (default): each dataset, whether photometric or spectroscopic, is assigned a weight equal to the inverse of its total number of data points. All data contribute the same, despite having very different numbers of points.
+		- ``'width'``: each point is weighted by wavelength resolution (wavelength step) for spectra or filter effective width for photometry. Broader filters receive larger weights, but the overall contribution of photometry may still differ from that of spectra.
+		- ``'none'``: apply the same weight to all input data points, which is equivalent to using no weighting at all (beyond the uncertainty-based weighting). Large datasets such as high-resolution spectra will dominate.
 	- R_range: float array, optional (used in ``bayes_fit``)
 		Minimum and maximum radius values to sample the posterior for radius. It requires the parameter ``distance`` in `input_parameters.InputData`.
 	- 'chi2_pickle_file' : dictionary, optional
@@ -890,7 +1005,7 @@ class BayesOptions:
 		If given, the grid nodes around the best fit will be used as ``params_ranges`` to select a grid subset and as sampling priors.
 		Otherwise, ``params_ranges`` provided in ``ModelOptions`` will be considered.
 	- grid: dictionary, optional
-		Model grid (``'wavelength'`` and ``'flux'``) generated by ``seda.read_grid`` to interpolate model spectra. 
+		Model grid (``'wavelength'`` and ``'flux'``) generated by ``seda.utils.read_grid`` to interpolate model spectra. 
 		If not provided (default), then the grid is read (``model`` and ``model_dir`` must be provided). 
 		If provided, the code will skip reading the grid, which will save some time (a few minutes).
 	- dynamic_sampling: {``True``, ``False``}, optional (default ``True``). 
@@ -904,9 +1019,52 @@ class BayesOptions:
 		Filename for the output dictionary stored as a pickle file, if ``save_results``.
 		Default name is '``model``\_bayesian\_sampling.pickle'.
 
-	Returns:
-	--------
-	- Dictionary with all (provided and default) Bayes fit option parameters.
+	Attributes:
+	-----------
+	Input parameters either from this class or attributes from the ``InputData`` and ``ModelOptions`` classes.
+		All input parameters are stored as attributes with their default values if not specified.
+	Other parameters
+		grid : list
+			Nested list of dictionaries containing the selected model spectra grid and their associated unique free-parameter values.
+			If ``fit_spectra``, a dictionary including the selected model spectra convolved using ``res`` and ``lam_res`` and resampled (based on the input wavelengths) within ``fit_wl_range``.
+			If ``fit_photometry``, a dictionary containing synthetic model fluxes (in erg/s/cm2/A) for ``filters_fit`` computed from the selected model spectra.
+		ndim : int
+			Number of free parameters in the model fit equal to the number of free parameters plus radius (if a ``distance`` is provided).
+		filename_pattern : list
+			String as a list with a common pattern in model spectra filenames.
+		params_unique : dictionary
+			Dictionary with unique values for each free parameters in the selected models.
+		params_priors : dictionary
+			Dictionary with the prior ranges for each model free parameter.
+		if ``fit_spectra``:
+			wl_spectra_min : float
+				Minimum wavelength from the input spectra.
+			wl_spectra_max : float
+				Maximum wavelength from the input spectra.
+			N_datapoints : int
+				Total number of data points in all input spectra.
+			wl_spectra_fit : list
+				Nested list input spectra wavelengths within ``fit_wl_range`` for each selected model spectrum.
+				This is convenient because model spectra do not necessary all have the same wavelength coverage.
+			flux_spectra_fit : list
+				Nested list with input spectra fluxes (in erg/s/cm2/A) within ``fit_wl_range`` for each selected model spectrum.
+			eflux_spectra_fit : list
+				Nested list with input spectra flux uncertainties (in erg/s/cm2/A) within ``fit_wl_range`` for each selected model spectrum.
+			weight_spec_fit : list
+				Nested list with the weights assigned to each spectroscopic data point within the fit range considering the equation chi2 = weight * (data-model)^2 / edata^2.
+		if ``fit_photometry``:
+			phot_fit : numpy array
+				Input photometry ``phot`` (in erg/s/cm2/A) within ``fit_phot_range``.
+			ephot_fit : numpy array
+				Input photometry errors ``ephot`` (in erg/s/cm2/A) within ``fit_phot_range``.
+			filters_fit : numpy array
+				Input filters ``filters`` within ``fit_phot_range``.
+			lambda_eff_SVO_fit : numpy array
+				Effective wavelengths from SVO for ``filters_fit``.
+			width_eff_SVO_fit : numpy array
+				Effective widths from SVO for ``filters_fit``.
+			weight_phot_fit : list
+				Nested list with the weights assigned to each photometric data point within the fit range considering the equation chi2 = weight * (data-model)^2 / edata^2.
 
 	Example:
 	--------
@@ -921,12 +1079,19 @@ class BayesOptions:
 	'''
 
 	def __init__(self, my_data, my_model, 
-	             fit_wl_range=None, disp_wl_range=None, model_wl_range=None, 
-	             R_range=None, chi2_pickle_file=None, bayes_pickle_file=None,
+	             fit_wl_range=None, disp_wl_range=None, model_wl_range=None, fit_phot_range=None,
+	             weight_label='dataset', R_range=None, chi2_pickle_file=None, bayes_pickle_file=None,
 		         grid=None, dynamic_sampling=True, nlive=500, save_results=True):
 
+		# associate input parameters as attributes
+		self.fit_wl_range = fit_wl_range
+		self.disp_wl_range = disp_wl_range
+		self.model_wl_range = model_wl_range
+		self.fit_phot_range = fit_phot_range
 		self.R_range = R_range
 		self.chi2_pickle_file = chi2_pickle_file
+		self.bayes_pickle_file = bayes_pickle_file
+		self.grid = grid
 		self.dynamic_sampling = dynamic_sampling
 		self.nlive = nlive
 		self.save_results = save_results
@@ -941,12 +1106,15 @@ class BayesOptions:
 		self.filters = my_data.filters
 		self.distance = my_data.distance
 		self.edistance = my_data.edistance
-		self.N_spectra = my_data.N_spectra
 		self.res = my_data.res
 		self.lam_res = my_data.lam_res
 		self.wl_spectra = my_data.wl_spectra
 		self.flux_spectra = my_data.flux_spectra
 		self.eflux_spectra = my_data.eflux_spectra
+		if my_data.fit_spectra: self.N_spectra = my_data.N_spectra
+		if my_data.fit_photometry: 
+			self.lambda_eff_SVO = my_data.lambda_eff_SVO # in um
+			self.width_eff_SVO = my_data.width_eff_SVO # in um
 
 		# read parameters from ModelOptions
 		self.model = my_model.model
@@ -956,40 +1124,61 @@ class BayesOptions:
 		self.skip_convolution = my_model.skip_convolution
 
 		# extract parameters for convenience
-		N_spectra = my_data.N_spectra
+		fit_spectra = my_data.fit_spectra
+		fit_photometry = my_data.fit_photometry
 		wl_spectra = my_data.wl_spectra
 		flux_spectra = my_data.flux_spectra
 		eflux_spectra = my_data.eflux_spectra
 		distance = my_data.distance
 		res = my_data.res
 		lam_res = my_data.lam_res
+		phot = my_data.phot
+		ephot = my_data.ephot
+		filters = my_data.filters
 		model = my_model.model
 		model_dir = my_model.model_dir
 		params_ranges = my_model.params_ranges
 		path_save_spectra_conv = my_model.path_save_spectra_conv
 		skip_convolution = my_model.skip_convolution
+		if fit_spectra: N_spectra = my_data.N_spectra
+		if fit_photometry: 
+			lambda_eff_SVO = my_data.lambda_eff_SVO # in um
+			width_eff_SVO = my_data.width_eff_SVO # in um
 
-		# some statistic for input spectra
-		out_input_data_stats = input_data_stats(wl_spectra=wl_spectra)
-		wl_spectra_min = out_input_data_stats['wl_spectra_min'] # minimum wavelength in the input spectra
-		wl_spectra_max = out_input_data_stats['wl_spectra_max'] # maximum wavelength in the input spectra
-		N_datapoints = out_input_data_stats['N_datapoints'] # number of data points in all input spectra
+		# handle input parameters
+		if weight_label not in allowed_weights: 
+			raise Exception(f'"{weight_label}" is not recognized for the parameter "weight_label". '
+			                f'Available options: {sorted(allowed_weights)}.')
+		self.weight_label = weight_label
 
-		# handle fit_wl_range
-		fit_wl_range = set_fit_wl_range(fit_wl_range=fit_wl_range, N_spectra=N_spectra, wl_spectra=wl_spectra)
+		# handle input spectra
+		if fit_spectra:
+			# some statistic for input spectra
+			out_input_data_stats = utils.input_data_stats(wl_spectra=wl_spectra)
+			wl_spectra_min = out_input_data_stats['wl_spectra_min'] # minimum wavelength in the input spectra
+			wl_spectra_max = out_input_data_stats['wl_spectra_max'] # maximum wavelength in the input spectra
+			N_datapoints = out_input_data_stats['N_datapoints'] # number of data points in all input spectra
 
-		# handle disp_wl_range
-		disp_wl_range = set_disp_wl_range(disp_wl_range=disp_wl_range, N_spectra=N_spectra, wl_spectra=wl_spectra)
+			# handle fit_wl_range
+			fit_wl_range = utils.set_fit_wl_range(fit_wl_range=fit_wl_range, N_spectra=N_spectra, wl_spectra=wl_spectra)
+			# handle disp_wl_range
+			disp_wl_range = utils.set_disp_wl_range(disp_wl_range=disp_wl_range, N_spectra=N_spectra, wl_spectra=wl_spectra)
+			# handle model_wl_range
+			model_wl_range = utils.set_model_wl_range(model_wl_range=model_wl_range, wl_spectra_min=wl_spectra_min, wl_spectra_max=wl_spectra_max)
 
-		# handle model_wl_range
-		model_wl_range = set_model_wl_range(model_wl_range=model_wl_range, wl_spectra_min=wl_spectra_min, wl_spectra_max=wl_spectra_max)
+			self.fit_wl_range = fit_wl_range
+			self.disp_wl_range = disp_wl_range
+			self.model_wl_range = model_wl_range
+			self.wl_spectra_min = out_input_data_stats['wl_spectra_min']
+			self.wl_spectra_max = out_input_data_stats['wl_spectra_max']
+			self.N_datapoints = out_input_data_stats['N_datapoints']
 
-		self.fit_wl_range = fit_wl_range
-		self.disp_wl_range = disp_wl_range
-		self.model_wl_range = model_wl_range
-		self.wl_spectra_min = out_input_data_stats['wl_spectra_min']
-		self.wl_spectra_max = out_input_data_stats['wl_spectra_max']
-		self.N_datapoints = out_input_data_stats['N_datapoints']
+		# handle input photometry
+		if fit_photometry:
+			# handle fit_phot_range
+			fit_phot_range = utils.set_fit_phot_range(fit_phot_range=fit_phot_range, filters=filters)
+
+			self.fit_phot_range = fit_phot_range
 
 		# file name to save the bayes results as a pickle
 		if bayes_pickle_file is None: self.bayes_pickle_file = f'{model}_bayesian_sampling.pickle'
@@ -998,47 +1187,71 @@ class BayesOptions:
 		# parameter ranges to select the grid and then used for the posterior priors
 		if chi2_pickle_file:
 			# params for the best chi-square fit
-			params = best_chi2_fits(chi2_pickle_file, N_best_fits=1)['params']
+			params = utils.best_chi2_fits(chi2_pickle_file, N_best_fits=1)['params']
 
 			# grid values around the best fit (which is also a grid node)
-			params_models = Models(model).params_unique # round median values for model grid parameters
+			params_models = models.Models(model).params_unique
 			params_ranges = {}
 			for param in params_models: # for each free parameter in the grid
-				params_ranges[param] = find_two_around_node(params_models[param], params[param])
+				params_ranges[param] = utils.find_two_around_node(params_models[param], params[param])
 			
 		# define the dimensionality of our problem
 		if distance is not None: # sample radius distribution
-			ndim = len(Models(model).free_params) + 1
+			ndim = len(models.Models(model).free_params) + 1
 		else:
-			ndim = len(Models(model).free_params)
+			ndim = len(models.Models(model).free_params)
 		self.ndim = ndim
-
+ 
 		# read model grid
 		if grid is None: 
 			# initialize list
-			grid = [] #  for the resampled, convolved grid appropriate for each input spectrum
-			filename_pattern = [] # for the filename pattern adequate for each input spectrum
-			for i in range(N_spectra): # for each input observed spectrum
-				# convolve the grid to the given res and lam_res for each input spectrum
-				# resample the convolved grid to the input wavelengths within the fit range for each input spectrum
-				print(f'\nFor input spectrum {i+1} of {N_spectra}')
-				if not skip_convolution: # read and convolve original model spectra
-					# set filename_pattern to look for model spectra
-					filename_pattern.append(Models(model).filename_pattern)
-					grid_each = read_grid(model=model, model_dir=model_dir, params_ranges=params_ranges, 
-					                      convolve=True, res=res[i], lam_res=lam_res[i], fit_wl_range=fit_wl_range[i], 
-					                      wl_resample=wl_spectra[i], disp_wl_range=disp_wl_range[i],
-					                      path_save_spectra_conv=path_save_spectra_conv)
-				else: # read model spectra already convolved to the data resolution
-					# set filename_pattern to look for model spectra with the corresponding resolution
-					filename_pattern.append(Models(model).filename_pattern+f'_R{res[i]}at{lam_res[i]}um.nc')
-					grid_each = read_grid(model=model, model_dir=model_dir, params_ranges=params_ranges, 
-					                      res=res[i], lam_res=lam_res[i], 
-					                      fit_wl_range=fit_wl_range[i], wl_resample=wl_spectra[i], 
-					                      skip_convolution=skip_convolution, filename_pattern=filename_pattern[i])
-					
-				# add resampled grid for each input spectrum to the same list
-				grid.append(grid_each)
+			if fit_spectra:
+				grid_spec = [] #  for the resampled, convolved grid appropriate for each input spectrum
+				filename_pattern = [] # for the filename pattern adequate for each input spectrum
+				for i in range(N_spectra): # for each input observed spectrum
+					# convolve the grid to the given res and lam_res for each input spectrum
+					# resample the convolved grid to the input wavelengths within the fit range for each input spectrum
+					print(f'\nFor input spectrum {i+1} of {N_spectra}')
+					if not skip_convolution: # read and convolve original model spectra
+						# set filename_pattern to look for model spectra
+						filename_pattern.append(models.Models(model).filename_pattern)
+						grid_each = utils.read_grid(model=model, model_dir=model_dir, params_ranges=params_ranges, 
+						                            convolve=True, res=res[i], lam_res=lam_res[i], fit_wl_range=fit_wl_range[i], 
+						                            wl_resample=wl_spectra[i], disp_wl_range=disp_wl_range[i],
+						                            path_save_spectra_conv=path_save_spectra_conv)
+					else: # read model spectra already convolved to the data resolution
+						# set filename_pattern to look for model spectra with the corresponding resolution
+						filename_pattern.append(models.Models(model).filename_pattern+f'_R{res[i]}at{lam_res[i]}um.nc')
+						grid_each = utils.read_grid(model=model, model_dir=model_dir, params_ranges=params_ranges, 
+						                            res=res[i], lam_res=lam_res[i], 
+						                            fit_wl_range=fit_wl_range[i], wl_resample=wl_spectra[i], 
+						                            skip_convolution=skip_convolution, filename_pattern=filename_pattern[i])
+					# add resampled grid for each input spectrum to the same list
+					grid_spec.append(grid_each)
+
+			if fit_photometry:
+				# select filters within the wavelength range to fit the photometry
+				mask_fit = (lambda_eff_SVO>=fit_phot_range.min()) & (lambda_eff_SVO<=fit_phot_range.max())
+				phot_fit = phot[mask_fit]
+				ephot_fit = ephot[mask_fit]
+				filters_fit = filters[mask_fit]
+				lambda_eff_SVO_fit = lambda_eff_SVO[mask_fit]
+				width_eff_SVO_fit = width_eff_SVO[mask_fit]
+				print(f'\n      {len(filters_fit)} of {len(filters)} input valid magnitudes within the fit range "fit_phot_range"')
+
+				# set filename_pattern to look for model spectra
+				filename_pattern = [models.Models(model).filename_pattern]
+				grid_phot = utils.read_grid_phot(model=model, model_dir=model_dir, params_ranges=params_ranges, filters=filters_fit)
+				grid_phot = [grid_phot] # grid as list to follow structure from then fit_spectra
+
+		# define grid depending whether spectra and/or photometry were provided
+		if fit_spectra and not fit_photometry:
+			grid = grid_spec
+		if not fit_spectra and fit_photometry:
+			grid = grid_phot 
+		if fit_spectra and fit_photometry:
+			grid = grid_spec + grid_phot 
+
 		self.grid = grid
 		self.filename_pattern = filename_pattern
 
@@ -1052,25 +1265,90 @@ class BayesOptions:
 			params_priors[param] = np.array([params_unique[param].min(), params_unique[param].max()])
 
 		if distance is not None:
-			if R_range is None: raise Exception('Please provide the "R_range" parameter to sample the radius \n           or remove the "distance" parameter in seda.InputData')
+			if R_range is None: 
+				raise Exception('Please provide the "R_range" parameter to sample the radius '
+			                    'or remove the "distance" parameter in seda.InputData')
 			params_priors['R'] = R_range
 
 		self.params_priors = params_priors
 
 		# cut input spectra to the wavelength region or model coverage for the fit
-		wl_spectra_fit = []
-		flux_spectra_fit = []
-		eflux_spectra_fit = []
-		for i in range(N_spectra): # for each input spectrum
-			mask_fit = (wl_spectra[i] >= max(fit_wl_range[i][0], grid[i]['wavelength'].min())) & \
-			           (wl_spectra[i] <= min(fit_wl_range[i][1], grid[i]['wavelength'].max()))
+		if fit_spectra:
+			wl_spectra_fit = []
+			flux_spectra_fit = []
+			eflux_spectra_fit = []
+			for i in range(N_spectra): # for each input spectrum
+				mask_fit = (wl_spectra[i] >= max(fit_wl_range[i][0], grid[i]['wavelength'].min())) & \
+				           (wl_spectra[i] <= min(fit_wl_range[i][1], grid[i]['wavelength'].max()))
 	
-			wl_spectra_fit.append(wl_spectra[i][mask_fit])
-			flux_spectra_fit.append(flux_spectra[i][mask_fit])
-			eflux_spectra_fit.append(eflux_spectra[i][mask_fit])
+				wl_spectra_fit.append(wl_spectra[i][mask_fit])
+				flux_spectra_fit.append(flux_spectra[i][mask_fit])
+				eflux_spectra_fit.append(eflux_spectra[i][mask_fit])
 
-		self.wl_spectra_fit = wl_spectra_fit
-		self.flux_spectra_fit = flux_spectra_fit
-		self.eflux_spectra_fit = eflux_spectra_fit
+		# set weights for the fit
+		out_compute_weights = compute_weights(fit_spectra=fit_spectra, fit_photometry=fit_photometry, weight_label=weight_label, 
+		                                      wl_spectra_fit=wl_spectra_fit, width_eff_SVO_fit=width_eff_SVO_fit)
+		weight_spec_fit = out_compute_weights['weight_spec_fit']
+		weight_phot_fit = out_compute_weights['weight_phot_fit']
+
+		# assign some attributes
+		if fit_spectra:
+			self.wl_spectra_fit = wl_spectra_fit
+			self.flux_spectra_fit = flux_spectra_fit
+			self.eflux_spectra_fit = eflux_spectra_fit
+			self.weight_spec_fit = weight_spec_fit
+
+		if fit_photometry:
+			self.phot_fit = phot_fit
+			self.ephot_fit = ephot_fit
+			self.filters_fit = filters_fit
+			self.lambda_eff_SVO_fit = lambda_eff_SVO_fit
+			self.width_eff_SVO_fit = width_eff_SVO_fit
+			self.weight_phot_fit = weight_phot_fit
 
 		print('\n   Bayes fit options loaded successfully')
+
+#+++++++++++++++++++++++++++++++++
+# useful functions for the classes
+#+++++++++++++++++++++++++++++++++
+# set the weights based on the input parameter weight_label
+def compute_weights(fit_spectra, fit_photometry, weight_label, wl_spectra_fit, width_eff_SVO_fit):
+	# set weights for the fit
+	if fit_spectra and fit_photometry: # only when both spectra and photometry are provided
+		weight_spec_fit = []
+		if weight_label=='width': 
+			# for spectra
+			for k in range(len(wl_spectra_fit)): # for each input observed spectrum
+				delta_lam = wl_spectra_fit[k][1:] - wl_spectra_fit[k][:-1] # dispersion of data points
+				delta_lam = np.insert(delta_lam, delta_lam.size, delta_lam[-1]) # add an element equal to the last row to keep the same shape as the wl_ref_convolve_resample array
+				weight_spec_fit.append(delta_lam)
+			# for photometry
+			weight_phot_fit = width_eff_SVO_fit
+		if weight_label=='dataset': 
+			# for spectra
+			for k in range(len(wl_spectra_fit)): # for each input observed spectrum
+				weight_spec = np.repeat(1./len(wl_spectra_fit[k]), len(wl_spectra_fit[k]))
+				weight_spec_fit.append(weight_spec )
+			# for photometry
+			weight_phot_fit = np.repeat(1./len(width_eff_SVO_fit), len(width_eff_SVO_fit))
+		if weight_label=='none': 
+			# for spectra
+			for k in range(len(wl_spectra_fit)): # for each input observed spectrum
+				weight_spec = np.repeat(1, len(wl_spectra_fit[k]))
+				weight_spec_fit.append(weight_spec )
+			# for photometry
+			weight_phot_fit = np.repeat(1, len(width_eff_SVO_fit))
+	else: # only spectra or photometry are provided
+		# assign the same weight to each data point
+		if fit_spectra: # only when both spectra and photometry are provided
+			weight_spec_fit = []
+			for k in range(len(wl_spectra_fit)): # for each input observed spectrum
+				delta_lam = np.repeat(1, len(wl_spectra_fit[k]))
+				weight_spec_fit.append(delta_lam)
+		if fit_photometry: # only when both spectra and photometry are provided
+			weight_phot_fit = np.repeat(1, len(width_eff_SVO_fit))
+
+	# output dictionary with the weights for both spectra and photometry
+	out = {'weight_spec_fit': weight_spec_fit, 'weight_phot_fit': weight_phot_fit}
+
+	return out
