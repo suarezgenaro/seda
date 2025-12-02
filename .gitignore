@@ -1,10 +1,57 @@
+# macOS
+.DS_Store
+.AppleDouble
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.python-version
+
+# Virtual environments
+.env
+.venv
+venv/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+
+# Auto-generated version file (setuptools-scm)
+seda/_version.py
+
+# Packaging/installer
+pip-wheel-metadata/
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Sphinx docs builds
+docs/_build/
+
+# Logs
+*.log
+
+# Coverage/pytest
+.coverage
+.pytest_cache/
+
+# Editor/IDE
+.vscode/
+.idea/
+
+# Local data caches
+*.cache
 # folders
 __pycache__
 \.ipynb_checkpoints
 logo
 aux
 tmp
-tests
 docs/notebooks/old
 seda/synthetic_photometry/filter_transmissions
 # files

@@ -8,7 +8,11 @@ from . import bayes_fit
 from . import phy_params
 from .synthetic_photometry import synthetic_photometry
 from .spectral_indices import spectral_indices
-from ._version import __version__
+
+try:
+	from ._version import __version__
+except (ImportError, ModuleNotFoundError):  
+	__version__ = "0.0.0+local"
 
 # defines the explicit public API of package's top-level namespace, so
 # from seda import *
@@ -24,3 +28,5 @@ __all__ = [
     "synthetic_photometry",
     "spectral_indices",
 ]
+
+print(f'\n    SEDA v{__version__} package imported')
