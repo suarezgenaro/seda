@@ -1,7 +1,7 @@
 from astropy.io import ascii
 from astropy.table import Table
 from astropy import units as u
-from ..utils import *
+from .. import utils
 import numpy as np
 import os
 from sys import exit
@@ -75,8 +75,8 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, out_file=None
 	path_synthetic_photometry = os.path.dirname(__file__)+dir_sep
 
 	# input spectrum to numpy
-	wl = astropy_to_numpy(wl)
-	flux = astropy_to_numpy(flux)
+	wl = utils.astropy_to_numpy(wl)
+	flux = utils.astropy_to_numpy(flux)
 
 	# remove nan and null flux values
 	mask = ~np.isnan(flux) & (flux!=0)
@@ -88,7 +88,7 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, out_file=None
 	if type(filters) is str: filters = ([filters])
 
 	# read filters' transmission curves and zero points
-	svo_data = read_SVO_table()
+	svo_data = utils.read_SVO_table()
 	filterID = svo_data['filterID'] # SVO ID
 	ZeroPoint = svo_data['ZeroPoint'] # in Jy
 
@@ -130,7 +130,7 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, out_file=None
 	
 			# read locally stored filter transmission
 			filter_transmission = ascii.read(path_filter_transmissions+filter_transmission_name)
-			filter_wl = (filter_transmission['col1'].data*u.angstrom).to(u.micron).value # in um
+			filter_wl = (filter_transmission['col1'].data*(u.nm*0.1)).to(u.micron).value # in um
 			filter_flux = filter_transmission['col2'] # filter transmission (named filter_flux just for ease)
 			transmission[filt] = np.array((filter_wl, filter_flux)) # save transmission to transmission dictionary
 		
@@ -295,18 +295,18 @@ def convert_flux(flux, wl, unit_in, unit_out, eflux=None):
 	'''
 
 	# convert input variables into numpy arrays if astropy
-	wl = astropy_to_numpy(wl)
-	flux = astropy_to_numpy(flux)
-	if eflux is not None: eflux = astropy_to_numpy(eflux)
+	wl = utils.astropy_to_numpy(wl)
+	flux = utils.astropy_to_numpy(flux)
+	if eflux is not None: eflux = utils.astropy_to_numpy(eflux)
 
 	if unit_in=='erg/s/cm2/A':
-		flux_out = (flux*u.erg/u.s/u.cm**2/u.angstrom).to(u.Jy, equivalencies=u.spectral_density(wl*u.micron)).value
+		flux_out = (flux*u.erg/u.s/u.cm**2/(u.nm*0.1)).to(u.Jy, equivalencies=u.spectral_density(wl*u.micron)).value
 		if eflux is not None:
-			eflux_out = (eflux*u.erg/u.s/u.cm**2/u.angstrom).to(u.Jy, equivalencies=u.spectral_density(wl*u.micron)).value
+			eflux_out = (eflux*u.erg/u.s/u.cm**2/(u.nm*0.1)).to(u.Jy, equivalencies=u.spectral_density(wl*u.micron)).value
 	elif unit_in=='Jy':
-		flux_out = (flux*u.Jy).to(u.erg/u.s/u.cm**2/u.angstrom, equivalencies=u.spectral_density(wl*u.micron)).value
+		flux_out = (flux*u.Jy).to(u.erg/u.s/u.cm**2/(u.nm*0.1), equivalencies=u.spectral_density(wl*u.micron)).value
 		if eflux is not None:
-			eflux_out = (eflux*u.Jy).to(u.erg/u.s/u.cm**2/u.angstrom, equivalencies=u.spectral_density(wl*u.micron)).value
+			eflux_out = (eflux*u.Jy).to(u.erg/u.s/u.cm**2/(u.nm*0.1), equivalencies=u.spectral_density(wl*u.micron)).value
 
 	out = {'flux_in': flux, 'flux_out': flux_out, 'wl_in': wl, 'unit_in': unit_in, 'unit_out': unit_out}
 	if eflux is not None: 
@@ -375,15 +375,15 @@ def flux_to_mag(flux, filters, flux_unit='Jy', eflux=None):
 	if eflux is not None: 
 		if isinstance(eflux, float): eflux = np.array([eflux])
 	# convert str (if any) into list
-	filters = var_to_list(filters)
+	filters = utils.var_to_list(filters)
 	# convert input variables into numpy arrays if astropy
-	flux = astropy_to_numpy(flux)
-	if eflux is not None: eflux = astropy_to_numpy(eflux)
+	flux = utils.astropy_to_numpy(flux)
+	if eflux is not None: eflux = utils.astropy_to_numpy(eflux)
 
 	# verify that flux and filters variables have the same size
 	if len(flux)!=len(filters): raise Exception('filters does not have the size as flux')
 
-	svo_data = read_SVO_table()
+	svo_data = utils.read_SVO_table()
 	filterID = svo_data['filterID'] # SVO ID
 	ZeroPoint = svo_data['ZeroPoint'] # in Jy
 	WavelengthEff = svo_data['WavelengthEff'] # effective wavelength in A
@@ -407,8 +407,8 @@ def flux_to_mag(flux, filters, flux_unit='Jy', eflux=None):
 		else: # if filter ID is a valid one
 			mask = filterID==filt
 			zero_point[k] = ZeroPoint[mask][0] # in Jy
-			wl_eff[k] = (WavelengthEff[mask][0]*u.angstrom).to(u.micron).value # in um
-			width_eff[k] = (WidthEff[mask][0]*u.angstrom).to(u.micron).value # in um
+			wl_eff[k] = (WavelengthEff[mask][0]*(u.nm*0.1)).to(u.micron).value # in um
+			width_eff[k] = (WidthEff[mask][0]*(u.nm*0.1)).to(u.micron).value # in um
 
 			# convert erg/s/cm2/A to Jy if needed
 			if (flux_unit=='erg/s/cm2/A'): 
@@ -488,15 +488,15 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None):
 	if emag is not None: 
 		if isinstance(emag, float): emag = np.array([emag])
 	# convert str (if any) into list
-	filters = var_to_list(filters)
+	filters = utils.var_to_list(filters)
 	# convert input variables into numpy arrays if astropy
-	mag = astropy_to_numpy(mag)
-	if emag is not None: emag = astropy_to_numpy(emag)
+	mag = utils.astropy_to_numpy(mag)
+	if emag is not None: emag = utils.astropy_to_numpy(emag)
 
 	# verify that mag and filters variables have the same size
 	if len(mag)!=len(filters): raise Exception('filters does not have the size as mag')
 
-	svo_data = read_SVO_table()
+	svo_data = utils.read_SVO_table()
 	filterID = svo_data['filterID'] # SVO ID
 	ZeroPoint = svo_data['ZeroPoint'] # zero points in Jy
 	WavelengthEff = svo_data['WavelengthEff'] # effective wavelength in A
@@ -516,8 +516,8 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None):
 		else: # if filter ID is a valid one
 			mask = filterID==filt
 			zero_point[k] = ZeroPoint[mask][0] # in Jy
-			wl_eff[k] = (WavelengthEff[mask][0]*u.angstrom).to(u.micron).value # in um
-			width_eff[k] = (WidthEff[mask][0]*u.angstrom).to(u.micron).value # in um
+			wl_eff[k] = (WavelengthEff[mask][0]*(u.nm*0.1)).to(u.micron).value # in um
+			width_eff[k] = (WidthEff[mask][0]*(u.nm*0.1)).to(u.micron).value # in um
 
 			# mag to Jy
 			flux[k] = zero_point[k] * 10**(-mag[k]/2.5) # in Jy

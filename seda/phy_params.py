@@ -278,7 +278,7 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 
 	# Lbol from the full SED
 	# total flux from
-	flux_tot = np.trapz(flux_SED, (wl_SED*u.um).to(u.angstrom).value) # erg/s/cm2
+	flux_tot = np.trapz(flux_SED, (wl_SED*u.um).to((u.nm*0.1)).value) # erg/s/cm2
 	mask = ~np.isnan(eflux_SED)
 	eflux_tot = np.median(eflux_SED[mask]/flux_SED[mask]) * flux_tot # keep fractional errors (errors from the spectrum with the most data points will dominate, as no error is associated to the model)
 	#eflux_tot = np.sqrt(sum(eflux_each**2)) # (fractional errors from each input spectrum will have its contribution)
