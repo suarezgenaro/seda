@@ -375,290 +375,140 @@ class ModelOptions:
 
 #+++++++++++++++++++++++++++
 class Chi2Options:
-    """
-    Description
-    -----------
-    Define chi-square fit options.
+	'''
+	Description:
+	------------
+		Define chi-square fit options.
 
-    Parameters
-    ----------
-    my_data : dict
-        Output dictionary produced by ``input_parameters.InputData``.
-    my_model : dict
-        Output dictionary produced by ``input_parameters.ModelOptions``.
-    fit_wl_range : array-like, optional
-        Minimum and maximum wavelengths (in micron) used to compare each input
-        spectrum to the models. Example::
+	Parameters:
+	-----------
+	- my_data : dictionary
+		Output dictionary by ``input_parameters.InputData`` with input data.
+	- my_model : dictionary
+		Output dictionary by ``input_parameters.ModelOptions`` with model options.
+	- fit_wl_range : float array or list, optional
+		Minimum and maximum wavelengths (in micron) where each input spectrum will be compared to the models. E.g., ``fit_wl_range = np.array([[fit_wl_min1, fit_wl_max1], [fit_wl_min2, fit_wl_max2]])``. 
+		This parameter is used if ``fit_spectra`` but ignored if only ``fit_photometry``. 
+		Default values are the minimum and the maximum wavelengths of each input spectrum.
+	- disp_wl_range : float array, optional
+		Minimum and maximum wavelengths (in micron) to compute the median wavelength dispersion of model spectra to convolve them.
+		It can take a set of values for each input spectrum e.g. ``disp_wl_range = np.array([[disp_wl_min1, disp_wl_max1], [disp_wl_min2, disp_wl_max2]])``.
+		Default values are ``fit_wl_range``.
+	- model_wl_range : array or list, optional
+		Minimum and maximum wavelength (in microns) to cut model spectra to keep only wavelengths of interest.
+		Default values are the minimum and maximum wavelengths covered by the input spectra with a padding to avoid the point below.
+		CAVEAT: the selected wavelength range of model spectra must cover the spectrophotometry used in the fit and a bit more (to avoid errors when resampling synthetic spectra using spectres).
+	- fit_phot_range : float array or list, optional
+		Minimum and maximum wavelengths (in micron) where photometry will be compared to the models. E.g., ``fit_phot_range = np.array([fit_phot_min1, fit_phot_max1])``. 
+		This parameter is used if ``fit_photometry`` but ignored if only ``fit_spectra``. 
+		Default values are the minimum and the maximum of the filter effective wavelengths from SVO.
+	- weight_label : str, optional (default ``dataset``)
+		Weight applied to each input data point (photometric and spectroscopic) when minimizing the chi-square statistics.
+		This parameters is different to the weighting that comes from the observed flux uncertainties in the chi-square statistics definition.
+		``weight_label`` allows assigning different relative weight to photometry and spectra (when ``fit_spectra`` and ``fit_photometry`` are enable),
+		ensuring that photometric measurements do not have a negligible contribution to the chi-square, considering that photometric SEDs typically contain far fewer data points than spectroscopic SEDs.
 
-            fit_wl_range = np.array([[min1, max1], [min2, max2]])
+		Available options are:
 
-        Used when ``fit_spectra`` is True and ignored when only ``fit_photometry``.
-        Defaults to the min/max wavelength of each input spectrum.
-    disp_wl_range : array-like, optional
-        Wavelength range (in micron) used to compute the median dispersion of the
-        model spectra for convolution. Example::
+		- ``'dataset'`` (default): each dataset, whether photometric or spectroscopic, is assigned a weight equal to the inverse of its total number of data points. All data contribute the same, despite having very different numbers of points.
+		- ``'width'``: each point is weighted by wavelength resolution (wavelength step) for spectra or filter effective width for photometry. Broader filters receive larger weights, but the overall contribution of photometry may still differ from that of spectra.
+		- ``'none'``: apply the same weight to all input data points, which is equivalent to using no weighting at all (beyond the uncertainty-based weighting). Large datasets such as high-resolution spectra will dominate.
+	- extinction_free_param : {``True``, ``False``}, optional (default ``False``)
+		Extinction as a free parameter: 
+			- ``'False'``: null extinction is assumed and it will not change.
+			- ``'True'``: null extinction is assumed and it varies to minimize chi-square.
+	- scaling_free_param : {``True``, ``False``}, optional (default ``True``)
+		Scaling as a free parameter: 
+			- ``'True'``: to find the scaling that minimizes chi square for each model.
+			- ``'False'``: to fix ``scaling`` if radius and distance are known.
+	- scaling: float, optional (required if ``scaling_free_param='False'``)
+		Fixed scaling factor ((R/d)^2, R: object's radius, d: distance to the object) to be applied to model spectra.
+	- avoid_IR_excess : {``True``, ``False``}, optional (default ``False``)
+		Wavelengths longer than ``IR_excess_limit`` will (``'True'``) or will not (``'False'``) be avoided in the fit in case infrared excesses are expected. 
+	- IR_excess_limit : float, optional (default 3 um).
+		Shortest wavelength at which IR excesses are expected.
+	- save_results : {``True``, ``False``}, optional (default ``True``)
+		Save (``True``) or do not save (``False``) ``seda.chi2_fit`` results.
+	- chi2_pickle_file : str, optional
+		Filename for the output dictionary stored as a pickle file, if ``save_results``.
+		Default name is '``model``\_chi2\_minimization.pickle'.
+	- chi2_table_file : str, optional
+		Filename for an output ascii table (if ``save_results``) with relevant information from the fit.
+		Default name is '``model``\_chi2\_minimization.dat'.
 
-            disp_wl_range = np.array([[dmin1, dmax1], [dmin2, dmax2]])
+	Attributes:
+	-----------
+	Input parameters either from this class or attributes from the ``InputData`` and ``ModelOptions`` classes.
+		All input parameters are stored as attributes with their default values if not specified.
+	Other parameters
+		spectra_name : numpy array
+			File names of selected model spectra
+		spectra_name_full : numpy array
+			File names of selected model spectra with full absolute path.
+		if ``fit_spectra``:
+			wl_spectra_min : float
+				Minimum wavelength from the input spectra.
+			wl_spectra_max : float
+				Maximum wavelength from the input spectra.
+			N_datapoints : int
+				Total number of data points in all input spectra.
+			N_model_spectra : int
+				Number of model spectra selected within ``fit_wl_range``.
+			wl_array_obs_fit : list
+				Nested list input spectra wavelengths within ``fit_wl_range`` for each selected model spectrum.
+				This is convenient because model spectra do not necessary all have the same wavelength coverage.
+			flux_array_obs_fit : list
+				Nested list with input spectra fluxes (in erg/s/cm2/A) within ``fit_wl_range`` for each selected model spectrum.
+			eflux_array_obs_fit  : list
+				Nested list with input spectra flux uncertainties (in erg/s/cm2/A) within ``fit_wl_range`` for each selected model spectrum.
+			wl_array_model_conv_resam : list
+				Nested list with wavelengths for the selected model spectra convolved using ``res`` and ``lam_res`` and resampled (based on the input wavelengths) within ``model_wl_range``.
+			flux_array_model_conv_resam : list
+				Nested list with fluxes (in erg/s/cm2/A) for the selected model spectra convolved using ``res`` and ``lam_res`` and resampled (based on the input wavelengths) within ``model_wl_range``.
+			wl_array_model_conv_resam_fit : list
+				Same as ``wl_array_model_conv_resam`` but within ``fit_wl_range``.
+			flux_array_model_conv_resam_fit :
+				Same as ``flux_array_model_conv_resam`` but within ``fit_wl_range``.
+			weight_spec_fit : list
+				Nested list with the weights assigned to each spectroscopic data point within the fit range considering the equation chi2 = weight * (data-model)^2 / edata^2.
+		if ``fit_photometry``:
+			phot_fit : numpy array
+				Input photometry ``phot`` (in erg/s/cm2/A) within ``fit_phot_range``.
+			ephot_fit : numpy array
+				Input photometry errors ``ephot`` (in erg/s/cm2/A) within ``fit_phot_range``.
+			filters_fit : numpy array
+				Input filters ``filters`` within ``fit_phot_range``.
+			lambda_eff_SVO_fit : numpy array
+				Effective wavelengths from SVO for ``filters_fit``.
+			width_eff_SVO_fit : numpy array
+				Effective widths from SVO for ``filters_fit``.
+			flux_syn_array_model_fit : list
+				Nested list with synthetic fluxes (in erg/s/cm2/A) for ``filters_fit`` for each selected model spectrum.
+			lambda_eff_array_model_fit : numpy array
+				Effective wavelengths (in micron) from the spectrum for ``filters_fit`` for each selected model spectrum.
+			width_eff_array_model_fit : numpy array
+				Effective width (in micron) from the spectrum for ``filters_fit`` for each selected model spectrum.
+			weight_phot_fit : list
+				Nested list with the weights assigned to each photometric data point within the fit range considering the equation chi2 = weight * (data-model)^2 / edata^2.
 
-        Defaults to ``fit_wl_range``.
-    model_wl_range : array-like, optional
-        Wavelength range (in micron) used to trim model spectra. Must fully cover
-        the spectral/photometric range used in the fit (plus padding for safe
-        resampling).
-    fit_phot_range : array-like, optional
-        Minimum and maximum wavelengths (in micron) used to compare photometry to
-        the models. Example::
+	Example:
+	--------
+	>>> import seda
+	>>> 
+	>>> # input spectrum wl_input, flux_input, eflux_input
+	>>> fit_wl_range = np.array([value1, value2]) # to make the fit between value1 and value2
+	>>> my_chi2 = seda.Chi2FitOptions(my_data=my_data, my_model=my_model, 
+	>>>                               fit_wl_range=fit_wl_range)
+	    Chi2 fit options loaded successfully
 
-            fit_phot_range = np.array([min_phot, max_phot])
+	Author: Genaro Suárez
+	'''
+#		The available options are:
+#		- ``"dataset"``  
+#		  Each dataset (photometric or spectroscopic) is assigned a weight equal  
+#		  to the inverse of the total number of its data points.  
+#		  All datasets contribute equally, regardless of size.
 
-        Used when ``fit_photometry`` is True and ignored for pure spectroscopic fits.
-        Defaults to the min/max effective filter wavelengths.
-    weight_label : {"dataset", "width", "none"}, optional
-        Weight applied to each input data point (spectroscopic or photometric)
-        when computing the chi-square statistic. This weighting is *in addition*
-        to uncertainty-based weighting.
-
-        Available options are:
-        - ``"dataset"`` (default)
-            Each dataset (spectrum or photometric set) receives a weight equal to
-            the inverse of its total number of data points, ensuring equal
-            contribution from each dataset regardless of size.
-        - ``"width"``
-            Each point is weighted by its wavelength resolution (for spectra) or
-            effective filter width (for photometry). Broader filters receive
-            larger weights.
-        - ``"none"``
-            All data points receive the same weight. Large datasets—e.g.,
-            high-resolution spectra—dominate the fit.
-    extinction_free_param : {True, False}, optional
-        Whether extinction is treated as a free parameter.
-
-        - ``False``: extinction fixed to zero  
-        - ``True``: extinction varies to minimize chi-square
-    scaling_free_param : {True, False}, optional
-        Whether the model scaling factor is treated as free.
-
-        - ``True``: scaling optimized for each model  
-        - ``False``: scaling fixed (requires ``scaling`` argument)
-    scaling : float, optional
-        Fixed scaling factor ``(R/d)^2`` used when ``scaling_free_param=False``.
-    avoid_IR_excess : {True, False}, optional
-        Whether to exclude wavelengths longer than ``IR_excess_limit`` to avoid
-        regions affected by IR excess.
-    IR_excess_limit : float, optional
-        Shortest wavelength (micron) where IR excess is expected. Default: 3 µm.
-    save_results : {True, False}, optional
-        Whether to save ``seda.chi2_fit`` results.
-    chi2_pickle_file : str, optional
-        Output filename for the pickle dictionary if ``save_results`` is True.
-        Default: ``model_chi2_minimization.pickle``.
-    chi2_table_file : str, optional
-        Output filename for an ASCII summary table if ``save_results`` is True.
-        Default: ``model_chi2_minimization.dat``.
-
-    Attributes
-    ----------
-    Input parameters from this class and from ``InputData`` / ``ModelOptions``
-    are stored as attributes with defaults when unspecified.
-
-    Other parameters
-    ----------------
-    spectra_name : ndarray
-        Names of selected model spectra.
-    spectra_name_full : ndarray
-        Absolute paths of selected model spectra.
-
-    If ``fit_spectra`` is True
-        wl_spectra_min : float
-            Minimum wavelength among input spectra.
-        wl_spectra_max : float
-            Maximum wavelength among input spectra.
-        N_datapoints : int
-            Total number of spectroscopic data points.
-        N_model_spectra : int
-            Number of model spectra selected within ``fit_wl_range``.
-        wl_array_obs_fit : list of arrays
-            Observed wavelengths in ``fit_wl_range`` for each model spectrum.
-        flux_array_obs_fit : list of arrays
-            Observed fluxes in ``fit_wl_range``.
-        eflux_array_obs_fit : list of arrays
-            Flux uncertainties in ``fit_wl_range``.
-        wl_array_model_conv_resam : list of arrays
-            Convolved and resampled model wavelengths in ``model_wl_range``.
-        flux_array_model_conv_resam : list of arrays
-            Convolved and resampled model fluxes in ``model_wl_range``.
-        wl_array_model_conv_resam_fit : list of arrays
-            Same as above but restricted to ``fit_wl_range``.
-        flux_array_model_conv_resam_fit : list of arrays
-            Same as above but restricted to ``fit_wl_range``.
-        weight_spec_fit : list of arrays
-            Weights for spectroscopic points in the chi-square computation.
-
-    If ``fit_photometry`` is True
-        phot_fit : ndarray
-            Photometric fluxes (erg/s/cm²/Å) within ``fit_phot_range``.
-        ephot_fit : ndarray
-            Photometric uncertainties.
-        filters_fit : ndarray
-            Filters within ``fit_phot_range``.
-        lambda_eff_SVO_fit : ndarray
-            Effective wavelengths from SVO.
-        width_eff_SVO_fit : ndarray
-            Effective filter widths from SVO.
-        flux_syn_array_model_fit : list of arrays
-            Synthetic fluxes for ``filters_fit`` for each model spectrum.
-        lambda_eff_array_model_fit : ndarray
-            Model-derived effective wavelengths for ``filters_fit``.
-        width_eff_array_model_fit : ndarray
-            Model-derived effective widths for ``filters_fit``.
-        weight_phot_fit : list of arrays
-            Weights for photometric points in the chi-square computation.
-
-    Example
-    -------
-    >>> import seda
-    >>> fit_wl_range = np.array([value1, value2])
-    >>> my_chi2 = seda.Chi2FitOptions(
-    ...     my_data=my_data,
-    ...     my_model=my_model,
-    ...     fit_wl_range=fit_wl_range,
-    ... )
-    Chi2 fit options loaded successfully
-
-    Author
-    ------
-    Genaro Suárez
-    """
-
-#class Chi2Options:
-#	'''
-#	Description:
-#	------------
-#		Define chi-square fit options.
-#
-#	Parameters:
-#	-----------
-#	- my_data : dictionary
-#		Output dictionary by ``input_parameters.InputData`` with input data.
-#	- my_model : dictionary
-#		Output dictionary by ``input_parameters.ModelOptions`` with model options.
-#	- fit_wl_range : float array or list, optional
-#		Minimum and maximum wavelengths (in micron) where each input spectrum will be compared to the models. E.g., ``fit_wl_range = np.array([[fit_wl_min1, fit_wl_max1], [fit_wl_min2, fit_wl_max2]])``. 
-#		This parameter is used if ``fit_spectra`` but ignored if only ``fit_photometry``. 
-#		Default values are the minimum and the maximum wavelengths of each input spectrum.
-#	- disp_wl_range : float array, optional
-#		Minimum and maximum wavelengths (in micron) to compute the median wavelength dispersion of model spectra to convolve them.
-#		It can take a set of values for each input spectrum e.g. ``disp_wl_range = np.array([[disp_wl_min1, disp_wl_max1], [disp_wl_min2, disp_wl_max2]])``.
-#		Default values are ``fit_wl_range``.
-#	- model_wl_range : array or list, optional
-#		Minimum and maximum wavelength (in microns) to cut model spectra to keep only wavelengths of interest.
-#		Default values are the minimum and maximum wavelengths covered by the input spectra with a padding to avoid the point below.
-#		CAVEAT: the selected wavelength range of model spectra must cover the spectrophotometry used in the fit and a bit more (to avoid errors when resampling synthetic spectra using spectres).
-#	- fit_phot_range : float array or list, optional
-#		Minimum and maximum wavelengths (in micron) where photometry will be compared to the models. E.g., ``fit_phot_range = np.array([fit_phot_min1, fit_phot_max1])``. 
-#		This parameter is used if ``fit_photometry`` but ignored if only ``fit_spectra``. 
-#		Default values are the minimum and the maximum of the filter effective wavelengths from SVO.
-#	- weight_label : str, optional (default ``dataset``)
-#		Weight applied to each input data point (photometric and spectroscopic) when minimizing the chi-square statistics.
-#		This parameters is different to the weighting that comes from the observed flux uncertainties in the chi-square statistics definition.
-#		``weight_label`` allows assigning different relative weight to photometry and spectra (when ``fit_spectra`` and ``fit_photometry`` are enable),
-#		ensuring that photometric measurements do not have a negligible contribution to the chi-square, considering that photometric SEDs typically contain far fewer data points than spectroscopic SEDs.
-#
-#		Available options are:
-#
-#		- ``'dataset'`` (default): each dataset, whether photometric or spectroscopic, is assigned a weight equal to the inverse of its total number of data points. All data contribute the same, despite having very different numbers of points.
-#		- ``'width'``: each point is weighted by wavelength resolution (wavelength step) for spectra or filter effective width for photometry. Broader filters receive larger weights, but the overall contribution of photometry may still differ from that of spectra.
-#		- ``'none'``: apply the same weight to all input data points, which is equivalent to using no weighting at all (beyond the uncertainty-based weighting). Large datasets such as high-resolution spectra will dominate.
-#	- extinction_free_param : {``True``, ``False``}, optional (default ``False``)
-#		Extinction as a free parameter: 
-#			- ``'False'``: null extinction is assumed and it will not change.
-#			- ``'True'``: null extinction is assumed and it varies to minimize chi-square.
-#	- scaling_free_param : {``True``, ``False``}, optional (default ``True``)
-#		Scaling as a free parameter: 
-#			- ``'True'``: to find the scaling that minimizes chi square for each model.
-#			- ``'False'``: to fix ``scaling`` if radius and distance are known.
-#	- scaling: float, optional (required if ``scaling_free_param='False'``)
-#		Fixed scaling factor ((R/d)^2, R: object's radius, d: distance to the object) to be applied to model spectra.
-#	- avoid_IR_excess : {``True``, ``False``}, optional (default ``False``)
-#		Wavelengths longer than ``IR_excess_limit`` will (``'True'``) or will not (``'False'``) be avoided in the fit in case infrared excesses are expected. 
-#	- IR_excess_limit : float, optional (default 3 um).
-#		Shortest wavelength at which IR excesses are expected.
-#	- save_results : {``True``, ``False``}, optional (default ``True``)
-#		Save (``True``) or do not save (``False``) ``seda.chi2_fit`` results.
-#	- chi2_pickle_file : str, optional
-#		Filename for the output dictionary stored as a pickle file, if ``save_results``.
-#		Default name is '``model``\_chi2\_minimization.pickle'.
-#	- chi2_table_file : str, optional
-#		Filename for an output ascii table (if ``save_results``) with relevant information from the fit.
-#		Default name is '``model``\_chi2\_minimization.dat'.
-#
-#	Attributes:
-#	-----------
-#	Input parameters either from this class or attributes from the ``InputData`` and ``ModelOptions`` classes.
-#		All input parameters are stored as attributes with their default values if not specified.
-#	Other parameters
-#		spectra_name : numpy array
-#			File names of selected model spectra
-#		spectra_name_full : numpy array
-#			File names of selected model spectra with full absolute path.
-#		if ``fit_spectra``:
-#			wl_spectra_min : float
-#				Minimum wavelength from the input spectra.
-#			wl_spectra_max : float
-#				Maximum wavelength from the input spectra.
-#			N_datapoints : int
-#				Total number of data points in all input spectra.
-#			N_model_spectra : int
-#				Number of model spectra selected within ``fit_wl_range``.
-#			wl_array_obs_fit : list
-#				Nested list input spectra wavelengths within ``fit_wl_range`` for each selected model spectrum.
-#				This is convenient because model spectra do not necessary all have the same wavelength coverage.
-#			flux_array_obs_fit : list
-#				Nested list with input spectra fluxes (in erg/s/cm2/A) within ``fit_wl_range`` for each selected model spectrum.
-#			eflux_array_obs_fit  : list
-#				Nested list with input spectra flux uncertainties (in erg/s/cm2/A) within ``fit_wl_range`` for each selected model spectrum.
-#			wl_array_model_conv_resam : list
-#				Nested list with wavelengths for the selected model spectra convolved using ``res`` and ``lam_res`` and resampled (based on the input wavelengths) within ``model_wl_range``.
-#			flux_array_model_conv_resam : list
-#				Nested list with fluxes (in erg/s/cm2/A) for the selected model spectra convolved using ``res`` and ``lam_res`` and resampled (based on the input wavelengths) within ``model_wl_range``.
-#			wl_array_model_conv_resam_fit : list
-#				Same as ``wl_array_model_conv_resam`` but within ``fit_wl_range``.
-#			flux_array_model_conv_resam_fit :
-#				Same as ``flux_array_model_conv_resam`` but within ``fit_wl_range``.
-#			weight_spec_fit : list
-#				Nested list with the weights assigned to each spectroscopic data point within the fit range considering the equation chi2 = weight * (data-model)^2 / edata^2.
-#		if ``fit_photometry``:
-#			phot_fit : numpy array
-#				Input photometry ``phot`` (in erg/s/cm2/A) within ``fit_phot_range``.
-#			ephot_fit : numpy array
-#				Input photometry errors ``ephot`` (in erg/s/cm2/A) within ``fit_phot_range``.
-#			filters_fit : numpy array
-#				Input filters ``filters`` within ``fit_phot_range``.
-#			lambda_eff_SVO_fit : numpy array
-#				Effective wavelengths from SVO for ``filters_fit``.
-#			width_eff_SVO_fit : numpy array
-#				Effective widths from SVO for ``filters_fit``.
-#			flux_syn_array_model_fit : list
-#				Nested list with synthetic fluxes (in erg/s/cm2/A) for ``filters_fit`` for each selected model spectrum.
-#			lambda_eff_array_model_fit : numpy array
-#				Effective wavelengths (in micron) from the spectrum for ``filters_fit`` for each selected model spectrum.
-#			width_eff_array_model_fit : numpy array
-#				Effective width (in micron) from the spectrum for ``filters_fit`` for each selected model spectrum.
-#			weight_phot_fit : list
-#				Nested list with the weights assigned to each photometric data point within the fit range considering the equation chi2 = weight * (data-model)^2 / edata^2.
-#
-#	Example:
-#	--------
-#	>>> import seda
-#	>>> 
-#	>>> # input spectrum wl_input, flux_input, eflux_input
-#	>>> fit_wl_range = np.array([value1, value2]) # to make the fit between value1 and value2
-#	>>> my_chi2 = seda.Chi2FitOptions(my_data=my_data, my_model=my_model, 
-#	>>>                               fit_wl_range=fit_wl_range)
-#	    Chi2 fit options loaded successfully
-#
-#	Author: Genaro Suárez
-#	'''
 
 	def __init__(self, my_data, my_model, 
 		fit_wl_range=None, disp_wl_range=None, model_wl_range=None, fit_phot_range=None, 
