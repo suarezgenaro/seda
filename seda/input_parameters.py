@@ -10,21 +10,6 @@ from .synthetic_photometry import synthetic_photometry
 from sys import exit
 
 #++++++++++++++++++++++++++++++++
-# message when importing the code
-#++++++++++++++++++++++++++++++++
-# read code version
-dir_path = os.path.dirname(os.path.realpath(__file__))
-version_string = open(os.path.join(dir_path, '_version.py')).read()
-VERS = r"^__version__ = ['\"]([^'\"]*)['\"]"
-mo = re.search(VERS, version_string, re.M)
-if mo:
-	__version__ = mo.group(1)
-else:
-	raise RuntimeError("Unable to find version string in %s." % (version_string,))
-
-print(f'\n    SEDA v{__version__} package imported')
-
-#++++++++++++++++++++++++++++++++
 # module-level constants
 #++++++++++++++++++++++++++++++++
 allowed_weights = {"none", "dataset", "width"}
