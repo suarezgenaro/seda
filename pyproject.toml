@@ -14,7 +14,7 @@ keywords = [
 ]
 authors = [{ name = "Genaro Suárez", email = "gsuarez2405@gmail.com" }]
 license = {file = "LICENSE"}
-requires-python = ">=3.9, <=3.12"
+requires-python = ">=3.9"
 dependencies = [
   "astropy",
   "corner",
