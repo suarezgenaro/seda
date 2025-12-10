@@ -262,21 +262,53 @@ def separate_params(model, spectra_name, save_results=False, out_file=None):
 		logKzz_fit = np.zeros(len(spectra_name))
 		Hmix_fit = np.zeros(len(spectra_name))
 		for i in range(len(spectra_name)):
+			print(spectra_name[i])
 			# Teff 
 			Teff_fit[i] = float(spectra_name[i].split('_')[0][1:]) # K
+			print('teff:',Teff_fit[i])
 			# logg
 			logg_fit[i] = float(spectra_name[i].split('_')[1][1:]) # logg
+			print('logg:', logg_fit[i])
 			# Z (metallicity)
-			Z_fit[i] = np.round(np.log10(float(spectra_name[i].split('_')[2][1:])),1)
+			Z_fit[i] = np.round(np.log10(float(spectra_name[i].split('_')[2][1:6])),1)
+			print('Z:', Z_fit[i])
 			# Kzz (radiative zone)
-			logKzz_fit[i] = np.log10(float(spectra_name[i].split('CDIFF')[1].split('_')[0])) # in cgs units
+			logKzz_fit[i] = np.log10(float(spectra_name[i].split('CDIFF')[1].split('_')[0].split('.')[0])) # in cgs units
+			print('kzz:', logKzz_fit[i])
 			# Hmix
 			Hmix_fit[i] = float(spectra_name[i].split('HMIX')[1][:5])
+			print('Hmix:', Hmix_fit[i])
 		out['params']['Teff']= Teff_fit
 		out['params']['logg']= logg_fit
 		out['params']['Z']= Z_fit
 		out['params']['logKzz']= logKzz_fit
-		out['params']['Hmix']= Hmix_fit
+		# out['params']['Hmix']= Hmix_fit
+	if (model == 'LB23_cleareq'):
+		Teff_fit = np.zeros(len(spectra_name))
+		logg_fit = np.zeros(len(spectra_name))
+		Z_fit = np.zeros(len(spectra_name))
+		for i in range(len(spectra_name)):
+			print(spectra_name[i])
+			# Teff 
+			Teff_fit[i] = float(spectra_name[i].split('_')[0][1:]) # K
+			# print('teff:',Teff_fit[i])
+			# logg
+			logg_fit[i] = float(spectra_name[i].split('_')[1][1:]) # logg
+			#print('logg:', logg_fit[i])
+			# Z (metallicity)
+			Z_fit[i] = np.round(np.log10(float(spectra_name[i].split('_')[2][1:6])),1)
+			#print('Z:', Z_fit[i])
+			# Kzz (radiative zone)
+			# logKzz_fit[i] = np.log10(float(spectra_name[i].split('CDIFF')[1].split('_')[0].split('.')[0])) # in cgs units
+			# print('kzz:', logKzz_fit[i])
+			# Hmix
+			# Hmix_fit[i] = float(spectra_name[i].split('HMIX')[1][:5])
+			# print('Hmix:', Hmix_fit[i])
+		out['params']['Teff']= Teff_fit
+		out['params']['logg']= logg_fit
+		out['params']['Z']= Z_fit
+		# out['params']['logKzz']= logKzz_fit
+		# out['params']['Hmix']= Hmix_fit
 	if (model == 'Sonora_Cholla'):
 		Teff_fit = np.zeros(len(spectra_name))
 		logg_fit = np.zeros(len(spectra_name))
