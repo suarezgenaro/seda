@@ -29,4 +29,5 @@ __all__ = [
 ]
 
 # Print the version on import
-print(f'\n    SEDA v{__version__} package imported')
+public_version = __version__.split("+", 1)[0] # avoid long git hash
+print(f'\n    SEDA v{public_version} package imported')
