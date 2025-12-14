@@ -1655,6 +1655,7 @@ def spt_to_teff(spt, spt_type, ref=None):
 		'K21': Kirkpatrick et al. (2021), valid for M7-Y2 (7-32)
 
 	Returns:
+	--------
 	- teff : array
 		Effective temperature (in K) corresponding to the input spectral types according to the ``ref`` reference.
 
