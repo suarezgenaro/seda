@@ -22,7 +22,7 @@ Chi-square minimization
 
    notebooks/tutorial_chi2_fit_single_spectrum.ipynb
    notebooks/tutorial_chi2_fit_multiple_spectra.ipynb
-   notebooks/tutorial_chi2_photometry_only.ipynb
+   notebooks/tutorial_chi2_fit_photometry_only.ipynb
    notebooks/tutorial_chi2_fit_spectrophotometry.ipynb
 
 Bayesian sampling
