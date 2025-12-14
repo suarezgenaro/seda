@@ -41,12 +41,18 @@ Utils
 .. automodule:: seda.utils
     :members:
 
+Models
+------
 .. automodule:: seda.models
     :members:
 
+Synthetic Photometry
+--------------------
 .. automodule:: seda.synthetic_photometry.synthetic_photometry
     :members:
 
+Spectral Indices
+----------------
 .. automodule:: seda.spectral_indices.spectral_indices
     :members:
 
