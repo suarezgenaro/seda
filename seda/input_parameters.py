@@ -752,13 +752,6 @@ class Chi2Options:
 
 			# derive synthetic photometry from model spectra 
 			if fit_photometry:
-				## select filters within the wavelength range to fit the photometry
-				#mask_fit = (lambda_eff_SVO>=fit_phot_range.min()) & (lambda_eff_SVO<=fit_phot_range.max())
-				#phot_fit = phot[mask_fit]
-				#ephot_fit = ephot[mask_fit]
-				#filters_fit = filters[mask_fit]
-				#lambda_eff_SVO_fit = lambda_eff_SVO[mask_fit]
-				#width_eff_SVO_fit = width_eff_SVO[mask_fit]
 				# select filters fully covered by model spectra and with effective wavelength within fit_phot_range
 				filters_fit = select_filters_for_fit(model=model, fit_phot_range=fit_phot_range, filters=filters)
 				mask_fit = np.isin(filters, filters_fit) # mask of selected filters
