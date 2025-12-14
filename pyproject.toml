@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "seda"
-description = "SEDA: Spectral Energy Distribution Analyzer for forward modeling and empirical analyses of ultracool objects"
+description = "SEDA: Spectral Energy Distribution Analyzer for forward modeling and empirical analysis of ultracool objects"
 readme = "README.md"
 # Use dynamic version from setuptools-scm (written to seda/_version.py)
 dynamic = ["version"]
@@ -55,3 +55,7 @@ seda = [
   "models_aux/model_spectra/*",
   "models_aux/*.pickle",
 ]
+
+[tool.setuptools.packages.find]
+include = ["seda*"]
+exclude = ["backups*"]
