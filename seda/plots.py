@@ -570,8 +570,7 @@ def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None
 			mask_max = lambda_eff_SVO==lambda_eff_SVO.max()
 			xmin_phot = lambda_eff_SVO[mask_min][0]-width_eff_SVO[mask_min][0]/2.
 			xmax_phot = lambda_eff_SVO[mask_max][0]+width_eff_SVO[mask_max][0]/2.
-
-		xrange = [0.99*min(xmin_spec, xmin_phot), 1.01*max(xmax_spec, xmax_phot)]
+			xrange = [0.99*min(xmin_spec, xmin_phot), 1.01*max(xmax_spec, xmax_phot)]
 
 	# plot input data
 	if fit_spectra:
@@ -786,7 +785,7 @@ def plot_model_coverage(model, xparam, yparam, model_dir=None, params_ranges=Non
 	path_plots = os.path.dirname(__file__)
 
 	# verify model is recognized
-	available_models = Models().available_models
+	available_models = models.Models().available_models
 	if model not in available_models: raise Exception(f'"{model}" models are not recognized. Available models: \n          {available_models}')
 
 	# get the coverage of model free parameters
@@ -881,14 +880,14 @@ def plot_model_resolution(model, spectra_name_full, xlog=True, ylog=False, xrang
 	'''
 
 	# make sure model_dir is a list
-	spectra_name_full = var_to_list(spectra_name_full)
+	spectra_name_full = utils.var_to_list(spectra_name_full)
 
 	# read model spectra
 	wl_model = []
 	flux_model = []
 	resolution_model = []
 	for i, spectrum_name_full in enumerate(spectra_name_full):
-		out_read_model_spectrum = read_model_spectrum(spectrum_name_full=spectrum_name_full, model=model)
+		out_read_model_spectrum = models.read_model_spectrum(spectrum_name_full=spectrum_name_full, model=model)
 		wl = out_read_model_spectrum['wl_model']
 		flux = out_read_model_spectrum['flux_model']
 
@@ -912,7 +911,7 @@ def plot_model_resolution(model, spectra_name_full, xlog=True, ylog=False, xrang
 	# initialize plot for best fits and residuals
 	fig, ax = plt.subplots()
 
-	out_input_data_stats = input_data_stats(wl_spectra=wl_model)
+	out_input_data_stats = utils.input_data_stats(wl_spectra=wl_model)
 	wl_spectra_min = out_input_data_stats['wl_spectra_min']
 	wl_spectra_max = out_input_data_stats['wl_spectra_max']
 

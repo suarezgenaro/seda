@@ -1,9 +1,10 @@
 import numpy as np
 from astropy import units as u
 from astropy.constants import L_sun
-from .synthetic_photometry.synthetic_photometry import *
-from .input_parameters import *
-from .chi2_fit import *
+from .synthetic_photometry import synthetic_photometry
+from . import input_parameters
+from . import chi2_fit 
+from . import models
 from sys import exit
 
 ##########################
@@ -126,12 +127,12 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 		
 				# read the entire best fit model spectrum (the one stored in 
 				# output_fit was trimmed to the wavelength range of the data)
-				output_best_chi2_fits = best_chi2_fits(output_chi2=output_fit, N_best_fits=1, 
-				                                       model_dir_ori=model_dir, ori_res=True)
+				output_best_chi2_fits = utils.best_chi2_fits(output_chi2=output_fit, N_best_fits=1, 
+				                                             model_dir_ori=model_dir, ori_res=True)
 				wl_model = output_best_chi2_fits['wl_model_best'][0] # um
 				flux_model = output_best_chi2_fits['flux_model_best'][0] # erg/s/cm2/A scaled to match the input spectra
 				spectra_name_best = output_best_chi2_fits['spectra_name_best'][0]
-				params = separate_params(model=model, spectra_name=spectra_name_best)['params']
+				params = models.separate_params(model=model, spectra_name=spectra_name_best)['params']
 				# convert each parameter into float instead of array, as it contains only parameters for the best fit
 				for param in params:
 					params[param] = params[param][0]
