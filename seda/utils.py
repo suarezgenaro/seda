@@ -13,6 +13,7 @@ from astropy.io import ascii
 from astropy.table import Column, MaskedColumn, Table
 from astropy.convolution import Gaussian1DKernel, convolve
 from scipy.interpolate import RegularGridInterpolator
+from scipy.interpolate import interp1d
 from tqdm.auto import tqdm
 from sys import exit
 from . import models
@@ -837,7 +838,7 @@ def read_grid_phot(model, model_dir, filters, params_ranges=None, fit_phot_range
 				out_read_model_spectrum = models.read_model_spectrum(spectrum_name_full=spectrum_name_full, model=model, model_wl_range=model_wl_range)
 				wl_model = out_read_model_spectrum['wl_model'] # um
 				flux_model = out_read_model_spectrum['flux_model'] # erg/s/cm2/A
-				
+
 				# derive synthetic photometry
 				out_syn_phot = synthetic_photometry(wl=wl_model, flux=flux_model, flux_unit='erg/s/cm2/A', filters=filters)
 				flux_syn = out_syn_phot['syn_flux(erg/s/cm2/A)'] # erg/s/cm2/A
@@ -1654,7 +1655,9 @@ def spt_to_teff(spt, spt_type, ref=None):
 		'K21': Kirkpatrick et al. (2021), valid for M7-Y2 (7-32)
 
 	Returns:
-	- effective temperature (in K) corresponding to the input spectral types according to the ``ref`` reference.
+	--------
+	- teff : array
+		Effective temperature (in K) corresponding to the input spectral types according to the ``ref`` reference.
 
 	Example:
 	--------
@@ -1742,6 +1745,80 @@ def spt_to_teff(spt, spt_type, ref=None):
 			teff[i] = c0 + c1*sp + c2*sp**2
 	
 	return teff
+
+##########################
+def teff_to_spt(teff, ref=None):
+	"""
+	Description:
+	------------
+		Estimate the spectral type (returned as a string) from effective temperature, using numerical inversion of spt_to_teff() and the same spectral-type conventions.
+
+	Parameters
+	----------
+	- teff : float, array
+		Effective temperatures (K)
+	- ref : str, optional (default 'F15')
+		Reference for the spectral type-temperature relationships.
+		'F15': Filippazzo et al. (2015), valid for M6-T9 (6-29)
+		'K21': Kirkpatrick et al. (2021), valid for M7-Y2 (7-32)
+
+	Returns
+	-------
+	- spt_str : array
+		Estimated spectral type(s), formatted like 'M6', 'L3.5', 'T8', 'Y1', etc.
+
+	Example:
+	--------
+	>>> import seda
+	>>> 
+	>>> # effective temperature to spectral type
+	>>> teff = [2000, 1500, 1000] # K
+	>>> seda.utils.teff_to_spt(teff)
+	    
+
+	Author: Genaro Suárez
+
+	Date: 2025-12-12
+	"""
+
+	# assigned default values
+	if ref is None: ref = 'F15' # Filippazzo et al. (2015)
+
+	# Valid spectral-type numerical ranges
+	if ref == 'F15':
+		spt_min, spt_max = 6, 29   # M6-T9
+	elif ref == 'K21':
+		spt_min, spt_max = 7, 32   # M7-Y2
+	else:
+		raise ValueError('"ref" must be "F15" or "K21"')
+
+	# construct dense numerical grid of spectral types
+	spt_grid = np.linspace(spt_min, spt_max, 2000)
+
+	# get Teff on this grid using spt_to_teff
+	teff_grid = spt_to_teff(spt_grid, spt_type='float', ref=ref)
+
+	# build inverse mapping (Teff -> numerical spt)
+	inv_interp = interp1d(teff_grid, spt_grid,
+						  fill_value='extrapolate',
+						  assume_sorted=False)
+
+	# force array
+	teff = np.array(teff, ndmin=1)
+	spt_float = inv_interp(teff)
+
+	spt_str = [spt_float_to_str(sf) for sf in spt_float]
+
+	# decide output: single value or list
+	if len(spt_str) == 1:
+		output = spt_str[0]
+	else:
+		output = spt_str
+
+	# output list as numpy array
+	output = np.array(output)
+	
+	return output
 
 ##########################
 def parallax_to_distance(parallax, eparallax):
@@ -2159,6 +2236,29 @@ def spt_str_to_float(spt):
 		raise Exception(f'"{spt}" is not recognized. Overall, "spt" can be M, L, T, and Y with any subtypes.')
 
 	return spt
+
+##########################
+# convert numerical spt to string spt
+def spt_float_to_str(spt):
+
+	spt = float(spt)
+
+	# determine prefix and subtype
+	if   0  <= spt < 10: prefix = 'M'; subtype = spt - 0
+	elif 10 <= spt < 20: prefix = 'L'; subtype = spt - 10
+	elif 20 <= spt < 30: prefix = 'T'; subtype = spt - 20
+	elif 30 <= spt < 40: prefix = 'Y'; subtype = spt - 30
+	else:
+		output = f'OUT_OF_RANGE_{spt:.2f}'
+		return output  # this is still required for out-of-range values
+
+	# integer or fractional subtype output
+	if abs(subtype - round(subtype)) < 1e-6:
+		output = f"{prefix}{int(round(subtype))}"
+	else:
+		output = f"{prefix}{subtype:.1f}".rstrip('0').rstrip('.')
+
+	return output
 
 ##########################
 # make sure a variable is a list

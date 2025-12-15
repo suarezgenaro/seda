@@ -2,6 +2,7 @@ import numpy as np
 from astropy import units as u
 import os
 import re
+import fnmatch
 from tqdm.auto import tqdm 
 from spectres import spectres
 from . import utils
@@ -458,11 +459,11 @@ class Chi2Options:
 				Nested list with the weights assigned to each spectroscopic data point within the fit range considering the equation chi2 = weight * (data-model)^2 / edata^2.
 		if ``fit_photometry``:
 			phot_fit : numpy array
-				Input photometry ``phot`` (in erg/s/cm2/A) within ``fit_phot_range``.
+				Input photometry ``phot`` (in erg/s/cm2/A) within ``fit_phot_range`` and the model wavelength coverage.
 			ephot_fit : numpy array
-				Input photometry errors ``ephot`` (in erg/s/cm2/A) within ``fit_phot_range``.
+				Input photometry errors ``ephot`` (in erg/s/cm2/A) within ``fit_phot_range`` and the model wavelength coverage.
 			filters_fit : numpy array
-				Input filters ``filters`` within ``fit_phot_range``.
+				Input filters ``filters`` within ``fit_phot_range`` and the model wavelength coverage.
 			lambda_eff_SVO_fit : numpy array
 				Effective wavelengths from SVO for ``filters_fit``.
 			width_eff_SVO_fit : numpy array
@@ -488,12 +489,6 @@ class Chi2Options:
 
 	Author: Genaro Suárez
 	'''
-#		The available options are:
-#		- ``"dataset"``  
-#		  Each dataset (photometric or spectroscopic) is assigned a weight equal  
-#		  to the inverse of the total number of its data points.  
-#		  All datasets contribute equally, regardless of size.
-
 
 	def __init__(self, my_data, my_model, 
 		fit_wl_range=None, disp_wl_range=None, model_wl_range=None, fit_phot_range=None, 
@@ -757,15 +752,17 @@ class Chi2Options:
 
 			# derive synthetic photometry from model spectra 
 			if fit_photometry:
-				# select filters within the wavelength range to fit the photometry
-				mask_fit = (lambda_eff_SVO>=fit_phot_range.min()) & (lambda_eff_SVO<=fit_phot_range.max())
+				# select filters fully covered by model spectra and with effective wavelength within fit_phot_range
+				filters_fit = select_filters_for_fit(model=model, fit_phot_range=fit_phot_range, filters=filters)
+				mask_fit = np.isin(filters, filters_fit) # mask of selected filters
 				phot_fit = phot[mask_fit]
 				ephot_fit = ephot[mask_fit]
-				filters_fit = filters[mask_fit]
 				lambda_eff_SVO_fit = lambda_eff_SVO[mask_fit]
 				width_eff_SVO_fit = width_eff_SVO[mask_fit]
-
-				print(f'\n      {len(filters_fit)} of {len(filters)} input valid magnitudes within the fit range "fit_phot_range"')
+				print(f'\n      {len(filters_fit)}/{len(filters)} selected input magnitudes within "fit_phot_range" or the model wavelength range')
+				if not np.all(mask_fit): # not all valid input filters were selected
+					print(f'\n         Filters {filters[~mask_fit]} are outside the "fit_phot_range" or '
+					      f'the model wavelength range, so they will be ignored in the fits.')
 
 				# create a tqdm progress bar
 				if not skip_syn_phot: # read original model spectra to then derive synthetic photometry
@@ -909,10 +906,19 @@ class Chi2Options:
 				flux_array_model_conv_resam_fit.append(flux_array_model_conv_resam_fit_each)
 
 		# set weights for the fit
-		out_compute_weights = compute_weights(fit_spectra=fit_spectra, fit_photometry=fit_photometry, weight_label=weight_label, 
-		                                      wl_spectra_fit=wl_spectra_fit[0], width_eff_SVO_fit=width_eff_SVO_fit)
-		weight_spec_fit = out_compute_weights['weight_spec_fit']
-		weight_phot_fit = out_compute_weights['weight_phot_fit']
+		if fit_spectra and fit_photometry: # when both spectra and photometry are provided
+			out_compute_weights = compute_weights(fit_spectra=fit_spectra, fit_photometry=fit_photometry, weight_label=weight_label, 
+			                                      wl_spectra_fit=wl_spectra_fit[0], width_eff_SVO_fit=width_eff_SVO_fit)
+			weight_spec_fit = out_compute_weights['weight_spec_fit']
+			weight_phot_fit = out_compute_weights['weight_phot_fit']
+		if fit_spectra and not fit_photometry: # only when both spectra and photometry are provided
+			out_compute_weights = compute_weights(fit_spectra=fit_spectra, fit_photometry=fit_photometry, weight_label=weight_label, 
+			                                      wl_spectra_fit=wl_spectra_fit[0])
+			weight_spec_fit = out_compute_weights['weight_spec_fit']
+		if not fit_spectra and fit_photometry: # only when both spectra and photometry are provided
+			out_compute_weights = compute_weights(fit_spectra=fit_spectra, fit_photometry=fit_photometry, weight_label=weight_label, 
+			                                      width_eff_SVO_fit=width_eff_SVO_fit)
+			weight_phot_fit = out_compute_weights['weight_phot_fit']
 
 		# assign some attributes
 		self.N_model_spectra = N_model_spectra
@@ -1039,11 +1045,11 @@ class BayesOptions:
 				Nested list with the weights assigned to each spectroscopic data point within the fit range considering the equation chi2 = weight * (data-model)^2 / edata^2.
 		if ``fit_photometry``:
 			phot_fit : numpy array
-				Input photometry ``phot`` (in erg/s/cm2/A) within ``fit_phot_range``.
+				Input photometry ``phot`` (in erg/s/cm2/A) within ``fit_phot_range`` and the model wavelength coverage.
 			ephot_fit : numpy array
-				Input photometry errors ``ephot`` (in erg/s/cm2/A) within ``fit_phot_range``.
+				Input photometry errors ``ephot`` (in erg/s/cm2/A) within ``fit_phot_range`` and the model wavelength coverage.
 			filters_fit : numpy array
-				Input filters ``filters`` within ``fit_phot_range``.
+				Input filters ``filters`` within ``fit_phot_range`` and the model wavelength coverage.
 			lambda_eff_SVO_fit : numpy array
 				Effective wavelengths from SVO for ``filters_fit``.
 			width_eff_SVO_fit : numpy array
@@ -1215,14 +1221,17 @@ class BayesOptions:
 					grid_spec.append(grid_each)
 
 			if fit_photometry:
-				# select filters within the wavelength range to fit the photometry
-				mask_fit = (lambda_eff_SVO>=fit_phot_range.min()) & (lambda_eff_SVO<=fit_phot_range.max())
+				# select filters fully covered by model spectra and with effective wavelength within fit_phot_range
+				filters_fit = select_filters_for_fit(model=model, fit_phot_range=fit_phot_range, filters=filters)
+				mask_fit = np.isin(filters, filters_fit) # mask of selected filters
 				phot_fit = phot[mask_fit]
 				ephot_fit = ephot[mask_fit]
-				filters_fit = filters[mask_fit]
 				lambda_eff_SVO_fit = lambda_eff_SVO[mask_fit]
 				width_eff_SVO_fit = width_eff_SVO[mask_fit]
-				print(f'\n      {len(filters_fit)} of {len(filters)} input valid magnitudes within the fit range "fit_phot_range"')
+				print(f'\n      {len(filters_fit)}/{len(filters)} selected input magnitudes within "fit_phot_range" or the model wavelength range')
+				if not np.all(mask_fit): # not all valid input filters were selected
+					print(f'\n         Filters {filters[~mask_fit]} are outside the "fit_phot_range" or '
+					      f'the model wavelength range, so they will be ignored in the fits.')
 
 				# set filename_pattern to look for model spectra
 				filename_pattern = [models.Models(model).filename_pattern]
@@ -1271,10 +1280,19 @@ class BayesOptions:
 				eflux_spectra_fit.append(eflux_spectra[i][mask_fit])
 
 		# set weights for the fit
-		out_compute_weights = compute_weights(fit_spectra=fit_spectra, fit_photometry=fit_photometry, weight_label=weight_label, 
-		                                      wl_spectra_fit=wl_spectra_fit, width_eff_SVO_fit=width_eff_SVO_fit)
-		weight_spec_fit = out_compute_weights['weight_spec_fit']
-		weight_phot_fit = out_compute_weights['weight_phot_fit']
+		if fit_spectra and fit_photometry: # when both spectra and photometry are provided
+			out_compute_weights = compute_weights(fit_spectra=fit_spectra, fit_photometry=fit_photometry, weight_label=weight_label, 
+			                                      wl_spectra_fit=wl_spectra_fit, width_eff_SVO_fit=width_eff_SVO_fit)
+			weight_spec_fit = out_compute_weights['weight_spec_fit']
+			weight_phot_fit = out_compute_weights['weight_phot_fit']
+		if fit_spectra and not fit_photometry: # only when both spectra and photometry are provided
+			out_compute_weights = compute_weights(fit_spectra=fit_spectra, fit_photometry=fit_photometry, weight_label=weight_label, 
+			                                      wl_spectra_fit=wl_spectra_fit)
+			weight_spec_fit = out_compute_weights['weight_spec_fit']
+		if not fit_spectra and fit_photometry: # only when both spectra and photometry are provided
+			out_compute_weights = compute_weights(fit_spectra=fit_spectra, fit_photometry=fit_photometry, weight_label=weight_label, 
+			                                      width_eff_SVO_fit=width_eff_SVO_fit)
+			weight_phot_fit = out_compute_weights['weight_phot_fit']
 
 		# assign some attributes
 		if fit_spectra:
@@ -1297,7 +1315,7 @@ class BayesOptions:
 # useful functions for the classes
 #+++++++++++++++++++++++++++++++++
 # set the weights based on the input parameter weight_label
-def compute_weights(fit_spectra, fit_photometry, weight_label, wl_spectra_fit, width_eff_SVO_fit):
+def compute_weights(fit_spectra, fit_photometry, weight_label, wl_spectra_fit=None, width_eff_SVO_fit=None):
 	# set weights for the fit
 	if fit_spectra and fit_photometry: # only when both spectra and photometry are provided
 		weight_spec_fit = []
@@ -1334,6 +1352,49 @@ def compute_weights(fit_spectra, fit_photometry, weight_label, wl_spectra_fit, w
 			weight_phot_fit = np.repeat(1, len(width_eff_SVO_fit))
 
 	# output dictionary with the weights for both spectra and photometry
-	out = {'weight_spec_fit': weight_spec_fit, 'weight_phot_fit': weight_phot_fit}
+	out = {}
+	if fit_spectra: out['weight_spec_fit'] = weight_spec_fit
+	if fit_photometry: out['weight_phot_fit'] = weight_phot_fit
 
 	return out
+
+#+++++++++++++++++++++++++++++++++
+# from a list of filters, select the ones fully covered by model spectra 
+# and with effective wavelength within the wavelength range for the fits
+def select_filters_for_fit(model, fit_phot_range, filters):
+	# read first a model spectrum to get the wavelength range covered by models
+	# path to the seda package
+	dir_sep = os.sep # directory separator for the current operating system
+	path_seda = os.path.dirname(__file__)+dir_sep
+	path_rel = 'models_aux/model_spectra/'
+	filename_pattern = models.Models(model).filename_pattern
+	spectrum_file = fnmatch.filter(os.listdir(path_seda+path_rel),
+		                           filename_pattern)
+	if not spectrum_file: # when there is not a spectrum in models_aux
+		raise ValueError(f'No example spectrum for the "{model}" grid '
+		                 f'was found in "{path_seda}{path_rel}" ' 
+		                 f'to determine the wavelength coverage of the models')
+	elif len(spectrum_file) > 1:
+		raise ValueError(f'Multiple spectrum filenames matching "{filename_pattern}" '
+		                 f'were found in "{path_seda}{path_rel}"')
+	spectrum_name_full = path_seda+path_rel+spectrum_file[0]
+	spectrum = models.read_model_spectrum(spectrum_name_full=spectrum_name_full,
+	                                           model=model)
+	wl_model = spectrum['wl_model']
+
+	# obtain minimum and maximum wavelengths for the filters
+	params = ['WavelengthMin', 'WavelengthMax', 'WavelengthEff']
+	out = utils.read_SVO_params(filters=filters, params=params)
+	WavelengthMin = u.Quantity(out['WavelengthMin'].data, u.nm*0.1).to(u.micron).value # in um
+	WavelengthMax = u.Quantity(out['WavelengthMax'].data, u.nm*0.1).to(u.micron).value # in um
+	WavelengthEff = u.Quantity(out['WavelengthEff'].data, u.nm*0.1).to(u.micron).value # in um
+	# select filters fully covered by the model spectra
+	mask = (WavelengthMin>=wl_model.min()) & (WavelengthMax<=wl_model.max())
+	filters = filters[mask]
+	WavelengthEff = WavelengthEff[mask]
+
+	# select filters fully covered by the model spectra and with effective wavelength within fit_phot_range
+	mask = (WavelengthEff>=fit_phot_range.min()) & (WavelengthEff<=fit_phot_range.max())
+	filters = filters[mask]
+	
+	return filters
