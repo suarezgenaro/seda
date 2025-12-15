@@ -1,6 +1,16 @@
 SEDA
 ====
 
+Bayesian Sampling
+-----------------
+.. automodule:: seda.bayes_fit
+    :members:
+
+Chi-square Fit
+--------------
+.. automodule:: seda.chi2_fit
+    :members:
+
 Input Parameters
 ----------------
 
@@ -26,28 +36,9 @@ Bayesian Options
 .. autoclass:: seda.input_parameters.BayesOptions
     :members:
 
-Chi-square Fit
---------------
-.. automodule:: seda.chi2_fit
-    :members:
-
-Bayesian Sampling
------------------
-.. automodule:: seda.bayes_fit
-    :members:
-
-Utils
------
-.. automodule:: seda.utils
-    :members:
-
+Models
+------
 .. automodule:: seda.models
-    :members:
-
-.. automodule:: seda.synthetic_photometry.synthetic_photometry
-    :members:
-
-.. automodule:: seda.spectral_indices.spectral_indices
     :members:
 
 Physical Parameters
@@ -58,4 +49,19 @@ Physical Parameters
 Plots
 -----
 .. automodule:: seda.plots
+    :members:
+
+Spectral Indices
+----------------
+.. automodule:: seda.spectral_indices.spectral_indices
+    :members:
+
+Synthetic Photometry
+--------------------
+.. automodule:: seda.synthetic_photometry.synthetic_photometry
+    :members:
+
+Utils
+-----
+.. automodule:: seda.utils
     :members:

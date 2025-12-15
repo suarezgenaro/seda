@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "seda"
-description = "SEDA: Spectral Energy Distribution Analyzer for forward modeling and empirical analyses of ultracool objects"
+description = "SEDA: Spectral Energy Distribution Analyzer for forward modeling and empirical analysis of ultracool objects"
 readme = "README.md"
 # Use dynamic version from setuptools-scm (written to seda/_version.py)
 dynamic = ["version"]
@@ -14,7 +14,7 @@ keywords = [
 ]
 authors = [{ name = "Genaro Suárez", email = "gsuarez2405@gmail.com" }]
 license = {file = "LICENSE"}
-requires-python = ">=3.11"
+requires-python = ">=3.9"
 dependencies = [
   "astropy",
   "corner",

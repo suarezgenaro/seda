@@ -4,6 +4,7 @@ import dynesty
 import time
 from .utils import *
 import importlib
+import copy
 from spectres import spectres # resample spectra
 from sys import exit
 
@@ -68,9 +69,6 @@ def bayes(my_bayes):
 	wl_spectra = my_bayes.wl_spectra
 	flux_spectra = my_bayes.flux_spectra
 	eflux_spectra = my_bayes.eflux_spectra
-#	phot = my_bayes.phot
-#	ephot = my_bayes.ephot
-#	filters = my_bayes.filters
 	res = my_bayes.res
 	lam_res = my_bayes.lam_res
 	distance = my_bayes.distance
@@ -84,7 +82,6 @@ def bayes(my_bayes):
 	fit_wl_range = my_bayes.fit_wl_range
 	model_wl_range = my_bayes.model_wl_range
 	R_range = my_bayes.R_range
-	#chi2_pickle_file = my_bayes.chi2_pickle_file
 	grid = my_bayes.grid
 	params_unique = my_bayes.params_unique
 	params_priors = my_bayes.params_priors
@@ -93,10 +90,6 @@ def bayes(my_bayes):
 	nlive = my_bayes.nlive
 	bayes_pickle_file = my_bayes.bayes_pickle_file
 	if fit_spectra:
-#		N_spectra = my_bayes.N_spectra
-#		wl_spectra_min = my_bayes.wl_spectra_min
-#		wl_spectra_max = my_bayes.wl_spectra_max
-#		N_datapoints = my_bayes.N_datapoints
 		wl_obs_spec = my_bayes.wl_spectra_fit
 		flux_obs_spec = my_bayes.flux_spectra_fit
 		eflux_obs_spec = my_bayes.eflux_spectra_fit
@@ -106,7 +99,6 @@ def bayes(my_bayes):
 		wl_obs_phot = [my_bayes.lambda_eff_SVO_fit]
 		flux_obs_phot = [my_bayes.phot_fit]
 		eflux_obs_phot = [my_bayes.ephot_fit]
-#		filters_fit = my_bayes.filters_fit
 		weight_phot_fit = my_bayes.weight_phot_fit 
 
 	# set input flux depending whether spectra and/or photometry were provided
@@ -188,8 +180,9 @@ def bayes(my_bayes):
 
 	# output dictionary
 	# remove model grid from my_bayes dictionary to have a lighter output file
-	del my_bayes.grid
-	out_bayes = {'my_bayes': my_bayes, 'out_dynesty': results}
+	my_bayes_copy = copy.copy(my_bayes) # to avoid affecting the original object when removing "grid"
+	del my_bayes_copy.grid
+	out_bayes = {'my_bayes': my_bayes_copy, 'out_dynesty': results}
 
 	# save output dictionary
 	if save_results:
