@@ -62,3 +62,4 @@ docs/notebooks/*.pdf
 docs/aux_plots/*.ipynb
 seda/synthetic_photometry/FPS_info.xml
 models
+uv.lock
