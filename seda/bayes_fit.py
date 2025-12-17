@@ -155,8 +155,8 @@ def bayes(my_bayes):
 				scaling = (((R*u.R_jup).to(u.km) / (distance*u.pc).to(u.km))**2).value # scaling = (R/d)^2
 				#flux_model = scale_synthetic_spectrum(wl=wl_model, flux=flux_model, distance=distance, radius=R)
 			else:
-				#scaling = np.sum(flux_obs[i]*flux_model/eflux_obs[i]**2) / np.sum(flux_model**2/eflux_obs[i]**2) # scaling that minimizes chi2
-				scaling = np.sum(weights[i]*flux_obs[i]*flux_model/eflux_obs[i]**2) / np.sum(weights[i]*flux_model**2/eflux_obs[i]**2) # scaling that minimizes chi2
+				# scaling factor that maximizes the weighted Gaussian log-likelihood (it is the same factor that minimizes the weighted chi-square)
+				scaling = np.sum(weights[i]*flux_obs[i]*flux_model/eflux_obs[i]**2) / np.sum(weights[i]*flux_model**2/eflux_obs[i]**2)
 			flux_model = scaling*flux_model
 
 			residual2 = weights[i] * ((flux_obs[i] - flux_model)**2 / eflux_obs[i]**2)
