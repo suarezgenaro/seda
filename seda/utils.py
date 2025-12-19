@@ -1774,6 +1774,7 @@ def teff_to_spt(teff, ref=None):
 	>>> # effective temperature to spectral type
 	>>> teff = [2000, 1500, 1000] # K
 	>>> seda.utils.teff_to_spt(teff)
+	    array(['L1.7', 'L5.8', 'T5.4'], dtype='<U4')
 
 	Author: Genaro Suárez
 
