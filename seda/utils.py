@@ -1748,13 +1748,13 @@ def spt_to_teff(spt, spt_type, ref=None):
 
 ##########################
 def teff_to_spt(teff, ref=None):
-	"""
+	'''
 	Description:
 	------------
 		Estimate the spectral type (returned as a string) from effective temperature, using numerical inversion of spt_to_teff() and the same spectral-type conventions.
 
-	Parameters
-	----------
+	Parameters:
+	-----------
 	- teff : float, array
 		Effective temperatures (K)
 	- ref : str, optional (default 'F15')
@@ -1762,8 +1762,8 @@ def teff_to_spt(teff, ref=None):
 		'F15': Filippazzo et al. (2015), valid for M6-T9 (6-29)
 		'K21': Kirkpatrick et al. (2021), valid for M7-Y2 (7-32)
 
-	Returns
-	-------
+	Returns:
+	--------
 	- spt_str : array
 		Estimated spectral type(s), formatted like 'M6', 'L3.5', 'T8', 'Y1', etc.
 
@@ -1774,12 +1774,11 @@ def teff_to_spt(teff, ref=None):
 	>>> # effective temperature to spectral type
 	>>> teff = [2000, 1500, 1000] # K
 	>>> seda.utils.teff_to_spt(teff)
-	    
 
 	Author: Genaro Suárez
 
 	Date: 2025-12-12
-	"""
+	'''
 
 	# assigned default values
 	if ref is None: ref = 'F15' # Filippazzo et al. (2015)
