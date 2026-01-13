@@ -21,6 +21,46 @@ FAQs
 ----
 .. **4. T**
 
+**8. SEDA was installed using `pip install -e .`, but it is not recognized in my Jupyter notebook**
+
+This usually means SEDA was installed with a different Python interpreter than the one Jupyter is using. This issue has been reported most often on Windows, especially when using Anaconda or multiple Python installations.
+
+To fix this, install SEDA using the exact Python executable used by Jupyter.
+
+Step 1: Find the Python executable used by Jupyter
+
+Run the following in a Jupyter notebook cell:
+
+.. code-block:: console
+
+    import sys
+    sys.executable
+
+Example output:
+
+.. code-block:: console
+
+    C:\Users\YourName\anaconda3\python.exe
+
+Step 2: Install SEDA using that Python executable
+
+From a terminal (Command Prompt or PowerShell), navigate to the cloned `seda` repository and run:
+
+.. code-block:: console
+
+    "C:\Users\YourName\anaconda3\python.exe" -m pip install -e .
+
+Replace the path with the one returned in Step 1.
+
+PowerShell note:
+In PowerShell, prefix the command with `&` to correctly execute a quoted path:
+
+.. code-block:: console
+
+    & "C:\Users\YourName\anaconda3\python.exe" -m pip install -e .
+
+This ensures the editable installation is performed in the same environment that Jupyter uses, making SEDA available inside your notebooks.
+
 **7. Why do the residuals from the best fit to photometric data points not scatter around zero, but instead lie preferentially above or below it?**
 
 This may happen when one photometric magnitude has a significantly smaller uncertainty compared to the others. In such cases, the fit is dominated by this data point, forcing the best-fit model to match it, even if the remaining points lie systematically brighter or fainter than the model. To obtain residuals that scatter more symmetrically around zero, identify any magnitude with unusually small errors and consider either inflating its uncertainty or excluding it from the fit.
@@ -49,21 +89,21 @@ It typically indicates an issue with the installation of the numpy package. Pote
 
 .. code-block:: console
 
-    $ pip uninstall numpy
-    $ pip install numpy
+    pip uninstall numpy
+    pip install numpy
 
 - Update Packages: Make sure all your packages are up to date. You can update numpy and other dependencies by running:
 
 .. code-block:: console
 
-    $ pip install --upgrade numpy
+    pip install --upgrade numpy
 
 - Verify Installation: Sometimes, the installation might be corrupted. Verify that numpy is correctly installed by running:
 
 .. code-block:: console
 
-    $ import numpy
-    $ print(numpy.__version__)
+    import numpy
+    print(numpy.__version__)
 
 **2. Why after cloning SEDA to get an updated version my notebook still reads the old version?**
 
