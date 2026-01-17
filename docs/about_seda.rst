@@ -18,7 +18,7 @@ Logo
 Seda is a Spanish word that means silk, which motivates the :math:`\texttt{SEDA}` logo. The logo shows a silk cocoon (irregular grid the code can handle) wrapping key molecules (water, methane, ammonia, and silicates) in the atmospheres of brown dwarfs and gas giant (exo)planets (background image).
 
 FAQs
-====
+----
 
 .. contents::
    :local:
@@ -26,7 +26,7 @@ FAQs
 
 
 SEDA is not recognized in my Jupyter notebook
----------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 SEDA was installed using ``pip install -e .`` but it is not recognized in my Jupyter notebook. 
 
@@ -35,7 +35,7 @@ This usually means that SEDA was installed with a **different Python interpreter
 To resolve this, ensure that SEDA is installed using the **exact Python executable that Jupyter is running**.
 
 Step 1: Find the Python executable used by Jupyter
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Run the following command in a Jupyter notebook cell:
 
@@ -51,7 +51,7 @@ Example output:
    C:\Users\YourName\anaconda3\python.exe
 
 Step 2: Install SEDA using that Python executable
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 From a terminal (Command Prompt or PowerShell), navigate to the cloned ``seda`` repository and run:
 
@@ -62,7 +62,7 @@ From a terminal (Command Prompt or PowerShell), navigate to the cloned ``seda`` 
 Replace the path with the one returned in Step 1.
 
 PowerShell note
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 In PowerShell, prefix the command with ``&`` to correctly execute a quoted path:
 
 .. code-block:: bash
@@ -73,21 +73,21 @@ This ensures that the editable installation is performed in the same environment
 
 
 Why do the residuals from the best fit to photometric data points not scatter around zero?
-------------------------------------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This behavior can occur when one photometric magnitude has a **significantly smaller uncertainty** than the others. In such cases, the fit becomes dominated by this single data point, forcing the best-fit model to closely match it—even if the remaining data points lie systematically above or below the model.
 
 To obtain residuals that scatter more symmetrically around zero, identify magnitudes with unusually small uncertainties and consider either inflating the uncertainties or excluding these data points from the fit.
 
 
-How should I interpret the output parameters from Dynesty in ``out_bayes['out_dynesty']``?
-------------------------------------------------------------------------------------------
+How should I interpret the output parameters from Dynesty?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A detailed explanation of each output parameter can be found in the official `Dynesty Results documentation <https://dynesty.readthedocs.io/en/stable/api.html#dynesty.results.Results>`__.
+A detailed explanation of each output parameter from Dynesety stored in ``out_bayes['out_dynesty']`` can be found in the official `Dynesty Results documentation <https://dynesty.readthedocs.io/en/stable/api.html#dynesty.results.Results>`__.
 
 
 Model spectra in the plots appear binned
-----------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This effect may be caused by resampling model spectra to **finer wavelength intervals** than those of the original models.
 
@@ -105,7 +105,7 @@ It has been observed only for the **low-resolution ATMO 2020 models** when fitti
 
 
 There is a flux offset between the best-fit model and the input data
---------------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This issue may arise from:
 
@@ -113,11 +113,11 @@ This issue may arise from:
 - Flux calibration issues in the input spectra
 
 How to diagnose the issue
-~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^
 Run a chi-square minimization (e.g., look at `this tutorial <https://seda.readthedocs.io/en/latest/notebooks/tutorial_chi2_fit_single_spectrum.html>`__) while providing a distance in ``seda.input_parameters.InputData``. In this case, the code estimates a radius from the scaling factor applied to the model spectra and the input distance. If the estimated radius (stored in the ASCII output table) deviates significantly from **1 Rjup**, this may indicate incorrect flux units or calibration issues.
 
 Additional checks
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 - Compare observed photometry with synthetic photometry derived from the input spectra  
   (see `this tutorial <https://seda.readthedocs.io/en/latest/notebooks/tutorial_synthetic_photometry.html>`__)
 - Run ``seda.bayes_fit.bayes`` **without providing a distance**, so the radius is not sampled and the
@@ -125,16 +125,12 @@ Additional checks
 
 
 Error opening generated pickle files
-------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The error
-
-``ModuleNotFoundError: No module named 'numpy._core'``
-
-typically indicates a **problem with the NumPy installation**, such as a corrupted installation or a mismatch between NumPy versions used to create and load the pickle files.
+The error ``ModuleNotFoundError: No module named 'numpy._core'`` typically indicates a **problem with the NumPy installation**, such as a corrupted installation or a mismatch between NumPy versions used to create and load the pickle files.
 
 Possible solutions
-~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^
 
 Reinstall NumPy:
 
@@ -158,7 +154,7 @@ Verify the installation:
 
 
 After cloning SEDA, my notebook still uses the old version
-----------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 After cloning the repository, reinstall the package by following the `installation instructions <https://seda.readthedocs.io/en/latest/installation.html>`__.
 
@@ -177,12 +173,12 @@ Confirm that the reported version matches the `latest release <https://github.co
 
 
 Is there a way to run the code faster, especially the convolution of model spectra?
------------------------------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The convolution of high-resolution model spectra is the **most computationally expensive** component of the workflow.
 
 Performance optimization strategies
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 - Constrain the parameter ranges to convolve only a relevant subset of the model grid  (see :meth:`~seda.input_parameters.ModelOptions`)
 - Save convolved model spectra and reuse them to avoid repeating the convolution step
 
