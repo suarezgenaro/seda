@@ -64,3 +64,4 @@ html_theme = 'sphinx_rtd_theme'
 #html_theme = 'classic'
 
 html_logo = 'SEDA_logo_nobg.png'
+html_favicon = "_static/favicon.ico"
