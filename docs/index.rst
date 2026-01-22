@@ -2,7 +2,7 @@
 
    <br/>
 
-.. image:: SEDA_logo.png
+.. image:: _static/SEDA_logo.png
     :width: 300px
     :align: center
 
