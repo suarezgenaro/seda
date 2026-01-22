@@ -3,6 +3,9 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter, AutoMinorLocator
 from sys import exit
 from ..utils import *
+from ..utils import normalize_flux
+from numpy.typing import ArrayLike
+from typing import Tuple, Literal, Optional, Union
 
 ##########################
 def silicate_index(wl, flux, eflux, silicate_wl=None, silicate_window=None, 
@@ -740,6 +743,167 @@ def user_index(wl, flux, eflux, feature_wl, feature_window,
 		                                                   plot_yrange=plot_yrange, plot_title=plot_title, plot_save=plot_save, plot_name=plot_name)
 
 	return out
+
+#######################
+
+def user_index_integral(
+    wavelength,
+    flux,
+    num_range: Tuple[float, float],
+    den_range: Tuple[float, float],
+    *,
+    mode: Literal["ratio", "difference"] = "ratio",
+    normalize: bool = False,
+    plot: bool = False,
+    plot_save: Union[bool, str] = False,
+) -> float:
+    """
+    Description:
+	------------
+    Compute a near-infrared spectral index as an integrated flux ratio or difference,
+    with optional normalization and plotting of numerator/denominator regions.
+
+    Parameters:
+    ----------
+    wavelength : array-like
+        Wavelength array (typically in microns).
+    flux : array-like
+        Flux array corresponding to `wavelength`. Assumed 1D, same length as `wavelength`.
+    num_range : (float, float)
+        Wavelength limits [λ_min, λ_max] for the numerator bandpass.
+    den_range : (float, float)
+        Wavelength limits [λ_min, λ_max] for the denominator bandpass.
+    mode : {"ratio", "difference"}, default "ratio"
+        - "ratio": index = ∬ F_num / ∬ F_den
+        - "difference": index = ∬ F_den - ∬ F_num
+    normalize : bool, default False
+        If True, flux is median-normalized (ignoring NaNs) before computing the index.
+    plot : bool, default False
+        If True, plot the spectrum and the two bandpasses.
+    plot_save : bool or str, default False
+        If True, saves to default filename "user_index.pdf".
+        If str, saves to that specific path.
+
+    Returns
+    -------
+    index : float - Spectral index value.
+    plot: Figure 
+        
+
+    Notes
+    -----
+    For *ratio*-type indices, a global flux normalization typically cancels out and
+    does not change the numerical value of the index. However, for *difference*-type
+    indices (e.g., J–H defined as ∬F_den − ∬F_num), normalization directly affects
+    the absolute scale of the index and therefore the boundaries of variability or
+    classification regions. Users should ensure that the same normalization
+    convention is applied consistently to both the target spectrum and any
+    reference/template spectra.
+
+    Author: Natalia Oliveros-Gomez
+    """
+    wave = np.asarray(wavelength, dtype=float)
+    flx = np.asarray(flux, dtype=float)
+
+    if wave.shape != flx.shape:
+        raise ValueError("`wavelength` and `flux` must have the same shape.")
+
+    if normalize:
+        flx = normalize_flux(flx)
+
+    m_num = (wave >= num_range[0]) & (wave <= num_range[1])
+    m_den = (wave >= den_range[0]) & (wave <= den_range[1])
+
+    if not np.any(m_num):
+        raise ValueError(f"No data points within numerator range {num_range}.")
+    if not np.any(m_den):
+        raise ValueError(f"No data points within denominator range {den_range}.")
+
+    num_val = np.trapz(flx[m_num], wave[m_num])
+    den_val = np.trapz(flx[m_den], wave[m_den])
+
+    if mode == "ratio":
+        if den_val == 0:
+            raise ZeroDivisionError(
+                f"Denominator integral is zero for range {den_range}."
+            )
+        index_value = num_val / den_val
+    elif mode == "difference":
+        index_value = den_val - num_val
+    else:
+        raise ValueError(f"Unknown mode={mode!r}. Use 'ratio' or 'difference'.")
+
+    # ---- Optional plotting ----
+    if plot:
+        if isinstance(plot_save, str):
+            savepath = plot_save
+        elif plot_save is True:
+            savepath = "user_index.pdf"
+        else:
+            savepath = None
+
+        plot_user_index_nir(
+            wave,
+            flx,
+            num_range,
+            den_range,
+            mode=mode,
+            index_value=index_value,
+            savepath=savepath,
+        )
+
+    return index_value
+
+###################
+# plot the spectral index as measured in the wavelength region
+
+def plot_user_index_nir(
+    wavelength,
+    flux,
+    num_range,
+    den_range,
+    *,
+    mode,
+    index_value,
+    savepath=None,
+):
+    """
+    Internal plotter for a single NIR index showing numerator/denominator windows.
+    """
+    wave = np.asarray(wavelength)
+    flx = np.asarray(flux)
+
+    fig, ax = plt.subplots(figsize=(7, 4))
+
+    # Plot spectrum
+    ax.plot(wave, flx, color="black", lw=1.2, label="Spectrum")
+
+    # Highlight denominator (blue)
+    ax.axvspan(
+        den_range[0], den_range[1],
+        color="cornflowerblue", alpha=0.25,
+        label="Denominator"
+    )
+
+    # Highlight numerator (red)
+    ax.axvspan(
+        num_range[0], num_range[1],
+        color="lightcoral", alpha=0.25,
+        label="Numerator"
+    )
+
+    ax.set_xlabel("Wavelength [µm]")
+    ax.set_ylabel("Flux")
+    ax.set_title(f"User index ({mode}) = {index_value:.4f}")
+
+    ax.set_xlim(wave.min(), wave.max())
+    ax.legend(loc="upper right", fontsize=10)
+
+    if savepath is not None:
+        fig.savefig(savepath, bbox_inches="tight")
+
+    plt.show()
+    return fig, ax
 
 ##########################
 # plot the spectral index is measured in one continuum wavelength region
