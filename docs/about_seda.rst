@@ -15,8 +15,7 @@ Questions and feedback
 
 Logo
 ----
-Seda is a Spanish word meaning *silk*, which motivates the
-`:math:\`\texttt{SEDA}\` logo <https://github.com/suarezgenaro/seda/blob/main/docs/_static/SEDA_logo.png>`_.
+Seda is a Spanish word meaning *silk*, which motivates the `SEDA logo <https://github.com/suarezgenaro/seda/blob/main/docs/_static/SEDA_logo.png>`_.
 
 The logo shows a silk cocoon, symbolizing the irregular parameter grids that the code can handle, wrapping key molecules—water, methane, ammonia, and silicates—that are common in the atmospheres of brown dwarfs and gas-giant (exo)planets, which are represented in the background image.
 
