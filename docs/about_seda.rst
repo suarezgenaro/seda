@@ -3,7 +3,7 @@ About SEDA
 
 Attribution
 -----------
-**The SEDA release paper is** `Suárez et al. (2024, in prep.) <https:xxx>`__, but the code was used in `Suárez et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...920...99S/abstract>`__. Please cite the release paper if :math:`\texttt{SEDA}` has contributed to your research. Also make sure to give credits to the models (see :ref:`models`) and other relevant python packages (e.g., see :ref:`seda_overview`) you use via :math:`\texttt{SEDA}`.
+**The SEDA release paper is** `Suárez et al. (2026, in prep.) <https:xxx>`__, but the code was used in `Suárez et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...920...99S/abstract>`__. Please cite the release paper if :math:`\texttt{SEDA}` has contributed to your research. Also make sure to give credits to the models (see :ref:`models`) and other relevant python packages (e.g., see :ref:`seda_overview`) you use via :math:`\texttt{SEDA}`.
 
 Contributing
 ------------
@@ -15,7 +15,10 @@ Questions and feedback
 
 Logo
 ----
-Seda is a Spanish word that means silk, which motivates the :math:`\texttt{SEDA}` logo. The logo shows a silk cocoon (irregular grid the code can handle) wrapping key molecules (water, methane, ammonia, and silicates) in the atmospheres of brown dwarfs and gas giant (exo)planets (background image).
+Seda is a Spanish word meaning *silk*, which motivates the
+`:math:\`\texttt{SEDA}\` logo <https://github.com/suarezgenaro/seda/blob/main/docs/_static/SEDA_logo.png>`_.
+
+The logo shows a silk cocoon, symbolizing the irregular parameter grids that the code can handle, wrapping key molecules—water, methane, ammonia, and silicates—that are common in the atmospheres of brown dwarfs and gas-giant (exo)planets, which are represented in the background image.
 
 FAQs
 ----
