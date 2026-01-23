@@ -389,10 +389,10 @@ class Chi2Options:
 		This parameter is used if ``fit_photometry`` but ignored if only ``fit_spectra``. 
 		Default values are the minimum and the maximum of the filter effective wavelengths from SVO.
 	- weight_label : str, optional (default ``dataset``)
-		Weight applied to each input data point (photometric and spectroscopic) when minimizing the chi-square statistics.
-		This parameters is different to the weighting that comes from the observed flux uncertainties in the chi-square statistics definition.
-		``weight_label`` allows assigning different relative weight to photometry and spectra (when ``fit_spectra`` and ``fit_photometry`` are enable),
-		ensuring that photometric measurements do not have a negligible contribution to the chi-square, considering that photometric SEDs typically contain far fewer data points than spectroscopic SEDs.
+		Weight applied to each input data point (photometric and spectroscopic) during data fitting.
+		This parameter is different from the weighting derived from the observed flux uncertainties, which typically appears as the denominator in the fit statistic.
+		``weight_label`` allows assigning different relative weights to photometry and spectra (when ``fit_spectra`` and ``fit_photometry`` are enabled), 
+		ensuring that photometric measurements do not have a negligible contribution to the fit, considering that photometric SEDs typically contain far fewer data points than spectroscopic SEDs.
 
 		Available options are:
 
@@ -979,10 +979,10 @@ class BayesOptions:
 		This parameter is used if ``fit_photometry`` but ignored if only ``fit_spectra``. 
 		Default values are the minimum and the maximum of the filter effective wavelengths from SVO.
 	- weight_label : str, optional (default ``dataset``)
-		Weight applied to each input data point (photometric and spectroscopic) when minimizing the chi-square statistics.
-		This parameters is different to the weighting that comes from the observed flux uncertainties in the chi-square statistics definition.
-		``weight_label`` allows assigning different relative weight to photometry and spectra (when ``fit_spectra`` and ``fit_photometry`` are enable),
-		ensuring that photometric measurements do not have a negligible contribution to the chi-square, considering that photometric SEDs typically contain far fewer data points than spectroscopic SEDs.
+		Weight applied to each input data point (photometric and spectroscopic) during data fitting.
+		This parameter is different from the weighting derived from the observed flux uncertainties, which typically appears as the denominator in the fit statistic.
+		``weight_label`` allows assigning different relative weights to photometry and spectra (when ``fit_spectra`` and ``fit_photometry`` are enabled), 
+		ensuring that photometric measurements do not have a negligible contribution to the fit, considering that photometric SEDs typically contain far fewer data points than spectroscopic SEDs.
 
 		Available options are:
 
