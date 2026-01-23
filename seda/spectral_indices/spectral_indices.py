@@ -6,6 +6,10 @@ from ..utils import *
 from ..utils import normalize_flux
 from numpy.typing import ArrayLike
 from typing import Tuple, Literal, Optional, Union
+<<<<<<< HEAD
+=======
+
+>>>>>>> 7c825e9 (Add variability module and NIR index-based classification and plotting)
 
 ##########################
 def silicate_index(wl, flux, eflux, silicate_wl=None, silicate_window=None, 
@@ -744,7 +748,11 @@ def user_index(wl, flux, eflux, feature_wl, feature_window,
 
 	return out
 
+<<<<<<< HEAD
 #######################
+=======
+#########################################
+>>>>>>> 7c825e9 (Add variability module and NIR index-based classification and plotting)
 
 def user_index_integral(
     wavelength,
@@ -855,7 +863,11 @@ def user_index_integral(
     return index_value
 
 ###################
+<<<<<<< HEAD
 # plot the spectral index as measured in the wavelength region
+=======
+# plot the spectral index is measured in the wavelength region
+>>>>>>> 7c825e9 (Add variability module and NIR index-based classification and plotting)
 
 def plot_user_index_nir(
     wavelength,
@@ -905,6 +917,12 @@ def plot_user_index_nir(
     plt.show()
     return fig, ax
 
+<<<<<<< HEAD
+=======
+
+
+
+>>>>>>> 7c825e9 (Add variability module and NIR index-based classification and plotting)
 ##########################
 # plot the spectral index is measured in one continuum wavelength region
 def plot_spectral_index_one_continuum_region(out_feature_index, index_name=None, plot_xrange=None, plot_yrange=None, plot_title=None, plot_save=True, plot_name=False):
