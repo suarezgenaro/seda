@@ -31,6 +31,19 @@ How can users customize output plots?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Plotting functions, such as those in the modules ``plots`` and
+``spectral_indices.spectral_indices``, return the Matplotlib objects
+``fig`` and ``ax`` (or ``axs`` for multiple subplots). This design allows
+users to customize the resulting figures using standard Matplotlib
+commands, for example to modify axis labels, font sizes, grids, legends,
+or titles.
+
+Below is an example showing how to customize a plot produced by
+``plot_synthetic_photometry`` using the output by ``synthetic_photometry``, as explained in 
+`this tutorial <https://seda.readthedocs.io/en/latest/notebooks/tutorial_synthetic_photometry.html>`__:
+
+Because the returned objects are standard Matplotlib figures and axes,
+any Matplotlib customization supported by ``fig`` and ``ax`` can be
+applied in the same way as for user-generated plots.
 
 
 SEDA is not recognized in my Jupyter notebook
