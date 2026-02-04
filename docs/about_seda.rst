@@ -41,6 +41,28 @@ Below is an example showing how to customize a plot produced by
 ``plot_synthetic_photometry`` using the output by ``synthetic_photometry``, as explained in 
 `this tutorial <https://seda.readthedocs.io/en/latest/notebooks/tutorial_synthetic_photometry.html>`__:
 
+.. code-block:: python
+
+   import matplotlib.pyplot as plt
+
+   # Generate plot for synthetic photometry
+   fig, axs = seda.plots.plot_synthetic_photometry(output_synthetic_photometry)
+
+   # Improve legend
+   axs[0].legend(prop={'size': 10.0}, handlelength=1, handletextpad=0.5, labelspacing=0.5)
+
+   # Set plot title
+   axs[0].set_title('Synthetic photometry', fontsize=15)
+
+   # Increase font size of axis labels
+   axs[0].yaxis.label.set_size(15)
+   axs[1].yaxis.label.set_size(15)
+   axs[1].xaxis.label.set_size(15)
+
+   # Export plot as PDF
+   plt.savefig('synthetic_photometry.pdf', bbox_inches='tight')
+   plt.show()
+
 Because the returned objects are standard Matplotlib figures and axes,
 any Matplotlib customization supported by ``fig`` and ``ax`` can be
 applied in the same way as for user-generated plots.
