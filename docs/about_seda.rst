@@ -39,7 +39,7 @@ or titles.
 
 Below is an example showing how to customize a plot produced by
 ``plot_synthetic_photometry`` using the output by ``synthetic_photometry``, as explained in 
-`this tutorial <https://seda.readthedocs.io/en/latest/notebooks/tutorial_synthetic_photometry.html>`__
+`this tutorial <https://seda.readthedocs.io/en/latest/notebooks/tutorial_synthetic_photometry.html>`__:
 
 .. code-block:: python
 
