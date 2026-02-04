@@ -1057,10 +1057,8 @@ def plot_spectral_index_one_continuum_region(out_feature_index, index_name=None,
 	if plot_save: 
 		if plot_name: plt.savefig(plot_name, bbox_inches='tight')
 		else: plt.savefig(f'{index_name}_index_measurement.pdf', bbox_inches='tight')
-	plt.show()
-	plt.close()
 
-	return
+	return fig, ax
 
 ##########################
 # plot the spectral index when continuum is measured from the fit to two continuum wavelength regions
@@ -1209,10 +1207,8 @@ def plot_spectral_index_two_continuum_regions(out_feature_index, index_name=None
 	if plot_save: 
 		if plot_name: plt.savefig(plot_name, bbox_inches='tight')
 		else: plt.savefig(f'{index_name}_index_measurement.pdf', bbox_inches='tight')
-	plt.show()
-	plt.close()
 
-	return
+	return fig, ax
 
 ##########################
 # manipulate input spectrum before measuring spectral indices

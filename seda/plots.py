@@ -128,16 +128,26 @@ def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None
 
 	# set xrange equal to the input SED range, if not provided
 	if xrange is None: 
-		if fit_spectra: 
-			xrange = [wl_spectra_min, wl_spectra_max]
-		if fit_photometry: 
+		if fit_spectra and not fit_photometry: 
+			xrange = [0.99*wl_spectra_min, 1.01*wl_spectra_max]
+		if not fit_spectra and fit_photometry: 
 			mask_min = lambda_eff_SVO==lambda_eff_SVO.min()
 			mask_max = lambda_eff_SVO==lambda_eff_SVO.max()
 			xmin = lambda_eff_SVO[mask_min][0]-width_eff_SVO[mask_min][0]/2.
 			xmax = lambda_eff_SVO[mask_max][0]+width_eff_SVO[mask_max][0]/2.
 			xrange = [0.99*xmin, 1.01*xmax]
+		if fit_spectra and fit_photometry: 
+			# from spectra
+			xmin_spec = wl_spectra_min
+			xmax_spec = wl_spectra_max
+			# from photometry
+			mask_min = lambda_eff_SVO==lambda_eff_SVO.min()
+			mask_max = lambda_eff_SVO==lambda_eff_SVO.max()
+			xmin_phot = lambda_eff_SVO[mask_min][0]-width_eff_SVO[mask_min][0]/2.
+			xmax_phot = lambda_eff_SVO[mask_max][0]+width_eff_SVO[mask_max][0]/2.
+			xrange = [0.99*min(xmin_spec, xmin_phot), 1.01*max(xmax_spec, xmax_phot)]
 
-	 # short name for spectra to keep only relevant info
+	# short name for spectra to keep only relevant info
 	label_model = models.spectra_name_short(model=model, spectra_name=spectra_name_best)
 
 	# plot data
@@ -267,10 +277,8 @@ def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None
 	if save:
 		if out_file is None: plt.savefig(f'SED_{model}_chi2.pdf', bbox_inches='tight')
 		else: plt.savefig(out_file, bbox_inches='tight')
-	plt.show()
-	plt.close()
 
-	return
+	return fig, ax 
 
 ##########################
 def plot_chi2_red(output_chi2, N_best_fits=1, xlog=False, ylog=False, out_file=None, save=True):
@@ -417,12 +425,11 @@ def plot_chi2_red(output_chi2, N_best_fits=1, xlog=False, ylog=False, out_file=N
 	
 		if save:
 			pdf_pages.savefig(fig, bbox_inches='tight')
-		plt.show()
-#		plt.cla()
 
 	if save:
 		pdf_pages.close()
-	plt.close('all')
+
+	return fig, ax 
 
 ##########################
 def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None, 
@@ -720,10 +727,8 @@ def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None
 	if save:
 		if out_file is None: plt.savefig(f'SED_{model}_bayes.pdf', bbox_inches='tight')
 		else: plt.savefig(out_file, bbox_inches='tight')
-	plt.show()
-	plt.close()
 
-	return
+	return fig, ax 
 
 ##########################
 def plot_model_coverage(model, xparam, yparam, model_dir=None, params_ranges=None, 
@@ -827,8 +832,8 @@ def plot_model_coverage(model, xparam, yparam, model_dir=None, params_ranges=Non
 	if save:
 		if out_file is None: plt.savefig(f'{model}_{xparam}_{yparam}.pdf', bbox_inches='tight')
 		else: plt.savefig(out_file, bbox_inches='tight')
-	plt.show()
-	plt.close()
+
+	return fig, ax 
 
 ##########################
 def plot_model_resolution(model, spectra_name_full, xlog=True, ylog=False, xrange=None, yrange=None, 
@@ -944,11 +949,12 @@ def plot_model_resolution(model, spectra_name_full, xlog=True, ylog=False, xrang
 	if save:
 		if out_file is None: plt.savefig(f'{model}_resolution.pdf', bbox_inches='tight')
 		else: plt.savefig(out_file, bbox_inches='tight')
-	plt.show()
-	plt.close()
+
+	return fig, ax 
 
 #########################
-def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False, out_file=None, save=False):
+def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False, 
+	                          out_file=None, save=False, spectrum_kwargs=None, phot_kwargs=None):
 	'''
 	Description:
 	------------
@@ -968,6 +974,10 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False, 
 		Default name is 'SED_synthetic_photometry.pdf', where ``model`` is read from ``out_synthetic_photometry``.
 	- save : {``True``, ``False``}, optional (default ``True``)
 		Save (``'True'``) or do not save (``'False'``) the resulting figure.
+	- sed_kwargs : dict, optional
+		Keyword arguments to customize the spectrum line plot (e.g., color, linewidth).
+	- phot_kwargs : dict, optional
+		Keyword arguments to customize synthetic photometry points (errorbar) plot.
 
 	Returns:
 	--------
@@ -1012,18 +1022,28 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False, 
 	# initialize plot for best fits and residuals
 	fig, ax = plt.subplots(2, sharex=True, gridspec_kw={'height_ratios': [1, 0.3], 'hspace': 0.0})
 
-	ax[0].plot(wl, flux, color='black', linewidth=1, zorder=3)
-	
+	# default spectrum plot options
+	default_spectrum_opts = {'color': 'black', 'linewidth': 1, 'zorder': 3}
+	if spectrum_kwargs is not None:
+		default_spectrum_opts.update(spectrum_kwargs)
+
+	# plot spectrum
+	ax[0].plot(wl, flux, **default_spectrum_opts)
+
+	# default photometry errorbar options
+	default_phot_opts = {'fmt': '.', 'markersize': 1, 'capsize': 2, 'elinewidth': 1, 'markeredgewidth': 0.5, 'zorder': 3}
+	if phot_kwargs is not None:
+		default_phot_opts.update(phot_kwargs)
+
+	# plot synthetic photometry
 	for i, filt in enumerate(filters):
 	    if label_syn[i]=='complete':
 	        ax[0].errorbar(eff_wl[i], flux_syn[i], xerr=eff_width[i]/2., yerr=eflux_syn[i], 
-	                       fmt='.', markersize=1., capsize=2,  elinewidth=1.0, markeredgewidth=0.5, 
-	                       label=filt, zorder=3)
+	                       label=filt, **default_phot_opts)
 	    elif label_syn[i]=='incomplete':
 	        arrow = 0.05*(flux.max()-flux.min())
 	        ax[0].errorbar(eff_wl[i], flux_syn[i], xerr=eff_width[i]/2., yerr=arrow, 
-	                       fmt='.', markersize=1., capsize=2,  elinewidth=1.0, markeredgewidth=0.5, 
-	                       lolims=1, label=filt, zorder=3)    
+	                       lolims=1, label=filt, **default_phot_opts)
 	
 	ax[0].xaxis.set_minor_locator(AutoMinorLocator())
 	ax[0].yaxis.set_minor_locator(AutoMinorLocator())
@@ -1036,10 +1056,16 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False, 
 	if flux_unit=='Jy': ax[0].set_ylabel(r'$F_\nu$ (Jy)', size=12)
 	
 	#++++++++++++++++++++++++
+	# determine color: use phot_kwargs['color'] if given, otherwise None to use default cycle
+	if phot_kwargs is not None:
+		trans_color = phot_kwargs.get('color', None) 
+	else:
+		trans_color = None
+
 	# filters' transmissions
 	for i, filt in enumerate(filters):
 		if filt in list(transmission.keys()): # only for input filters in SVO
-		    ax[1].plot(transmission[filt][0,:], transmission[filt][1,:], linewidth=1.0)
+			ax[1].plot(transmission[filt][0,:], transmission[filt][1,:], color=trans_color, linewidth=1.0)
 	
 	ax[1].xaxis.set_minor_locator(AutoMinorLocator())
 	ax[1].yaxis.set_minor_locator(AutoMinorLocator())
@@ -1051,10 +1077,8 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False, 
 	if save:
 		if out_file is None: plt.savefig('SED_synthetic_photometry.pdf', bbox_inches='tight')
 		else: plt.savefig(out_file, bbox_inches='tight')
-	plt.show()
-	plt.close()
 
-	return
+	return fig, ax 
 
 #########################
 def plot_full_SED(out_bol_lum, xlog=True, ylog=True, xrange=None, yrange=None, 
@@ -1155,7 +1179,5 @@ def plot_full_SED(out_bol_lum, xlog=True, ylog=True, xrange=None, yrange=None,
 	if save:
 		if out_file is None: plt.savefig(f'Hybrid_SED.pdf', bbox_inches='tight')
 		else: plt.savefig(out_file, bbox_inches='tight')
-	plt.show()
-	plt.close()
 
-	return
+	return fig, ax 
