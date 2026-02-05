@@ -51,35 +51,14 @@ def nir_indices(
     plot: bool = False,
     plot_save: Union[bool, str] = False,
 ) -> Dict[str, float]:
-    """
-    Description:
-    ----------
-    Compute NIR spectral indices for L and T brown dwarfs, defined by Oliveros-Gomez et. al. 2022, 2024, to focused in found variable candidate objects.
+    #Compute NIR spectral indices for L and T brown dwarfs, defined by Oliveros-Gomez et. al. 2022, 2024,
+    #to focused in found variable candidate objects.
 
-    Parameters
-    ----------
-    wavelength : array-like
-        Wavelength array (microns).
-    flux : array-like
-        Flux array corresponding to `wavelength`. 1D, same length.
-    spectral_type : {"L", "T"}
-        Coarse spectral type. Determines which index set is computed.
-    normalize : bool, default False
-        If True, the flux is divided by its median before computing
-        the indices (similar to the original implementation).
-    plot : bool, default False
-        If True, plot the index bandpasses over the input spectrum,
-        one panel per index (similar to `user_index` plot option).
-    plot_save : bool or str, default False
-        If False: do not save the plot.
-        If True: save to a default filename: "nir_indices_<spt>.pdf".
-        If str: interpreted as a path/filename to save the figure.
+    #Parameters: wavelength, flux (array-like), spectral_type : {"L", "T"}, normalize : bool, default False,
+    #plot : bool, default False, plot_save : bool or str, default False
 
-    Returns
-    -------
-    indices : dict
-        Dictionary of index_name -> value.
-    """
+    #Returns: indices : dict -- Dictionary of index_name -> value.
+
     wave = np.asarray(wavelength, dtype=float)
     flx = np.asarray(flux, dtype=float)
 
@@ -135,10 +114,9 @@ def _plot_user_index_integral_windows(
     figsize=None,
     savepath: Optional[str] = None,
 ):
-    """
-    Internal helper to plot NIR indices bandpasses over the input spectrum.
-    One panel per index, similar to the user_index plot.
-    """
+    #Internal helper to plot NIR indices bandpasses over the input spectrum.
+    #One panel per index, similar to the user_index plot.
+
     wave = np.asarray(wavelength, dtype=float)
     flx = np.asarray(flux, dtype=float)
 
@@ -168,9 +146,9 @@ def _plot_user_index_integral_windows(
 
         ax.plot(wave, flx, lw=1.2)
 
-        # Denominador en azul
+        # Denominador in blue
         ax.axvspan(den_range[0], den_range[1], alpha=0.25, label="denominator")
-        # Numerador en rojo (de momento mismo color, el usuario puede cambiar estilo global)
+        # Numerador in red (the user can change the color)
         ax.axvspan(num_range[0], num_range[1], alpha=0.25, color='red')
 
         ax.set_title(f"{name} index")
@@ -200,33 +178,30 @@ def _plot_user_index_integral_windows(
 RegionDef = Dict[str, object]  # para no complicar tipos
 
 def _build_path(verts: List[Tuple[float, float]]) -> Path:
-    """
-    Build a Matplotlib Path from a list of vertices, mimicking the original
-    implementation where different code arrays (codes_3v, codes_4v, codes_5v)
-    were used with CLOSEPOLY at the end.
+    #Build a Matplotlib Path from a list of vertices, mimicking the original
+    #implementation where different code arrays (codes_3v, codes_4v, codes_5v)
+    #were used with CLOSEPOLY at the end.
 
-    Behavior:
-    - First vertex: MOVETO
-    - Intermediate vertices: LINETO
-    - Last vertex: CLOSEPOLY
+    #Behavior:
+    #- First vertex: MOVETO
+    #- Intermediate vertices: LINETO
+    #- Last vertex: CLOSEPOLY
 
-    This works tanto si el último vértice es una repetición del primero
-    (como en tu código original) como si no lo es.
-    """
+    #This works whether the last vertex is a repetition of the first or not
+
     verts = list(verts)
 
-    # cerrar el polígono si no viene cerrado
+    # close the poligone
     if verts[0] != verts[-1]:
         verts.append(verts[0])
 
     n = len(verts)
     if n < 4:
-        # 3 vértices reales + punto de cierre
+        # 3 real verts + close
         raise ValueError("A polygon needs at least 3 vertices.")
 
     # MOVETO for first point, LINETO for all intermediate, CLOSEPOLY for last
     if n == 4:
-        # equivale a tus codes_3v: [MOVETO, LINETO, LINETO, CLOSEPOLY]
         codes = [Path.MOVETO, Path.LINETO, Path.LINETO]
     else:
         # general: MOVETO + LINETO * (n-2) + CLOSEPOLY
@@ -758,24 +733,12 @@ def _count_regions_triggered(
     indices: Mapping[str, float],
     regions: List[RegionDef],
 ) -> Tuple[int, List[str]]:
-    """
-    Given a set of indices and region definitions, count how many
-    index–index points fall inside the variable regions.
+    #Given a set of indices and region definitions, count how many
+    #index–index points fall inside the variable regions.
 
-    Parameters
-    ----------
-    indices : mapping
-        Dict-like object with index_name -> value.
-    regions : list of dict
-        Each element with keys: "name", "x_index", "y_index", "verts".
+    #Parameters: indices : mapping, regions : list of dict
 
-    Returns
-    -------
-    n_triggered : int
-        Number of regions containing the point.
-    region_names : list of str
-        Names of the regions where the point is inside.
-    """
+    #Returns: n_triggered : int,    region_names : list of str
     triggered: List[str] = []
 
     for reg in regions:
@@ -835,12 +798,12 @@ def _classify_T_variability(
     normalize: bool = True,
     scheme: str = "Oliveros-Gomez+2022",
 ) -> VariabilityResult:
-    """
-    Classify T-type brown dwarf variability using NIR spectral indices.
 
-    This wraps `seda.spectral_indices.nir_indices` and the original
-    polygon-based criterion (12 regions, threshold ~11).
-    """
+    #Classify T-type brown dwarf variability using NIR spectral indices.
+
+    #This wraps `seda.spectral_indices.nir_indices` and the original
+    #polygon-based criterion (12 regions, threshold ~11).
+
     indices = nir_indices(wavelength, flux, spectral_type="T", normalize=normalize)
     n_trig, names = _count_regions_triggered(indices, _T_REGIONS)
 
@@ -865,12 +828,12 @@ def _classify_L_variability(
     normalize: bool = True,
     scheme: str = "Oliveros-Gomez+2024",
 ) -> VariabilityResult:
-    """
-    Classify L-type brown dwarf variability using NIR spectral indices.
 
-    This wraps `seda.spectral_indices.nir_indices` and the original
-    polygon-based criterion (15 regions, threshold ~9).
-    """
+    #Classify L-type brown dwarf variability using NIR spectral indices.
+
+   # This wraps `seda.spectral_indices.nir_indices` and the original
+    #polygon-based criterion (15 regions, threshold ~9).
+    
     indices = nir_indices(wavelength, flux, spectral_type="L", normalize=normalize)
     n_trig, names = _count_regions_triggered(indices, _L_REGIONS)
 
@@ -1100,66 +1063,26 @@ def _plot_variability_diagrams(
     show: bool = True,
     savepath: Optional[str] = None,
 ):
-    """
-    Plot index–index diagrams with variability regions for L/T brown dwarfs.
-    This function generates a grid of index–index panels corresponding to the
-    adopted variability scheme for the given spectral type. Each panel shows:
-    (i) the polygonal variability region, (ii) the reference/template object,
-    and (iii) the measured target indices.
+    #Plot index–index diagrams with variability regions for L/T brown dwarfs.
+    #This function generates a grid of index–index panels corresponding to the
+    #adopted variability scheme for the given spectral type. Each panel shows:
+    #(i) the polygonal variability region, (ii) the reference/template object,
+    #and (iii) the measured target indices.
     
-    Parameters
-    ----------
-    result : VariabilityResult
-        Output of `classify_variability`, `classify_L_variability`, or
-        `classify_T_variability`. The object must contain the computed indices,
-        the list of triggered regions, and the adopted classification threshold.
-    figsize : tuple, optional
-        Figure size passed to `matplotlib.pyplot.subplots`. If None, a sensible
-        default is chosen depending on the spectral type and number of panels.
-        Typical values are (22, 14) for T-type schemes and (26, 14) for L-type
-        schemes.
-    show : bool, default True
-        If True, call `matplotlib.pyplot.show()` at the end of the function.
-        Set to False when embedding the figure in a larger matplotlib workflow
-        or when saving without displaying.
-    savepath : str or None, default None
-        If provided, the figure is saved to this path (e.g., "indices.pdf",
-        "indices.png"). The file format is inferred from the extension.
+    #Parameters: result : VariabilityResult, show : bool, default True, savepath : str or None, default None
 
-    Returns
-    -------
-    fig : matplotlib.figure.Figure
-        The created matplotlib Figure object.
-    axes : ndarray of matplotlib.axes.Axes
-        Array of Axes objects corresponding to the individual index–index
-        panels, ordered row-wise.
+    #Returns: fig : matplotlib.figure.Figure, axes : ndarray of matplotlib.axes.Axes
+    #Notes: The variability regions are defined as polygonal areas in index–index
+    #space following the original scheme described in Oliveros-Gomez et al.
+    #(2022, T dwarfs) and Oliveros-Gomez et al. (2024, L dwarfs). A target is
+    #classified as a candidate variable if the number of panels in which its
+    #indices fall inside the corresponding polygon meets or exceeds the
+    #threshold stored in the input `result`.
 
-    Notes
-    -----
-    The variability regions are defined as polygonal areas in index–index
-    space following the original scheme described in Oliveros-Gomez et al.
-    (2022, T dwarfs) and Oliveros-Gomez et al. (2024, L dwarfs). A target is
-    classified as a candidate variable if the number of panels in which its
-    indices fall inside the corresponding polygon meets or exceeds the
-    threshold stored in the input `result`.
+    #The reference/template object is shown as a black star marker, while the
+    #target object is shown as a blue star marker. Shaded red regions indicate
+    #the variability polygons.
 
-    The reference/template object is shown as a black star marker, while the
-    target object is shown as a blue star marker. Shaded red regions indicate
-    the variability polygons.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from seda.variability import classify_variability, plot_variability_diagrams
-    >>> wave = np.linspace(1.1, 1.7, 200)
-    >>> flux = np.ones_like(wave)
-    >>> result = classify_variability(wave, flux, spectral_type="T", normalize=False)
-    >>> fig, axes = plot_variability_diagrams(result, savepath="indices_T.pdf")
-
-    The returned `fig` and `axes` objects can be further customized using
-    standard matplotlib commands, for example:
-    >>> axes[0].set_title("Custom title for first panel")
-    """
     spt = result.spectral_type.upper()
 
     if spt == "T":
