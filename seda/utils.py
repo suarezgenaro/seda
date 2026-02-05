@@ -1807,6 +1807,10 @@ def teff_to_spt(teff, ref=None):
 	teff = np.array(teff, ndmin=1)
 	spt_float = inv_interp(teff)
 
+	# round spt_float to a few decimal to avoid having
+	# e.g., 19.99999945 -> L10 instead of T0
+	spt_float = np.round(spt_float, 5)
+
 	spt_str = [spt_float_to_str(sf) for sf in spt_float]
 
 	# decide output: single value or list
