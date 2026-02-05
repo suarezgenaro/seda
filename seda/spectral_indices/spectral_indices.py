@@ -15,12 +15,12 @@ def silicate_index(wl, flux, eflux, silicate_wl=None, silicate_window=None,
 	               plot=False, plot_title=None, plot_xrange=None, 
 	               plot_yrange=None, plot_save=False, plot_name=False):
 	'''
-	Description:
-	------------
+	Description
+	-----------
 		Measure the strength of the mid-infrared silicate absorption considering the silicate index defined in Suárez & Metchev (2022,2023).
 
-	Parameters:
-	-----------
+	Parameters
+	----------
 	- wl : array
 		Spectrum wavelengths in microns.
 	- flux : array
@@ -64,8 +64,8 @@ def silicate_index(wl, flux, eflux, silicate_wl=None, silicate_window=None,
 		Filename to store the plot.
 		Default is ``'Silicate_index_measurement.pdf'``.
 
-	Returns:
-	--------
+	Returns
+	-------
 	- Dictionary 
 		Dictionary with silicate index parameters:
 			- ``'silicate_index'`` : silicate index
@@ -759,37 +759,38 @@ def user_index_integral(
     plot_save: Union[bool, str] = False,
 ) -> float:
     """
-    Description:
-	------------
+    Description
+	-----------
     Compute a near-infrared spectral index as an integrated flux ratio or difference,
     with optional normalization and plotting of numerator/denominator regions.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     wavelength : array-like
         Wavelength array (typically in microns).
     flux : array-like
         Flux array corresponding to `wavelength`. Assumed 1D, same length as `wavelength`.
-    num_range : (float, float)
-        Wavelength limits [λ_min, λ_max] for the numerator bandpass.
-    den_range : (float, float)
-        Wavelength limits [λ_min, λ_max] for the denominator bandpass.
-    mode : {"ratio", "difference"}, default "ratio"
-        - "ratio": index = ∬ F_num / ∬ F_den
-        - "difference": index = ∬ F_den - ∬ F_num
-    normalize : bool, default False
+    num_range : tuple of float
+        Wavelength limits (λ_min, λ_max) for the numerator bandpass.
+    den_range : tuple of float
+        Wavelength limits (λ_min, λ_max) for the denominator bandpass.
+    mode : {"ratio", "difference"}, optional
+        Definition of the index.
+
+        - ``"ratio"``: index = ∬ F_num / ∬ F_den
+        - ``"difference"``: index = ∬ F_den − ∬ F_num
+    normalize : bool, optional
         If True, flux is median-normalized (ignoring NaNs) before computing the index.
-    plot : bool, default False
+    plot : bool, optional
         If True, plot the spectrum and the two bandpasses.
-    plot_save : bool or str, default False
-        If True, saves to default filename "user_index.pdf".
+    plot_save : bool or str, optional
+        If True, saves to default filename ``"user_index.pdf"``.
         If str, saves to that specific path.
 
     Returns
     -------
-    index : float - Spectral index value.
-    plot: Figure 
-        
+    float
+        Spectral index value.
 
     Notes
     -----
@@ -801,8 +802,11 @@ def user_index_integral(
     convention is applied consistently to both the target spectrum and any
     reference/template spectra.
 
-    Author: Natalia Oliveros-Gomez
+    Author
+    ------
+    Natalia Oliveros-Gomez
     """
+
     wave = np.asarray(wavelength, dtype=float)
     flx = np.asarray(flux, dtype=float)
 
