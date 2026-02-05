@@ -759,8 +759,6 @@ def user_index_integral(
     plot_save: Union[bool, str] = False,
 ) -> float:
     """
-	Description
-    -----------
     Compute a near-infrared spectral index as an integrated flux ratio or difference,
     with optional normalization and plotting of numerator/denominator regions.
 
