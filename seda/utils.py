@@ -2438,19 +2438,3 @@ def reorder_dict(data_dict, order_list):
 	        raise Exception(f'{key} param is not provided')
 
 	return reordered_dict
-
-
-######################
-
-def normalize_flux(flx: ArrayLike) -> np.ndarray:
-    """Simple median normalization, ignoring NaNs."""
-    flx = np.asarray(flx, dtype=float)
-    m = np.isfinite(flx)
-    if not np.any(m):
-        raise ValueError("Flux array contains no finite values to normalize.")
-    med = np.median(flx[m])
-    if med == 0:
-        return flx
-    return flx / med
-
-
