@@ -765,7 +765,7 @@ def user_index_integral(
     with optional normalization and plotting of numerator/denominator regions.
 
     Parameters:
-    ----------
+    -----------
     wavelength : array-like
         Wavelength array (typically in microns).
     flux : array-like
