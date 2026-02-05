@@ -16,13 +16,13 @@ from scipy.interpolate import RegularGridInterpolator
 from scipy.interpolate import interp1d
 from tqdm.auto import tqdm
 from sys import exit
-<<<<<<< HEAD
+
 from . import models
 from .synthetic_photometry.synthetic_photometry import synthetic_photometry
 from specutils import Spectrum1D
-=======
+
 from .models import *
->>>>>>> 7c825e9 (Add variability module and NIR index-based classification and plotting)
+
 from numpy.typing import ArrayLike
 
 ##########################
@@ -2304,7 +2304,45 @@ def astropy_to_numpy(x):
 ######################
 
 def normalize_flux(flx: ArrayLike) -> np.ndarray:
-    """Simple median normalization, ignoring NaNs."""
+    """
+    Description:
+    ------------
+    Median-normalize a flux array while ignoring non-finite values.
+
+    The function divides the input flux by the median of the finite
+    (non-NaN, non-infinite) values. This is commonly used to place
+    spectra on a relative scale before computing spectral indices.
+
+    Parameters:
+    -----------
+    flx : array-like
+        Input flux array. Can contain NaNs or infinite values, which
+        are ignored when computing the median.
+
+    Returns
+    -------
+    normalized_flux : ndarray
+        Flux array divided by the median of its finite values.
+        If the median is zero, the original array is returned unchanged.
+
+    Raises:
+    -------
+    ValueError
+        If the input array contains no finite values.
+
+    Notes:
+    ------
+    This is a simple normalization intended for index-based analysis.
+    It does not perform any continuum fitting or band-specific scaling.
+
+    Examples:
+    ---------
+    >>> import numpy as np
+    >>> flux = np.array([1.0, 2.0, 3.0, np.nan])
+    >>> normalize_flux(flux)
+    array([0.5, 1. , 1.5, nan])
+    """
+    
     flx = np.asarray(flx, dtype=float)
     m = np.isfinite(flx)
     if not np.any(m):
@@ -2313,7 +2351,6 @@ def normalize_flux(flx: ArrayLike) -> np.ndarray:
     if med == 0:
         return flx
     return flx / med
-
 
 
 #+++++++++++++++++++++++++++

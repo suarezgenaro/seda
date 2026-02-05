@@ -53,7 +53,7 @@ def nir_indices(
 ) -> Dict[str, float]:
     """
     Description:
-    ------------
+    ----------
     Compute NIR spectral indices for L and T brown dwarfs, defined by Oliveros-Gomez et. al. 2022, 2024, to focused in found variable candidate objects.
 
     Parameters
@@ -120,13 +120,13 @@ def nir_indices(
         else:
             savepath = None
 
-        plot_user_index_integral_windows(wave, flx, spt, index_defs, savepath=savepath)
+        _plot_user_index_integral_windows(wave, flx, spt, index_defs, savepath=savepath)
 
     return indices
 
 ######
 
-def plot_user_index_integral_windows(
+def _plot_user_index_integral_windows(
     wavelength: ArrayLike,
     flux: ArrayLike,
     spectral_type: str,
@@ -828,7 +828,7 @@ class VariabilityResult:
         )
 
 
-def classify_T_variability(
+def _classify_T_variability(
     wavelength,
     flux,
     *,
@@ -858,7 +858,7 @@ def classify_T_variability(
     )
 
 
-def classify_L_variability(
+def _classify_L_variability(
     wavelength,
     flux,
     *,
@@ -886,7 +886,6 @@ def classify_L_variability(
         indices=indices,
         regions_triggered=names,
     )
-
 
 def classify_variability(
     wavelength,
@@ -1016,11 +1015,13 @@ def classify_variability(
         else:
             savepath = None
 
+        index_defs = _T_INDEX_DEFS if spt.startswith("T") else _L_INDEX_DEFS
+        
         _plot_user_index_integral_windows(
             wavelength,
             flux,
             spectral_type=spt,
-            index_defs=result.indices,
+            index_defs=index_defs,
             savepath=savepath,
         )
 
@@ -1042,8 +1043,6 @@ def classify_variability(
         )
 
     return result
-
-
 
 
 # ==========================
@@ -1094,7 +1093,7 @@ _L_LABELS = {
 
 
 # Creating the plot
-def plot_variability_diagrams(
+def _plot_variability_diagrams(
     result: VariabilityResult,
     *,
     figsize=None,
