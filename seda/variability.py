@@ -1098,7 +1098,7 @@ def _plot_variability_diagrams(
     *,
     figsize=None,
     show: bool = True,
-    savepath: str | None = None,
+    savepath: Optional[str] = None,
 ):
     """
     Plot index–index diagrams with variability regions for L/T brown dwarfs.
