@@ -771,14 +771,14 @@ def user_index_integral(
     flux : array-like
         Flux array corresponding to `wavelength`. Assumed 1D, same length as `wavelength`.
     num_range : tuple of float
-        Wavelength limits (λ_min, λ_max) for the numerator bandpass.
+        Wavelength limits (lambda_min, lambda_max) for the numerator bandpass.
     den_range : tuple of float
-        Wavelength limits (λ_min, λ_max) for the denominator bandpass.
+        Wavelength limits (lambda_min, lambda_max) for the denominator bandpass.
     mode : {"ratio", "difference"}, optional
         Definition of the index.
 
-        - ``"ratio"``: index = ∬ F_num / ∬ F_den
-        - ``"difference"``: index = ∬ F_den − ∬ F_num
+        - ``"ratio"``: index = int(F_num) / int(F_den)
+        - ``"difference"``: index = int(F_den) − int(F_num)
     normalize : bool, optional
         If True, flux is median-normalized (ignoring NaNs) before computing the index.
     plot : bool, optional
