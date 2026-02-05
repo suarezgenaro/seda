@@ -893,10 +893,10 @@ def classify_variability(
     *,
     spectral_type: str,
     normalize: bool = True,
-    scheme: str | None = None,
+    scheme: Optional[str] = None,
     plot_diagrams: bool = False,
     plot_index_windows: bool = False,
-    plot_save: bool | str = False,
+    plot_save: Union[bool, str] = False,
     show: bool = True,
 ) -> VariabilityResult:
     """
