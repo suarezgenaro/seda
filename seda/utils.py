@@ -445,6 +445,18 @@ def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spect
 	Date: 2025-03-14
 	'''
 
+	# verify model_dir is provided if grid is not given
+	if not grid and not model_dir:
+		raise Exception(f'"model_dir" or "grid" must be provided.')
+
+	# if desired parameters are given as a one-element numpy array
+	# convert it into a float number
+	for param, value in params.items():
+		if isinstance(value, np.ndarray):
+			params[param] = float(params[param].item())
+		else:
+			params[param] = float(value)
+
 	# verify there is an input value for each free parameter in the grid
 	# parameter ranges covered by the model spectra in the input model_dir
 	if grid is None: # when no grid is provided, read the parameter ranges from the spectra in the input folders
