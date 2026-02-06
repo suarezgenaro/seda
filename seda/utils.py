@@ -572,6 +572,7 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 		- ``'wavelength'`` : wavelengths in microns for the model spectra in the grid.
 		- ``'flux'`` : fluxes in erg/s/cm2/A for the model spectra in the grid.
 		- ``'params_unique'`` : dictionary with unique (non-repetitive) values for each model free parameter
+		- ``'N_model_spectra'`` : dictionary with unique (non-repetitive) values for each model free parameter
 
 	Example:
 	--------
@@ -710,7 +711,7 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 	fin_time_grid = time.time()
 	print_time(fin_time_grid-ini_time_grid)
 
-	out = {'wavelength': wl_grid, 'flux': flux_grid, 'params_unique': params_unique}
+	out = {'wavelength': wl_grid, 'flux': flux_grid, 'params_unique': params_unique, 'N_model_spectra': len(spectra_name)}
 
 	return out
 
@@ -760,6 +761,7 @@ def read_grid_phot(model, model_dir, filters, params_ranges=None, fit_phot_range
 		- ``'wavelength'`` : wavelengths in microns for the model spectra in the grid.
 		- ``'flux'`` : fluxes in erg/s/cm2/A for synthetic photometry in the grid.
 		- ``'params_unique'`` : dictionary with unique (non-repetitive) values for each model free parameter
+		- ``'N_model_spectra'`` : dictionary with unique (non-repetitive) values for each model free parameter
 
 	Example:
 	--------
@@ -922,7 +924,7 @@ def read_grid_phot(model, model_dir, filters, params_ranges=None, fit_phot_range
 	fin_time_grid = time.time()
 	print_time(fin_time_grid-ini_time_grid)
 
-	out = {'wavelength': wl_grid, 'flux': flux_grid, 'params_unique': params_unique}
+	out = {'wavelength': wl_grid, 'flux': flux_grid, 'params_unique': params_unique, 'N_model_spectra': len(spectra_name)}
 
 	return out
 
