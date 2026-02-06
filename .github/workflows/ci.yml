@@ -10,9 +10,9 @@ jobs:
   tests:
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: false
+      fail-fast: true
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.11", "3.12", "3.13"]
 
     steps:
       - name: Checkout
@@ -35,4 +35,4 @@ jobs:
           python -m pip install -e .
 
       - name: Run tests
-        run: pytest
+        run: pytest -m "not models"

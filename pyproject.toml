@@ -14,7 +14,7 @@ keywords = [
 ]
 authors = [{ name = "Genaro Suárez", email = "gsuarez2405@gmail.com" }]
 license = {file = "LICENSE"}
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
   "astropy",
   "corner",
@@ -24,7 +24,7 @@ dependencies = [
   "numpy",
   "prettytable",
   "scipy",
-  "specutils",
+  "specutils>2.1.0",
   "spectres",
   "tqdm",
   "xarray",
@@ -37,6 +37,9 @@ docs = [
   "jupyter",
   "nbsphinx",
 ]
+dev = [
+  "pytest"
+]
 
 [project.urls]
 Homepage = "https://github.com/suarezgenaro/seda"
@@ -46,9 +49,9 @@ write_to = "seda/_version.py"
 
 [tool.setuptools]
 include-package-data = true
+packages = ["seda"]
 
 [tool.setuptools.package-data]
-# Mirror setup.py's package_data config
 seda = [
   "models_aux/model_coverage/*",
   "models_aux/model_specifics/*",
@@ -56,6 +59,12 @@ seda = [
   "models_aux/*.pickle",
 ]
 
-[tool.setuptools.packages.find]
-include = ["seda*"]
-exclude = ["backups*"]
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
+
+[pytest]
+markers = [
+    "models: marks tests that use models (deselect with '-m \"not models\"')",
+]
