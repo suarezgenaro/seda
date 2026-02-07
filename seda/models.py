@@ -399,10 +399,15 @@ def read_model_spectrum(spectrum_name_full, model, model_wl_range=None):
 		spec_model = ascii.read(spectrum_name_full, data_start=3, format='no_header')
 		wl_model = spec_model['col1'] * u.micron # um (in vacuum?)
 		# convert wavelength from vacuum to air
-		if wl_model.min() < 200 * u.nm:
-			wl_model = vac_to_air(wl_model, method='Griesen2006').value # um in the air
-		else:
-			wl_model = vac_to_air(wl_model).value # um in the air
+		uv_mask = wl_model < 0.2 * u.um
+		nouv_mask = ~uv_mask
+		if np.any(uv_mask):
+			# only UV wavelengths use Greisen2006
+			wl_model[uv_mask] = vac_to_air(wl_model[uv_mask], method='Greisen2006')
+		if np.any(nouv_mask):
+			# rest use default (Morton2000)
+			wl_model[nouv_mask] = vac_to_air(wl_model[nouv_mask])
+		wl_model = wl_model.value # in um
 		flux_model = spec_model['col2'] * u.W/u.m**2/u.m # W/m2/m
 		flux_model = flux_model.to(u.erg/u.s/u.cm**2/(u.nm*0.1)).value # erg/s/cm2/A
 	if (model == 'Sonora_Elf_Owl'):
@@ -427,40 +432,60 @@ def read_model_spectrum(spectrum_name_full, model, model_wl_range=None):
 		spec_model = ascii.read(spectrum_name_full, data_start=2, format='no_header')
 		wl_model = spec_model['col1'] * u.micron # um (in vacuum?)
 		# convert wavelength from vacuum to air
-		if wl_model.min() < 200 * u.nm:
-			wl_model = vac_to_air(wl_model, method='Griesen2006').value # um in the air
-		else:
-			wl_model = vac_to_air(wl_model).value # um in the air
+		uv_mask = wl_model < 0.2 * u.um
+		nouv_mask = ~uv_mask
+		if np.any(uv_mask):
+			# only UV wavelengths use Greisen2006
+			wl_model[uv_mask] = vac_to_air(wl_model[uv_mask], method='Greisen2006')
+		if np.any(nouv_mask):
+			# rest use default (Morton2000)
+			wl_model[nouv_mask] = vac_to_air(wl_model[nouv_mask])
+		wl_model = wl_model.value # in um
 		flux_model = spec_model['col2'] * u.W/u.m**2/u.m # W/m2/m
 		flux_model = flux_model.to(u.erg/u.s/u.cm**2/(u.nm*0.1)).value # erg/s/cm2/A
 	if (model == 'Sonora_Bobcat'):
 		spec_model = ascii.read(spectrum_name_full, data_start=2, format='no_header')
 		wl_model = spec_model['col1'] * u.micron # um (in vacuum?)
 		# convert wavelength from vacuum to air
-		if wl_model.min() < 200 * u.nm:
-			wl_model = vac_to_air(wl_model, method='Griesen2006').value # um in the air
-		else:
-			wl_model = vac_to_air(wl_model).value # um in the air
+		uv_mask = wl_model < 0.2 * u.um
+		nouv_mask = ~uv_mask
+		if np.any(uv_mask):
+			# only UV wavelengths use Greisen2006
+			wl_model[uv_mask] = vac_to_air(wl_model[uv_mask], method='Greisen2006')
+		if np.any(nouv_mask):
+			# rest use default (Morton2000)
+			wl_model[nouv_mask] = vac_to_air(wl_model[nouv_mask])
+		wl_model = wl_model.value # in um
 		flux_model = spec_model['col2'] * u.erg/u.s/u.cm**2/u.Hz # erg/s/cm2/Hz
 		flux_model = flux_model.to(u.erg/u.s/u.cm**2/(u.nm*0.1), equivalencies=u.spectral_density( wl_model * u.micron)).value # erg/s/cm2/A
 	if (model == 'ATMO2020'):
 		spec_model = ascii.read(spectrum_name_full, format='no_header')
 		wl_model = spec_model['col1'] * u.micron # um (in vacuum)
 		# convert wavelength from vacuum to air
-		if wl_model.min() < 200 * u.nm:
-			wl_model = vac_to_air(wl_model, method='Griesen2006').value # um in the air
-		else:
-			wl_model = vac_to_air(wl_model).value # um in the air
+		uv_mask = wl_model < 0.2 * u.um
+		nouv_mask = ~uv_mask
+		if np.any(uv_mask):
+			# only UV wavelengths use Greisen2006
+			wl_model[uv_mask] = vac_to_air(wl_model[uv_mask], method='Greisen2006')
+		if np.any(nouv_mask):
+			# rest use default (Morton2000)
+			wl_model[nouv_mask] = vac_to_air(wl_model[nouv_mask])
+		wl_model = wl_model.value # in um
 		flux_model = spec_model['col2'] * u.W/u.m**2/u.micron # W/m2/micron
 		flux_model = flux_model.to(u.erg/u.s/u.cm**2/(u.nm*0.1)).value # erg/s/cm2/A
 	if (model == 'BT-Settl'):
 		spec_model = ascii.read(spectrum_name_full, format='no_header')
 		wl_model = (spec_model['col1']*(u.nm*0.1)).to(u.micron) # um (in vacuum)
 		# convert wavelength from vacuum to air
-		if wl_model.min() < 200 * u.nm:
-			wl_model = vac_to_air(wl_model, method='Griesen2006').value # um in the air
-		else:
-			wl_model = vac_to_air(wl_model).value # um in the air
+		uv_mask = wl_model < 0.2 * u.um
+		nouv_mask = ~uv_mask
+		if np.any(uv_mask):
+			# only UV wavelengths use Greisen2006
+			wl_model[uv_mask] = vac_to_air(wl_model[uv_mask], method='Greisen2006')
+		if np.any(nouv_mask):
+			# rest use default (Morton2000)
+			wl_model[nouv_mask] = vac_to_air(wl_model[nouv_mask])
+		wl_model = wl_model.value # in um
 		flux_model = spec_model['col2'] * u.erg/u.s/u.cm**2/u.Hz # erg/s/cm2/Hz (to an unknown distance). 10**(F_lam + DF) to convert to erg/s/cm2/A
 		DF= -8.0
 		flux_model = 10**(flux_model.value + DF) # erg/s/cm2/A
