@@ -144,7 +144,7 @@ def scale_synthetic_spectrum(wl, flux, distance, radius):
 	'''
 	Description:
 	------------
-		scale model spectrum when distance and radius are known.
+		Scale model spectrum when distance and radius are known.
 
 	Parameters:
 	-----------
