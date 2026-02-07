@@ -2,6 +2,8 @@ import pytest
 import seda
 import numpy as np
 
+from astropy import units as u
+
 # ----------------------------
 # Test data
 # ----------------------------
@@ -209,4 +211,27 @@ def test_app_to_abs_mag(mag, emag, distance, edistance):
 
 	assert emag_abs == pytest.approx(emag_abs_exp), (
 		f"Expected absolute magnitude uncertainty {emag_abs_exp}, got {emag_abs}"
+	)
+
+def test_scale_synthetic_spectrum():
+	"""Test model spectrum spectrum"""
+	wl = np.array([1.0, 2.0, 3.0])           # arbitrary wavelengths
+	flux = np.array([10.0, 20.0, 30.0])*1e18 # arbitrary flux units
+	distance = 10.0                          # pc
+	radius = 1.0                             # Rjup
+
+	flux_scaled = seda.utils.scale_synthetic_spectrum(
+		wl=wl,
+		flux=flux,
+		distance=distance,
+		radius=radius,
+	)
+
+	# expected scaling
+	distance_km = (distance * u.pc).to(u.km).value
+	radius_km = (radius * u.R_jup).to(u.km).value
+	flux_exp = flux * (radius_km / distance_km) ** 2
+	
+	assert np.allclose(flux_scaled, flux_exp), (
+		'Scaled flux does not match expected (R/d)^2 scaling'
 	)
