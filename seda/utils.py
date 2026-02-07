@@ -2396,3 +2396,11 @@ def reorder_dict(data_dict, order_list):
 	        raise Exception(f'{key} param is not provided')
 
 	return reordered_dict
+
+#+++++++++++++++++++++++++++
+def np_trapz(y, x=None, dx=1.0, axis=-1):
+    """Version-safe trapezoidal integration for numpy 3.9-3.11+"""
+    if hasattr(np, 'trapezoid'):
+        return np.trapezoid(y, x=x, dx=dx, axis=axis)
+    else:
+        return np.trapz(y, x=x, dx=dx, axis=axis)
