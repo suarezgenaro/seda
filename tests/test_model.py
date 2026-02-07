@@ -5,6 +5,8 @@ import numpy as np
 import pytest
 from astropy.io import ascii
 
+from tests.conftest import load_model_spectra_catalog
+
 # ----------------------------
 # Constants / Test data
 # ----------------------------
@@ -77,29 +79,9 @@ def test_coverage_pickle_files_exist():
 	# assert all models have coverage
 	assert not missing, f'Coverage pickle files in model_coverage missing for models: {sorted(missing)}'
 
-def load_model_spectra_catalog():
-	"""Read catalog of example spectra corresponding to models"""
-
-	# base path to the seda package
-	path_seda = os.path.dirname(os.path.dirname(seda.__file__))
-	# path to example model spectra
-	spectra_dir = 'seda/models_aux/model_spectra'
-	# file with model names and corresponding example spectra names
-	table_file = os.path.join(path_seda, spectra_dir, 'README')
-	table = ascii.read(table_file)
-
-	# make a list of 2-tuples of strings for pytest.mark.parametrize
-	catalog = []
-	for model in table:
-		catalog.append((model[0], os.path.join(path_seda, spectra_dir, model[1])))
-	
-	return catalog
-
 @pytest.mark.parametrize('model, spectrum_file', load_model_spectra_catalog())
 def test_read_model_spectrum(model, spectrum_file):
 	"""Test that all model spectra can be read without errors"""
-	path_seda = os.path.dirname(os.path.dirname(seda.__file__))
-	spectra_dir = 'seda/models_aux/model_spectra'
 
 	# read each example model spectrum
 	spectrum = seda.models.read_model_spectrum(spectrum_file, model)
