@@ -141,9 +141,9 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, out_file=None
 			else: # filter fully or partially covered
 				if (filter_wl.min()<wl.min()) & (filter_wl.max()>wl.min()): # blue-end of the filter partially covered
 					# fraction of the filter transmission cover by the data
-					area_total = np_trapz(filter_flux, filter_wl)
+					area_total = utils.np_trapz(filter_flux, filter_wl)
 					mask_cov = filter_wl>wl.min() # total area of the filter transmission
-					area_cov = np_trapz(filter_flux[mask_cov], filter_wl[mask_cov]) # area of the filter transmission within the data coverage
+					area_cov = utils.np_trapz(filter_flux[mask_cov], filter_wl[mask_cov]) # area of the filter transmission within the data coverage
 					area_frac = 100.*area_cov/area_total # fraction of the filter transmission covered by the data
 					print(f'   Caveat: No full spectral coverage for {filt}, so the synthetic photometry is a lower limit')
 					print(f'      approx. {round(area_frac,2)}% of the filter transmission is covered by the data')
@@ -151,9 +151,9 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, out_file=None
 
 				if (filter_wl.max()>wl.max()) & (filter_wl.min()<wl.max()): # red-end of the filter partially covered
 					# fraction of the filter transmission cover by the data
-					area_total = np_trapz(filter_flux, filter_wl)
+					area_total = utils.np_trapz(filter_flux, filter_wl)
 					mask_cov = filter_wl<wl.max() # total area of the filter transmission
-					area_cov = np_trapz(filter_flux[mask_cov], filter_wl[mask_cov]) # area of the filter transmission within the data coverage
+					area_cov = utils.np_trapz(filter_flux[mask_cov], filter_wl[mask_cov]) # area of the filter transmission within the data coverage
 					area_frac = 100.*area_cov/area_total # fraction of the filter transmission covered by the data
 					print(f'   Caveat: No full spectral coverage for {filt}, so the synthetic photometry is a lower limit')
 					print(f'      approx. {round(area_frac,2)}% of the filter transmission is covered by the data')
@@ -167,15 +167,15 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, out_file=None
 				filter_flux_resam = np.interp(wl[mask_wl], filter_wl, filter_flux) # dimensionless
 
 				# normalize the transmission curve (it was dimensionless but now it has 1/um units)
-				filter_flux_resam_norm = filter_flux_resam / np_trapz(filter_flux_resam, wl[mask_wl]) # 1/um
+				filter_flux_resam_norm = filter_flux_resam / utils.np_trapz(filter_flux_resam, wl[mask_wl]) # 1/um
 
 				# synthetic flux density
-				syn_flux = np_trapz(flux[mask_wl]*filter_flux_resam_norm, wl[mask_wl]) # in input flux units (erg/s/cm2/A or Jy)
+				syn_flux = utils.np_trapz(flux[mask_wl]*filter_flux_resam_norm, wl[mask_wl]) # in input flux units (erg/s/cm2/A or Jy)
 				if eflux is not None: esyn_flux = np.median(eflux[mask_wl]/flux[mask_wl]) * syn_flux # synthetic flux error as the median fractional flux uncertainties in the filter passband
 
 				# compute the filter's effective wavelength and effective width
-				lambda_eff[k] = np_trapz(wl[mask_wl]*filter_flux_resam*flux[mask_wl], wl[mask_wl]) / np_trapz(filter_flux_resam*flux[mask_wl], wl[mask_wl]) # in um
-				width_eff[k] = np_trapz(filter_flux_resam, wl[mask_wl]) / filter_flux_resam.max() # in um
+				lambda_eff[k] = utils.np_trapz(wl[mask_wl]*filter_flux_resam*flux[mask_wl], wl[mask_wl]) / utils.np_trapz(filter_flux_resam*flux[mask_wl], wl[mask_wl]) # in um
+				width_eff[k] = utils.np_trapz(filter_flux_resam, wl[mask_wl]) / filter_flux_resam.max() # in um
 				
 				# convert flux into magnitudes
 				# first from erg/s/cm2/A to Jy (if needed) and then from Jy to mag
