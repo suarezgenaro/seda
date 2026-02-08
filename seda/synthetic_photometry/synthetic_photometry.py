@@ -197,10 +197,10 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, out_file=None
 				mask = filterID==filt
 				if any(mask) is False: raise Exception(f'   \nERROR: No zero point for filter {filt}')
 				out_flux_to_mag = flux_to_mag(flux=syn_flux_Jy[k], eflux=esyn_flux_Jy[k], filters=filt)
-				syn_mag[k] = out_flux_to_mag['mag'] # in mag
-				if eflux is not None: esyn_mag[k] = out_flux_to_mag['emag'] # in mag
-				lambda_eff_SVO[k] = out_flux_to_mag['lambda_eff_SVO(um)'] # um
-				width_eff_SVO[k] = out_flux_to_mag['width_eff_SVO(um)'] # um
+				syn_mag[k] = out_flux_to_mag['mag'][0] # in mag
+				if eflux is not None: esyn_mag[k] = out_flux_to_mag['emag'][0] # in mag
+				lambda_eff_SVO[k] = out_flux_to_mag['lambda_eff_SVO(um)'][0] # um
+				width_eff_SVO[k] = out_flux_to_mag['width_eff_SVO(um)'][0] # um
 				zero_point[k] = ZeroPoint[mask][0] # in Jy
 
 				del filter_transmission # remove variable with filter transmission so it won't exist if an input filter name doesn't match an existing one
