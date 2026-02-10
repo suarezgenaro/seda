@@ -2299,15 +2299,26 @@ def var_to_numpy(x):
 ##########################
 # convert an astropy array into a numpy array
 def astropy_to_numpy(x):
+	if x is None:
+		return None  # keep None as-is
+
 	# if the variable is an astropy Column
 	if isinstance(x, Column):
 		if isinstance(x, MaskedColumn): # if MaskedColumn
 			x = x.filled(np.nan) # fill masked values with nan
 			x = x.data
-		else: # if Column
+		else: # if column
 			x = x.data
+
 	# if the variable is an astropy Quantity (with units)
 	if isinstance(x, u.Quantity): x = x.value
+
+	# convert to numpy array safely
+	x = np.array(x)
+
+	# if numeric, force float64
+	if np.issubdtype(x.dtype, np.number):
+		x = x.astype(np.float64)
 
 	return x
 
