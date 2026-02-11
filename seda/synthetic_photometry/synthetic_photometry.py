@@ -525,7 +525,7 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, svo_data=None):
 
 #+++++++++++++++++
 def load_filter_transmission(filt):
-	"""Read or download filter transmission"""
+	#"""Read or download filter transmission"""
 
 	# path to folder to read and save filter transmissions
 	dir_sep = os.sep # directory separator for the current operating system
@@ -558,7 +558,7 @@ def load_filter_transmission(filt):
 
 #+++++++++++++++++
 def assess_filter_coverage(wl, filter_wl):
-	"""Check spectral coverage and return label and mask"""
+	#"""Check spectral coverage and return label and mask"""
 
 	# no spectral coverage for the filter
 	if filter_wl.max() < wl.min() or filter_wl.min() > wl.max():
@@ -575,10 +575,10 @@ def assess_filter_coverage(wl, filter_wl):
 
 #+++++++++++++++++
 def filter_coverage_fraction(wl, filter_wl, filter_flux):
-	"""
-	Fraction of filter transmission covered by the spectrum,
-	using assess_filter_coverage output.
-	"""
+	#"""
+	#Fraction of filter transmission covered by the spectrum,
+	#using assess_filter_coverage output.
+	#"""
 
 	label = assess_filter_coverage(wl, filter_wl)
 
@@ -602,7 +602,7 @@ def filter_coverage_fraction(wl, filter_wl, filter_flux):
 
 #+++++++++++++++++
 def compute_synthetic_flux(wl, flux, filter_wl, filter_flux, eflux=None):
-	"""Compute synthetic flux, flux error, lambda_eff, width_eff"""
+	#"""Compute synthetic flux, flux error, lambda_eff, width_eff"""
 
 	# spectrum wavelengths within the filter wavelength range
 	mask_wl = (wl >= filter_wl.min()) & (wl <= filter_wl.max())
