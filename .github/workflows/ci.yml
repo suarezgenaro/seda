@@ -39,10 +39,6 @@ jobs:
           python -m pip install pytest
           python -m pip install -e .
 
-      # Confirm setuptools_scm sees the correct tag
-      - name: Show detected version
-        run: python -c "import setuptools_scm; print('Detected version:', setuptools_scm.get_version())"
-
       # Run tests
       - name: Run tests
         run: pytest
