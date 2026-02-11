@@ -51,6 +51,11 @@ Plots
 .. automodule:: seda.plots
     :members:
 
+Variability
+-----------
+.. automodule:: seda.variability
+    :members:
+
 Spectral Indices
 ----------------
 .. automodule:: seda.spectral_indices.spectral_indices
