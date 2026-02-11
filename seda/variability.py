@@ -938,6 +938,9 @@ def classify_variability(
     Triggered regions: 11/12 (threshold >= 11)
     Classification: candidate VARIABLE
 
+    Author:
+    -------
+    Natalia Oliveros-Gomez
     """
 
     spt = str(spectral_type).upper()
