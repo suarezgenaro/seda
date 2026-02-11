@@ -19,6 +19,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          tags: true       # ensure all tags are fetched
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -33,6 +34,9 @@ jobs:
           python -m pip install pytest
           # Install package in editable mode
           python -m pip install -e .
+
+      - name: Check setuptools_scm version
+        run: python -c "import setuptools_scm; print(setuptools_scm.get_version())"
 
       - name: Run tests
         run: pytest
