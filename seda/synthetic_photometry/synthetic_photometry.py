@@ -280,7 +280,7 @@ def convert_flux(flux, wl, unit_in, unit_out, eflux=None):
 	return out
 
 #+++++++++++++++++
-def flux_to_mag(flux, filters, flux_unit='Jy', eflux=None):
+def flux_to_mag(flux, filters, flux_unit='Jy', eflux=None, svo_data=None):
 	'''
 	Description:
 	------------
@@ -297,6 +297,8 @@ def flux_to_mag(flux, filters, flux_unit='Jy', eflux=None):
 		Units of ``flux``: ``'Jy'`` or ``'erg/s/cm2/A'``.
 	- eflux : array, float, optional
  		Flux uncertainties for ``flux`` in ``unit_in``.
+	- svo_data : SVO table, optional
+		Astropoy table from SVO.
 
 	Returns:
 	--------
@@ -320,7 +322,7 @@ def flux_to_mag(flux, filters, flux_unit='Jy', eflux=None):
 	>>> eflux = flux/10. # test flux errors in Jy
 	>>> filters=['2MASS/2MASS.J', '2MASS/2MASS.Ks'] # test filter IDs
 	>>> 
-	>>> seda.flux_to_mag(flux=flux, eflux=eflux, filters=filters)
+	>>> seda.synthetic_phtometry.flux_to_mag(flux=flux, eflux=eflux, filters=filters)
 		{'flux': array([0.005, 0.006]),
 		 'mag': array([13.75879578, 12.61461085]),
 		 'filters': ['2MASS/2MASS.J', '2MASS/2MASS.Ks'],
@@ -347,12 +349,21 @@ def flux_to_mag(flux, filters, flux_unit='Jy', eflux=None):
 	# verify that flux and filters variables have the same size
 	if len(flux)!=len(filters): raise Exception('filters does not have the size as flux')
 
-	svo_data = utils.read_SVO_table()
+	# if the SVO is not provided
+	if svo_data is None:
+		svo_data = utils.read_SVO_table()
+
 	filterID = svo_data['filterID'] # SVO ID
 	ZeroPoint = svo_data['ZeroPoint'] # in Jy
 	WavelengthEff = svo_data['WavelengthEff'] # effective wavelength in A
 	WidthEff = svo_data['WidthEff'] # effective width in A
 
+	# fill masked values if needed
+	filterID = maskedcolumn_to_numpy(filterID)
+	ZeroPoint = maskedcolumn_to_numpy(ZeroPoint)
+	WavelengthEff = maskedcolumn_to_numpy(WavelengthEff)
+	WidthEff = maskedcolumn_to_numpy(WidthEff)
+	
 	# save the input fluxes and errors because they are replaced by Jy units when given in erg/s/cm2/A
 	flux_ori = flux.copy()
 	if eflux is not None: eflux_ori = eflux.copy()
@@ -393,7 +404,7 @@ def flux_to_mag(flux, filters, flux_unit='Jy', eflux=None):
 	return out
 
 #+++++++++++++++++
-def mag_to_flux(mag, filters, flux_unit='Jy', emag=None):
+def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, svo_data=None):
 	'''
 	Description:
 	------------
@@ -410,6 +421,8 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None):
 		Units to return flux: ``'Jy'`` or ``'erg/s/cm2/A'``.
 	- emag : array, float, optional
  		Magnitude uncertainties for ``mag`` in mag.
+	- svo_data : SVO table, optional
+		Astropoy table from SVO.
 
 	Returns:
 	--------
@@ -460,12 +473,21 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None):
 	# verify that mag and filters variables have the same size
 	if len(mag)!=len(filters): raise Exception('filters does not have the size as mag')
 
-	svo_data = utils.read_SVO_table()
+	# if the SVO is not provided
+	if svo_data is None:
+		svo_data = utils.read_SVO_table()
+
 	filterID = svo_data['filterID'] # SVO ID
 	ZeroPoint = svo_data['ZeroPoint'] # zero points in Jy
 	WavelengthEff = svo_data['WavelengthEff'] # effective wavelength in A
 	WidthEff = svo_data['WidthEff'] # effective width in A
 
+	# fill masked values if needed
+	filterID = maskedcolumn_to_numpy(filterID)
+	ZeroPoint = maskedcolumn_to_numpy(ZeroPoint)
+	WavelengthEff = maskedcolumn_to_numpy(WavelengthEff)
+	WidthEff = maskedcolumn_to_numpy(WidthEff)
+	
 	# initialize arrays to store relevant information
 	# assign NaN values to be the output for unrecognized filters by SVO
 	flux = np.zeros(len(filters)) * np.nan
@@ -512,7 +534,7 @@ def load_filter_transmission(filt):
 
 	# make path_filter_trans directory (if not existing) to store filter transmissions
 	if not os.path.exists(path_filter_trans): 
-		os.makedirs(path_filter_transmissions)
+		os.makedirs(path_filter_trans)
 
 	fname = filt.replace('/', '_') + '.dat' # when filter name includes '/' replace it by '_'
 	fullpath = path_filter_trans + fname
@@ -640,9 +662,24 @@ def format_number(x):
 
 #+++++++++++++++++
 def maskedcolumn_to_numpy(col):
-    if isinstance(col, MaskedColumn):
-        return col.filled(np.nan)  # masked entries become np.nan
-    elif hasattr(col, 'data'):
-        return np.array(col.data, dtype=float)
-    else:
-        return np.array(col, dtype=float)
+
+	# if it is a MaskedColumn, fill masked values
+	if isinstance(col, MaskedColumn):
+		# check dtype: numeric -> np.nan, string -> None
+		if np.issubdtype(col.dtype, np.number):
+			arr = col.filled(np.nan)
+		else:
+			arr = col.filled(None)
+
+	# if regular Column, take data
+	elif isinstance(col, Column):
+		arr = col.data
+	else:
+		arr = col
+
+	# convert numeric to float, leave strings intact
+	arr = np.array(arr)  # first convert to numpy array
+	if np.issubdtype(arr.dtype, np.number):
+		arr = arr.astype(float)
+
+	return arr
