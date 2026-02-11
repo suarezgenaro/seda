@@ -920,10 +920,8 @@ def classify_variability(
           List of region identifiers (or names) for which the target falls inside the corresponding variability polygon.
         - normalize : bool
           Whether a median flux normalization was applied to the input spectrum prior to computing the indices.
-          
-        The result object also provides a convenience method:
-        - summary() : str  
-            Returns a human-readable, multi-line summary of the classification outcome.
+        - summary() : str
+          Returns a human-readable, multi-line summary of the classification outcome. The result object also provides a convenience method:
 
     Examples
     --------
