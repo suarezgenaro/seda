@@ -872,6 +872,74 @@ def classify_variability(
     It computes the required spectral indices, evaluates the polygon-based
     variability criteria, and optionally produces diagnostic plots.
 
+    Parameters
+    ----------
+    wavelength : array-like
+        Wavelength array (microns).
+    flux : array-like
+        Flux array corresponding to `wavelength`.
+    spectral_type : {"L", "T"}
+        Spectral type scheme to use for the classification.
+    normalize : bool, default True
+        If True, the flux is median-normalized before computing indices.
+    scheme : str or None, optional
+        Name or reference of the variability scheme. If None, the default
+        scheme for the selected spectral type is used.
+    plot_diagrams : bool, default False
+        If True, generate the index–index variability diagrams.
+    plot_index_windows : bool, default False
+        If True, plot the spectrum with the numerator/denominator
+        windows used to compute the NIR indices.
+    plot_save : bool or str, default False
+        If True, save plots to default filenames.
+        If a string, use it as the base path or filename.
+    show : bool, default True
+        If True, display the plots using `plt.show()`.
+
+    Returns
+    -------
+    result : VariabilityResult
+        Structured classification result with the following attributes:
+
+        - spectral_type : str
+          Spectral type scheme used for the classification ("L" or "T").
+        - scheme : str
+          Name or reference of the variability scheme (e.g., "Oliveros-Gomez+2022", "Oliveros-Gomez+2024").
+        - is_candidate_variable : bool
+          Final classification flag. True if the number of triggered index–index regions meets or exceeds the adopted threshold.
+        - n_regions_triggered : int
+          Number of variability regions in which the target falls.
+        - n_regions_total : int
+          Total number of regions evaluated for the selected spectral type.
+        - threshold : int
+          Minimum number of triggered regions required to be classified as a candidate variable.
+        - indices : dict[str, float]
+          Dictionary of computed NIR spectral indices. Keys correspond to the physical index names (e.g., "J", "H", "Jslope", "Jcurve",
+          "H2OJ", "CH4J"), and values are the numerical index values.
+        - regions_triggered : list[str]
+          List of region identifiers (or names) for which the target falls inside the corresponding variability polygon.
+        - normalize : bool
+          Whether a median flux normalization was applied to the input spectrum prior to computing the indices.
+          
+        The result object also provides a convenience method:
+        - summary() : str  
+            Returns a human-readable, multi-line summary of the classification outcome.
+
+    Examples
+    --------
+    >>> result = classify_variability(wave, flux, spectral_type="T", normalize=False)
+    >>> print(result.is_candidate_variable)
+    True
+    >>> print(result.n_regions_triggered, "/", result.n_regions_total)
+    11 / 12
+    >>> print(result.indices["Jslope"], result.indices["Jcurve"])
+    0.63 0.15
+    >>> print(result.summary())
+    Scheme: Oliveros-Gomez+2022
+    Spectral type: T
+    Normalize: False
+    Triggered regions: 11/12 (threshold >= 11)
+    Classification: candidate VARIABLE
 
     """
 
