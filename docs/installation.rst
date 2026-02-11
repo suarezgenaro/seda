@@ -4,11 +4,11 @@ Installation and Dependencies
 Installation
 ------------
 
-We recommend to make a conda environment to install :math:`\texttt{SEDA}` using Python 3.11 (most recent security version):
+We recommend to make a conda environment to install :math:`\texttt{SEDA}` using Python 3.14 (latest stable version):
 
 .. code-block:: console
 
-    $ conda create -n env_seda python=3.11
+    $ conda create -n env_seda python=3.14
     $ conda activate env_seda
 
 Installation of :math:`\texttt{SEDA}` via GitHub:
@@ -37,9 +37,9 @@ Dependencies
 * `tqdm <https://pypi.org/project/tqdm/>`_
 * `xarray <https://docs.xarray.dev/en/stable/>`_
 
-:math:`\texttt{SEDA}` has been tested in Python 3.9, 3.10, and 3.11 security versions as of Nov. 2024.
+:math:`\texttt{SEDA}` has been tested in Python versions 3.9-3.14.
 
-:math:`\texttt{SEDA}` has been tested in Linux (Ubuntu 22.04), Windows, and macOS.
+:math:`\texttt{SEDA}` has been tested on Linux, Windows, and macOS.
 
 
 Developer Installation

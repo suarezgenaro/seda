@@ -144,7 +144,7 @@ def scale_synthetic_spectrum(wl, flux, distance, radius):
 	'''
 	Description:
 	------------
-		scale model spectrum when distance and radius are known.
+		Scale model spectrum when distance and radius are known.
 
 	Parameters:
 	-----------
@@ -445,6 +445,18 @@ def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spect
 	Date: 2025-03-14
 	'''
 
+	# verify model_dir is provided if grid is not given
+	if not grid and not model_dir:
+		raise Exception(f'"model_dir" or "grid" must be provided.')
+
+	# if desired parameters are given as a one-element numpy array
+	# convert it into a float number
+	for param, value in params.items():
+		if isinstance(value, np.ndarray):
+			params[param] = float(params[param].item())
+		else:
+			params[param] = float(value)
+
 	# verify there is an input value for each free parameter in the grid
 	# parameter ranges covered by the model spectra in the input model_dir
 	if grid is None: # when no grid is provided, read the parameter ranges from the spectra in the input folders
@@ -572,6 +584,7 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 		- ``'wavelength'`` : wavelengths in microns for the model spectra in the grid.
 		- ``'flux'`` : fluxes in erg/s/cm2/A for the model spectra in the grid.
 		- ``'params_unique'`` : dictionary with unique (non-repetitive) values for each model free parameter
+		- ``'N_model_spectra'`` : dictionary with unique (non-repetitive) values for each model free parameter
 
 	Example:
 	--------
@@ -710,7 +723,7 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 	fin_time_grid = time.time()
 	print_time(fin_time_grid-ini_time_grid)
 
-	out = {'wavelength': wl_grid, 'flux': flux_grid, 'params_unique': params_unique}
+	out = {'wavelength': wl_grid, 'flux': flux_grid, 'params_unique': params_unique, 'N_model_spectra': len(spectra_name)}
 
 	return out
 
@@ -760,6 +773,7 @@ def read_grid_phot(model, model_dir, filters, params_ranges=None, fit_phot_range
 		- ``'wavelength'`` : wavelengths in microns for the model spectra in the grid.
 		- ``'flux'`` : fluxes in erg/s/cm2/A for synthetic photometry in the grid.
 		- ``'params_unique'`` : dictionary with unique (non-repetitive) values for each model free parameter
+		- ``'N_model_spectra'`` : dictionary with unique (non-repetitive) values for each model free parameter
 
 	Example:
 	--------
@@ -922,7 +936,7 @@ def read_grid_phot(model, model_dir, filters, params_ranges=None, fit_phot_range
 	fin_time_grid = time.time()
 	print_time(fin_time_grid-ini_time_grid)
 
-	out = {'wavelength': wl_grid, 'flux': flux_grid, 'params_unique': params_unique}
+	out = {'wavelength': wl_grid, 'flux': flux_grid, 'params_unique': params_unique, 'N_model_spectra': len(spectra_name)}
 
 	return out
 
@@ -1807,6 +1821,10 @@ def teff_to_spt(teff, ref=None):
 	teff = np.array(teff, ndmin=1)
 	spt_float = inv_interp(teff)
 
+	# round spt_float to a few decimal to avoid having
+	# e.g., 19.99999945 -> L10 instead of T0
+	spt_float = np.round(spt_float, 5)
+
 	spt_str = [spt_float_to_str(sf) for sf in spt_float]
 
 	# decide output: single value or list
@@ -2281,15 +2299,26 @@ def var_to_numpy(x):
 ##########################
 # convert an astropy array into a numpy array
 def astropy_to_numpy(x):
+	if x is None:
+		return None  # keep None as-is
+
 	# if the variable is an astropy Column
 	if isinstance(x, Column):
 		if isinstance(x, MaskedColumn): # if MaskedColumn
 			x = x.filled(np.nan) # fill masked values with nan
 			x = x.data
-		else: # if Column
+		else: # if column
 			x = x.data
+
 	# if the variable is an astropy Quantity (with units)
 	if isinstance(x, u.Quantity): x = x.value
+
+	# convert to numpy array safely
+	x = np.array(x)
+
+	# if numeric, force float64
+	if np.issubdtype(x.dtype, np.number):
+		x = x.astype(np.float64)
 
 	return x
 
@@ -2378,3 +2407,11 @@ def reorder_dict(data_dict, order_list):
 	        raise Exception(f'{key} param is not provided')
 
 	return reordered_dict
+
+#+++++++++++++++++++++++++++
+def np_trapz(y, x=None, dx=1.0, axis=-1):
+    """Version-safe trapezoidal integration for numpy 3.9-3.11+"""
+    if hasattr(np, 'trapezoid'):
+        return np.trapezoid(y, x=x, dx=dx, axis=axis)
+    else:
+        return np.trapz(y, x=x, dx=dx, axis=axis)
