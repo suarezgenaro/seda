@@ -936,7 +936,7 @@ def classify_variability(
     Scheme: Oliveros-Gomez+2022
     Spectral type: T
     Normalize: False
-    Triggered regions: 11/12 (threshold ≥ 11)
+    Triggered regions: 11/12 (threshold >= 11)
     Classification: candidate VARIABLE
 
     """
