@@ -760,50 +760,50 @@ def user_index_integral(
     """
 	Description:
 	------------
-    Compute a near-infrared spectral index as an integrated flux ratio or difference,
-    with optional normalization and plotting of numerator/denominator regions.
+	Compute a near-infrared spectral index as an integrated flux ratio or difference,
+	with optional normalization and plotting of numerator/denominator regions.
 
 	Parameters:
 	-----------
-    - wavelength : array-like
-        Wavelength array (typically in microns).
-    - flux : array-like
-        Flux array corresponding to `wavelength`. Assumed 1D, same length as `wavelength`.
-    - num_range : tuple of float
-        Wavelength limits (lambda_min, lambda_max) for the numerator bandpass.
-    - den_range : tuple of float
-        Wavelength limits (lambda_min, lambda_max) for the denominator bandpass.
-    - mode : {"ratio", "difference"}, optional
-        Definition of the index:
-        - ``"ratio"``: index = int(F_num) / int(F_den)
-        - ``"difference"``: index = int(F_den) - int(F_num)
-    - normalize : bool, optional
-        If True, flux is median-normalized (ignoring NaNs) before computing the index.
-    - plot : bool, optional
-        If True, plot the spectrum and the two bandpasses.
-    - plot_save : bool or str, optional
-        If True, saves to default filename ``"user_index.pdf"``.
-        If str, saves to that specific path.
+	- wavelength : array-like
+		Wavelength array (typically in microns).
+	- flux : array-like
+		Flux array corresponding to `wavelength`. Assumed 1D, same length as `wavelength`.
+	- num_range : tuple of float
+		Wavelength limits (lambda_min, lambda_max) for the numerator bandpass.
+	- den_range : tuple of float
+		Wavelength limits (lambda_min, lambda_max) for the denominator bandpass.
+	- mode : {"ratio", "difference"}, optional
+		Definition of the index:
+		- ``"ratio"``: index = int(F_num) / int(F_den)
+		- ``"difference"``: index = int(F_den) - int(F_num)
+	- normalize : bool, optional
+		If True, flux is median-normalized (ignoring NaNs) before computing the index.
+	- plot : bool, optional
+		If True, plot the spectrum and the two bandpasses.
+	- plot_save : bool or str, optional
+		If True, saves to default filename ``"user_index.pdf"``.
+		If str, saves to that specific path.
 
 	Returns:
 	--------
-    float
-        Spectral index value.
+	float
+		Spectral index value.
 
-    Notes:
-    ------
-    For *ratio*-type indices, a global flux normalization typically cancels out and
-    does not change the numerical value of the index. However, for *difference*-type
-    indices (e.g., J-H defined as int(F_den) - int(F_num)), normalization directly affects
-    the absolute scale of the index and therefore the boundaries of variability or
-    classification regions. Users should ensure that the same normalization
-    convention is applied consistently to both the target spectrum and any
-    reference/template spectra.
+	Notes:
+	------
+	For *ratio*-type indices, a global flux normalization typically cancels out and
+	does not change the numerical value of the index. However, for *difference*-type
+	indices (e.g., J-H defined as int(F_den) - int(F_num)), normalization directly affects
+	the absolute scale of the index and therefore the boundaries of variability or
+	classification regions. Users should ensure that the same normalization
+	convention is applied consistently to both the target spectrum and any
+	reference/template spectra.
 
-    Author
-    ------
-    Natalia Oliveros-Gomez
-    """
+	Author
+	------
+	Natalia Oliveros-Gomez
+	"""
 
     wave = np.asarray(wavelength, dtype=float)
     flx = np.asarray(flux, dtype=float)
