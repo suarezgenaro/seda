@@ -746,7 +746,6 @@ def user_index(wl, flux, eflux, feature_wl, feature_window,
 
 
 #########################################
-
 def user_index_integral(
     wavelength,
     flux,
@@ -860,8 +859,6 @@ def user_index_integral(
 
 ###################
 # plot the spectral index as measured in the wavelength region
-
-
 def plot_user_index_nir(
     wavelength,
     flux,
