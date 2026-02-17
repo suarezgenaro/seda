@@ -758,13 +758,13 @@ def user_index_integral(
     plot_save: Union[bool, str] = False,
 ) -> float:
     """
-	Description:
-	------------
+	Description
+	-----------
 	Compute a near-infrared spectral index as an integrated flux ratio or difference,
 	with optional normalization and plotting of numerator/denominator regions.
 
-	Parameters:
-	-----------
+	Parameters
+	----------
 	- wavelength : array-like
 		Wavelength array (typically in microns).
 	- flux : array-like
@@ -785,13 +785,13 @@ def user_index_integral(
 		If True, saves to default filename ``"user_index.pdf"``.
 		If str, saves to that specific path.
 
-	Returns:
-	--------
+	Returns
+	-------
 	float
 		Spectral index value.
 
-	Notes:
-	------
+	Notes
+	-----
 	For *ratio*-type indices, a global flux normalization typically cancels out and
 	does not change the numerical value of the index. However, for *difference*-type
 	indices (e.g., J-H defined as int(F_den) - int(F_num)), normalization directly affects
