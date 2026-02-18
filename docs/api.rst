@@ -12,6 +12,7 @@ Handles IRS data from archival sources.
     :members:
     :show-inheritance:
     :exclude-members: _*
+    :noindex:
 
 Spectrum
 ++++++++
@@ -21,6 +22,7 @@ Represents spectra and provides plotting utilities.
     :members:
     :show-inheritance:
     :exclude-members: _*
+    :noindex:
 
 Bayesian Sampling
 -----------------
