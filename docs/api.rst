@@ -1,6 +1,11 @@
 SEDA
 ====
 
+Archival Data
+-------------
+.. automodule:: seda.archival_data
+    :members:
+
 Bayesian Sampling
 -----------------
 .. automodule:: seda.bayes_fit
@@ -51,11 +56,6 @@ Plots
 .. automodule:: seda.plots
     :members:
 
-Variability
------------
-.. automodule:: seda.variability
-    :members:
-
 Spectral Indices
 ----------------
 .. automodule:: seda.spectral_indices.spectral_indices
@@ -69,4 +69,9 @@ Synthetic Photometry
 Utils
 -----
 .. automodule:: seda.utils
+    :members:
+
+Variability
+-----------
+.. automodule:: seda.variability
     :members:
