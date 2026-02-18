@@ -10,8 +10,8 @@ Handles IRS data from archival sources.
 
 .. autoclass:: seda.archival_data.IRS
     :members:
-    :undoc-members:
     :show-inheritance:
+    :exclude-members: _*
 
 Spectrum
 ++++++++
@@ -19,8 +19,8 @@ Represents spectra and provides plotting utilities.
 
 .. autoclass:: seda.archival_data.Spectrum
     :members:
-    :undoc-members:
     :show-inheritance:
+    :exclude-members: _*
 
 Bayesian Sampling
 -----------------
