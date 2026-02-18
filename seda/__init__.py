@@ -7,6 +7,7 @@ from . import chi2_fit
 from . import bayes_fit
 from . import phy_params
 from . import variability
+from . import archival_data.py
 from .synthetic_photometry import synthetic_photometry
 from .spectral_indices import spectral_indices
 
