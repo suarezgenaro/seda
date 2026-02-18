@@ -50,10 +50,15 @@ include-package-data = true
 [tool.setuptools.package-data]
 # Mirror setup.py's package_data config
 seda = [
+  # Modeled data
   "models_aux/model_coverage/*",
   "models_aux/model_specifics/*",
   "models_aux/model_spectra/*",
   "models_aux/*.pickle",
+
+  # Observational data
+  "observations_aux/spitzer_irs/*",
+  "observations_aux/Suarez_Metchev_2022_tables.dat"
 ]
 
 [tool.setuptools.packages.find]
