@@ -3,8 +3,24 @@ SEDA
 
 Archival Data
 -------------
-.. automodule:: seda.archival_data
+
+Infrared Spectrograph
++++++++++++++++++++++
+Handles IRS data from archival sources.
+
+.. autoclass:: seda.archival_data.IRS
     :members:
+    :undoc-members:
+    :show-inheritance:
+
+Spectrum
+++++++++
+Represents spectra and provides plotting utilities.
+
+.. autoclass:: seda.archival_data.Spectrum
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
 Bayesian Sampling
 -----------------
