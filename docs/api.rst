@@ -4,9 +4,9 @@ SEDA
 Archival Data
 -------------
 
-Infrared Spectrograph
-+++++++++++++++++++++
-Handles IRS data from archival sources.
+Spitzer IRS
++++++++++++
+Access Spitzer IRS archival spectra for one or multiple targets.
 
 .. autoclass:: seda.archival_data.IRS
     :members:
@@ -16,7 +16,7 @@ Handles IRS data from archival sources.
 
 Spectrum
 ++++++++
-Represents spectra and provides plotting utilities.
+Represents individual spectra and provides plotting and analysis methods.
 
 .. autoclass:: seda.archival_data.Spectrum
     :members:
