@@ -1,6 +1,29 @@
 SEDA
 ====
 
+Archival Data
+-------------
+
+Spitzer IRS
++++++++++++
+Access Spitzer IRS archival spectra for one or multiple targets.
+
+.. autoclass:: seda.archival_data.IRS
+    :members:
+    :show-inheritance:
+    :exclude-members: _*
+    :noindex:
+
+Spectrum
+++++++++
+Represents individual spectra and provides plotting and analysis methods.
+
+.. autoclass:: seda.archival_data.Spectrum
+    :members:
+    :show-inheritance:
+    :exclude-members: _*
+    :noindex:
+
 Bayesian Sampling
 -----------------
 .. automodule:: seda.bayes_fit
@@ -51,11 +74,6 @@ Plots
 .. automodule:: seda.plots
     :members:
 
-Variability
------------
-.. automodule:: seda.variability
-    :members:
-
 Spectral Indices
 ----------------
 .. automodule:: seda.spectral_indices.spectral_indices
@@ -69,4 +87,9 @@ Synthetic Photometry
 Utils
 -----
 .. automodule:: seda.utils
+    :members:
+
+Variability
+-----------
+.. automodule:: seda.variability
     :members:

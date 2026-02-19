@@ -13,6 +13,7 @@ Miscellaneous
    notebooks/tutorial_synthetic_photometry.ipynb
    notebooks/tutorial_spectral_indices.ipynb
    notebooks/tutorial_bolometric_luminosity.ipynb
+   notebooks/tutorial_spitzer_irs_spectra.ipynb
 
 Chi-square minimization
 +++++++++++++++++++++++
