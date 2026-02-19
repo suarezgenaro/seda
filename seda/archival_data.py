@@ -2,6 +2,7 @@ from importlib import resources
 from astropy.io import ascii
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator, FormatStrFormatter, AutoMinorLocator, StrMethodFormatter
 from sys import exit
 
 class Spectrum:
@@ -14,7 +15,7 @@ class Spectrum:
 
 	Parameters
 	----------
-	name : str
+	target : str
 		Target short name.
 	wavelength : array-like
 		Wavelength numpy array in microns.
@@ -52,9 +53,9 @@ class Spectrum:
 	Date: 2026-02-18
 	"""
 
-	def __init__(self, name, wavelength, flux, eflux, meta_row):
+	def __init__(self, target, wavelength, flux, eflux, meta_row):
 		# core spectrum data
-		self.name = name
+		self.target = target
 		self.wavelength = wavelength
 		self.flux = flux
 		self.eflux = eflux
@@ -93,14 +94,19 @@ class Spectrum:
 		Date: 2026-02-18
 		"""
 
-		plt.figure()
-		plt.plot(self.wavelength, self.flux, **kwargs)
-		plt.xlabel("Wavelength (um)")
-		plt.ylabel("Flux (Jy)")
-		plt.title(self.name)
-		if show:
-			plt.show()
-		return self
+		fig, ax = plt.subplots()
+
+		ax.plot(self.wavelength, self.flux, **kwargs)
+
+		ax.xaxis.set_minor_locator(AutoMinorLocator())
+		ax.yaxis.set_minor_locator(AutoMinorLocator())
+		ax.grid(True, which='both', color='gainsboro', linewidth=0.5, alpha=0.5)
+
+		ax.set_xlabel('Wavelength ($\mu$m)')
+		ax.set_ylabel('Flux (Jy)')
+		ax.set_title(f'{self.Name} ({self.SName}; {self.SpTypeopt}/{self.SpTypeir})')
+
+		return fig, ax
 
 class IRS:
 	"""
@@ -190,9 +196,9 @@ class IRS:
 
 		# 
 		spectra_list = []
-		for name in targets:
+		for target in targets:
 			# table row for each target
-			row = self._get_row(name)
+			row = self._get_row(target)
 			# read spectrum and meta
 			spectrum = self._load_spectrum(row)
 			# append spectrum and meta to the list
@@ -200,7 +206,7 @@ class IRS:
 
 		return spectra_list
 
-	def _get_row(self, name):
+	def _get_row(self, target):
 		"""
 		Look up a single target in the metadata table by 'SName'.
 
@@ -209,9 +215,9 @@ class IRS:
 		astropy.table.Row
 		"""
 
-		matched = self.table[self.table['SName'] == name]
+		matched = self.table[self.table['SName'] == target]
 		if len(matched) == 0:
-			raise ValueError(f"Target '{name}' not found in table.")
+			raise ValueError(f"Target '{target}' not found in table.")
 
 		return matched[0] # returns a single Row object from the table
 
