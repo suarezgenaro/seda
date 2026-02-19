@@ -217,7 +217,10 @@ class IRS:
 
 		matched = self.table[self.table['SName'] == target]
 		if len(matched) == 0:
-			raise ValueError(f"Target '{target}' not found in table.")
+			raise ValueError(
+				f"Target '{target}' not found in table. "
+				f"Valid targets: {self.table['SName'].tolist()}"
+			)
 
 		return matched[0] # returns a single Row object from the table
 
