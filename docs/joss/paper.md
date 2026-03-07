@@ -134,7 +134,7 @@ aas-journal: Astrophysical Journal <- The name of the AAS journal.
 
 <!-- TEMPORARY author block for local PDF preview ONLY -->
 <!-- Safe to remove before JOSS submission -->
-
+<!-- 
 Genaro Suárez$^{1}$, Kelle Cruz$^{1,2,3}$, Jacqueline K. Faherty$^{1}$, Rocio Kiman$^{4}$, Stanimir Metchev$^{5}$, Natalia Oliveros-Gomez$^{6}$, 
 Michael K. Plummer$^{7}$, Johanna M. Vos$^{8}$, Daniella C. Bardalez Gagliuffi$^{9}$, Elena Manjavacas$^{10}$, Melanie J. Rowland$^{1}$, Samuel Candero$^{11,1}$, Jonathan Gagné$^{12,13}$, 
 Thomas P. Bickle$^{14}$, Austin Rothermich$^{1,3}$, Madeline Lam$^{8}$, Easton J. Honaker$^{15}$, Sherelyn Alejandro Merchan$^{1,3}$, Niall Whiteford$^1$, Caprice L. Phillips$^{16}$, Sam Barber$^{5}$, 
@@ -159,6 +159,7 @@ $^{16}$ Department of Astronomy & Astrophysics, University of California, Santa 
 $^{17}$ Department of Geosciences, Virginia Tech, Blacksburg, VA 24061, USA
 $^{18}$ Planétarium Rio Tinto Alcan, Espace pour la Vie, 4801 av. Pierre-de Coubertin, Montréal, Québec, Canada  
 $^{19}$ Institute for Research on Exoplanets, Université de Montréal, Département de Physique, C.P. 6128 Succ. Centre-ville, Montréal, QC H3C 3J7, Canada  
+ -->
 
 ---
 
