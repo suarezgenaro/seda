@@ -76,7 +76,7 @@ authors:
     affiliation: 5
   - name: Savaria Parrish
     orcid: 
-    affiliation: Department of Geosciences, Virginia Tech, Blacksburg, VA 24061, USA
+    affiliation: 17
   - name: Jolie L'Heureux
     orcid: 0009-0009-3024-5846
     affiliation: 1, 3
@@ -117,6 +117,8 @@ affiliations:
     index: 15 
   - name: Department of Astronomy & Astrophysics, University of California, Santa Cruz, CA 95064, USA  
     index: 16
+  - name: Department of Geosciences, Virginia Tech, Blacksburg, VA 24061, USA
+    index: 17
   - name: Planétarium Rio Tinto Alcan, Espace pour la Vie, 4801 av. Pierre-de Coubertin, Montréal, Québec, Canada  
     index: 18
   - name: Institute for Research on Exoplanets, Université de Montréal, Département de Physique, C.P. 6128 Succ. Centre-ville, Montréal, QC H3C 3J7, Canada  
