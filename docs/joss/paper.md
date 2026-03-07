@@ -105,8 +105,8 @@ affiliations:
     index: 9
   - name: AURA for the European Space Agency (ESA), ESA Office, Space Telescope Science Institute, 3700 San Martin Drive, Baltimore, MD 21218, USA
     index: 10
-  - name: 11
-    index: Department of Physics, Florida Atlantic University, 777 Glades Rd, Boca Raton, FL 33431, USA  
+  - name: Department of Physics, Florida Atlantic University, 777 Glades Rd, Boca Raton, FL 33431, USA
+    index: 11
   - name: Planétarium de Montréal, Espace pour la Vie, 4801 Avenue Pierre-de Coubertin, Montréal, Québec, Canada  
     index: 12
   - name: Trottier Institute for Research on Exoplanets, Université de Montréal, Département de Physique, C.P. 6128 Succ. Centre-ville, Montréal, QC H3C 3J7, Canada  
