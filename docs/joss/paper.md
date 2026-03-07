@@ -31,7 +31,7 @@ authors:
     affiliation: 6
   - name: Michael K. Plummer
     orcid: 0000-0002-4831-0329
-    index: 7
+    affiliation: 7
   - name: Johanna M. Vos
     orcid: 0000-0003-0489-1528
     affiliation: 8
