@@ -166,9 +166,9 @@ $^{19}$ Institute for Research on Exoplanets, Université de Montréal, Départe
 ---
 
 # Summary
-Brown dwarfs and extrasolar gas giant planets exhibit complex, dynamic atmospheres that undergo diverse physical and chemical processes, including disequilibrium chemistry, cloud formation, and variability, which depend on fundamental properties such as temperature, age, and metallicity [e.g., @Marley_Robinson2015]. 
+Brown dwarfs and extrasolar gas giant planets exhibit complex, dynamic atmospheres that undergo diverse physical and chemical processes, including disequilibrium chemistry, cloud formation, auroral activity, and variability, which depend on fundamental properties and observational factors such as temperature, age, metallicity, rotation period, and  viewing geometry [e.g., @Marley_Robinson2015;@Biller2017;@Vos_etal2017]. 
 These atmospheres also exhibit a rich diversity of chemical species, including water, methane, ammonia, carbon monoxide, carbon dioxide, and silicates [e.g., @Kirkpatrick2005;@Cushing_etal2006]. 
-Studying the chemistry and physics of these atmospheres provides insights not only into the atmospheric processes that govern their behavior, but also into the formation and evolution of these objects.
+Studying the chemistry and physics of these atmospheres provides insights not only into the atmospheric processes that govern their behavior, but also into the formation and evolution of these objects [e.g, @Luhman2012].
 In the long term, understanding these atmospheric conditions is essential for characterizing potential habitable worlds with next-generation observatories and for contextualizing the uniqueness of our own.
 
 We introduce `SEDA` (Spectral Energy Distribution Analyzer), a versatile open-source Python package for forward modeling of observations of ultracool objects, such as brown dwarfs, directly imaged exoplanets, and low-mass stars. 
@@ -220,7 +220,7 @@ equilibrium and non-equilibrium chemistry;
 temperatures from the coldest brown dwarfs through hot and temperate exoplanets to low-mass stars ($\sim$ 300--4200 K);
 and surface gravities ($\log g$=3.0--5.5) appropriate for both young and old ultracool objects.
 `SEDA` also allows users to easily incorporate additional atmospheric model grids.
-Fitting observations to these model grids enables the inference of chemical and physical parameters defined as free parameters in the grids, 
+Fitting these model grids to observational data, the code infers chemical and physical parameters defined as free parameters in the grids, 
 along with additional quantities such as bolometric luminosity and radius, when the distance is known (see [Mathematics](#mathematics)).
 
 Empirical analyses of SEDs include measurements of the strengths of key spectral features produced by gas and grain species using literature-defined or user-defined spectral indices, i.e., flux ratios that quantify the depth of specific spectral signatures. 
@@ -233,15 +233,8 @@ $(ii)$ a model interpolator that generates synthetic spectra for any parameter c
 $(iii)$ a model examiner that enables inspection of atmospheric model properties, such as basic and free parameters, parameter coverage, resolving power, and spectral resolution, and 
 $(iv)$ access to 113 Spitzer IRS mid-infrared spectra of brown dwarfs from @Suarez_Metchev2022, together with associated target properties, observing logs, and measured spectral indices.
 
-# Software Design
-
-`SEDA` v1.0 accompanies this publication and represents a stable, well-tested release following multiple pre-releases used for development and community feedback.
-The software is designed for flexible analysis of SEDs, centered on forward modeling and complemented by empirical analysis tools (see [Functionality](#functionality) and [Mathematics](#mathematics)).
-The code includes automated tests to verify core functionality and has been successfully tested with Python 3.9 or later (latest tested: Python 3.14) on Linux, Windows, and macOS.
-The repository also provides Jupyter notebook tutorials demonstrating typical scientific workflows.
-
 # Mathematics {#mathematics}
-For model fitting, as described in [Functionality](#functionality), we adopt two approaches:
+For model fitting, as described in [Functionality](#functionality), the code adopts two approaches:
 
 **1. Chi-square Minimization**
 
@@ -286,12 +279,18 @@ The observed data are complemented with the best-fitting model to construct a fu
 # Documentation
 `SEDA` is hosted on GitHub[^2] and the most up-to-date documentation is available on Read The Docs[^3].
 The documentation provides installation instructions, an overview of the code and its principal modules, a description of the code workflow, a list of useful tools, and details on the available atmospheric models. 
+The repository also provides Jupyter notebook tutorials demonstrating typical scientific workflows.
 
 The documentation is actively maintained and includes an API reference describing all functions and classes, with basic example provided where applicable.
 In addition, the documentation contains a frequently asked questions section and guidance on contributing to the code or submitting feedback.
 
 [^2]: <https://github.com/suarezgenaro/seda>
 [^3]: <https://seda.readthedocs.io/>
+
+# Software Design
+`SEDA` v1.0 accompanies this publication and represents a stable, well-tested release following multiple pre-releases used for development and community feedback.
+The software is designed for flexible analysis of SEDs, centered on forward modeling and complemented by empirical analysis tools (see [Functionality](#functionality) and [Mathematics](#mathematics)).
+The code includes automated tests to verify core functionality and has been successfully tested with Python 3.9 or later (latest tested: Python 3.14) on Linux, Windows, and macOS.
 
 # Research Impact
 The foundation of `SEDA` was introduced in @Suarez_etal2021a, which implemented only a chi-square minimization approach. 
