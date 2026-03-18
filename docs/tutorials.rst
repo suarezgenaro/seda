@@ -14,6 +14,7 @@ Miscellaneous
    notebooks/tutorial_spectral_indices.ipynb
    notebooks/tutorial_bolometric_luminosity.ipynb
    notebooks/tutorial_spitzer_irs_spectra.ipynb
+   notebooks/tutorial_variability.ipynb
 
 Chi-square minimization
 +++++++++++++++++++++++
