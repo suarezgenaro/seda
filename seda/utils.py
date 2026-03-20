@@ -1993,16 +1993,6 @@ def merge_MRS(fits_files):
 	>>> import seda
 	>>>
 	>>> # list of fits files to be merge
-	>>> fits_files = ['jw05474-o001_t001_miri_ch1-long_x1d.fits', 
-    >>>               'jw05474-o001_t001_miri_ch1-medium_x1d.fits', 
-    >>>               'jw05474-o001_t001_miri_ch1-short_x1d.fits', 
-    >>>               'jw05474-o001_t001_miri_ch2-long_x1d.fits', 
-    >>>               'jw05474-o001_t001_miri_ch2-medium_x1d.fits', 
-    >>>               'jw05474-o001_t001_miri_ch2-short_x1d.fits',
-    >>>               'jw05474-o001_t001_miri_ch3-long_x1d.fits', 
-    >>>               'jw05474-o001_t001_miri_ch3-medium_x1d.fits', 
-    >>>               'jw05474-o001_t001_miri_ch3-short_x1d.fits'
-    >>>              ]
 	>>> # merge files
 	>>> out_merge_MRS = seda.utils.merge_MRS(fits_files)
 
