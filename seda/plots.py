@@ -799,7 +799,7 @@ def plot_model_coverage(model, xparam, yparam, model_dir=None, params_ranges=Non
 		params = select_model_spectra(model=model, model_dir=model_dir, params_ranges=params_ranges)['params']
 	else: # coverage of the full model grid
 		# open results from the chi square analysis
-		with open(f'{path_plots}/models_aux/model_coverage/{model}_free_parameters.pickle', 'rb') as file:
+		with open(f'{path_plots}/models_aux/{model}/coverage.pickle', 'rb') as file:
 			params = pickle.load(file)['params']
 	
 	# verify that xparam and yparam are valid parameters
