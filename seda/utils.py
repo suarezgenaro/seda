@@ -6,7 +6,6 @@ import xarray
 import pickle
 import astropy
 from prettytable import PrettyTable
-#import itertools
 from spectres import spectres
 from astropy import units as u
 from astropy.io import ascii
@@ -20,8 +19,6 @@ from sys import exit
 from . import models
 from .synthetic_photometry.synthetic_photometry import synthetic_photometry
 from specutils import Spectrum1D
-
-#from .models import *
 
 from numpy.typing import ArrayLike
 
