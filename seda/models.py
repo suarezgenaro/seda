@@ -4,9 +4,11 @@ import os
 import fnmatch
 import json
 import xarray
+import importlib.util
 from astropy import units as u
 from astropy.io import ascii
-from specutils.utils.wcs_utils import vac_to_air
+from pathlib import Path
+from importlib import resources
 from sys import exit
 
 ##########################
@@ -20,7 +22,7 @@ class Models:
 	-----------
 	- model : str, optional.
 		Atmospheric models for which basic information will be read. 
-		See available models with ``seda.Models().available_models``.
+		See available models with ``seda.models.Models().available_models``.
 
 	Attributes:
 	-----------
@@ -68,45 +70,62 @@ class Models:
 
 	def __init__(self, model=None):
 
-		# path to this module
-		path_models = os.path.dirname(__file__)+'/'
+		# path to model folders
+		self.path_models_aux = resources.files('seda.models_aux')
 
-		# available atmospheric models
-		# open all the json files in models_aux/model_specifics
-		path_jsons = path_models+'models_aux/model_specifics/'
-		
-		json_files = fnmatch.filter(os.listdir(path_jsons), '*.json')
+		# read info from json files
+		model_configs = self._load_model_configs()
 
-		# read available models
-		available_models = []
-		for json_file in json_files:
-			if json_file!='template_models.json': # avoid template
-				available_models.append(json.load(open(path_jsons+json_file))['model'])
+		# set available atmospheric models
+		self.available_models = list(model_configs.keys())
 
-		# set attribute
-		self.available_models = available_models
+		# if a specific model is requested
+		if model:
+			if model not in model_configs:
+				raise Exception(f'"{model}" models are not recognized. Available models: \n          {self.available_models}')
 
-		# read attributes from the json file for desired models
-		if model is not None:
-			if model not in self.available_models: raise Exception(f'"{model}" models are not recognized. Available models: \n          {self.available_models}')
-			
-			self.model = model
-	
-			# read relevant info for available atmospheric models from the json files in models_aux/model_specifics
-			for json_file in json_files:
-				if json.load(open(path_jsons+json_file))['model']==model: models_json = json.load(open(path_jsons+json_file))
+			config = model_configs[model]
 
-			# define attributes
-			self.ref = models_json['ref']
-			self.name = models_json['name']
-			self.bibcode = models_json['bibcode']
-			self.ADS = models_json['ADS']
-			self.download = models_json['download']
-			self.filename_pattern = models_json['filename_pattern']
-			self.free_params = models_json['free_params']
+			# assign all non-comment fields as attributes
+			for key, value in config.items():
+				if not key.startswith('_comment'):
+					setattr(self, key, value)
 
 			# set attributes related to coverage of the free parameters
 			self.model_ranges()
+
+	def _load_model_configs(self):
+		"""
+		Scan model folders, ensure config + plugin exist,
+		and return a dict with config and available models
+
+		Author: Genaro Suárez
+		Data: 2026-03-25
+		"""
+
+		model_configs = {}
+
+		# loop over model directories
+		for model_dir in self.path_models_aux.iterdir():
+			# skip non-directories and internal folders
+			if not model_dir.is_dir() or model_dir.name.startswith('_'):
+				continue
+
+			config_path = model_dir / 'config.json'
+			plugin_path = model_dir / 'plugin.py'
+
+			# require both config and plugin files
+			if not config_path.exists() or not plugin_path.exists():
+				continue
+
+			# read model name from config
+			with open(config_path) as f:
+				config = json.load(f)
+
+			model_name = config['model']
+			model_configs[model_name] = config
+
+		return model_configs
 
 	def model_ranges(self):
 		'''
@@ -115,11 +134,13 @@ class Models:
 		Author: Genaro Suárez
 		'''
 
-		# path to the this module
-		path_models = os.path.dirname(__file__)+'/'
+		# path to model folders
+		path_models_aux = resources.files('seda.models_aux')
+		## path to the this module
+		#path_models = os.path.dirname(__file__)+'/'
 
 		# open the pickle file, if any, with model coverage
-		pickle_file = f'{path_models}models_aux/model_coverage/{self.model}_free_parameters.pickle'
+		pickle_file = f'{path_models_aux}/{self.model}/coverage.pickle'
 		if not os.path.exists(pickle_file): # if the pickle file exists
 			raise Exception(f'"{pickle_file}" file with model coverage is missing')
 			
@@ -140,6 +161,20 @@ class Models:
 				params_unique[param] = np.unique(model_coverage['params'][param]) # unique values for each free parameter
 			self.params_unique = params_unique
 
+	def get_parameters(self, return_type="dict", include_values=True):
+		"""Return all user-facing attributes (exclude __dunder__ names)."""
+
+		attrs = {}
+		for key, value in self.__dict__.items():
+			if key.startswith('__'):
+				continue
+			if return_type == 'dict' and include_values:
+				attrs[key] = value
+			else:
+				attrs[key] = None
+		if return_type == 'list':
+			return list(attrs.keys())
+		return attrs
 
 ##########################
 def separate_params(model, spectra_name, save_results=False, out_file=None):
@@ -173,192 +208,42 @@ def separate_params(model, spectra_name, save_results=False, out_file=None):
 	>>> model = 'Sonora_Elf_Owl'
 	>>> spectra_name = np.array(['spectra_logzz_4.0_teff_750.0_grav_178.0_mh_0.0_co_1.0.nc', 
 	>>>                          'spectra_logzz_2.0_teff_800.0_grav_316.0_mh_0.0_co_1.0.nc'])
-	>>> seda.separate_params(spectra_name=spectra_name, model=model)
+	>>> seda.models.separate_params(spectra_name=spectra_name, model=model)
 	    {'spectra_name': array(['spectra_logzz_4.0_teff_750.0_grav_178.0_mh_0.0_co_1.0.nc',
-	                            'spectra_logzz_2.0_teff_800.0_grav_316.0_mh_0.0_co_1.0.nc'],
-	    'Teff': array([750., 800.]),
-	    'logg': array([4.25042   , 4.49968708]),
-	    'logKzz': array([4., 2.]),
-	    'Z': array([0., 0.]),
-	    'CtoO': array([1., 1.])}
+	            'spectra_logzz_2.0_teff_800.0_grav_316.0_mh_0.0_co_1.0.nc'],
+	           dtype='<U56'),
+	     'params': {'Teff': array([750., 800.]),
+	      'logg': array([4.25, 4.5 ]),
+	      'logKzz': array([4., 2.]),
+	      'Z': array([0., 0.]),
+	      'CtoO': array([1., 1.])}}
 
-	Author: Genaro Suárez
+	Author: 
+		Genaro Suárez
+
+	Date: 
+		Created: 2021-05-12
+		Last Modified: 2026-03-25
 	'''
 
 	# if there is one input spectrum with its name given as a string, convert it into a list
 	if isinstance(spectra_name, str): spectra_name = [spectra_name]
 
-	out = {'spectra_name': spectra_name} # start dictionary with some parameters
-	out['params'] = {}
+	# load model config and plugin
+	config, plugin = _load_model(model)
 
-	# get parameters from model spectra names
-	# consider a way that also works when adding an additional string at the end of the name
-	# which is the case when convolved spectra are store and then read
-	if (model == 'Exo-REM'):
-		Teff_fit = np.zeros(len(spectra_name))
-		logg_fit = np.zeros(len(spectra_name))
-		Z_fit = np.zeros(len(spectra_name))
-		CtoO_fit = np.zeros(len(spectra_name))
-		for i in range(len(spectra_name)):
-			# Teff
-			Teff_fit[i] = float(spectra_name[i].split('_')[2][:-1]) # K
-			# logg
-			logg_fit[i] = float(spectra_name[i].split('_')[3][4:]) # g in cgs
-			# Z
-			Z_fit[i] = np.round(np.log10(float(spectra_name[i].split('_')[4][3:])),2) # 
-			# CtoO
-			CtoO_fit[i] = float(spectra_name[i].split('_')[5].split('.dat')[0][2:])
-		out['params']['Teff']= Teff_fit
-		out['params']['logg']= logg_fit
-		out['params']['Z']= Z_fit
-		out['params']['CtoO']= CtoO_fit
+	# call the plugin to get the raw parameters
+	params = plugin._separate_params(spectra_name)
 
-	if (model == 'Sonora_Diamondback'):
-		Teff_fit = np.zeros(len(spectra_name))
-		logg_fit = np.zeros(len(spectra_name))
-		Z_fit = np.zeros(len(spectra_name))
-		fsed_fit = np.zeros(len(spectra_name))
-		for i in range(len(spectra_name)):
-			# Teff 
-			Teff_fit[i] = float(spectra_name[i].split('g')[0][1:]) # in K
-			# logg
-			logg_fit[i] = round(np.log10(float(spectra_name[i].split('g')[1].split('_')[0][:-2])),1) + 2 # g in cgs
-			# Z
-			Z_fit[i] = float(spectra_name[i].split('_')[1][1:])
-			# fsed
-			fsed = spectra_name[i].split('_')[0][-1:]
-			if fsed=='c': fsed_fit[i] = 99 # 99 to indicate nc (no clouds)
-			if fsed!='c': fsed_fit[i] = float(fsed)
-		out['params']['Teff']= Teff_fit
-		out['params']['logg']= logg_fit
-		out['params']['Z']= Z_fit
-		out['params']['fsed']= fsed_fit
-	if (model == 'Sonora_Elf_Owl'):
-		Teff_fit = np.zeros(len(spectra_name))
-		logg_fit = np.zeros(len(spectra_name))
-		logKzz_fit = np.zeros(len(spectra_name))
-		Z_fit = np.zeros(len(spectra_name))
-		CtoO_fit = np.zeros(len(spectra_name))
-		for i in range(len(spectra_name)):
-			# Teff 
-			Teff_fit[i] = float(spectra_name[i].split('_')[4]) # in K
-			# logg
-			logg_fit[i] = round_logg_point25(np.log10(float(spectra_name[i].split('_')[6])) + 2) # g in cgs
-			# logKzz
-			logKzz_fit[i] = float(spectra_name[i].split('_')[2]) # Kzz in cgs
-			# Z
-			Z_fit[i] = float(spectra_name[i].split('_')[8]) # in cgs
-			# C/O
-			CtoO_fit[i] = float(spectra_name[i].split('_')[10][:-3])
-		out['params']['Teff']= Teff_fit
-		out['params']['logg']= logg_fit
-		out['params']['logKzz']= logKzz_fit
-		out['params']['Z']= Z_fit
-		out['params']['CtoO']= CtoO_fit
-	if (model == 'LB23'):
-		Teff_fit = np.zeros(len(spectra_name))
-		logg_fit = np.zeros(len(spectra_name))
-		Z_fit = np.zeros(len(spectra_name))
-		logKzz_fit = np.zeros(len(spectra_name))
-		Hmix_fit = np.zeros(len(spectra_name))
-		for i in range(len(spectra_name)):
-			# Teff 
-			Teff_fit[i] = float(spectra_name[i].split('_')[0][1:]) # K
-			# logg
-			logg_fit[i] = float(spectra_name[i].split('_')[1][1:]) # logg
-			# Z (metallicity)
-			Z_fit[i] = np.round(np.log10(float(spectra_name[i].split('_')[2][1:])),1)
-			# Kzz (radiative zone)
-			logKzz_fit[i] = np.log10(float(spectra_name[i].split('CDIFF')[1].split('_')[0])) # in cgs units
-			# Hmix
-			Hmix_fit[i] = float(spectra_name[i].split('HMIX')[1][:5])
-		out['params']['Teff']= Teff_fit
-		out['params']['logg']= logg_fit
-		out['params']['Z']= Z_fit
-		out['params']['logKzz']= logKzz_fit
-		out['params']['Hmix']= Hmix_fit
-	if (model == 'Sonora_Cholla'):
-		Teff_fit = np.zeros(len(spectra_name))
-		logg_fit = np.zeros(len(spectra_name))
-		logKzz_fit = np.zeros(len(spectra_name))
-		for i in range(len(spectra_name)):
-			# Teff 
-			Teff_fit[i] = float(spectra_name[i].split('_')[0][:-1]) # K
-			# logg
-			logg_fit[i] = round_logg_point25(np.log10(float(spectra_name[i].split('_')[1][:-1])) + 2) # g in cm/s2
-			# logKzz
-			logKzz_fit[i] = float(spectra_name[i].split('_')[2].split('.')[0][-1]) # Kzz in cm2/s
-		out['params']['Teff']= Teff_fit
-		out['params']['logg']= logg_fit
-		out['params']['logKzz']= logKzz_fit
-	if (model == 'Sonora_Bobcat'):
-		Teff_fit = np.zeros(len(spectra_name))
-		logg_fit = np.zeros(len(spectra_name))
-		Z_fit = np.zeros(len(spectra_name))
-		CtoO_fit = np.zeros(len(spectra_name))
-		for i in range(len(spectra_name)):
-			# Teff 
-			Teff_fit[i] = float(spectra_name[i].split('_')[1].split('g')[0][1:]) # K
-			# logg
-			logg_fit[i] = round_logg_point25(np.log10(float(spectra_name[i].split('_')[1].split('g')[1][:-2])) + 2) # g in cm/s2
-			# Z
-			Z_fit[i] = float(spectra_name[i].split('_')[2][1:])
-			# C/O
-			if (len(spectra_name[i].split('_'))==4): # when the spectrum file name includes the C/O
-				CtoO_fit[i] = float(spectra_name[i].split('_')[3][2:])
-			if (len(spectra_name[i].split('_'))==3): # when the spectrum file name does not include the C/O
-				CtoO_fit[i] = 1.0
-		out['params']['Teff']= Teff_fit
-		out['params']['logg']= logg_fit
-		out['params']['Z']= Z_fit
-		out['params']['CtoO']= CtoO_fit
-	if (model == 'ATMO2020'):
-		Teff_fit = np.zeros(len(spectra_name))
-		logg_fit = np.zeros(len(spectra_name))
-		logKzz_fit = np.zeros(len(spectra_name))
-		for i in range(len(spectra_name)):
-			# Teff 
-			Teff_fit[i] = float(spectra_name[i].split('spec_')[1].split('_')[0][1:])
-			# logg
-			logg_fit[i] = float(spectra_name[i].split('spec_')[1].split('_')[1][2:])
-			# logKzz
-			if (spectra_name[i].split('spec_')[1].split('lg')[1][4:-4]=='NEQ_weak'): # when the grid is NEQ_weak
-				logKzz_fit[i] = 4
-			if (spectra_name[i].split('spec_')[1].split('lg')[1][4:-4]=='NEQ_strong'): # when the grid is NEQ_strong
-				logKzz_fit[i] = 6
-		out['params']['Teff']= Teff_fit
-		out['params']['logg']= logg_fit
-		out['params']['logKzz']= logKzz_fit
-	if (model == 'BT-Settl'):
-		Teff_fit = np.zeros(len(spectra_name))
-		logg_fit = np.zeros(len(spectra_name))
-		for i in range(len(spectra_name)):
-			# Teff 
-			Teff_fit[i] = float(spectra_name[i].split('-')[0][3:]) * 100 # K
-			# logg
-			logg_fit[i] = float(spectra_name[i].split('-')[1]) # g in cm/s^2
-		out['params']['Teff']= Teff_fit
-		out['params']['logg']= logg_fit
-	if (model == 'SM08'):
-		Teff_fit = np.zeros(len(spectra_name))
-		logg_fit = np.zeros(len(spectra_name))
-		fsed_fit = np.zeros(len(spectra_name))
-		for i in range(len(spectra_name)):
-			# Teff 
-			Teff_fit[i] = float(spectra_name[i].split('_')[1].split('g')[0][1:])
-			# logg
-			logg_fit[i] = np.round(np.log10(float(spectra_name[i].split('_')[1].split('g')[1].split('f')[0])), 1) + 2 # g in cm/s^2
-			# fsed
-			fsed_fit[i] = float(spectra_name[i].split('_')[1].split('g')[1].split('f')[1])
-		out['params']['Teff']= Teff_fit
-		out['params']['logg']= logg_fit
-		out['params']['fsed']= fsed_fit
+	# output dictionary
+	out = {'spectra_name': spectra_name, 'params': params}
 
 	# save output dictionary
 	if save_results:
-		if out_file is None: out_file = f'{model}_free_parameters.pickle'
+		if out_file is None: out_file = f'{model}_coverage.pickle'
 		with open(out_file, 'wb') as file:
 			pickle.dump(out, file)
+			print(f'{out_file} saved successfully')
 
 	return out
 
@@ -385,83 +270,28 @@ def read_model_spectrum(spectrum_name_full, model, model_wl_range=None):
 		- ``'flux_model'`` : fluxes in erg/s/cm2/A
 		- ``'flux_model_Jy'`` : fluxes in Jy
 
-	Author: Genaro Suárez
+	Author: 
+		Genaro Suárez
+
+	Date: 
+		Created: 2021-05-12
+		Last Modified: 2026-03-25
 	'''
 
 	# verify the input model is available
 	if model not in Models().available_models: raise Exception(f'Models "{model}" are not recognized. Available models: \n          {Models().available_models}')
 
-	# read model spectra files
-	if (model == 'Exo-REM'):
-		# reading how to convert fluxes in wavenumber units to fluxes in wavelength units
-		print('exit')
-	if (model == 'Sonora_Diamondback'):
-		spec_model = ascii.read(spectrum_name_full, data_start=3, format='no_header')
-		wl_model = spec_model['col1'] * u.micron # um (in vacuum?)
-		wl_model = vac_to_air(wl_model).value # um in the air
-		flux_model = spec_model['col2'] * u.W/u.m**2/u.m # W/m2/m
-		flux_model = flux_model.to(u.erg/u.s/u.cm**2/(u.nm*0.1)).value # erg/s/cm2/A
-	if (model == 'Sonora_Elf_Owl'):
-		spec_model = xarray.open_dataset(spectrum_name_full) # Sonora Elf Owl model spectra have NetCDF Data Format data
-		wl_model = spec_model['wavelength'].data * u.micron # um
-		wl_model = wl_model.value
-		flux_model = spec_model['flux'].data * u.erg/u.s/u.cm**2/u.cm # erg/s/cm2/cm
-		flux_model = flux_model.to(u.erg/u.s/u.cm**2/(u.nm*0.1)).value # erg/s/cm2/A
-	if (model == 'LB23'):
-		spec_model = ascii.read(spectrum_name_full)
-		wl_model = spec_model['LAMBDA(mic)'] # micron
-		flux_model = spec_model['FLAM'] # erg/s/cm2/A
-		# convert scientific notation from 'D' to 'E'
-		wl_LB23 = np.zeros(wl_model.size)
-		flux_LB23 = np.zeros(wl_model.size)
-		for j in range(wl_LB23.size):
-			wl_LB23[j] = float(wl_model[j].replace('D', 'E'))
-			flux_LB23[j] = float(flux_model[j].replace('D', 'E'))
-		wl_model = wl_LB23 # um
-		flux_model = flux_LB23 # erg/s/cm2/A
-	if (model == 'Sonora_Cholla'):
-		spec_model = ascii.read(spectrum_name_full, data_start=2, format='no_header')
-		wl_model = spec_model['col1'] * u.micron # um (in vacuum?)
-		wl_model = vac_to_air(wl_model).value # um in the air
-		flux_model = spec_model['col2'] * u.W/u.m**2/u.m # W/m2/m
-		flux_model = flux_model.to(u.erg/u.s/u.cm**2/(u.nm*0.1)).value # erg/s/cm2/A
-	if (model == 'Sonora_Bobcat'):
-		spec_model = ascii.read(spectrum_name_full, data_start=2, format='no_header')
-		wl_model = spec_model['col1'] * u.micron # um (in vacuum?)
-		wl_model = vac_to_air(wl_model).value # um in the air
-		flux_model = spec_model['col2'] * u.erg/u.s/u.cm**2/u.Hz # erg/s/cm2/Hz
-		flux_model = flux_model.to(u.erg/u.s/u.cm**2/(u.nm*0.1), equivalencies=u.spectral_density( wl_model * u.micron)).value # erg/s/cm2/A
-	if (model == 'ATMO2020'):
-		spec_model = ascii.read(spectrum_name_full, format='no_header')
-		wl_model = spec_model['col1'] * u.micron # um (in vacuum)
-		wl_model = vac_to_air(wl_model).value # um in the air
-		flux_model = spec_model['col2'] * u.W/u.m**2/u.micron # W/m2/micron
-		flux_model = flux_model.to(u.erg/u.s/u.cm**2/(u.nm*0.1)).value # erg/s/cm2/A
-	if (model == 'BT-Settl'):
-		spec_model = ascii.read(spectrum_name_full, format='no_header')
-		wl_model = (spec_model['col1']*(u.nm*0.1)).to(u.micron) # um (in vacuum)
-		# convert wavelength from vacuum to air
-		uv_mask = wl_model < 0.2 * u.um
-		nouv_mask = ~uv_mask
-		if np.any(uv_mask):
-			# only UV wavelengths use Greisen2006
-			wl_model[uv_mask] = vac_to_air_uv_safe(wl_model[uv_mask])
-		if np.any(nouv_mask):
-			# rest use default (Morton2000)
-			wl_model[nouv_mask] = vac_to_air(wl_model[nouv_mask])
-		wl_model = wl_model.value # in um
-		flux_model = spec_model['col2'] * u.erg/u.s/u.cm**2/u.Hz # erg/s/cm2/Hz (to an unknown distance). 10**(F_lam + DF) to convert to erg/s/cm2/A
-		DF= -8.0
-		flux_model = 10**(flux_model.value + DF) # erg/s/cm2/A
-	if (model == 'SM08'):
-		spec_model = ascii.read(spectrum_name_full, data_start=2, format='no_header')
-		wl_model = spec_model['col1'] * u.micron # um (in air the alkali lines and in vacuum the rest of the spectra)
-		#wl_model = vac_to_air(wl_model).value # um in the air
-		wl_model = wl_model.value # um
-		flux_model = spec_model['col2'] * u.erg/u.s/u.cm**2/u.Hz # erg/s/cm2/Hz (to an unknown distance)
-		flux_model = flux_model.to(u.erg/u.s/u.cm**2/(u.nm*0.1), equivalencies=u.spectral_density(wl_model*u.micron)).value # erg/s/cm2/A
+	# load plugin (and config if needed)
+	_, plugin = _load_model(model)
 
-	# sort the array. For BT-Settl is recommended by Allard in her webpage and some models are sorted from higher to smaller wavelengths.
+	# get the model spectrum
+	spectrum = plugin._read_model_spectrum(spectrum_name_full)
+
+	# extract main arrays first
+	wl_model = spectrum['wl_model']
+	flux_model = spectrum['flux_model']
+
+	# ensure wl is sorted
 	sort_index = np.argsort(wl_model)
 	wl_model = wl_model[sort_index]
 	flux_model = flux_model[sort_index]
@@ -570,20 +400,48 @@ def spectra_name_short(model, spectra_name):
 	return short_name
 
 ##########################
-# round logg to steps of 0.25
-def round_logg_point25(logg):
-	logg = round(logg*4.) / 4. 
-	return logg
+_BASE_PATH = Path(__file__).parent / 'models_aux'
+_PLUGIN_CACHE = {}
 
-##########################
-def vac_to_air_uv_safe(wavelength):
-	"""
-	Convert vacuum to air wavelengths in the UV,
-	supporting specutils API changes.
-	"""
-	try:
-		# New, correct spelling (specutils ≥ newer versions)
-		return vac_to_air(wavelength, method="Greisen2006")
-	except ValueError:
-		# Older specutils fallback
-		return vac_to_air(wavelength, method="Griesen2006")
+def _load_model(model):
+
+	# return cached model if already loaded
+	if model in _PLUGIN_CACHE:
+		return _PLUGIN_CACHE[model]
+
+	# define model folder and load JSON config
+	model_dir = _BASE_PATH / model
+	config_path = model_dir / 'config.json'
+
+	# verify the json file exists
+	if not config_path.exists():
+		raise FileNotFoundError(f"No config.json for model '{model}'")
+
+	with open(config_path) as f:
+		config = json.load(f)
+
+	# load plugin.py dynamically as a module
+	plugin_path = model_dir / 'plugin.py'
+	# verify that plugin.py exists
+	if not plugin_path.exists():
+		raise NotImplementedError(
+			f"Model '{model}' has no plugin.py"
+		)
+
+	# create a module spec for the plugin file
+	spec = importlib.util.spec_from_file_location(model, plugin_path)
+	# create a module object from that spec
+	plugin = importlib.util.module_from_spec(spec)
+	# execute the module code to load it into Python
+	spec.loader.exec_module(plugin)
+
+	# validate required functions
+	for func in ['_read_model_spectrum', '_separate_params']:
+		if not hasattr(plugin, func):
+			raise AttributeError(
+				f"{model}/plugin.py must define '{func}'"
+			)
+
+	# cache and return
+	_PLUGIN_CACHE[model] = (config, plugin)
+	return config, plugin

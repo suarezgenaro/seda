@@ -1,21 +1,48 @@
 import os
+from pathlib import Path
+from importlib import resources
+import fnmatch
+import json
 import seda
-from astropy.io import ascii
 
 def load_model_spectra_catalog():
-	"""Read catalog of example spectra corresponding to models"""
+    """Return list of (model, example_spectrum_path)."""
 
-	# base path to the seda package
-	path_seda = os.path.dirname(os.path.dirname(seda.__file__))
-	# path to example model spectra
-	spectra_dir = 'seda/models_aux/model_spectra'
-	# file with model names and corresponding example spectra names
-	table_file = os.path.join(path_seda, spectra_dir, 'README')
-	table = ascii.read(table_file)
+    # base path to models_aux
+    base = Path(resources.files('seda.models_aux'))
 
-	# make a list of 2-tuples of strings for pytest.mark.parametrize
-	catalog = []
-	for model in table:
-		catalog.append((model[0], os.path.join(path_seda, spectra_dir, model[1])))
-	
-	return catalog
+    # get available models from the API
+    available_models = seda.models.Models().available_models
+
+    catalog = []
+
+    # loop over available models
+    for model in available_models:
+
+        # path to model folder
+        model_dir = base / model
+
+        # read config.json
+        config_path = model_dir / 'config.json'
+        with open(config_path) as f:
+            config = json.load(f)
+
+        pattern = config['filename_pattern']
+
+        # find spectra matching pattern
+        spectra = [
+            f for f in os.listdir(model_dir)
+            if fnmatch.fnmatch(f, pattern)
+        ]
+
+        if not spectra:
+            continue
+
+        # pick one example spectrum (sorted for reproducibility)
+        spectra = sorted(spectra)
+        example_file = model_dir / spectra[0]
+
+        # append (model, spectrum path)
+        catalog.append((model, str(example_file)))
+
+    return catalog
