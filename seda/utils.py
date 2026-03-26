@@ -21,7 +21,7 @@ from . import models
 from .synthetic_photometry.synthetic_photometry import synthetic_photometry
 from specutils import Spectrum1D
 
-from .models import *
+#from .models import *
 
 from numpy.typing import ArrayLike
 
