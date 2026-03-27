@@ -621,6 +621,16 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 
 	ini_time_grid = time.time() # to estimate the time elapsed reading the grid
 
+	# ensure model_dir is a list
+	model_dir = var_to_list(model_dir)
+
+	# ensure that all folders in model_dir end with the path separator
+	for i,p in enumerate(model_dir):
+		# check if path already ends with separator
+		if not p.endswith(os.sep):
+			# update path with path separator if needed
+			model_dir[i] = p + os.sep
+
 	if wl_resample is not None:
 		# handle fit_wl_range
 		fit_wl_range = set_fit_wl_range(fit_wl_range=fit_wl_range, N_spectra=1, wl_spectra=[wl_resample])[0]
