@@ -33,11 +33,11 @@ def _separate_params(filenames):
     # separate parameters
     for i,name in enumerate(filenames):
         # Teff 
-        Teff = float(name.split('_')[0][:-1]) # K
+        Teff[i] = float(name.split('_')[0][:-1]) # K
         # logg
-        logg = _round_logg_point25(np.log10(float(name.split('_')[1][:-1])) + 2) # g in cm/s2
+        logg[i] = _round_logg_point25(np.log10(float(name.split('_')[1][:-1])) + 2) # g in cm/s2
         # logKzz
-        logKzz = float(name.split('_')[2].split('.')[0][-1]) # Kzz in cm2/s
+        logKzz[i] = float(name.split('_')[2].split('.')[0][-1]) # Kzz in cm2/s
         
     # output dictionary with parameters
     out = {'Teff': Teff, 'logg': logg, 'logKzz': logKzz}
