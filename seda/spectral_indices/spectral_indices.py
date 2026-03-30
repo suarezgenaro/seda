@@ -11,7 +11,7 @@ from typing import Tuple, Literal, Optional, Union
 def silicate_index(wl, flux, eflux, silicate_wl=None, silicate_window=None, 
 	               continuum_wl1=None, continuum_window1=None, 
 	               continuum_wl2=None, continuum_window2=None, 
-	               continuum_fit='exponential', continuum_error='fit', reference='SM23', 
+	               continuum_fit=None, continuum_error=None, reference='SM23', 
 	               plot=False, plot_title=None, plot_xrange=None, 
 	               plot_yrange=None, plot_save=False, plot_name=False):
 	'''
@@ -108,6 +108,8 @@ def silicate_index(wl, flux, eflux, silicate_wl=None, silicate_window=None,
 		if continuum_window1 is None: continuum_window1 = 0.5 # window in um for the short-wavelength continuum region
 		if continuum_wl2 is None: continuum_wl2 = 13.5 # minimum in the red side of the peak (um)
 		if continuum_window2 is None: continuum_window2 = 1.0 # window in um for the long-wavelength continuum region
+		if continuum_fit is None: continuum_fit='exponential'
+		if continuum_error is None: continuum_error='fit'
 	elif reference=='SM22': # parameters in Suárez & Metchev (2022)
 		# center of the absorption and window region
 		if silicate_wl is None: silicate_wl = 9.00 # um
@@ -117,6 +119,8 @@ def silicate_index(wl, flux, eflux, silicate_wl=None, silicate_window=None,
 		if continuum_window1 is None: continuum_window1 = 0.6 # window in um for the short-wavelength continuum region
 		if continuum_wl2 is None: continuum_wl2 = 11.5 # minimum in the red side of the peak (um)
 		if continuum_window2 is None: continuum_window2 = 0.6 # window in um for the long-wavelength continuum region
+		if continuum_fit is None: continuum_fit='line'
+		if continuum_error is None: continuum_error='fit'
 	else: raise Exception(f'"{reference}" is not a recognized reference to set default parameters to measure the silicate index. \nTry "SM22" or "SM23".')
 
 	# measure silicate index
