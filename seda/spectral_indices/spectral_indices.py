@@ -84,6 +84,8 @@ def silicate_index(wl, flux, eflux, silicate_wl=None, silicate_window=None,
 			- ``'continuum_window1'`` : input ``continuum_window1``
 			- ``'continuum_wl2'`` : input ``continuum_wl2``
 			- ``'continuum_window2'`` : input ``continuum_window2``
+			- ``'continuum_fit'`` : input ``continuum_fit``
+			- ``'continuum_error'`` : input ``continuum_error``
 			- ``'wl'`` : input ``wl``
 			- ``'flux'`` : input ``flux``
 			- ``'eflux'`` : input ``eflux``
@@ -159,6 +161,7 @@ def silicate_index(wl, flux, eflux, silicate_wl=None, silicate_window=None,
 	out['continuum_wl2'] = continuum_wl2
 	out['continuum_window2'] = continuum_window2
 	out['continuum_fit'] = continuum_fit
+	out['continuum_error'] = continuum_fit
 	# add input spectrum
 	out['wl'] = wl
 	out['flux'] = flux
