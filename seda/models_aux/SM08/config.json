@@ -13,6 +13,8 @@
     "download": "Contact authors",
     "_comment_filename_pattern": "Common pattern recognized in all spectra filenames used to select only spectra files in case there are other files in the same directory",
     "filename_pattern": "sp_t*f*",
+    "_comment_filename_trim": "Indices [start, end] to trim start/end of filenames for plot labels; use null for start or end of string",
+    "filename_trim": [3, null],
     "_comment_free_params": "Free parameters in the models",
     "free_params": ["Teff", "logg", "fsed"]
 }

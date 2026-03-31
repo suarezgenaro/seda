@@ -13,6 +13,8 @@
     "download": "http://phoenix.ens-lyon.fr/simulator/",
     "_comment_filename_pattern": "Common pattern recognized in all spectra filenames used to select only spectra files in case there are other files in the same directory",
     "filename_pattern": "lte*.BT-Settl.spec.7",
+    "_comment_filename_trim": "Indices [start, end] to trim start/end of filenames for plot labels; use null for start or end of string",
+    "filename_trim": [null, -16],
     "_comment_free_params": "Free parameters in the models",
     "free_params": ["Teff", "logg"]
 }
