@@ -34,6 +34,7 @@ class Models:
 	- download (str) : link to download ``model`` (if provided).
 	- filename_pattern (str) : common pattern in all spectra filenames in ``model`` (if provided). 
 		It is used to avoid other potential files in the same directory with model spectra.
+    - filename_trim (list) : start and end indices of filenames to trim, selecting only the relevant part for display.
 	- free_params (list) : free parameters in ``model`` (if provided).
 	- params (dict) : values (including repetitions) for each free parameter in ``model`` (if provided).
 	- params_unique (dict) : unique (no repetitions) values for each free parameter in ``model`` (if provided).
@@ -385,17 +386,21 @@ def read_PT_profile(filename, model):
 ##########################
 # short name for plot legends for model spectra
 def spectra_name_short(model, spectra_name):
-	
+
+	if isinstance(spectra_name, str): spectra_name = [spectra_name]
+	if isinstance(spectra_name, np.ndarray): spectra_name = spectra_name.tolist()
+	if isinstance(spectra_name, float): spectra_name = [spectra_name]
+
 	short_name = []
+
+	trim = getattr(Models(model), "filename_trim", None)
+	
 	for spectrum_name in spectra_name:
-		if model=='Sonora_Diamondback': short_name.append(spectrum_name[:-5])
-		if model=='Sonora_Elf_Owl': short_name.append(spectrum_name[8:-3])
-		if model=='Sonora_Cholla': short_name.append(spectrum_name[:-5])
-		if model=='Sonora_Bobcat': short_name.append(spectrum_name[3:])
-		if model=='LB23': short_name.append(spectrum_name[:-3])
-		if model=='ATMO2020': short_name.append(spectrum_name.split('spec_')[1][:-4])
-		if model=='BT-Settl': short_name.append(spectrum_name[:-16])
-		if model=='SM08': short_name.append(spectrum_name[3:])
+		if trim:
+			start, end = trim
+			short_name.append(spectrum_name[start:end])
+		else:
+			raise ValueError(f"No 'filename_trim' parameter in 'config.json' for '{model}' models")
 
 	return short_name
 
