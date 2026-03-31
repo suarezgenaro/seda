@@ -34,7 +34,7 @@ class Models:
 	- download (str) : link to download ``model`` (if provided).
 	- filename_pattern (str) : common pattern in all spectra filenames in ``model`` (if provided). 
 		It is used to avoid other potential files in the same directory with model spectra.
-    - filename_trim (list) : start and end indices of filenames to trim, selecting only the relevant part for display.
+	- filename_trim (list) : start and end indices of filenames to trim, selecting only the relevant part for display.
 	- free_params (list) : free parameters in ``model`` (if provided).
 	- params (dict) : values (including repetitions) for each free parameter in ``model`` (if provided).
 	- params_unique (dict) : unique (no repetitions) values for each free parameter in ``model`` (if provided).
