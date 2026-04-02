@@ -15,12 +15,12 @@ def silicate_index(wl, flux, eflux, silicate_wl=None, silicate_window=None,
 	               plot=False, plot_title=None, plot_xrange=None, 
 	               plot_yrange=None, plot_save=False, plot_name=False):
 	'''
-	Description
-	-----------
+	Description:
+	------------
 		Measure the strength of the mid-infrared silicate absorption considering the silicate index defined in Suárez & Metchev (2022,2023).
 
-	Parameters
-	----------
+	Parameters:
+	-----------
 	- wl : array
 		Spectrum wavelengths in microns.
 	- flux : array
@@ -64,8 +64,8 @@ def silicate_index(wl, flux, eflux, silicate_wl=None, silicate_window=None,
 		Filename to store the plot.
 		Default is ``'Silicate_index_measurement.pdf'``.
 
-	Returns
-	-------
+	Returns:
+	--------
 	- Dictionary 
 		Dictionary with silicate index parameters:
 			- ``'silicate_index'`` : silicate index
