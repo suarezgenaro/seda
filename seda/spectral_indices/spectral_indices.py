@@ -17,7 +17,7 @@ def silicate_index(wl, flux, eflux, silicate_wl=None, silicate_window=None,
 	'''
 	Description:
 	------------
-		Measure the strength of the mid-infrared silicate absorption considering the silicate index defined in Suárez & Metchev (2022,2023).
+		Measure the strength of the mid-infrared silicate absorption feature considering the silicate index defined in Suárez & Metchev (2022,2023).
 
 	Parameters:
 	-----------
@@ -104,9 +104,9 @@ def silicate_index(wl, flux, eflux, silicate_wl=None, silicate_window=None,
 		if silicate_window is None: silicate_window = 0.6 # um
 		# continuum region definition
 		# where CH4 and NH3 are not expected for mid-L type
-		if continuum_wl1 is None: continuum_wl1 = 7.45 # minimum in the blue side of the peak (um)
+		if continuum_wl1 is None: continuum_wl1 = 7.45 # wavelength reference in um for the short-wavelength continuum region
 		if continuum_window1 is None: continuum_window1 = 0.5 # window in um for the short-wavelength continuum region
-		if continuum_wl2 is None: continuum_wl2 = 13.5 # minimum in the red side of the peak (um)
+		if continuum_wl2 is None: continuum_wl2 = 13.5 # wavelength reference in um for the long-wavelength continuum region
 		if continuum_window2 is None: continuum_window2 = 1.0 # window in um for the long-wavelength continuum region
 		if continuum_fit is None: continuum_fit='exponential'
 		if continuum_error is None: continuum_error='fit'
@@ -115,9 +115,9 @@ def silicate_index(wl, flux, eflux, silicate_wl=None, silicate_window=None,
 		if silicate_wl is None: silicate_wl = 9.00 # um
 		if silicate_window is None: silicate_window = 0.6 # um
 		# continuum region definition
-		if continuum_wl1 is None: continuum_wl1 = 7.5 # minimum in the blue side of the peak (um)
+		if continuum_wl1 is None: continuum_wl1 = 7.5 # wavelength reference in um for the short-wavelength continuum region
 		if continuum_window1 is None: continuum_window1 = 0.6 # window in um for the short-wavelength continuum region
-		if continuum_wl2 is None: continuum_wl2 = 11.5 # minimum in the red side of the peak (um)
+		if continuum_wl2 is None: continuum_wl2 = 11.5 # wavelength reference in um for the long-wavelength continuum region
 		if continuum_window2 is None: continuum_window2 = 0.6 # window in um for the long-wavelength continuum region
 		if continuum_fit is None: continuum_fit='line'
 		if continuum_error is None: continuum_error='fit'
@@ -173,6 +173,163 @@ def silicate_index(wl, flux, eflux, silicate_wl=None, silicate_window=None,
 
 	# visualize how the silicate index was measured
 	index_name='Silicate'
+	if plot_xrange is None: plot_xrange=[5.2, 14]
+	if plot: plot_spectral_index_two_continuum_regions(out_feature_index=out, index_name=index_name, plot_xrange=plot_xrange, 
+	                                                   plot_yrange=plot_yrange, plot_title=plot_title, plot_save=plot_save, plot_name=plot_name)
+
+	return out
+
+##########################
+def sio_index(wl, flux, eflux, sio_wl=None, sio_window=None, 
+	          continuum_wl1=None, continuum_window1=None, 
+	          continuum_wl2=None, continuum_window2=None, 
+	          continuum_fit=None, continuum_error=None, reference='B26', 
+	          plot=False, plot_title=None, plot_xrange=None, 
+	          plot_yrange=None, plot_save=False, plot_name=False):
+	'''
+	Description:
+	------------
+	Measure the strength of the mid-infrared SiO (silicon monoxide) absorption 
+	feature considering the SiO index defined in Beiler et al. (2026).
+
+	Parameters:
+	-----------
+	- wl : array
+		Spectrum wavelengths in microns.
+	- flux : array
+		Spectrum fluxes in Jy.
+	- eflux : array
+		Spectrum flux errors in Jy.
+	- sio_wl : float, optional (default 7.9 um)
+		Wavelength reference to indicate the center of SiO absorption. 
+	- sio_window : float, optional (default 0.3 um)
+		Wavelength window around ``sio_wl`` used to calculate the average flux at the absorption.
+	- continuum_wl1 : float, optional (default 7.3 um)
+		Wavelength reference to indicate the short-wavelength continuum of SiO absorption. 
+	- continuum_window1 : float, optional (default 0.3 um))
+		Wavelength window around ``continuum_wl1`` used to select data points to fit a curve to continuum regions.
+	- continuum_wl2 : float, optional (default 9.7 um)
+		Wavelength reference to indicate the long-wavelength continuum of SiO absorption. 
+	- continuum_window2 : float, optional (default 0.3 um)
+		Wavelength window around ``continuum_wl2`` used to select data points to fit a curve to continuum regions.
+	- reference : {``B26``}, optional (default ``B26``)
+		Reference to set default parameters to measure the SiO index.
+	- continuum_error : string, optional (default ``fit``)
+		Label indicating the approach used to estimate the continuum flux uncertainty. Available options are: 
+			- ``'fit'`` (default) : from the error of the curve fit.
+			- ``'empirical'`` : from the scatter of the data points and the typical flux errors in the continuum regions.
+	- continuum_fit : string, optional (default ``linear``)
+		Label indicating the curve fit to the continuum regions.
+			- ``'line'`` : fit a line to continuum fluxes in both regions.
+			- ``'exponential'`` (default) : fit an exponential (or a line in log-log space) to continuum fluxes in both regions.
+	- plot : {``True``, ``False``}, optional (default ``False``)
+		Plot (``True``) or do not plot (``False``) the SiO index measurement.
+	- plot_title : str, optional
+		Plot title (default ``'Silicate Index Measurement'``.
+	- plot_xrange : list or array
+		Wavelength range (in microns) of the plot (default [5.2, 14] um).
+	- plot_yrange : list or array
+		Flux range (in Jy) of the plot (default is the flux range in ``plot_xrange``).
+	- plot_save : {``True``, ``False``}, optional (default ``False``)
+		Save (``'True'``) or do not save (``'False'``) the resulting plot.
+	- plot_name : str, optional
+		Filename to store the plot.
+		Default is ``'Silicate_index_measurement.pdf'``.
+
+	Returns:
+	--------
+	- Dictionary 
+		Dictionary with SiO index parameters:
+			- ``'sio_index'`` : SiO index
+			- ``'esio_index'`` : SiO index uncertainty
+			- ``'sio_flux'`` : flux at the absorption feature
+			- ``'esio_flux'`` : flux error at the absorption feature
+			- ``'continuum_flux'`` : flux at the continuum of the absorption
+			- ``'econtinuum_flux'`` : flux uncertainty at the continuum of the absorption
+			- ``'slope'`` : slope of the fit to the continuum regions
+			- ``'eslope'`` : slope uncertainty
+			- ``'constant'`` : constant or intercept of the linear fit
+			- ``'econstant'`` : constant uncertainty
+			- ``'sio_wl'`` : input ``sio_wl``
+			- ``'sio_window'`` : input ``sio_window``
+			- ``'continuum_wl1'`` : input ``continuum_wl1``
+			- ``'continuum_window1'`` : input ``continuum_window1``
+			- ``'continuum_wl2'`` : input ``continuum_wl2``
+			- ``'continuum_window2'`` : input ``continuum_window2``
+			- ``'continuum_fit'`` : input ``continuum_fit``
+			- ``'continuum_error'`` : input ``continuum_error``
+			- ``'wl'`` : input ``wl``
+			- ``'flux'`` : input ``flux``
+			- ``'eflux'`` : input ``eflux``
+	- Plot of the SiO index measurement that will be stored if ``plot_save``.
+
+	Author: Genaro Suárez
+
+	Date: 2026-04-02
+	'''
+
+	# handle input spectrum
+	wl, flux, eflux = handle_input_spectrum(wl, flux, eflux)
+
+	# use default values if optional values (peak and continuum regions) are not provided
+	if reference=='B26': # parameters in Barber et al. (2026)
+		# center of the absorption and window region
+		if sio_wl is None: sio_wl = 7.9 # um
+		if sio_window is None: sio_window = 0.3 # um
+		# continuum region definition
+		if continuum_wl1 is None: continuum_wl1 = 7.3 # wavelength reference in um for the short-wavelength continuum region
+		if continuum_window1 is None: continuum_window1 = 0.3 # window in um for the short-wavelength continuum region
+		if continuum_wl2 is None: continuum_wl2 = 9.7 # wavelength reference in um for the long-wavelength continuum region
+		if continuum_window2 is None: continuum_window2 = 0.3 # window in um for the long-wavelength continuum region
+		if continuum_fit is None: continuum_fit='line'
+		if continuum_error is None: continuum_error='fit'
+	else: raise Exception(f'"{reference}" is not a recognized reference to set default parameters to measure the silicate index. \nTry "B26".')
+
+	# measure SiO index
+	mask_sio_wl = (wl>=(sio_wl-sio_window/2)) & (wl<=(sio_wl+sio_window/2))
+	# using the mean
+	sio_flux = np.mean(flux[mask_sio_wl]) # average flux at the bottom of the feature
+	esio_flux = np.std(flux[mask_sio_wl]) / np.sqrt(flux[mask_sio_wl].size) # flux error as the standard error of the mean
+
+	# continuum flux
+	output = fit_continuum(wl=wl, flux=flux, eflux=eflux, wl_con1=continuum_wl1, wl_con2=continuum_wl2, 
+	                       window_con1=continuum_window1, window_con2=continuum_window2, 
+	                       continuum_fit=continuum_fit, continuum_error=continuum_error, ref_min=sio_wl)
+	slope = output['slope']
+	eslope = output['eslope']
+	constant = output['constant']
+	econstant = output['econstant']
+	continuum_flux = output['continuum_flux']
+	econtinuum_flux = output['econtinuum_flux']
+
+	# SiO index
+	sio_index = continuum_flux/sio_flux
+	esio_index = sio_index * np.sqrt((econtinuum_flux/continuum_flux)**2 + (esio_flux/sio_flux)**2)
+
+	# output dictionary
+	out = {'sio_index': sio_index, 'esio_index': esio_index, 'sio_flux': sio_flux, 
+	       'esio_flux': esio_flux, 'continuum_flux': continuum_flux, 'econtinuum_flux': econtinuum_flux}
+	# add parameter of the slope fit
+	out['slope'] = slope
+	out['eslope'] = eslope
+	out['constant'] = constant
+	out['econstant'] = econstant
+	# add parameters used to measure the index
+	out['sio_wl'] = sio_wl
+	out['sio_window'] = sio_window
+	out['continuum_wl1'] = continuum_wl1
+	out['continuum_window1'] = continuum_window1
+	out['continuum_wl2'] = continuum_wl2
+	out['continuum_window2'] = continuum_window2
+	out['continuum_fit'] = continuum_fit
+	out['continuum_error'] = continuum_error
+	# add input spectrum
+	out['wl'] = wl
+	out['flux'] = flux
+	out['eflux'] = eflux
+
+	# visualize how the SiO index was measured
+	index_name='SiO'
 	if plot_xrange is None: plot_xrange=[5.2, 14]
 	if plot: plot_spectral_index_two_continuum_regions(out_feature_index=out, index_name=index_name, plot_xrange=plot_xrange, 
 	                                                   plot_yrange=plot_yrange, plot_title=plot_title, plot_save=plot_save, plot_name=plot_name)
@@ -1084,6 +1241,21 @@ def plot_spectral_index_two_continuum_regions(out_feature_index, index_name=None
 		# index parameters
 		feature_wl = out_feature_index['silicate_wl']
 		feature_window = out_feature_index['silicate_window']
+		continuum_wl1 = out_feature_index['continuum_wl1']
+		continuum_window1 = out_feature_index['continuum_window1']
+		continuum_wl2 = out_feature_index['continuum_wl2']
+		continuum_window2 = out_feature_index['continuum_window2']
+	if index_name=='SiO': # specific variables names for SiO index
+		# index
+		feature_index = out_feature_index['sio_index']
+		efeature_index = out_feature_index['esio_index']
+		feature_flux = out_feature_index['sio_flux']
+		efeature_flux = out_feature_index['esio_flux']
+		continuum_flux = out_feature_index['continuum_flux']
+		econtinuum_flux = out_feature_index['econtinuum_flux']
+		# index parameters
+		feature_wl = out_feature_index['sio_wl']
+		feature_window = out_feature_index['sio_window']
 		continuum_wl1 = out_feature_index['continuum_wl1']
 		continuum_window1 = out_feature_index['continuum_window1']
 		continuum_wl2 = out_feature_index['continuum_wl2']
