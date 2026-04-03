@@ -8,6 +8,7 @@ from spectres import spectres
 from . import utils
 from . import models
 from .synthetic_photometry import synthetic_photometry
+from importlib import resources
 from sys import exit
 
 #++++++++++++++++++++++++++++++++
@@ -1362,14 +1363,17 @@ def compute_weights(fit_spectra, fit_photometry, weight_label, wl_spectra_fit=No
 # from a list of filters, select the ones fully covered by model spectra 
 # and with effective wavelength within the wavelength range for the fits
 def select_filters_for_fit(model, fit_phot_range, filters):
-	# read first a model spectrum to get the wavelength range covered by models
-	# path to the seda package
-	dir_sep = os.sep # directory separator for the current operating system
-	path_seda = os.path.dirname(__file__)+dir_sep
-	path_rel = 'models_aux/model_spectra/'
-	filename_pattern = models.Models(model).filename_pattern
-	spectrum_file = fnmatch.filter(os.listdir(path_seda+path_rel),
+
+	# path to models_aux folder
+	path_models_aux = resources.files('seda.models_aux')
+	# path to model folder
+	model_path = path_models_aux / model
+
+	# look for model spectrum
+	filename_pattern = models.Models(model).filename_pattern	
+	spectrum_file = fnmatch.filter(os.listdir(model_path),
 		                           filename_pattern)
+
 	if not spectrum_file: # when there is not a spectrum in models_aux
 		raise ValueError(f'No example spectrum for the "{model}" grid '
 		                 f'was found in "{path_seda}{path_rel}" ' 
@@ -1377,7 +1381,9 @@ def select_filters_for_fit(model, fit_phot_range, filters):
 	elif len(spectrum_file) > 1:
 		raise ValueError(f'Multiple spectrum filenames matching "{filename_pattern}" '
 		                 f'were found in "{path_seda}{path_rel}"')
-	spectrum_name_full = path_seda+path_rel+spectrum_file[0]
+
+	# read first a model spectrum to get the wavelength range covered by models
+	spectrum_name_full = model_path / spectrum_file[0]
 	spectrum = models.read_model_spectrum(spectrum_name_full=spectrum_name_full,
 	                                           model=model)
 	wl_model = spectrum['wl_model']
