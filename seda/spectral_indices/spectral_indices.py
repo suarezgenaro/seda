@@ -1245,7 +1245,7 @@ def plot_spectral_index_two_continuum_regions(out_feature_index, index_name=None
 		continuum_window1 = out_feature_index['continuum_window1']
 		continuum_wl2 = out_feature_index['continuum_wl2']
 		continuum_window2 = out_feature_index['continuum_window2']
-	if index_name=='SiO': # specific variables names for SiO index
+	elif index_name=='SiO': # specific variables names for SiO index
 		# index
 		feature_index = out_feature_index['sio_index']
 		efeature_index = out_feature_index['esio_index']
