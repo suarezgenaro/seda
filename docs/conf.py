@@ -69,9 +69,6 @@ html_favicon = "_static/favicon.ico"
 # --- nbsphinx configuration ---
 nbsphinx_prolog = r"""
 {% set docname = env.doc2path(env.docname, base=None) %}
-
 .. note::
-
-   📥 Download this notebook:
-   https://github.com/suarezgenaro/seda/blob/main/docs/{{ docname }}
+   `📥 Download this tutorial <https://github.com/suarezgenaro/seda/blob/main/docs/{{ docname }}>`_
 """
