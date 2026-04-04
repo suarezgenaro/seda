@@ -65,3 +65,13 @@ html_theme = 'sphinx_rtd_theme'
 
 html_logo = '_static/SEDA_logo_nobg.png'
 html_favicon = "_static/favicon.ico"
+
+# --- nbsphinx configuration ---
+nbsphinx_prolog = r"""
+{% set docname = env.doc2path(env.docname, base=None) %}
+
+.. note::
+
+   📥 Download this notebook:
+   https://github.com/suarezgenaro/seda/blob/main/docs/{{ docname }}
+"""
