@@ -29,39 +29,42 @@ authors:
   - name: Natalia Oliveros-Gomez
     orcid: 0000-0001-5254-6740
     affiliation: 6
+  - name: Efrain Alvarado III
+    orcid: 0009-0005-8159-8490
+    affiliation: 7
   - name: Michael K. Plummer
     orcid: 0000-0002-4831-0329
-    affiliation: 7
+    affiliation: 8
   - name: Johanna M. Vos
     orcid: 0000-0003-0489-1528
-    affiliation: 8
+    affiliation: 9
   - name: Daniella C. Bardalez Gagliuffi
     orcid: 0000-0001-8170-7072
-    affiliation: 9
+    affiliation: 10
   - name: Elena Manjavacas
     orcid: 0000-0003-0192-6887
-    affiliation: 10
+    affiliation: 11
   - name: Melanie J. Rowland
     orcid: 0000-0003-4225-6314
     affiliation: 1
   - name: Samuel Candero
     orcid: 
-    affiliation: 11, 1
+    affiliation: 12, 1
   - name: Jonathan Gagné
     orcid: 0000-0002-2592-9612
-    affiliation: 12, 13
+    affiliation: 13, 14
   - name: Thomas P. Bickle
     orcid: 0000-0003-2235-761X
-    affiliation: 14
+    affiliation: 15
   - name: Austin Rothermich
     orcid: 0000-0003-4083-9962
     affiliation: 1, 3
   - name: Madeline Lam
     orcid: 
-    affiliation: 8
+    affiliation: 9
   - name: Easton J. Honaker
     orcid: 0000-0003-1202-3683
-    affiliation: 15
+    affiliation: 16
   - name: Sherelyn Alejandro Merchan
     orcid: 0000-0003-0548-0093 
     affiliation: 1, 3
@@ -70,19 +73,19 @@ authors:
     affiliation: 1
   - name: Caprice L. Phillips
     orcid: 0000-0001-5610-5328
-    affiliation: 16
+    affiliation: 17
   - name: Sam Barber
     orcid: 
     affiliation: 5
   - name: Savaria Parrish
     orcid: 
-    affiliation: 17
+    affiliation: 18
   - name: Jolie L'Heureux
     orcid: 0009-0009-3024-5846
     affiliation: 1, 3
   - name: Azul Ruiz Diaz
     orcid: 0000-0001-6733-4118
-    affiliation: 18, 19
+    affiliation: 19, 20
 
 affiliations:
   - name: Department of Astrophysics, American Museum of Natural History, Central Park West at 79th Street, NY 10024, USA
@@ -97,32 +100,34 @@ affiliations:
     index: 5
   - name: Department of Physics and Astronomy, Johns Hopkins University, Baltimore, MD 21218, USA
     index: 6
-  - name: Department of Physics and Meteorology, United States Air Force Academy, 2354 Fairchild Drive, CO 80840, USA
+  - name: Department of Physics and Astronomy, San Francisco State University, 1600 Holloway Avenue, San Francisco, CA 94132, US
     index: 7
-  - name: School of Physics, Trinity College Dublin, The University of Dublin, Dublin 2, Ireland  
+  - name: Department of Physics and Meteorology, United States Air Force Academy, 2354 Fairchild Drive, CO 80840, USA
     index: 8
-  - name: Department of Physics & Astronomy, Amherst College, Amherst, MA, USA  
+  - name: School of Physics, Trinity College Dublin, The University of Dublin, Dublin 2, Ireland  
     index: 9
-  - name: AURA for the European Space Agency (ESA), ESA Office, Space Telescope Science Institute, 3700 San Martin Drive, Baltimore, MD 21218, USA
+  - name: Department of Physics & Astronomy, Amherst College, Amherst, MA, USA  
     index: 10
-  - name: Department of Physics, Florida Atlantic University, 777 Glades Rd, Boca Raton, FL 33431, USA
+  - name: AURA for the European Space Agency (ESA), ESA Office, Space Telescope Science Institute, 3700 San Martin Drive, Baltimore, MD 21218, USA
     index: 11
-  - name: Planétarium de Montréal, Espace pour la Vie, 4801 Avenue Pierre-de Coubertin, Montréal, Québec, Canada  
+  - name: Department of Physics, Florida Atlantic University, 777 Glades Rd, Boca Raton, FL 33431, USA
     index: 12
-  - name: Trottier Institute for Research on Exoplanets, Université de Montréal, Département de Physique, C.P. 6128 Succ. Centre-ville, Montréal, QC H3C 3J7, Canada  
+  - name: Planétarium de Montréal, Espace pour la Vie, 4801 Avenue Pierre-de Coubertin, Montréal, Québec, Canada  
     index: 13
-  - name: School of Physical Sciences, The Open University, Milton Keynes, MK7 6AA, UK  
+  - name: Trottier Institute for Research on Exoplanets, Université de Montréal, Département de Physique, C.P. 6128 Succ. Centre-ville, Montréal, QC H3C 3J7, Canada  
     index: 14
+  - name: School of Physical Sciences, The Open University, Milton Keynes, MK7 6AA, UK  
+    index: 15
   - name: Department of Physics and Astronomy, University of Delaware, Newark, DE 19716, USA  
-    index: 15 
+    index: 16 
   - name: Department of Astronomy & Astrophysics, University of California, Santa Cruz, CA 95064, USA  
-    index: 16
-  - name: Department of Geosciences, Virginia Tech, Blacksburg, VA 24061, USA
     index: 17
-  - name: Planétarium Rio Tinto Alcan, Espace pour la Vie, 4801 av. Pierre-de Coubertin, Montréal, Québec, Canada  
+  - name: Department of Geosciences, Virginia Tech, Blacksburg, VA 24061, USA
     index: 18
-  - name: Institute for Research on Exoplanets, Université de Montréal, Département de Physique, C.P. 6128 Succ. Centre-ville, Montréal, QC H3C 3J7, Canada  
+  - name: Planétarium Rio Tinto Alcan, Espace pour la Vie, 4801 av. Pierre-de Coubertin, Montréal, Québec, Canada  
     index: 19
+  - name: Institute for Research on Exoplanets, Université de Montréal, Département de Physique, C.P. 6128 Succ. Centre-ville, Montréal, QC H3C 3J7, Canada  
+    index: 20
 
 date: 11 February 2026
 bibliography: paper.bib
@@ -178,7 +183,7 @@ Overall, `SEDA` enables the inference and analysis of atmospheric composition, c
 
 # Statement of Need
 The James Webb Space Telescope (JWST) is revolutionizing our understanding of extrasolar atmospheres by providing high-quality observations of exoplanets and brown dwarfs. 
-These data will synergize with observations from next-generation facilities such as the Nancy Grace Roman Space Telescope, the Habitable Worlds Observatory, the Vera C. Rubin Observatory, and 30-m class telescopes. 
+These data will synergize with observations from next-generation facilities such as the Nancy Grace Roman Space Telescope, the Habitable Worlds Observatory, the Vera C. Rubin Observatory, and 30-m class telescopes (e.g., the Extremely Large Telescope, ELT, and the Thirty Meter Telescope, TMT). 
 Furthermore, a large volume of multiwavelength data is already available from wide-field photometric surveys [e.g., SDSS, @York_etal2000; and Pan-STARRS, @Chambers_etal2016], all-sky photometric surveys [e.g., Gaia, @GaiaCollaboration2020; 2MASS, @Skrutskie_etal2006; and WISE, @Cutri_etal2013], targeted spectroscopic programs [e.g., SpeX Prism Library, @Burgasser2014; MOCAdb, @Gagne_etal2025], and both large [e.g., LAMOST, @Luo_etal2015; and APOGEE, @SDSS-DR17] and all-sky [SPHEREx, @Dore_etal2014] spectroscopic surveys.
 
 To fully exploit these extensive datasets, it is necessary to develop techniques and software capable of managing heterogeneous, multiwavelength observations (see [State of the Field](#state_of_the_field)).
@@ -190,7 +195,7 @@ In addition to its modeling capabilities, the package incorporates a growing set
 [^1]: <https://svo2.cab.inta-csic.es/theory/fps/>
 
 # State of the Field {#state_of_the_field}
-Several software packages enable forward modeling of ultracool dwarf data, including \texttt{VOSA} [@Bayo_etal2008], \texttt{Starfish} [@Czekala_etal2015], \texttt{SEDkit} [@Filippazzo_etal2015], \texttt{SPLAT} [@Burgasser2017], \texttt{species} [@Stolker_etal2020], \texttt{ForMoSA} [@Petrus_etal2023], and \texttt{PICASO} [@Ahrer_etal2023]. 
+Several software packages enable forward modeling of ultracool dwarf data, including \texttt{VOSA} [@Bayo_etal2008], \texttt{Starfish} [@Czekala_etal2015], \texttt{SEDkit} [@Filippazzo_etal2015], \texttt{SPLAT} [@Burgasser2017], \texttt{species} [@Stolker_etal2020], \texttt{ForMoSA} [@Petrus_etal2023], \texttt{PICASO} [@Ahrer_etal2023], and \texttt{ucdmcmc} [@Burgasser_etal2026]. 
 Except for \texttt{VOSA}, these packages primarily focus on spectroscopic data, with limited ability to incorporate photometry in the model fitting.
 To our knowledge, only \texttt{species} can forward model SEDs constructed from photometry alone or combined with spectra, but its empirical analysis capabilities are relatively limited. 
 In contrast, \texttt{SPLAT} provides more empirical analysis tools similar to those in \texttt{SEDA}, but it is restricted to modeling spectroscopic observations. 
@@ -206,6 +211,7 @@ a Bayesian framework with nested sampling to construct posterior distributions a
 a chi-square minimization method to find the best-fitting models (see [Mathematics](#mathematics)). 
 The code supports both widely used and state-of-the-art atmospheric model grids, namely 
 Lacy (2026, in preparation), 
+SAND [@Alvarado_etal2024],
 Sonora Diamondback [@Morley_etal2024], 
 Sonora Elf Owl [@Mukherjee_etal2024], 
 @Lacy_Burrows2023, 
@@ -217,6 +223,7 @@ BT-Settl [@Allard_etal2012], and
 Collectively, these models span a broad range of atmospheric and physical conditions, 
 from cloud-free to cloudy atmospheres; 
 equilibrium and non-equilibrium chemistry; 
+metallicities from very low ($-2.4$ dex) to super-solar ($-0.5$ dex);
 temperatures from the coldest brown dwarfs through hot and temperate exoplanets to low-mass stars ($\sim$ 300--4200 K);
 and surface gravities ($\log g$=3.0--5.5) appropriate for both young and old ultracool objects.
 `SEDA` also allows users to easily incorporate additional atmospheric model grids.
@@ -314,5 +321,6 @@ Any AI-generated suggestions were reviewed, verified, and modified by the author
 GS and JKF acknowledge funding support from JWST-GO-02124.001-A as well as NASA XRP Award 80NSSC22K0142 and NSF Award 1909776. 
 ML and JMV acknowledge support from a Royal Society - Research Ireland University Research Fellowship (URF/1/221932, RF/ERE/221108). 
 ML acknowledges support from Trinity College Dublin via a Trinity Research Doctoral Award. 
+EA acknowledges funding support from NASA/STScI through JWST General Observer Program GO-4668, under NASA contract NAS 5-03127.
 
 # References
