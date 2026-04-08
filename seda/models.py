@@ -137,8 +137,6 @@ class Models:
 
 		# path to model folders
 		path_models_aux = resources.files('seda.models_aux')
-		## path to the this module
-		#path_models = os.path.dirname(__file__)+'/'
 
 		# open the pickle file, if any, with model coverage
 		pickle_file = f'{path_models_aux}/{self.model}/coverage.pickle'
