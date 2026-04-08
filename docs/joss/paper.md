@@ -223,7 +223,7 @@ BT-Settl [@Allard_etal2012], and
 Collectively, these models span a broad range of atmospheric and physical conditions, 
 from cloud-free to cloudy atmospheres; 
 equilibrium and non-equilibrium chemistry; 
-metallicities from very low ($-2.4$ dex) to super-solar ($-0.5$ dex);
+metallicities from very low ($-2.4$ dex) to super-solar ($+0.5$ dex);
 temperatures from the coldest brown dwarfs through hot and temperate exoplanets to low-mass stars ($\sim$ 300--4200 K);
 and surface gravities ($\log g$=3.0--5.5) appropriate for both young and old ultracool objects.
 `SEDA` also allows users to easily incorporate additional atmospheric model grids.
