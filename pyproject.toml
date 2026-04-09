@@ -45,6 +45,7 @@ Homepage = "https://github.com/suarezgenaro/seda"
 write_to = "seda/_version.py"
 
 [tool.setuptools]
+packages = {find = {include = ["seda*"], exclude = ["backups*"]}}
 include-package-data = true
 
 [tool.setuptools.package-data]
@@ -57,7 +58,3 @@ seda = [
   "observations_aux/spitzer_irs/*",
   "observations_aux/Suarez_Metchev_2022_tables.dat"
 ]
-
-[tool.setuptools.packages.find]
-include = ["seda*"]
-exclude = ["backups*"]
