@@ -17,7 +17,7 @@ Installation of :math:`\texttt{SEDA}` via GitHub:
 
     $ git clone https://github.com/suarezgenaro/seda.git
     $ cd seda
-    $ pip install -e .
+    $ python -m pip install -e .
 
 Dependencies
 ------------
