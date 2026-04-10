@@ -548,9 +548,8 @@ def load_filter_transmission(filt):
 		# save filter transmission
 		ascii.write(filter_trans, fullpath, format='no_header',
 					formats={'Wavelength': '%.1f', 'Transmission': '%.10f'})
-	else: # filter transmission already stored locally
-		filter_trans = ascii.read(fullpath)
-
+	# read locally stored filter transmission
+	filter_trans = ascii.read(fullpath)
 	filter_wl = (filter_trans['col1'].data*(0.1*u.nm)).to(u.micron).value # in um
 	filter_flux = filter_trans['col2'] # filter transmission
 
