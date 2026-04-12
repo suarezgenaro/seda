@@ -1147,7 +1147,8 @@ def plot_full_SED(out_bol_lum, xlog=True, ylog=True, xrange=None, yrange=None,
 	# initialize plot for the SED
 	fig, ax = plt.subplots()
 
-	plt.plot(wl_SED, flux_SED, linewidth=1, color='black', label='Hybrid SED')
+	mask = (wl_SED>=xrange[0]) & (wl_SED<=xrange[1])
+	plt.plot(wl_SED[mask], flux_SED[mask], linewidth=1.5, color='black', label='Hybrid SED', zorder=3)
 
 	if model_label is None: label_mod = f'Model spectrum'
 	else: label_mod = model_label
@@ -1155,11 +1156,14 @@ def plot_full_SED(out_bol_lum, xlog=True, ylog=True, xrange=None, yrange=None,
 	for param in params:
 		param_label += param+str(params[param])
 	label_mod = label_mod+f' ({param_label})'
-	plt.plot(wl_model, flux_model, '--', linewidth=0.5, color='silver', label=label_mod)
+	mask = (wl_model>=xrange[0]) & (wl_model<=xrange[1])
+	plt.plot(wl_model[mask], flux_model[mask], '--', linewidth=0.5, color='silver', label=label_mod, zorder=2)
+
 	for i in range(N_spectra): # for each input spectrum
 		if spectra_label is None: label_obs = f'Observed spectrum #{i+1}'
 		else: label_obs = spectra_label[i]
-		plt.plot(wl_spectra[i], flux_spectra[i], linewidth=1, label=label_obs)
+		mask = (wl_spectra[i]>=xrange[0]) & (wl_spectra[i]<=xrange[1])
+		plt.plot(wl_spectra[i][mask], flux_spectra[i][mask], linewidth=1.0, label=label_obs, zorder=4)
 
 	ax.xaxis.set_minor_locator(AutoMinorLocator())
 	ax.yaxis.set_minor_locator(AutoMinorLocator())
