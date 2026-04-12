@@ -5,6 +5,7 @@ from .synthetic_photometry import synthetic_photometry
 from . import input_parameters
 from . import chi2_fit 
 from . import models
+from . import utils
 from sys import exit
 
 ##########################
@@ -165,8 +166,8 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 	
 		else: # no output_fit is provided
 			# handle input data
-			my_data = InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, eflux_spectra=eflux_spectra, 
-			                    flux_unit=flux_unit, res=res, distance=distance, edistance=edistance)
+			my_data = input_parameters.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, eflux_spectra=eflux_spectra, 
+			                                     flux_unit=flux_unit, res=res, distance=distance, edistance=edistance)
 			N_spectra = my_data.N_spectra
 			wl_spectra = my_data.wl_spectra # um
 			flux_spectra = my_data.flux_spectra # erg/cm2/s/A
@@ -179,7 +180,7 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 		eflux_each = np.zeros(N_spectra)
 		for i in range(N_spectra):
 			# total flux
-			flux_each[i] = np_trapz(flux_spectra[i], 1.e4*wl_spectra[i]) # erg/s/cm2
+			flux_each[i] = utils.np_trapz(flux_spectra[i], 1.e4*wl_spectra[i]) # erg/s/cm2
 			eflux_each[i] = np.median(eflux_spectra[i]/flux_spectra[i]) * flux_each[i] # keep fractional errors
 	
 		# total flux and total luminosity
@@ -201,12 +202,12 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 		if (wl_model is not None) & (flux_model is not None):
 			if scale_model: # scale model fluxes to minimize the chi-square statistics
 				# find scaling factor by running the chi-square minimization
-				my_data = InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, 
-				                    eflux_spectra=eflux_spectra, flux_unit=flux_unit, 
-				                    res=res, distance=distance, edistance=edistance)
-				my_model = ModelOptions(wl_model=wl_model, flux_model=flux_model)
-				my_chi2 = Chi2Options(my_data=my_data, my_model=my_model)
-				out_chi2 = chi2(my_chi2=my_chi2)
+				my_data = input_parameters.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, 
+				                                     eflux_spectra=eflux_spectra, flux_unit=flux_unit, 
+				                                     res=res, distance=distance, edistance=edistance)
+				my_model = input_parameters.ModelOptions(wl_model=wl_model, flux_model=flux_model)
+				my_chi2 = input_parameters.Chi2Options(my_data=my_data, my_model=my_model)
+				out_chi2 = chi2_fit.chi2(my_chi2=my_chi2)
 	
 				# scale model fluxes
 				flux_model = out_chi2['scaling_fit']*flux_model
@@ -279,7 +280,7 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 
 	# Lbol from the full SED
 	# total flux from
-	flux_tot = np_trapz(flux_SED, (wl_SED*u.um).to((u.nm*0.1)).value) # erg/s/cm2
+	flux_tot = utils.np_trapz(flux_SED, (wl_SED*u.um).to((u.nm*0.1)).value) # erg/s/cm2
 	mask = ~np.isnan(eflux_SED)
 	eflux_tot = np.median(eflux_SED[mask]/flux_SED[mask]) * flux_tot # keep fractional errors (errors from the spectrum with the most data points will dominate, as no error is associated to the model)
 	#eflux_tot = np.sqrt(sum(eflux_each**2)) # (fractional errors from each input spectrum will have its contribution)
