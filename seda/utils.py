@@ -245,12 +245,9 @@ def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False
 	Date: 2024-10, 2025-09-07
 	'''
 
-	# open results from the chi square analysis
-	try: # if given as a pickle file
-		with open(output_chi2, 'rb') as file:
-			output_chi2 = pickle.load(file)
-	except: # if given as the output of chi2_fit
-		pass
+	# open dictionary if need it
+	output_chi2 = utils.load_output_fit(output_chi2)
+
 	fit_spectra = output_chi2['my_chi2'].fit_spectra
 	fit_photometry = output_chi2['my_chi2'].fit_photometry
 	model = output_chi2['my_chi2'].model
@@ -477,7 +474,8 @@ def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spect
 		params_models = grid['params_unique']
 
 	for param in params_models:
-		if param not in params: raise Exception(f'Provide "{param}" value in "params" since it is a free parameter in "{model}".')
+		if param not in params: 
+			raise Exception(f'Provide "{param}" value in "params" since it is a free parameter in "{model}" models.')
 
 	# verify that "params" are within the model grid coverage
 	for param in params:
@@ -674,8 +672,12 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 	# multiply all sizes to get total number of combinations
 	n_combinations = np.prod(sizes)
 
-	print(f'\n   Note: homogeneous grid would contain {n_combinations} spectra from unique parameter combinations,')
-	print(f'         but {len(spectra_name)} spectra were read from "model_dir"')
+	# print message for heterogeneous grid
+	if n_combinations-len(model_dir)>0:
+		print(f'\n   Heterogeneous grid detected')
+		print(f'      A homogeneous grid would contain {n_combinations} spectra from unique parameter combinations,')
+		print(f'      but {len(spectra_name)} spectra were read from "model_dir".')
+		print(f'      The output dictionary "dict_missing" list the parameter combinations lacking spectra.')
 
 	grid_bar = tqdm(total=n_combinations, desc=desc)
 
@@ -758,17 +760,6 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 
 	fin_time_grid = time.time()
 	print_time(fin_time_grid-ini_time_grid)
-
-	# number of missing model spectra to obtain a homogeneous grid
-	values_iter = iter(dict_missing.values()) # iterator over all dictionary values
-	first_list = next(values_iter) # first list (no need to know any key name)
-	dict_missing_size = len(first_list)
-
-	# print message if missing spectra
-	if dict_missing_size!=0:
-		print(f'\n   Heterogeneous grid detected:')
-		print(f'      {dict_missing_size} missing model spectra for a homogeneous grid')
-		print('      with parameters stored in the output dictionary "dict_missing"')
 
 	out = {'wavelength': wl_grid, 'flux': flux_grid, 'params_unique': params_unique, 'N_model_spectra': len(spectra_name), 'dict_missing': dict_missing}
 
@@ -1042,12 +1033,9 @@ def best_bayesian_fit(output_bayes, grid=None, model_dir_ori=None, ori_res=False
 	Date: 2024-09
 	'''
 
-	# open results from the nested sampling
-	try: # if given as a pickle file
-		with open(output_bayes, 'rb') as file:
-			output_bayes = pickle.load(file)
-	except: # if given as the output of bayes_fit
-		pass
+	# open dictionary if need it
+	output_bayes = utils.load_output_bayes(output_bayes)
+
 	fit_spectra = output_bayes['my_bayes'].fit_spectra
 	fit_photometry = output_bayes['my_bayes'].fit_photometry
 	model = output_bayes['my_bayes'].model
@@ -1332,7 +1320,7 @@ def select_model_spectra(model, model_dir, params_ranges=None, filename_pattern=
 	params_noranges = {}
 	for key, value in params.items():
 		if key not in params_ranges:
-			params_noranges[key] = value
+			params_noranges[key] = [value.min(), value.max()]
 
 	print(f'\n      {len(spectra_name)} model spectra')
 	print(f'         user-constrained parameters:')
@@ -2500,6 +2488,21 @@ def find_two_nearest(array, value):
 		near_high = array[diff>0].min()
 
 	return np.array([near_low, near_high])
+
+#+++++++++++++++++++++++++++
+# load a dictionary if need it
+def load_output_fit(output_fit):
+
+	# if it is already a dictionary, use it directly
+	if isinstance(output_fit, dict):
+		data = output_fit
+
+	# otherwise assume it is a file path and load it
+	else:
+		with open(output_fit, "rb") as f:
+			data = pickle.load(f)
+
+	return data
 
 #+++++++++++++++++++++++++++
 def find_two_around_node(array, value):
