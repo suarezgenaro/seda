@@ -20,9 +20,9 @@
     ],
     "_comment_free_params": "Free parameters in the models",
     "free_params": [
-        "Teff",
-        "logg",
         "[M/H]",
-        "[a/Fe]"
+        "[a/Fe]",
+        "Teff",
+        "logg"
     ]
 }
