@@ -1147,6 +1147,10 @@ def plot_full_SED(out_bol_lum, xlog=True, ylog=True, xrange=None, yrange=None,
 	# initialize plot for the SED
 	fig, ax = plt.subplots()
 
+	# set xrange equal to the input SED range, if not provided
+	if xrange is None: 
+		xrange = [0.99*wl_SED.min(), 1.01*wl_SED.max()]
+
 	mask = (wl_SED>=xrange[0]) & (wl_SED<=xrange[1])
 	plt.plot(wl_SED[mask], flux_SED[mask], linewidth=1.5, color='black', label='Hybrid SED', zorder=3)
 
