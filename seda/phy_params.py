@@ -1,4 +1,5 @@
 import numpy as np
+import pickle
 from astropy import units as u
 from astropy.constants import L_sun
 from .synthetic_photometry import synthetic_photometry
@@ -101,13 +102,9 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 			raise Exception(f'"distance" or "output_fit" must be provided')
 	
 		if output_fit is not None: # output_fit is provided
-			# if results from the fits are provided as a pickle file, open it
-			try: # if given as a pickle file
-				with open(output_fit, 'rb') as file:
-					output_fit = pickle.load(file)
-			except: # if given as the output of chi2_fit
-				pass
-	
+			# open dictionary if need it
+			output_fit = utils.load_output_fit(output_fit)
+
 			# open results from the chi square analysis
 			try:
 				output_fit['my_chi2']
