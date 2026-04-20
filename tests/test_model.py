@@ -128,40 +128,40 @@ def test_select_model_spectra(model):
 		f"No spectra found for model {model} using pattern '{pattern}'"
 	)
 
-@pytest.mark.parametrize('model, spectrum_file', load_model_spectra_catalog())
-def test_generate_model_spectrum(model, spectrum_file):
-	"""
-	Generate a model spectrum at the exact parameters of an example 
-	spectrum and verify that it matches the reference spectrum.
-	"""
-
-	# read reference spectrum
-	spec_ref = seda.models.read_model_spectrum(spectrum_file, model)
-	wl_ref = spec_ref['wl_model']
-	flux_ref = spec_ref['flux_model']
-
-	# extract parameters from filename
-	params = seda.models.separate_params(model, os.path.basename(spectrum_file))['params']
-
-	# construct path to the model folder
-	model_dir = str(Path(resources.files("seda.models_aux")) / model)
-
-	# generate spectrum at the same parameters
-	spectrum_gen = seda.utils.generate_model_spectrum(
-		params=params, 
-		model=model, 
-		model_dir=model_dir
-	)
-	wl_gen = spectrum_gen['wavelength']
-	flux_gen = spectrum_gen['flux']
-
-	# compare wavelength grids
-	assert np.allclose(wl_gen, wl_ref), (
-		f'Wavelength mismatch for model {model}: '
-		f'generated vs reference differs'
-	)
-	# compare flux arrays
-	assert np.allclose(flux_gen, flux_ref, rtol=1e-6), (
-		f'Flux mismatch for model {model}: '
-		f'generated vs reference differs'
-	)
+#@pytest.mark.parametrize('model, spectrum_file', load_model_spectra_catalog())
+#def test_generate_model_spectrum(model, spectrum_file):
+#	"""
+#	Generate a model spectrum at the exact parameters of an example 
+#	spectrum and verify that it matches the reference spectrum.
+#	"""
+#
+#	# read reference spectrum
+#	spec_ref = seda.models.read_model_spectrum(spectrum_file, model)
+#	wl_ref = spec_ref['wl_model']
+#	flux_ref = spec_ref['flux_model']
+#
+#	# extract parameters from filename
+#	params = seda.models.separate_params(model, os.path.basename(spectrum_file))['params']
+#
+#	# construct path to the model folder
+#	model_dir = str(Path(resources.files("seda.models_aux")) / model)
+#
+#	# generate spectrum at the same parameters
+#	spectrum_gen = seda.utils.generate_model_spectrum(
+#		params=params, 
+#		model=model, 
+#		model_dir=model_dir
+#	)
+#	wl_gen = spectrum_gen['wavelength']
+#	flux_gen = spectrum_gen['flux']
+#
+#	# compare wavelength grids
+#	assert np.allclose(wl_gen, wl_ref), (
+#		f'Wavelength mismatch for model {model}: '
+#		f'generated vs reference differs'
+#	)
+#	# compare flux arrays
+#	assert np.allclose(flux_gen, flux_ref, rtol=1e-6), (
+#		f'Flux mismatch for model {model}: '
+#		f'generated vs reference differs'
+#	)

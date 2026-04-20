@@ -346,7 +346,8 @@ class ModelOptions:
 			                                                                  f'\n{models.Models().available_models}')
 
 		# when only one directory with models is given
-		if not isinstance(model_dir, (list, np.ndarray)): model_dir = [model_dir]
+		if model_dir is not None:
+			if not isinstance(model_dir, (list, np.ndarray)): model_dir = [model_dir]
 
 		self.model = model
 		self.model_dir = model_dir

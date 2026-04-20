@@ -1,4 +1,5 @@
 import numpy as np
+import pickle
 from astropy import units as u
 from astropy.constants import L_sun
 from .synthetic_photometry import synthetic_photometry
@@ -101,13 +102,9 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 			raise Exception(f'"distance" or "output_fit" must be provided')
 	
 		if output_fit is not None: # output_fit is provided
-			# if results from the fits are provided as a pickle file, open it
-			try: # if given as a pickle file
-				with open(output_fit, 'rb') as file:
-					output_fit = pickle.load(file)
-			except: # if given as the output of chi2_fit
-				pass
-	
+			# open dictionary if need it
+			output_fit = utils.load_output_fit(output_fit)
+
 			# open results from the chi square analysis
 			try:
 				output_fit['my_chi2']
@@ -166,8 +163,8 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 	
 		else: # no output_fit is provided
 			# handle input data
-			my_data = InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, eflux_spectra=eflux_spectra, 
-			                    flux_unit=flux_unit, res=res, distance=distance, edistance=edistance)
+			my_data = input_parameters.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, eflux_spectra=eflux_spectra, 
+			                                     flux_unit=flux_unit, res=res, distance=distance, edistance=edistance)
 			N_spectra = my_data.N_spectra
 			wl_spectra = my_data.wl_spectra # um
 			flux_spectra = my_data.flux_spectra # erg/cm2/s/A
@@ -202,12 +199,12 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 		if (wl_model is not None) & (flux_model is not None):
 			if scale_model: # scale model fluxes to minimize the chi-square statistics
 				# find scaling factor by running the chi-square minimization
-				my_data = InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, 
-				                    eflux_spectra=eflux_spectra, flux_unit=flux_unit, 
-				                    res=res, distance=distance, edistance=edistance)
-				my_model = ModelOptions(wl_model=wl_model, flux_model=flux_model)
-				my_chi2 = Chi2Options(my_data=my_data, my_model=my_model)
-				out_chi2 = chi2(my_chi2=my_chi2)
+				my_data = input_parameters.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, 
+				                                     eflux_spectra=eflux_spectra, flux_unit=flux_unit, 
+				                                     res=res, distance=distance, edistance=edistance)
+				my_model = input_parameters.ModelOptions(wl_model=wl_model, flux_model=flux_model)
+				my_chi2 = input_parameters.Chi2Options(my_data=my_data, my_model=my_model)
+				out_chi2 = chi2_fit.chi2(my_chi2=my_chi2)
 	
 				# scale model fluxes
 				flux_model = out_chi2['scaling_fit']*flux_model

@@ -245,12 +245,9 @@ def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False
 	Date: 2024-10, 2025-09-07
 	'''
 
-	# open results from the chi square analysis
-	try: # if given as a pickle file
-		with open(output_chi2, 'rb') as file:
-			output_chi2 = pickle.load(file)
-	except: # if given as the output of chi2_fit
-		pass
+	# open dictionary if need it
+	output_chi2 = utils.load_output_fit(output_chi2)
+
 	fit_spectra = output_chi2['my_chi2'].fit_spectra
 	fit_photometry = output_chi2['my_chi2'].fit_photometry
 	model = output_chi2['my_chi2'].model
@@ -477,7 +474,8 @@ def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spect
 		params_models = grid['params_unique']
 
 	for param in params_models:
-		if param not in params: raise Exception(f'Provide "{param}" value in "params" since it is a free parameter in "{model}".')
+		if param not in params: 
+			raise Exception(f'Provide "{param}" value in "params" since it is a free parameter in "{model}" models.')
 
 	# verify that "params" are within the model grid coverage
 	for param in params:
@@ -624,12 +622,8 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 	# ensure model_dir is a list
 	model_dir = var_to_list(model_dir)
 
-	# ensure that all folders in model_dir end with the path separator
-	for i,p in enumerate(model_dir):
-		# check if path already ends with separator
-		if not p.endswith(os.sep):
-			# update path with path separator if needed
-			model_dir[i] = p + os.sep
+	# add path separator at the end of model_dir if needed
+	model_dir = ensure_trailing_separator(model_dir)
 
 	if wl_resample is not None:
 		# handle fit_wl_range
@@ -650,7 +644,7 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 
 	# create an array with as many dimensions as the number of free parameters in the models 
 	# and each dimension's size as the number of unique values for the corresponding parameter
-	arr = np.array(0.)*np.nan # initialize float array of NaNs with dimension zero
+	arr = np.array(np.nan) # initialize float array of NaNs with dimension zero
 	for param in params.keys(): # for each free parameter
 		dim_size = len(params_unique[param]) # number of unique values in each parameter
 		new_dim = np.expand_dims(arr, -1) # add a dimension (at the end)
@@ -668,10 +662,33 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 			desc = 'Reading and resampling model grid'
 		else:
 			desc = 'Reading model grid'
-	grid_bar = tqdm(total=len(spectra_name), desc=desc)
+
+	# number of parameter combinations
+	values = params_unique.values() # get all arrays from the dictionary
+	sizes = [] # initialize list for sizes
+	# compute length of each array explicitly
+	for v in values:
+		sizes.append(len(v))
+	# multiply all sizes to get total number of combinations
+	n_combinations = np.prod(sizes)
+
+	# print message for heterogeneous grid
+	if n_combinations-len(model_dir)>0:
+		print(f'\n   Heterogeneous grid detected')
+		print(f'      A homogeneous grid would contain {n_combinations} spectra from unique parameter combinations,')
+		print(f'      but {len(spectra_name)} spectra were read from "model_dir".')
+		print(f'      The output dictionary "dict_missing" list the parameter combinations lacking spectra.')
+
+	grid_bar = tqdm(total=n_combinations, desc=desc)
+
+	# initialize dictionary to store parameter combinations without model spectra
+	dict_missing = {}
+	for k in params.keys():
+		dict_missing[k] = []
 
 	# save model spectra for each combination of free parameter values
 	first_spec = True # reference to initialize arrays for store the grid in the first iteration with a model spectrum
+
 	for index in np.ndindex(arr.shape): # iterate over all possible combinations of the free parameter unique values
 		# update the progress bar
 		grid_bar.update(1)
@@ -683,9 +700,8 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 
 		# verify if there is a model spectrum for the combination of parameters
 		if not np.any(mask): # if there is not a spectrum
-			print('   Caveat: No spectrum in "model_dir" for the combination:')
 			for i,param in enumerate(params.keys()):
-				print(f'	  {param}={params_unique[param][index[i]]}')
+				dict_missing[param].append(params_unique[param][index[i]])
 		else: # if there is a spectrum
 			# read the spectrum with the parameter combination in the iteration and cut it to model_wl_range (default value: fit_wl_range plus padding)
 			spectrum_name_full = spectra_name_full[mask][0]
@@ -745,7 +761,7 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 	fin_time_grid = time.time()
 	print_time(fin_time_grid-ini_time_grid)
 
-	out = {'wavelength': wl_grid, 'flux': flux_grid, 'params_unique': params_unique, 'N_model_spectra': len(spectra_name)}
+	out = {'wavelength': wl_grid, 'flux': flux_grid, 'params_unique': params_unique, 'N_model_spectra': len(spectra_name), 'dict_missing': dict_missing}
 
 	return out
 
@@ -819,6 +835,12 @@ def read_grid_phot(model, model_dir, filters, params_ranges=None, fit_phot_range
 	'''
 
 	ini_time_grid = time.time() # to estimate the time elapsed reading the grid
+
+	# ensure model_dir is a list
+	model_dir = var_to_list(model_dir)
+
+	# add path separator at the end of model_dir if needed
+	model_dir = ensure_trailing_separator(model_dir)
 
 	# read the model spectra names and their parameters in the input folders and meeting the indicated parameters ranges 
 	out_select_model_spectra = select_model_spectra(model=model, model_dir=model_dir, params_ranges=params_ranges)
@@ -1011,12 +1033,9 @@ def best_bayesian_fit(output_bayes, grid=None, model_dir_ori=None, ori_res=False
 	Date: 2024-09
 	'''
 
-	# open results from the nested sampling
-	try: # if given as a pickle file
-		with open(output_bayes, 'rb') as file:
-			output_bayes = pickle.load(file)
-	except: # if given as the output of bayes_fit
-		pass
+	# open dictionary if need it
+	output_bayes = utils.load_output_bayes(output_bayes)
+
 	fit_spectra = output_bayes['my_bayes'].fit_spectra
 	fit_photometry = output_bayes['my_bayes'].fit_photometry
 	model = output_bayes['my_bayes'].model
@@ -1237,10 +1256,10 @@ def select_model_spectra(model, model_dir, params_ranges=None, filename_pattern=
 
 	# make sure model_dir is a list
 	model_dir = var_to_list(model_dir)
-	
-	if isinstance(model_dir, str): model_dir = [model_dir]
-	if isinstance(model_dir, np.ndarray): model_dir = model_dir.tolist()
 
+	# add path separator at the end of model_dir if needed
+	model_dir = ensure_trailing_separator(model_dir)
+	
 	# set default parameters
 	# if params_ranges is provided, verified that there is a minimum and a maximum values for each provided parameter
 	if params_ranges is not None:
@@ -1287,13 +1306,6 @@ def select_model_spectra(model, model_dir, params_ranges=None, filename_pattern=
 	if len(spectra_name_full)==0: 
 		# show up an error when there are no models in the indicated ranges
 		raise Exception(f'No model spectra in "model_dir": {model_dir} within params_ranges: {params_ranges}')
-	else: 
-		if not params_ranges: 
-			print(f'\n      {len(spectra_name)} model spectra')
-		else:
-			print(f'\n      {len(spectra_name)} model spectra selected with:')
-			for param in params_ranges:
-				print(f'         {param} range = {params_ranges[param]}')
 
 	# convert lists into numpy arrays
 	spectra_name_full = np.array(spectra_name_full)
@@ -1301,6 +1313,22 @@ def select_model_spectra(model, model_dir, params_ranges=None, filename_pattern=
 
 	# separate parameters from selected spectra
 	out_separate_params = models.separate_params(model=model, spectra_name=spectra_name, save_results=save_results, out_file=out_file)
+
+	# all free parameters
+	params = out_separate_params['params']
+	# free parameters no constrained
+	params_noranges = {}
+	for key, value in params.items():
+		if key not in params_ranges:
+			params_noranges[key] = [value.min(), value.max()]
+
+	print(f'\n      {len(spectra_name)} model spectra')
+	print(f'         user-constrained parameters:')
+	for param in params_ranges:
+		print(f'             {param} range = {params_ranges[param]}')
+	print(f'         model-constrained parameters:')
+	for param in params_noranges:
+		print(f'            {param} range = {params_noranges[param]}')
 
 	out = {'spectra_name_full': spectra_name_full, 'spectra_name': spectra_name, 'params': out_separate_params['params']}
 
@@ -2350,9 +2378,18 @@ def astropy_to_numpy(x):
 
 	return x
 
+######################
+# Ensure all folder paths in a list end with the OS-specific path separator.
+def ensure_trailing_separator(x):
+	# for each path
+	for i,p in enumerate(x):
+		# check if path already ends with separator
+		if not p.endswith(os.sep):
+			# update path with path separator if needed
+			x[i] = p + os.sep
 
+	return x
 
-###################
 ######################
 
 def normalize_flux(flx: ArrayLike) -> np.ndarray:
@@ -2451,6 +2488,21 @@ def find_two_nearest(array, value):
 		near_high = array[diff>0].min()
 
 	return np.array([near_low, near_high])
+
+#+++++++++++++++++++++++++++
+# load a dictionary if need it
+def load_output_fit(output_fit):
+
+	# if it is already a dictionary, use it directly
+	if isinstance(output_fit, dict):
+		data = output_fit
+
+	# otherwise assume it is a file path and load it
+	else:
+		with open(output_fit, "rb") as f:
+			data = pickle.load(f)
+
+	return data
 
 #+++++++++++++++++++++++++++
 def find_two_around_node(array, value):
