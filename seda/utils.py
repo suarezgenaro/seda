@@ -484,7 +484,7 @@ def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spect
 			                f'spectra in "model_dir", which is [{params_models[param].min()}, {params_models[param].max()}]')
 
 	# sort input params in the same order as the dictionary with free parameters returned by `models.separate_params`
-	params = reorder_dict(params, models.Models(model).free_params)
+	params = models.reorder_dict(params, models.Models(model).free_params)
 
 	# read model grid if not provided
 	if grid is None:
@@ -503,6 +503,9 @@ def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spect
 	interp_wl = RegularGridInterpolator((params_unique.values()), wl_grid)
 
 	# interpolate input parameters
+	print(params_unique)
+	print(params)
+	exit()
 	spectra_flux = interp_flux(list(params.values()))[0,:] # to return a 1D array
 	spectra_wl = interp_wl(list(params.values()))[0,:] # to return a 1D array
 	
@@ -2529,19 +2532,6 @@ def max_decimals(arr):
 			decimal_part = num_str.split('.')[1] # select decimals as a string
 			max_places = max(max_places, len(decimal_part)) # compare decimals
 	return max_places
-
-#+++++++++++++++++++++++++++
-# reorder dictionary keys according to a list with the order for the keys
-def reorder_dict(data_dict, order_list):
-
-	reordered_dict = {}
-	for key in order_list:
-	    if key in data_dict:
-	        reordered_dict[key] = data_dict[key]
-	    else:
-	        raise Exception(f'{key} param is not provided')
-
-	return reordered_dict
 
 #+++++++++++++++++++++++++++
 def np_trapz(y, x=None, dx=1.0, axis=-1):
