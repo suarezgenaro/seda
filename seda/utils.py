@@ -503,9 +503,6 @@ def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spect
 	interp_wl = RegularGridInterpolator((params_unique.values()), wl_grid)
 
 	# interpolate input parameters
-	print(params_unique)
-	print(params)
-	exit()
 	spectra_flux = interp_flux(list(params.values()))[0,:] # to return a 1D array
 	spectra_wl = interp_wl(list(params.values()))[0,:] # to return a 1D array
 	
