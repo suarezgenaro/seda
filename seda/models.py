@@ -234,6 +234,11 @@ def separate_params(model, spectra_name, save_results=False, out_file=None):
 	# call the plugin to get the raw parameters
 	params = plugin._separate_params(spectra_name)
 
+	# sort params in the same order as free_params in the JSON file
+	free_params = Models(model).free_params
+
+	params = reorder_dict(params, free_params)
+
 	# output dictionary
 	out = {'spectra_name': spectra_name, 'params': params}
 
@@ -448,3 +453,16 @@ def _load_model(model):
 	# cache and return
 	_PLUGIN_CACHE[model] = (config, plugin)
 	return config, plugin
+
+#+++++++++++++++++++++++++++
+# reorder dictionary keys according to a list with the order for the keys
+def reorder_dict(data_dict, order_list):
+
+	reordered_dict = {}
+	for key in order_list:
+	    if key in data_dict:
+	        reordered_dict[key] = data_dict[key]
+	    else:
+	        raise Exception(f'{key} param is not provided')
+
+	return reordered_dict
