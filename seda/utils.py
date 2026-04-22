@@ -246,7 +246,7 @@ def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False
 	'''
 
 	# open dictionary if need it
-	output_chi2 = utils.load_output_fit(output_chi2)
+	output_chi2 = load_output_fit(output_chi2)
 
 	fit_spectra = output_chi2['my_chi2'].fit_spectra
 	fit_photometry = output_chi2['my_chi2'].fit_photometry
@@ -1068,7 +1068,7 @@ def best_bayesian_fit(output_bayes, grid=None, model_dir_ori=None, ori_res=False
 	'''
 
 	# open dictionary if need it
-	output_bayes = utils.load_output_bayes(output_bayes)
+	output_bayes = load_output_fit(output_bayes)
 
 	fit_spectra = output_bayes['my_bayes'].fit_spectra
 	fit_photometry = output_bayes['my_bayes'].fit_photometry
