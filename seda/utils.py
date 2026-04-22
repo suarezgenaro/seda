@@ -673,7 +673,7 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 	n_combinations = np.prod(sizes)
 
 	# print message for heterogeneous grid
-	if n_combinations-len(model_dir)>0:
+	if n_combinations-len(spectra_name)>0:
 		print(f'\n   Heterogeneous grid detected')
 		print(f'      A homogeneous grid would contain {n_combinations} spectra from unique parameter combinations,')
 		print(f'      but {len(spectra_name)} spectra were read from "model_dir".')
