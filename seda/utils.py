@@ -466,13 +466,13 @@ def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spect
 		else:
 			params[param] = float(value)
 
-	# verify there is an input value for each free parameter in the grid
-	# parameter ranges covered by the model spectra in the input model_dir
+	# parameter ranges covered by the model spectra in the input model_dir or grid
 	if grid is None: # when no grid is provided, read the parameter ranges from the spectra in the input folders
 		params_models = select_model_spectra(model=model, model_dir=model_dir)['params']
 	else: # when a grid is provided, read the parameter ranges from the grid dictionary
 		params_models = grid['params_unique']
 
+	# verify there is an input value for each free parameter in the grid
 	for param in params_models:
 		if param not in params: 
 			raise Exception(f'Provide "{param}" value in "params" since it is a free parameter in "{model}" models.')
@@ -497,14 +497,43 @@ def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spect
 
 	# define an interpolating function from the grid
 	flux_grid = grid['flux']
-	wl_grid = grid['wavelength']
 	params_unique = grid['params_unique']
 	interp_flux = RegularGridInterpolator((params_unique.values()), flux_grid)
-	interp_wl = RegularGridInterpolator((params_unique.values()), wl_grid)
 
 	# interpolate input parameters
 	spectra_flux = interp_flux(list(params.values()))[0,:] # to return a 1D array
-	spectra_wl = interp_wl(list(params.values()))[0,:] # to return a 1D array
+	spectra_wl = grid['wavelength']
+
+	# proper interpolation for each wavelength data point (much slower than above)
+#	# define an interpolating function from the grid
+#	flux_grid = grid['flux']
+#	params_unique = grid['params_unique']
+#
+#	# interpolate input parameters
+#	param_order = models.Models(model).free_params
+#	values = []
+#	for p in param_order:
+#	    values.append(params_unique[p])	
+#	grid_axes = tuple(values)
+#
+#	xi = []
+#	for p in param_order:
+#		xi.append(params[p])
+#
+#	spectra_flux = []
+#	for i in range(flux_grid.shape[-1]):
+#		slice_i = flux_grid[..., i]
+#	
+#		# skip if slice contains NaNs (optional but safer)
+#		if np.isnan(slice_i).any():
+#			spectra_flux.append(np.nan)
+#			continue
+#
+#		interp = RegularGridInterpolator(grid_axes, slice_i, bounds_error=True)
+#		spectra_flux.append(interp(xi))
+#
+#	spectra_flux = np.array(spectra_flux).flatten()
+#	spectra_wl = grid['wavelength']
 	
 	## reverse array to sort wavelength from shortest to longest
 	#ind_sort = np.argsort(spectra_wl)
@@ -710,8 +739,9 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 				                                              model_wl_range=model_wl_range)
 			else: # read precomputed convolved model spectra
 				out_read_model_spectrum = models.read_model_spectrum_conv(spectrum_name_full=spectrum_name_full, model_wl_range=model_wl_range)
-			wl_model = out_read_model_spectrum['wl_model'] # in um
 			flux_model = out_read_model_spectrum['flux_model'] # in erg/s/cm2/A
+			# read wavelength only for the first spectrum
+			if first_spec: wl_model = out_read_model_spectrum['wl_model'] # in um
 
 			# convolve (if requested) the model spectrum to the indicated resolution
 			if convolve and not skip_convolution: # convolve spectra only if convolve is True and skip_convolution is False
@@ -721,7 +751,7 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 					if not os.path.exists(path_save_spectra_conv): os.makedirs(path_save_spectra_conv) # make directory (if not existing) to store convolved spectra
 					out_file = path_save_spectra_conv+spectra_name[mask][0]+f'_R{res}at{lam_res}um.nc'
 					out_convolve_spectrum = convolve_spectrum(wl=wl_model, flux=flux_model, res=res, lam_res=lam_res, disp_wl_range=disp_wl_range, out_file=out_file)
-				wl_model = out_convolve_spectrum['wl_conv']
+				if first_spec: wl_model = out_convolve_spectrum['wl_conv']
 				flux_model = out_convolve_spectrum['flux_conv']
 
 			# resample (if requested) the convolved model spectrum to the wavelength data points in the observed spectra
@@ -730,7 +760,7 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 				mask_fit = (wl_resample >= max(fit_wl_range[0], wl_model.min())) & \
 				           (wl_resample <= min(fit_wl_range[1], wl_model.max()))
 				flux_model = spectres(wl_resample[mask_fit], wl_model, flux_model)
-				wl_model = wl_resample[mask_fit]
+				if first_spec: wl_model = wl_resample[mask_fit]
 
 			# save spectrum for each combination
 			if first_spec: # for the first parameters' combination with a model spectrum
@@ -738,11 +768,12 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 				# add a last dimension with the number of data points in the model spectrum subset
 				# it is better to initialize the arrays after the first iteration to consider the model spectrum 
 				# data points after resampling instead of using all data points in the original model spectrum
-				wl_grid = np.repeat(np.expand_dims(arr, -1), len(wl_model), axis=-1) # to save the wavelength at each grid point
+#				wl_grid = np.repeat(np.expand_dims(arr, -1), len(wl_model), axis=-1) # to save the wavelength at each grid point
+				wl_grid = wl_model
 				flux_grid = np.repeat(np.expand_dims(arr, -1), len(wl_model), axis=-1) # to save the flux at each grid point
 
 				# save first spectrum
-				wl_grid[index] = wl_model
+#				wl_grid[index] = wl_model
 				flux_grid[index] = flux_model
 
 				first_spec = False # to avoid initializing grid arrays in future iterations
@@ -752,7 +783,7 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 				if wl_model.shape!=wl_grid.shape[-1:]:
 					raise ValueError(f'Spectrum {spectra_name[mask]} has a different number of data points compared to the previous ones')
 				# save spectrum
-				wl_grid[index] = wl_model
+#				wl_grid[index] = wl_model
 				flux_grid[index] = flux_model
 
 	# close the progress bar
