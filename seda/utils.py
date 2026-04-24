@@ -466,13 +466,13 @@ def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spect
 		else:
 			params[param] = float(value)
 
-	# verify there is an input value for each free parameter in the grid
-	# parameter ranges covered by the model spectra in the input model_dir
+	# parameter ranges covered by the model spectra in the input model_dir or grid
 	if grid is None: # when no grid is provided, read the parameter ranges from the spectra in the input folders
 		params_models = select_model_spectra(model=model, model_dir=model_dir)['params']
 	else: # when a grid is provided, read the parameter ranges from the grid dictionary
 		params_models = grid['params_unique']
 
+	# verify there is an input value for each free parameter in the grid
 	for param in params_models:
 		if param not in params: 
 			raise Exception(f'Provide "{param}" value in "params" since it is a free parameter in "{model}" models.')
@@ -497,46 +497,43 @@ def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spect
 
 	# define an interpolating function from the grid
 	flux_grid = grid['flux']
-#	wl_grid = grid['wavelength']
 	params_unique = grid['params_unique']
-#	interp_flux = RegularGridInterpolator((params_unique.values()), flux_grid)
-#	interp_wl = RegularGridInterpolator((params_unique.values()), wl_grid)
-#
-#	# interpolate input parameters
-#	spectra_flux = interp_flux(list(params.values()))[0,:] # to return a 1D array
-#	spectra_wl = interp_wl(list(params.values()))[0,:] # to return a 1D array
-
-	print(params_ranges)
-	print(params_unique)
+	interp_flux = RegularGridInterpolator((params_unique.values()), flux_grid)
 
 	# interpolate input parameters
-	param_order = models.Models(model).free_params
-	grid_axes = tuple(params_unique[p] for p in param_order)
-
-	xi = []
-	for p in param_order:
-		xi.append(params[p])
-	
-	spectra_flux = []
-	for i in range(flux_grid.shape[-1]):
-		slice_i = flux_grid[..., i]
-	
-		# skip if slice contains NaNs (optional but safer)
-		if np.isnan(slice_i).any():
-			spectra_flux.append(np.nan)
-			continue
-
-		print(i)
-		print(grid_axes)
-		print(xi)
-		interp = RegularGridInterpolator(grid_axes, slice_i, bounds_error=True)
-		spectra_flux.append(interp(xi))
-
-	spectra_flux = np.array(spectra_flux).flatten()
+	spectra_flux = interp_flux(list(params.values()))[0,:] # to return a 1D array
 	spectra_wl = grid['wavelength']
 
-
-
+	# proper interpolation for each wavelength data point (much slower than above)
+#	# define an interpolating function from the grid
+#	flux_grid = grid['flux']
+#	params_unique = grid['params_unique']
+#
+#	# interpolate input parameters
+#	param_order = models.Models(model).free_params
+#	values = []
+#	for p in param_order:
+#	    values.append(params_unique[p])	
+#	grid_axes = tuple(values)
+#
+#	xi = []
+#	for p in param_order:
+#		xi.append(params[p])
+#
+#	spectra_flux = []
+#	for i in range(flux_grid.shape[-1]):
+#		slice_i = flux_grid[..., i]
+#	
+#		# skip if slice contains NaNs (optional but safer)
+#		if np.isnan(slice_i).any():
+#			spectra_flux.append(np.nan)
+#			continue
+#
+#		interp = RegularGridInterpolator(grid_axes, slice_i, bounds_error=True)
+#		spectra_flux.append(interp(xi))
+#
+#	spectra_flux = np.array(spectra_flux).flatten()
+#	spectra_wl = grid['wavelength']
 	
 	## reverse array to sort wavelength from shortest to longest
 	#ind_sort = np.argsort(spectra_wl)
