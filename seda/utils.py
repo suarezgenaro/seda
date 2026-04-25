@@ -2323,7 +2323,7 @@ def save_prettytable(my_dict, table_name):
 			values.append([v])
 
 	# add the dictionary values as rows
-	for row in zip(*my_dict.values()):
+	for row in zip(*values):
 		table.add_row(row)
 	
 	# get the ASCII string representation
