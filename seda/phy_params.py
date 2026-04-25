@@ -1,13 +1,14 @@
 import numpy as np
 import pickle
 from astropy import units as u
-from astropy.constants import L_sun
+from astropy.constants import L_sun, sigma_sb, R_jup
 from .synthetic_photometry import synthetic_photometry
 from . import input_parameters
 from . import chi2_fit 
 from . import models
 from . import utils
 from sys import exit
+
 
 ##########################
 def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=None, distance=None, edistance=None, 
@@ -187,13 +188,13 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 		# luminosity in erg/s
 		Lbol_erg_s_obs = 4.*np.pi*((distance*u.pc).to(u.cm).value)**2 * flux_tot_obs # erg/s
 		eLbol_erg_s_obs = np.sqrt((2*edistance/distance)**2 + (eflux_tot_obs/flux_tot_obs)**2) * Lbol_erg_s_obs
+
 		# luminosity in Lsun
 		Lbol_tot_obs = Lbol_erg_s_obs / (L_sun.to(u.erg/u.s).value) # in Lsun
 		eLbol_tot_obs = (eLbol_erg_s_obs/Lbol_erg_s_obs) * Lbol_tot_obs
 		# logLbol
 		logLbol_tot_obs = np.log10(Lbol_tot_obs)
 		elogLbol_tot_obs = eLbol_tot_obs/(Lbol_tot_obs*np.log(10))
-	
 	
 		# complement SED with the input model spectrum
 		if (wl_model is not None) & (flux_model is not None):
@@ -281,6 +282,12 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 	mask = ~np.isnan(eflux_SED)
 	eflux_tot = np.median(eflux_SED[mask]/flux_SED[mask]) * flux_tot # keep fractional errors (errors from the spectrum with the most data points will dominate, as no error is associated to the model)
 	#eflux_tot = np.sqrt(sum(eflux_each**2)) # (fractional errors from each input spectrum will have its contribution)
+
+#	wl_int = (wl_SED * u.um).to(u.AA).value
+#	dwl = np.gradient(wl_int)
+#	mask = ~np.isnan(eflux_SED)
+#	eflux_tot = np.sqrt(np.sum((eflux_SED[mask] * dwl[mask])**2))
+
 	# luminosity in erg/s
 	Lbol_erg_s = 4.*np.pi*((distance*u.pc).to(u.cm).value)**2 * flux_tot # erg/s
 	eLbol_erg_s = np.sqrt((2*edistance/distance)**2 + (eflux_tot/flux_tot)**2) * Lbol_erg_s
@@ -327,6 +334,112 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 		                 'N_spectra': N_spectra, 'completeness_obs': completeness})
 
 	return out
+
+##########################
+def teff(Lbol, eLbol, R, eR, n_mc=10000, central="median", 
+	     error="percentile", percentiles=(16, 84)):
+	'''
+	Effective temperature from Stefan–Boltzmann law.
+
+	Parameters:
+	-----------
+	Lbol : float
+		Bolometric luminosity in units of L_sun.
+	eLbol : float
+		Uncertainty in luminosity (L_sun).
+	R : float
+		Radius in units of R_jup.
+	eR : float
+		Uncertainty in radius (R_jup).
+	n_mc : int, optional (default 10000)
+		Number of Monte Carlo samples for uncertainties.
+	central : str, optional (default "median")
+		"mean" or "median" for central value.
+	error : str, optional (default "percentile")
+		"std" or "percentile".
+	percentiles : tuple or list, optional (default [16, 84])
+		Lower and upper percentiles for uncertainty.
+
+	Returns:
+	--------
+	Teff : float
+		Effective temperature in K.
+	eTeff : float or tuple
+		Effective temperature uncertainty in K.
+		If error="std": error is a scalar
+		If error="percentile": error is a tuple (lower_err, upper_err)
+
+	Example:
+	--------
+	>>> import seda
+	>>>
+	>>> # input parameters
+	>>> Lbol, eLbol = 6.324e-5, 6.978e-6 # in Lsun
+	>>> R, eR = 1.018, 0.059 # in Rjup
+	>>>
+	>>> # derive Teff (in K) from Stefan–Boltzmann law
+	>>> seda.phy_params.teff(Lbol=Lbol, eLbol=eLbol, R=R, eR=eR)
+	    (1592.0020910445828, (57.98628122105015, 65.18365052510921))
+
+
+	Author: Genaro Suárez
+
+	Date: 2026-05-25
+	'''
+   
+	# ensure percentiles is a tuple
+	percentiles = tuple((18, 84))
+	
+	# verify "central" and "error" are valid parameters
+	central_valid = ["mean", "median"]
+	if central not in central_valid:
+		raise ValueError(
+			f"central={central!r} is not recognized. "
+			f"Valid options: {central_valid}."
+		)
+	error_value = ["std", "percentile"]
+	if error not in error_value:
+		raise ValueError(
+			f"error={error!r} is not recognized. "
+			f"Valid options: {error_value}."
+		)
+	
+	# input values with units
+	Lbol = Lbol * L_sun
+	eLbol = eLbol * L_sun
+
+	R = R * R_jup
+	eR = eR * R_jup
+
+	# deterministic Teff (not returned, but useful sanity check)
+	Teff_det = (Lbol / (4 * np.pi * sigma_sb * R**2))**0.25
+	Teff_det = Teff_det.to(u.K)
+
+	# Monte Carlo simulation for Teff error
+	# sample L and R values from normal distribution
+	# peaking at the input values and standard deviation
+	# equal to the input uncertainties.
+	L_samples = np.random.normal(Lbol.value, eLbol.value, n_mc) * Lbol.unit
+	R_samples = np.random.normal(R.value, eR.value, n_mc) * R.unit
+
+	Teff_samples = (L_samples / (4 * np.pi * sigma_sb * R_samples**2))**0.25
+	Teff_samples = Teff_samples.to(u.K).value
+
+	# Teff from MC
+	if central == "mean":
+		Teff_val = np.mean(Teff_samples)
+	elif central == "median":
+		Teff_val = np.median(Teff_samples)
+	 
+	# Teff uncertainty
+	if error == "std":
+		Teff_err = np.std(Teff_samples)
+
+	elif error == "percentile":
+		p_lo, p_hi = np.percentile(Teff_samples, percentiles)
+		Teff_err = (Teff_val - p_lo, p_hi - Teff_val)
+
+	return Teff_val, Teff_err
 
 ##################
 # function to sort input spectra as nested lists according to their minimum wavelength values
