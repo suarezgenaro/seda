@@ -2311,9 +2311,16 @@ def save_prettytable(my_dict, table_name):
 
 	# create a PrettyTable object
 	table = PrettyTable()
-
 	# add the dictionary keys as column headers
 	table.field_names = my_dict.keys()
+
+	# ensure every value is iterable (wrap scalars in a list)
+	values = []
+	for v in my_dict.values():
+		if isinstance(v, (list, tuple, np.ndarray)):
+			values.append(v)
+		else:
+			values.append([v])
 
 	# add the dictionary values as rows
 	for row in zip(*my_dict.values()):
