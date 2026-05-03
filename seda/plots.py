@@ -12,7 +12,7 @@ from . import models
 from . import chi2_fit
 
 ##########################
-def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None, yrange=None, 
+def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None, yrange=None, plot_title=None,
 	              ori_res=False, res=None, lam_res=None, model_dir_ori=None, out_file=None, save=True):
 	'''
 	Description:
@@ -34,6 +34,8 @@ def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None
 		Horizontal range of the plot.
 	- yrange : list or array, optional (default is full range in the input spectra)
 		Vertical range of the plot.
+	- set_title : str, optional
+		Title for the plot which, if not provided, will be '``models.Models(model).name`` Atmospheric Models'.
 	- ori_res : {``True``, ``False``}, optional (default ``False``)
 		Plot (``True``) or do not plot (``False``) model spectra with the original resolution.
 	- model_dir_ori : str, list, or array
@@ -244,7 +246,10 @@ def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None
 
 	ax[0].grid(True, which='both', color='gainsboro', linewidth=0.5, alpha=1.0)
 	ax[0].set_ylabel(r'$F_\lambda\ ($erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)', size=12)
-	ax[0].set_title(f'{models.Models(model).name} Atmospheric Models')
+	if plot_title is None:
+		ax[0].set_title(f'{models.Models(model).name} Atmospheric Models')
+	else:
+		ax[0].set_title(plot_title)
 
 	#------------------------
 	# residuals
