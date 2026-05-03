@@ -460,10 +460,11 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, svo_data=None):
 	Author: Genaro Suárez
 	'''
 
-	# convert floats (if any) into arrays
-	if isinstance(mag, float): mag = np.array([mag])
+	# convert floats or integer (if any) into arrays
+	if isinstance(mag, (float, int)): mag = np.array([mag])
 	if emag is not None: 
-		if isinstance(emag, float): emag = np.array([emag])
+		if isinstance(emag, (float, int)): emag = np.array([emag])
+
 	# convert str (if any) into list
 	filters = utils.var_to_list(filters)
 	# convert input variables into numpy arrays if astropy
@@ -517,7 +518,7 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, svo_data=None):
 	# output dictionary
 	out = {'mag': mag, 'flux': flux, 'filters': filters, 'zero_point(Jy)': zero_point, 'flux_unit': flux_unit, 
 	       'lambda_eff_SVO(um)': wl_eff, 'width_eff_SVO(um)': width_eff}
-	if eflux is not None: 
+	if emag is not None: 
 		out['emag'] = emag
 		out['eflux'] = eflux
 
