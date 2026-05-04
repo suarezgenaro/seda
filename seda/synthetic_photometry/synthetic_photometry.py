@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import matplotlib.pyplot as plt
 from astropy.io import ascii
 from astropy.table import Column, MaskedColumn, Table
 from astropy import units as u
@@ -525,6 +526,12 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, svo_data=None):
 			if flux_unit=='erg/s/cm2/A':
 				flux[k] = convert_flux(flux=flux[k], wl=wl_eff[k], unit_in='Jy', unit_out='erg/s/cm2/A')['flux_out'] # in erg/s/cm2/A
 				if emag is not None: eflux[k] = convert_flux(flux=flux[k], eflux=eflux[k], wl=wl_eff[k], unit_in='Jy', unit_out='erg/s/cm2/A')['eflux_out'] # in erg/s/cm2/A
+			elif flux_unit=='erg/s/cm2/um':
+				flux[k] = convert_flux(flux=flux[k], wl=wl_eff[k], unit_in='Jy', unit_out='erg/s/cm2/A')['flux_out'] # in erg/s/cm2/A
+				flux[k] = (flux[k]*u.erg/u.s/u.cm**2/(u.nm*0.1)).to(u.erg/u.s/u.cm**2/u.micron).value # erg/s/cm2/um
+				if emag is not None: 
+					eflux[k] = convert_flux(flux=flux[k], eflux=eflux[k], wl=wl_eff[k], unit_in='Jy', unit_out='erg/s/cm2/A')['eflux_out'] # in erg/s/cm2/A
+					eflux[k] = (eflux[k]*u.erg/u.s/u.cm**2/(u.nm*0.1)).to(u.erg/u.s/u.cm**2/u.micron).value # erg/s/cm2/um
 
 	# output dictionary
 	out = {'mag': mag, 'flux': flux, 'filters': filters, 'zero_point(Jy)': zero_point, 'flux_unit': flux_unit, 
@@ -532,6 +539,136 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, svo_data=None):
 	if emag is not None: 
 		out['emag'] = emag
 		out['eflux'] = eflux
+
+	return out
+
+#+++++++++++++++++
+def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None, plot=True):
+	'''
+	Description:
+	------------
+		Calibrate a spectrum by scaling it to match observed photometry.
+
+		Computes synthetic photometry from the input spectrum, compares it to
+		observed magnitudes, derives an average magnitude offset, and applies
+		a corresponding scaling factor to the spectrum.
+
+	Parameters:
+	-----------
+	- wl : array
+		Wavelength array in microns.
+	- flux : array
+		Flux values in ``flux_unit`` unit corresponding to ``wl``.
+	- eflux : array, optional
+		Uncertainties on the flux in ``flux_unit`` unit. If ``None``, uncertainties are ignored.
+	- flux_unit : str
+		Unit of the flux (passed to synthetic photometry routines).
+	- mag : array
+		Observed magnitudes in mag.
+	- emag : array
+		Uncertainties on observed magnitudes in mag.
+	- filters : list, array, or str
+		List of filters (following SVO filter IDs) used for photometry.
+	- plot : bool, optional
+		If True, plot calibrated spectrum and photometry comparison.
+
+	Returns:
+	--------
+	Python dictionary with the following parameters:
+		- ``'wl``': wavelength in microns of calibrated spectrum.
+		- ``'flux``': flux in     of calibrated spectrum.
+		- ``'eflux``': 
+		- ``'syn_mag``': 
+		- ``'esyn_mag``': 
+		- ``'syn_flux``': 
+		- ``'esyn_flux``': 
+		- ``'scaling``': 
+		- ``'flux_unit``': 
+
+		- ``'syn_flux(erg/s/cm2/A)'`` : synthetic fluxes in erg/s/cm2/A.
+
+	dict
+		Dictionary containing calibrated spectrum, synthetic photometry,
+		scaling factor, and flux units.
+	'''
+
+	# ensure input mag and emag are numpy arrays
+	mag = utils.var_to_numpy(mag)
+	emag = utils.var_to_numpy(emag)
+
+	# synthetic photometry from the spectrum
+	out_syn = synthetic_photometry(wl=wl, flux=flux, eflux=eflux,
+	                               flux_unit=flux_unit,	filters=filters)
+
+	syn_mag = out_syn['syn_mag']
+	if eflux is not None: esyn_mag = out_syn['esyn_mag']
+	else: esyn_mag = None
+	lambda_eff = out_syn['lambda_eff(um)']  # um
+	width_eff = out_syn['width_eff(um)']	# um
+
+	# residual between observed and synthetic magnitudes
+	res = np.mean(mag - syn_mag)
+
+	# scaling factor
+	scaling = 10**(-res / 2.5)
+
+	# scale spectrum
+	flux_calib = flux * scaling
+	if eflux is not None: eflux_calib = eflux * scaling
+	else: eflux_calib = None
+
+	# calibrate synthetic magnitudes
+	syn_mag_calib = syn_mag + res
+	if eflux is not None: esyn_mag_calib = esyn_mag
+	else: esyn_mag_calib = None
+
+	# calibrate synthetic fluxes
+	out_syn_flux = mag_to_flux(mag=syn_mag_calib, emag=esyn_mag_calib, 
+	                           filters=filters, flux_unit=flux_unit)
+	syn_flux_calib = out_syn_flux['flux']
+	if eflux is not None: esyn_flux_calib = out_syn_flux['eflux']
+	else: esyn_flux_calib = None
+
+	print(f'Spectrum was scaled by a factor of {scaling}')
+
+	# output dictionary
+	out = {
+		'wl': wl,
+		'flux': flux_calib,
+		'eflux': eflux_calib,
+		'syn_mag': syn_mag_calib,
+		'esyn_mag': esyn_mag_calib,
+		'syn_flux': syn_flux_calib,
+		'esyn_flux': esyn_flux_calib,
+		'scaling': scaling,
+		'flux_unit': flux_unit
+	}
+
+	if plot:
+		fig, ax = plt.subplots()
+
+		# calibrated spectrum
+		ax.plot(wl, flux_calib, label='Calibrated fluxes')
+		if eflux_calib is not None:
+			ax.plot(wl, eflux_calib, label='Calibrated flux errors')
+
+		# synthetic photometry
+		ax.errorbar(
+			lambda_eff, syn_flux_calib,
+			xerr=width_eff / 2., yerr=esyn_flux_calib,
+			fmt='.', markersize=1., capsize=2, elinewidth=3.0,
+			markeredgewidth=0.5, label='Synthetic photometry'
+		)
+
+		# observed photometry
+		out_obs_flux = mag_to_flux(mag=mag, emag=emag, filters=filters, flux_unit=flux_unit)
+		ax.errorbar(lambda_eff, out_obs_flux['flux'], xerr=width_eff / 2., yerr=out_obs_flux['eflux'],
+		            fmt='.', markersize=1., capsize=2, elinewidth=1.0,
+		            markeredgewidth=0.5, label='Observed photometry')
+
+		ax.legend()
+		ax.set_xlabel(r'Wavelength ($\mu$m)')
+		ax.set_ylabel(f'Flux ({flux_unit})')
 
 	return out
 
