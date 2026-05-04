@@ -21,7 +21,7 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, out_file=None
 	- filters : list, array, or str
 		Filters (following SVO filter IDs) to derive synthetic photometry.
 	- flux_unit : str
-		Flux and flux error units: ``'erg/s/cm2/A'`` or ``'Jy'``.
+		Flux and flux error units: ``'erg/s/cm2/A'``, ``'Jy'``, or ``erg/s/cm2/um``.
 	- eflux : array (optional) 
 		Flux uncertainties in units specified by ``flux_unit``.
 	- out_file : str, optional
@@ -151,13 +151,24 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, out_file=None
 		# convert flux into magnitudes
 		# first from erg/s/cm2/A to Jy (if needed) and then from Jy to mag
 		if flux_unit == 'erg/s/cm2/A':
-			syn_flux_Jy[k] = convert_flux(syn_flux, lambda_eff[k], 'erg/s/cm2/A', 'Jy')['flux_out'] # in Jy
+			syn_flux_Jy[k] = convert_flux(syn_flux, lambda_eff[k], flux_unit, 'Jy')['flux_out'] # in Jy
 			if eflux is not None: esyn_flux_Jy[k] = esyn_flux / syn_flux * syn_flux_Jy[k] # in Jy
 			syn_flux_erg[k] = syn_flux # in erg/s/cm2/A
 			if eflux is not None: esyn_flux_erg[k] = esyn_flux # in erg/s/cm2/A
 
-		else:  # (flux_unit == 'Jy') convert Jy to erg/s/cm2/A to be an output
-			syn_flux_erg[k] = convert_flux(syn_flux, lambda_eff[k], 'Jy', 'erg/s/cm2/A')['flux_out'] # in erg/s/cm2/A
+		elif flux_unit == 'erg/s/cm2/um':
+			# erg/s/cm2/um to erg/s/cm2/A
+			syn_flux_erg[k] = (syn_flux*u.erg/u.s/u.cm**2/u.micron).to(u.erg/u.s/u.cm**2/(u.nm*0.1)).value # erg/s/cm2/A
+			if eflux is not None: 
+				esyn_flux_erg[k] = (esyn_flux*u.erg/u.s/u.cm**2/u.micron).to(u.erg/u.s/u.cm**2/(u.nm*0.1)).value # erg/s/cm2/A
+			# in Jy
+			
+			syn_flux_Jy[k] = convert_flux(flux=syn_flux_erg[k], wl=lambda_eff[k], unit_in='erg/s/cm2/A', unit_out='Jy')['flux_out'] # in Jy
+			esyn_flux_Jy[k] = convert_flux(flux=syn_flux_erg[k], eflux=esyn_flux_erg[k], wl=lambda_eff[k], 
+			                               unit_in='erg/s/cm2/A', unit_out='Jy')['eflux_out'] # in Jy
+			
+		elif flux_unit == 'Jy': # convert Jy to erg/s/cm2/A to be an output
+			syn_flux_erg[k] = convert_flux(syn_flux, lambda_eff[k], flux_unit, 'erg/s/cm2/A')['flux_out'] # in erg/s/cm2/A
 			if eflux is not None: esyn_flux_erg[k] = esyn_flux / syn_flux * syn_flux_erg[k] # in erg/s/cm2/A
 			syn_flux_Jy[k] = syn_flux # in Jy
 			if eflux is not None: esyn_flux_Jy[k] = esyn_flux # in Jy
