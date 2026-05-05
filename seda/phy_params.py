@@ -426,17 +426,22 @@ def teff(Lbol, eLbol, R, eR, n_mc=10000, central="median",
 	Teff_samples = Teff_samples.to(u.K).value
 
 	# Teff from MC
+	# remove nan values, if any
+	mask_nonan = ~np.isnan(Teff_samples)
+	if not all(mask_nonan):
+		print(f'{len(Teff_samples[~mask_nonan])}/{n_mc} Teff values from MC are NaN')
+
 	if central == "mean":
-		Teff_val = np.mean(Teff_samples)
+		Teff_val = np.mean(Teff_samples[mask_nonan])
 	elif central == "median":
-		Teff_val = np.median(Teff_samples)
+		Teff_val = np.median(Teff_samples[mask_nonan])
 	 
 	# Teff uncertainty
 	if error == "std":
-		Teff_err = np.std(Teff_samples)
+		Teff_err = np.std(Teff_samples[mask_nonan])
 
 	elif error == "percentile":
-		p_lo, p_hi = np.percentile(Teff_samples, percentiles)
+		p_lo, p_hi = np.percentile(Teff_samples[mask_nonan], percentiles)
 		Teff_err = (Teff_val - p_lo, p_hi - Teff_val)
 
 	return Teff_val, Teff_err
