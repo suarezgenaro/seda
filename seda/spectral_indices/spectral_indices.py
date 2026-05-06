@@ -54,9 +54,9 @@ def silicate_index(wl, flux, eflux, silicate_wl=None, silicate_window=None,
 		Plot (``True``) or do not plot (``False``) the silicate index measurement.
 	- plot_title : str, optional
 		Plot title (default ``'Silicate Index Measurement'``.
-	- plot_xrange : list or array
+	- plot_xrange : list or array, optional
 		Wavelength range (in microns) of the plot (default [5.2, 14] um).
-	- plot_yrange : list or array
+	- plot_yrange : list or array, optional
 		Flux range (in Jy) of the plot (default is the flux range in ``plot_xrange``).
 	- plot_save : {``True``, ``False``}, optional (default ``False``)
 		Save (``'True'``) or do not save (``'False'``) the resulting plot.
@@ -226,9 +226,9 @@ def sio_index(wl, flux, eflux, sio_wl=None, sio_window=None,
 		Plot (``True``) or do not plot (``False``) the SiO index measurement.
 	- plot_title : str, optional
 		Plot title (default ``'Silicate Index Measurement'``.
-	- plot_xrange : list or array
+	- plot_xrange : list or array, optional
 		Wavelength range (in microns) of the plot (default [5.2, 14] um).
-	- plot_yrange : list or array
+	- plot_yrange : list or array, optional
 		Flux range (in Jy) of the plot (default is the flux range in ``plot_xrange``).
 	- plot_save : {``True``, ``False``}, optional (default ``False``)
 		Save (``'True'``) or do not save (``'False'``) the resulting plot.
@@ -377,9 +377,9 @@ def water_index(wl, flux, eflux, reference='SM22',
 		Plot (``True``) or do not plot (``False``) the water index measurement.
 	- plot_title : str, optional
 		Plot title (default ``'Water Index Measurement'``.
-	- plot_xrange : list or array
+	- plot_xrange : list or array, optional
 		Wavelength range (in microns) of the plot (default [5.2, 14] um).
-	- plot_yrange : list or array
+	- plot_yrange : list or array, optional
 		Flux range (in Jy) of the plot (default is the flux range in ``plot_xrange``).
 	- plot_save : {``True``, ``False``}, optional (default ``False``)
 		Save (``'True'``) or do not save (``'False'``) the resulting plot.
@@ -524,9 +524,9 @@ def methane_index(wl, flux, eflux, reference='SM22',
 		Plot (``True``) or do not plot (``False``) the methane index measurement.
 	- plot_title : str, optional
 		Plot title (default ``'Methane Index Measurement'``.
-	- plot_xrange : list or array
+	- plot_xrange : list or array, optional
 		Wavelength range (in microns) of the plot (default [5.2, 14] um).
-	- plot_yrange : list or array
+	- plot_yrange : list or array, optional
 		Flux range (in Jy) of the plot (default is the flux range in ``plot_xrange``).
 	- plot_save : {``True``, ``False``}, optional (default ``False``)
 		Save (``'True'``) or do not save (``'False'``) the resulting plot.
@@ -648,9 +648,9 @@ def ammonia_index(wl, flux, eflux, reference='SM22',
 		Plot (``True``) or do not plot (``False``) the ammonia index measurement.
 	- plot_title : str, optional
 		Plot title (default ``'Ammonia Index Measurement'``.
-	- plot_xrange : list or array
+	- plot_xrange : list or array, optional
 		Wavelength range (in microns) of the plot (default [5.2, 14] um).
-	- plot_yrange : list or array
+	- plot_yrange : list or array, optional
 		Flux range (in Jy) of the plot (default is the flux range in ``plot_xrange``).
 	- plot_save : {``True``, ``False``}, optional (default ``False``)
 		Save (``'True'``) or do not save (``'False'``) the resulting plot.
@@ -792,9 +792,9 @@ def user_index(wl, flux, eflux, feature_wl, feature_window,
 		Plot (``True``) or do not plot (``False``) the feature index measurement.
 	- plot_title : str, optional
 		Plot title (default ``'{index_name} Index Measurement'``.
-	- plot_xrange : list or array
+	- plot_xrange : list or array, optional
 		Wavelength range (in same units as ``wl``) of the plot (default is min and max values of ``wl``).
-	- plot_yrange : list or array
+	- plot_yrange : list or array, optional
 		Flux range (in same units as ``flux``) of the plot (default is the flux range in ``plot_xrange``).
 	- plot_save : {``True``, ``False``}, optional (default ``False``)
 		Save (``'True'``) or do not save (``'False'``) the resulting plot.
