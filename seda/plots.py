@@ -10,7 +10,7 @@ from sys import exit
 from . import utils
 from . import models
 from . import chi2_fit
-from . import synthetic_photometry
+from .synthetic_photometry import synthetic_photometry
 
 ##########################
 def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None, yrange=None, plot_title=None,
