@@ -33,7 +33,7 @@ def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None
 		Use logarithmic (``True``) or linear (``False``) scale to plot the vertical axis.
 	- xrange : list or array, optional (default is full range in the input spectra)
 		Horizontal range of the plot.
-	- yrange : list or array, optional (default is full range in the input spectra)
+	- yrange : list or array, optional (default is full range in ``xrange``)
 		Vertical range of the plot.
 	- set_title : str, optional
 		Title for the plot which, if not provided, will be '``models.Models(model).name`` Atmospheric Models'.
@@ -457,7 +457,7 @@ def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None
 		Use logarithmic (``True``) or linear (``False``) scale to plot the vertical axis.
 	- xrange : list or array, optional (default is full range in the input spectra)
 		Horizontal range of the plot.
-	- yrange : list or array, optional (default is full range in the input spectra)
+	- yrange : list or array, optional (default is full range in ``xrange``)
 		Vertical range of the plot.
 	- ori_res : {``True``, ``False``}, optional (default ``False``)
 		Plot (``True``) or do not plot (``False``) the best model spectrum with its original resolution.
@@ -762,7 +762,7 @@ def plot_model_coverage(model, xparam, yparam, model_dir=None, params_ranges=Non
 		If a parameter range is not provided, the full range in ``model_dir`` or the pre-saved pickle files is considered.
 	- xrange : list or array, optional (default is full range in the input spectra)
 		Horizontal range of the plot.
-	- yrange : list or array, optional (default is full range in the input spectra)
+	- yrange : list or array, optional (default is full range in ``xrange``)
 		Vertical range of the plot.
 	- xlog : {``True``, ``False``}, optional (default ``False``)
 		Use logarithmic (``True``) or linear (``False``) scale to plot the horizontal axis.
@@ -861,7 +861,7 @@ def plot_model_resolution(model, spectra_name_full, xlog=True, ylog=False, xrang
 		Use logarithmic (``True``) or linear (``False``) scale for resolution range.
 	- xrange : list or array, optional (default is full range in the input spectra)
 		Horizontal range of the plot.
-	- yrange : list or array, optional (default is full range in the input spectra)
+	- yrange : list or array, optional (default is full range in ``xrange``)
 		Vertical range of the plot.
 	- delta_wl_log : {``True``, ``False``}, optional (default ``False``)
 		Consider wavelength steps in linear (``False``) or logarithmic (``True``) scale.
@@ -1099,7 +1099,7 @@ def plot_calibrate_spectrum(dic, xrange=None, yrange=None):
 		Output dictionary from ``synthetic_photometry.calibrate_spectrum``.
 	- xrange : list or array, optional (default is full range in the input spectra)
 		Horizontal range of the plot.
-	- yrange : list or array, optional (default is full range in the input spectra)
+	- yrange : list or array, optional (default is full range in ``xrange``)
 		Vertical range of the plot.
 
 	Returns:
