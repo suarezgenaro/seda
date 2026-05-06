@@ -10,6 +10,7 @@ from sys import exit
 from . import utils
 from . import models
 from . import chi2_fit
+from . import synthetic_photometry
 
 ##########################
 def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None, yrange=None, plot_title=None,
@@ -1084,6 +1085,97 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False,
 		else: plt.savefig(out_file, bbox_inches='tight')
 
 	return fig, ax 
+
+#########################
+def plot_calibrate_spectrum(dic, xrange=None, yrange=None):
+	'''
+	Description:
+	------------
+		Plot flux-calibrated spectrum with observed photometry used as a reference.
+
+	Parameters:
+	-----------
+	- dic : dictionary
+		Output dictionary from ``synthetic_photometry.calibrate_spectrum``.
+	- xrange : list or array, optional (default is full range in the input spectra)
+		Horizontal range of the plot.
+	- yrange : list or array, optional (default is full range in the input spectra)
+		Vertical range of the plot.
+
+	Returns:
+	--------
+	Plot showing a flux-calibrated spectrum, the observed photometry used as a reference, and synthetic photometry for comparison.
+
+	Example:
+	--------
+	>>> import seda
+	>>> 
+	>>> # Plot of the flux-calibrated spectrum with synthetic photometry and observed photometry.
+	>>> # 'dic' is the output dictionary from `synthetic_photometry.calibrate_spectrum``.
+	>>> # Show spectrum between 1 and 2.5 microns, as an example.
+	>>> seda.plot_calibrate_spectrum(dic=dic, xrange=[1, 2.5])
+
+	Author: Genaro Suárez
+
+	Date: 2026-05-06
+	'''
+
+
+	wl = dic['wl']
+	flux = dic['flux']
+	eflux = dic['eflux']
+	lambda_eff = dic['lambda_eff']
+	width_eff = dic['width_eff']
+	syn_flux = dic['syn_flux']
+	esyn_flux = dic['esyn_flux']
+	obs_mag = dic['obs_mag']
+	eobs_mag = dic['eobs_mag']
+	filters = dic['filters']
+	flux_unit = dic['flux_unit']
+
+	fig, ax = plt.subplots()
+
+	if xrange is None: xmin, xmax = wl.min(), wl.max()
+	else: xmin, xmax = xrange
+	if yrange is None:
+		mask = (wl>=xmin) & (wl<=xmax)
+		if flux[mask].min() >= 0: # when the minimum flux is positive
+			ymin, ymax = 0.9*flux[mask].min(), 1.1*flux[mask].max()
+		else: # when the minimum flux is negative
+			ymin, ymax = 1.1*flux[mask].min(), 1.1*flux[mask].max()
+	else: ymin, ymax = yrange
+
+	# calibrated spectrum
+	ax.plot(wl, flux, label='Calibrated fluxes')
+	if eflux is not None:
+		ax.plot(wl, eflux, label='Calibrated flux errors')
+
+	# synthetic photometry
+	ax.errorbar(
+		lambda_eff, syn_flux,
+		xerr=width_eff / 2., yerr=esyn_flux,
+		fmt='.', markersize=1., capsize=2, elinewidth=3.0,
+		markeredgewidth=0.5, label='Synthetic photometry'
+	)
+
+	# observed photometry
+	out_obs_flux = synthetic_photometry.mag_to_flux(mag=obs_mag, emag=eobs_mag, filters=filters, flux_unit=flux_unit)
+	ax.errorbar(lambda_eff, out_obs_flux['flux'], xerr=width_eff / 2., yerr=out_obs_flux['eflux'],
+	            fmt='.', markersize=1., capsize=2, elinewidth=1.0,
+	            markeredgewidth=0.5, label='Observed photometry')
+
+	ax.legend()
+
+	plt.xlim(xmin, xmax)
+	plt.ylim(ymin, ymax)
+	ax.xaxis.set_minor_locator(AutoMinorLocator())
+	ax.yaxis.set_minor_locator(AutoMinorLocator())
+	ax.grid(True, which='both', color='gainsboro', alpha=0.5)
+
+	ax.set_xlabel(r'Wavelength ($\mu$m)')
+	ax.set_ylabel(f'Flux ({flux_unit})')
+
+	return fig, ax
 
 #########################
 def plot_full_SED(out_bol_lum, xlog=True, ylog=True, xrange=None, yrange=None, 
