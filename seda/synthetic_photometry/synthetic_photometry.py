@@ -64,11 +64,11 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, out_file=None
 	>>> filters = (['2MASS/2MASS.J', 'Spitzer/IRAC.I1', 'WISE/WISE.W1']) # filters of interest
 	>>> 
 	>>>	# run the code
-	>>> out = seda.synthetic_photometry(wl=wl, flux=flux, eflux=eflux, 
-	>>>                                 flux_unit='erg/s/cm2/A', filters=filters)
+	>>> out = seda.synthetic_photometry.synthetic_photometry(wl=wl, flux=flux, eflux=eflux, 
+	>>>                                                      flux_unit='erg/s/cm2/A', filters=filters)
 	>>> 
 	>>> # visualize the derived synthetic fluxes
-	>>> seda.plot_synthetic_photometry(out)
+	>>> seda.plots.plot_synthetic_photometry(out)
 
 	Author: Genaro Suárez
 	'''
@@ -258,7 +258,7 @@ def convert_flux(flux, wl, unit_in, unit_out, eflux=None):
 	>>> wl = np.array([1.23, 2.16]) # test wavelengths in microns
 	>>> eflux = flux/10. # test flux errors in Jy
 	>>> 
-	>>> seda.convert_flux(flux=flux, wl=wl, eflux=eflux, unit_in='Jy', unit_out='erg/s/cm2/A')
+	>>> seda.synthetic_photometry.convert_flux(flux=flux, wl=wl, eflux=eflux, unit_in='Jy', unit_out='erg/s/cm2/A')
 	    {'flux_in': array([0.005, 0.006]),
 	     'flux_out': array([9.90787422e-16, 3.85535568e-16]),
 	     'wl_in': array([1.23, 2.16]),
@@ -458,7 +458,7 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, svo_data=None):
 	>>> emag = mag/10. # test magnitude errors in mag
 	>>> filters=['2MASS/2MASS.J', '2MASS/2MASS.Ks'] # test filter IDs
 	>>> 
-	>>> seda.mag_to_flux(mag=mag, emag=emag, filters=filters)
+	>>> seda.synthetic_photometry.mag_to_flux(mag=mag, emag=emag, filters=filters)
 	    {'mag': array([15. , 15.5]),
 	     'flux': array([0.001594  , 0.00042072]),
 	     'filters': ['2MASS/2MASS.J', '2MASS/2MASS.Ks'],
@@ -543,7 +543,7 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, svo_data=None):
 	return out
 
 #+++++++++++++++++
-def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None, plot=True):
+def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None):
 	'''
 	Description:
 	------------
@@ -562,34 +562,50 @@ def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None, plot
 	- eflux : array, optional
 		Uncertainties on the flux in ``flux_unit`` unit. If ``None``, uncertainties are ignored.
 	- flux_unit : str
-		Unit of the flux (passed to synthetic photometry routines).
+		Flux and flux error units: ``'erg/s/cm2/A'``, ``'Jy'``, or ``erg/s/cm2/um``.
 	- mag : array
 		Observed magnitudes in mag.
 	- emag : array
 		Uncertainties on observed magnitudes in mag.
 	- filters : list, array, or str
 		List of filters (following SVO filter IDs) used for photometry.
-	- plot : bool, optional
-		If True, plot calibrated spectrum and photometry comparison.
 
 	Returns:
 	--------
 	Python dictionary with the following parameters:
 		- ``'wl``': wavelength in microns of calibrated spectrum.
-		- ``'flux``': flux in     of calibrated spectrum.
-		- ``'eflux``': 
-		- ``'syn_mag``': 
-		- ``'esyn_mag``': 
-		- ``'syn_flux``': 
-		- ``'esyn_flux``': 
-		- ``'scaling``': 
-		- ``'flux_unit``': 
+		- ``'flux``': flux in ``flux_unit`` of calibrated spectrum.
+		- ``'eflux``': flux uncertainties in ``flux_unit`` of calibrated spectrum.
+		- ``'syn_mag``': synthetic magnitudes in mag for ``filters`` from the calibrated spectrum.
+		- ``'esyn_mag``': synthetic magnitude errors in mag for ``filters`` from the calibrated spectrum.
+		- ``'syn_flux``': synthetic fluxes in ``flux_unit`` for ``filters`` from the calibrated spectrum.
+		- ``'esyn_flux``': synthetic flux errors in ``flux_unit`` for ``filters`` from the calibrated spectrum.
+		- ``'scaling``': scaling factor applied to the input spectrum to calibrate it.
+		- ``'flux_unit``': units of input spectrum fluxes and errors.
 
-		- ``'syn_flux(erg/s/cm2/A)'`` : synthetic fluxes in erg/s/cm2/A.
+	Example:
+	--------
+	>>> # Flux-calibrate a near-infrared spectrum using 2MASS photometry.
+	>>> # Assume the spectrum wavelength, flux and flux errors are loaded in the variable wl, flux, and eflux,
+	>>> # and the units of fluxes are 'erg/s/cm2/um'.
+	>>> flux_unit='erg/s/cm2/um'
+	>>> 
+	>>> # Example of 2MASS photometry
+	>>> filters = ['2MASS/2MASS.J', '2MASS/2MASS.H', '2MASS/2MASS.Ks']
+	>>> mag = [13.997, 13.284, 12.829]
+	>>> emag = [0.032, 0.036, 0.029]
+	>>> 
+	>>>	# calibrate spectrum
+	>>> out = seda.synthetic_photometry.calibrate_spectrum(wl=wl, flux=flux, eflux=eflux, 
+	                                                       flux_unit=flux_unit, 
+	                                                       mag=mag, emag=emag, filters=filters)
+	>>> 
+	>>> # visualize the results
+	>>> seda.plots.plot_calibrate_spectrum(out)
 
-	dict
-		Dictionary containing calibrated spectrum, synthetic photometry,
-		scaling factor, and flux units.
+	Author: Genaro Suárez
+
+	Date: 2026-05-04
 	'''
 
 	# ensure input mag and emag are numpy arrays
@@ -640,35 +656,15 @@ def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None, plot
 		'esyn_mag': esyn_mag_calib,
 		'syn_flux': syn_flux_calib,
 		'esyn_flux': esyn_flux_calib,
+		'lambda_eff': lambda_eff,
+		'width_eff': width_eff,
 		'scaling': scaling,
+		'flux_unit': flux_unit,
+		'obs_mag': mag,
+		'eobs_mag': emag,
+		'filters': filters,
 		'flux_unit': flux_unit
 	}
-
-	if plot:
-		fig, ax = plt.subplots()
-
-		# calibrated spectrum
-		ax.plot(wl, flux_calib, label='Calibrated fluxes')
-		if eflux_calib is not None:
-			ax.plot(wl, eflux_calib, label='Calibrated flux errors')
-
-		# synthetic photometry
-		ax.errorbar(
-			lambda_eff, syn_flux_calib,
-			xerr=width_eff / 2., yerr=esyn_flux_calib,
-			fmt='.', markersize=1., capsize=2, elinewidth=3.0,
-			markeredgewidth=0.5, label='Synthetic photometry'
-		)
-
-		# observed photometry
-		out_obs_flux = mag_to_flux(mag=mag, emag=emag, filters=filters, flux_unit=flux_unit)
-		ax.errorbar(lambda_eff, out_obs_flux['flux'], xerr=width_eff / 2., yerr=out_obs_flux['eflux'],
-		            fmt='.', markersize=1., capsize=2, elinewidth=1.0,
-		            markeredgewidth=0.5, label='Observed photometry')
-
-		ax.legend()
-		ax.set_xlabel(r'Wavelength ($\mu$m)')
-		ax.set_ylabel(f'Flux ({flux_unit})')
 
 	return out
 
