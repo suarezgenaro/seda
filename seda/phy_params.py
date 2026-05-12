@@ -339,7 +339,10 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 def teff(Lbol, eLbol, R, eR, n_mc=10000, central="median", 
 	     error="percentile", percentiles=(16, 84)):
 	'''
-	Effective temperature from Stefan–Boltzmann law.
+	Description:
+	------------
+		Calculate effective temperature using the Stefan–Boltzmann 
+		law considering a known bolometric luminosity and radius.
 
 	Parameters:
 	-----------
