@@ -339,35 +339,38 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 def teff(Lbol, eLbol, R, eR, n_mc=10000, central="median", 
 	     error="percentile", percentiles=(16, 84)):
 	'''
-	Effective temperature from Stefan–Boltzmann law.
+	Description:
+	------------
+		Calculate effective temperature using the Stefan–Boltzmann 
+		law considering a known bolometric luminosity and radius.
 
 	Parameters:
 	-----------
-	Lbol : float
+	- Lbol : float
 		Bolometric luminosity in units of L_sun.
-	eLbol : float
+	- eLbol : float
 		Uncertainty in luminosity (L_sun).
-	R : float
+	- R : float
 		Radius in units of R_jup.
-	eR : float
+	- eR : float
 		Uncertainty in radius (R_jup).
-	n_mc : int, optional (default 10000)
+	- n_mc : int, optional (default 10000)
 		Number of Monte Carlo samples for uncertainties.
-	central : str, optional (default "median")
+	- central : str, optional (default "median")
 		"mean" or "median" for central value.
-	error : str, optional (default "percentile")
+	- error : str, optional (default "percentile")
 		"std" or "percentile".
-	percentiles : tuple or list, optional (default [16, 84])
+	- percentiles : tuple or list, optional (default [16, 84])
 		Lower and upper percentiles for uncertainty.
 
 	Returns:
 	--------
-	Teff : float
+	- Teff : float
 		Effective temperature in K.
-	eTeff : float or tuple
-		Effective temperature uncertainty in K.
-		If error="std": error is a scalar
-		If error="percentile": error is a tuple (lower_err, upper_err)
+	- eTeff : float or tuple
+		- Effective temperature uncertainty in K.
+		- If error="std": error is a scalar
+		- If error="percentile": error is a tuple (lower_err, upper_err)
 
 	Example:
 	--------
@@ -426,17 +429,22 @@ def teff(Lbol, eLbol, R, eR, n_mc=10000, central="median",
 	Teff_samples = Teff_samples.to(u.K).value
 
 	# Teff from MC
+	# remove nan values, if any
+	mask_nonan = ~np.isnan(Teff_samples)
+	if not all(mask_nonan):
+		print(f'{len(Teff_samples[~mask_nonan])}/{n_mc} Teff values from MC are NaN')
+
 	if central == "mean":
-		Teff_val = np.mean(Teff_samples)
+		Teff_val = np.mean(Teff_samples[mask_nonan])
 	elif central == "median":
-		Teff_val = np.median(Teff_samples)
+		Teff_val = np.median(Teff_samples[mask_nonan])
 	 
 	# Teff uncertainty
 	if error == "std":
-		Teff_err = np.std(Teff_samples)
+		Teff_err = np.std(Teff_samples[mask_nonan])
 
 	elif error == "percentile":
-		p_lo, p_hi = np.percentile(Teff_samples, percentiles)
+		p_lo, p_hi = np.percentile(Teff_samples[mask_nonan], percentiles)
 		Teff_err = (Teff_val - p_lo, p_hi - Teff_val)
 
 	return Teff_val, Teff_err

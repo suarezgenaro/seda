@@ -149,7 +149,7 @@ class InputData:
 				eflux_spectra[i] = eflux_spectra[i][mask_nonan]
 
 				# remove negative fluxes
-				mask_noneg = flux_spectra[i]>0
+				mask_noneg = (flux_spectra[i]>0) & (eflux_spectra[i]>0)
 				wl_spectra[i] = wl_spectra[i][mask_noneg]
 				flux_spectra[i] = flux_spectra[i][mask_noneg]
 				eflux_spectra[i] = eflux_spectra[i][mask_noneg]

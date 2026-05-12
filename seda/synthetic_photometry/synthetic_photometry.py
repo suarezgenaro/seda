@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import matplotlib.pyplot as plt
 from astropy.io import ascii
 from astropy.table import Column, MaskedColumn, Table
 from astropy import units as u
@@ -21,7 +22,7 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, out_file=None
 	- filters : list, array, or str
 		Filters (following SVO filter IDs) to derive synthetic photometry.
 	- flux_unit : str
-		Flux and flux error units: ``'erg/s/cm2/A'`` or ``'Jy'``.
+		Flux and flux error units: ``'erg/s/cm2/A'``, ``'Jy'``, or ``erg/s/cm2/um``.
 	- eflux : array (optional) 
 		Flux uncertainties in units specified by ``flux_unit``.
 	- out_file : str, optional
@@ -63,11 +64,11 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, out_file=None
 	>>> filters = (['2MASS/2MASS.J', 'Spitzer/IRAC.I1', 'WISE/WISE.W1']) # filters of interest
 	>>> 
 	>>>	# run the code
-	>>> out = seda.synthetic_photometry(wl=wl, flux=flux, eflux=eflux, 
-	>>>                                 flux_unit='erg/s/cm2/A', filters=filters)
+	>>> out = seda.synthetic_photometry.synthetic_photometry(wl=wl, flux=flux, eflux=eflux, 
+	>>>                                                      flux_unit='erg/s/cm2/A', filters=filters)
 	>>> 
 	>>> # visualize the derived synthetic fluxes
-	>>> seda.plot_synthetic_photometry(out)
+	>>> seda.plots.plot_synthetic_photometry(out)
 
 	Author: Genaro Suárez
 	'''
@@ -151,13 +152,24 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, out_file=None
 		# convert flux into magnitudes
 		# first from erg/s/cm2/A to Jy (if needed) and then from Jy to mag
 		if flux_unit == 'erg/s/cm2/A':
-			syn_flux_Jy[k] = convert_flux(syn_flux, lambda_eff[k], 'erg/s/cm2/A', 'Jy')['flux_out'] # in Jy
+			syn_flux_Jy[k] = convert_flux(syn_flux, lambda_eff[k], flux_unit, 'Jy')['flux_out'] # in Jy
 			if eflux is not None: esyn_flux_Jy[k] = esyn_flux / syn_flux * syn_flux_Jy[k] # in Jy
 			syn_flux_erg[k] = syn_flux # in erg/s/cm2/A
 			if eflux is not None: esyn_flux_erg[k] = esyn_flux # in erg/s/cm2/A
 
-		else:  # (flux_unit == 'Jy') convert Jy to erg/s/cm2/A to be an output
-			syn_flux_erg[k] = convert_flux(syn_flux, lambda_eff[k], 'Jy', 'erg/s/cm2/A')['flux_out'] # in erg/s/cm2/A
+		elif flux_unit == 'erg/s/cm2/um':
+			# erg/s/cm2/um to erg/s/cm2/A
+			syn_flux_erg[k] = (syn_flux*u.erg/u.s/u.cm**2/u.micron).to(u.erg/u.s/u.cm**2/(u.nm*0.1)).value # erg/s/cm2/A
+			if eflux is not None: 
+				esyn_flux_erg[k] = (esyn_flux*u.erg/u.s/u.cm**2/u.micron).to(u.erg/u.s/u.cm**2/(u.nm*0.1)).value # erg/s/cm2/A
+			# in Jy
+			
+			syn_flux_Jy[k] = convert_flux(flux=syn_flux_erg[k], wl=lambda_eff[k], unit_in='erg/s/cm2/A', unit_out='Jy')['flux_out'] # in Jy
+			esyn_flux_Jy[k] = convert_flux(flux=syn_flux_erg[k], eflux=esyn_flux_erg[k], wl=lambda_eff[k], 
+			                               unit_in='erg/s/cm2/A', unit_out='Jy')['eflux_out'] # in Jy
+			
+		elif flux_unit == 'Jy': # convert Jy to erg/s/cm2/A to be an output
+			syn_flux_erg[k] = convert_flux(syn_flux, lambda_eff[k], flux_unit, 'erg/s/cm2/A')['flux_out'] # in erg/s/cm2/A
 			if eflux is not None: esyn_flux_erg[k] = esyn_flux / syn_flux * syn_flux_erg[k] # in erg/s/cm2/A
 			syn_flux_Jy[k] = syn_flux # in Jy
 			if eflux is not None: esyn_flux_Jy[k] = esyn_flux # in Jy
@@ -246,7 +258,7 @@ def convert_flux(flux, wl, unit_in, unit_out, eflux=None):
 	>>> wl = np.array([1.23, 2.16]) # test wavelengths in microns
 	>>> eflux = flux/10. # test flux errors in Jy
 	>>> 
-	>>> seda.convert_flux(flux=flux, wl=wl, eflux=eflux, unit_in='Jy', unit_out='erg/s/cm2/A')
+	>>> seda.synthetic_photometry.convert_flux(flux=flux, wl=wl, eflux=eflux, unit_in='Jy', unit_out='erg/s/cm2/A')
 	    {'flux_in': array([0.005, 0.006]),
 	     'flux_out': array([9.90787422e-16, 3.85535568e-16]),
 	     'wl_in': array([1.23, 2.16]),
@@ -446,7 +458,7 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, svo_data=None):
 	>>> emag = mag/10. # test magnitude errors in mag
 	>>> filters=['2MASS/2MASS.J', '2MASS/2MASS.Ks'] # test filter IDs
 	>>> 
-	>>> seda.mag_to_flux(mag=mag, emag=emag, filters=filters)
+	>>> seda.synthetic_photometry.mag_to_flux(mag=mag, emag=emag, filters=filters)
 	    {'mag': array([15. , 15.5]),
 	     'flux': array([0.001594  , 0.00042072]),
 	     'filters': ['2MASS/2MASS.J', '2MASS/2MASS.Ks'],
@@ -460,10 +472,11 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, svo_data=None):
 	Author: Genaro Suárez
 	'''
 
-	# convert floats (if any) into arrays
-	if isinstance(mag, float): mag = np.array([mag])
+	# convert floats or integer (if any) into arrays
+	if isinstance(mag, (float, int)): mag = np.array([mag])
 	if emag is not None: 
-		if isinstance(emag, float): emag = np.array([emag])
+		if isinstance(emag, (float, int)): emag = np.array([emag])
+
 	# convert str (if any) into list
 	filters = utils.var_to_list(filters)
 	# convert input variables into numpy arrays if astropy
@@ -513,13 +526,145 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, svo_data=None):
 			if flux_unit=='erg/s/cm2/A':
 				flux[k] = convert_flux(flux=flux[k], wl=wl_eff[k], unit_in='Jy', unit_out='erg/s/cm2/A')['flux_out'] # in erg/s/cm2/A
 				if emag is not None: eflux[k] = convert_flux(flux=flux[k], eflux=eflux[k], wl=wl_eff[k], unit_in='Jy', unit_out='erg/s/cm2/A')['eflux_out'] # in erg/s/cm2/A
+			elif flux_unit=='erg/s/cm2/um':
+				flux[k] = convert_flux(flux=flux[k], wl=wl_eff[k], unit_in='Jy', unit_out='erg/s/cm2/A')['flux_out'] # in erg/s/cm2/A
+				flux[k] = (flux[k]*u.erg/u.s/u.cm**2/(u.nm*0.1)).to(u.erg/u.s/u.cm**2/u.micron).value # erg/s/cm2/um
+				if emag is not None: 
+					eflux[k] = convert_flux(flux=flux[k], eflux=eflux[k], wl=wl_eff[k], unit_in='Jy', unit_out='erg/s/cm2/A')['eflux_out'] # in erg/s/cm2/A
+					eflux[k] = (eflux[k]*u.erg/u.s/u.cm**2/(u.nm*0.1)).to(u.erg/u.s/u.cm**2/u.micron).value # erg/s/cm2/um
 
 	# output dictionary
 	out = {'mag': mag, 'flux': flux, 'filters': filters, 'zero_point(Jy)': zero_point, 'flux_unit': flux_unit, 
 	       'lambda_eff_SVO(um)': wl_eff, 'width_eff_SVO(um)': width_eff}
-	if eflux is not None: 
+	if emag is not None: 
 		out['emag'] = emag
 		out['eflux'] = eflux
+
+	return out
+
+#+++++++++++++++++
+def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None):
+	'''
+	Description:
+	------------
+		Calibrate a spectrum by scaling it to match observed photometry.
+
+		Computes synthetic photometry from the input spectrum, compares it to
+		observed magnitudes, derives an average magnitude offset, and applies
+		a corresponding scaling factor to the spectrum.
+
+	Parameters:
+	-----------
+	- wl : array
+		Wavelength array in microns.
+	- flux : array
+		Flux values in ``flux_unit`` unit corresponding to ``wl``.
+	- eflux : array, optional
+		Uncertainties on the flux in ``flux_unit`` unit. If ``None``, uncertainties are ignored.
+	- flux_unit : str
+		Flux and flux error units: ``'erg/s/cm2/A'``, ``'Jy'``, or ``erg/s/cm2/um``.
+	- mag : array
+		Observed magnitudes in mag.
+	- emag : array
+		Uncertainties on observed magnitudes in mag.
+	- filters : list, array, or str
+		List of filters (following SVO filter IDs) used for photometry.
+
+	Returns:
+	--------
+	Python dictionary with the following parameters:
+		- ``'wl``': wavelength in microns of calibrated spectrum.
+		- ``'flux``': flux in ``flux_unit`` of calibrated spectrum.
+		- ``'eflux``': flux uncertainties in ``flux_unit`` of calibrated spectrum.
+		- ``'syn_mag``': synthetic magnitudes in mag for ``filters`` from the calibrated spectrum.
+		- ``'esyn_mag``': synthetic magnitude errors in mag for ``filters`` from the calibrated spectrum.
+		- ``'syn_flux``': synthetic fluxes in ``flux_unit`` for ``filters`` from the calibrated spectrum.
+		- ``'esyn_flux``': synthetic flux errors in ``flux_unit`` for ``filters`` from the calibrated spectrum.
+		- ``'scaling``': scaling factor applied to the input spectrum to calibrate it.
+		- ``'flux_unit``': units of input spectrum fluxes and errors.
+
+	Example:
+	--------
+	>>> # Flux-calibrate a near-infrared spectrum using 2MASS photometry.
+	>>> # Assume the spectrum wavelength, flux and flux errors are loaded in the variable wl, flux, and eflux,
+	>>> # and the units of fluxes are 'erg/s/cm2/um'.
+	>>> flux_unit='erg/s/cm2/um'
+	>>> 
+	>>> # Example of 2MASS photometry
+	>>> filters = ['2MASS/2MASS.J', '2MASS/2MASS.H', '2MASS/2MASS.Ks']
+	>>> mag = [13.997, 13.284, 12.829]
+	>>> emag = [0.032, 0.036, 0.029]
+	>>> 
+	>>>	# calibrate spectrum
+	>>> out = seda.synthetic_photometry.calibrate_spectrum(wl=wl, flux=flux, eflux=eflux, 
+	                                                       flux_unit=flux_unit, 
+	                                                       mag=mag, emag=emag, filters=filters)
+	>>> 
+	>>> # visualize the results
+	>>> seda.plots.plot_calibrate_spectrum(out)
+
+	Author: Genaro Suárez
+
+	Date: 2026-05-04
+	'''
+
+	# ensure input mag and emag are numpy arrays
+	mag = utils.var_to_numpy(mag)
+	emag = utils.var_to_numpy(emag)
+
+	# synthetic photometry from the spectrum
+	out_syn = synthetic_photometry(wl=wl, flux=flux, eflux=eflux,
+	                               flux_unit=flux_unit,	filters=filters)
+
+	syn_mag = out_syn['syn_mag']
+	if eflux is not None: esyn_mag = out_syn['esyn_mag']
+	else: esyn_mag = None
+	lambda_eff = out_syn['lambda_eff(um)']  # um
+	width_eff = out_syn['width_eff(um)']	# um
+
+	# residual between observed and synthetic magnitudes
+	res = np.mean(mag - syn_mag)
+
+	# scaling factor
+	scaling = 10**(-res / 2.5)
+
+	# scale spectrum
+	flux_calib = flux * scaling
+	if eflux is not None: eflux_calib = eflux * scaling
+	else: eflux_calib = None
+
+	# calibrate synthetic magnitudes
+	syn_mag_calib = syn_mag + res
+	if eflux is not None: esyn_mag_calib = esyn_mag
+	else: esyn_mag_calib = None
+
+	# calibrate synthetic fluxes
+	out_syn_flux = mag_to_flux(mag=syn_mag_calib, emag=esyn_mag_calib, 
+	                           filters=filters, flux_unit=flux_unit)
+	syn_flux_calib = out_syn_flux['flux']
+	if eflux is not None: esyn_flux_calib = out_syn_flux['eflux']
+	else: esyn_flux_calib = None
+
+	print(f'Spectrum was scaled by a factor of {scaling}')
+
+	# output dictionary
+	out = {
+		'wl': wl,
+		'flux': flux_calib,
+		'eflux': eflux_calib,
+		'syn_mag': syn_mag_calib,
+		'esyn_mag': esyn_mag_calib,
+		'syn_flux': syn_flux_calib,
+		'esyn_flux': esyn_flux_calib,
+		'lambda_eff': lambda_eff,
+		'width_eff': width_eff,
+		'scaling': scaling,
+		'flux_unit': flux_unit,
+		'obs_mag': mag,
+		'eobs_mag': emag,
+		'filters': filters,
+		'flux_unit': flux_unit
+	}
 
 	return out
 

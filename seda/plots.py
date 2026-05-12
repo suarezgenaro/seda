@@ -10,9 +10,10 @@ from sys import exit
 from . import utils
 from . import models
 from . import chi2_fit
+from .synthetic_photometry import synthetic_photometry
 
 ##########################
-def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None, yrange=None, 
+def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None, yrange=None, plot_title=None,
 	              ori_res=False, res=None, lam_res=None, model_dir_ori=None, out_file=None, save=True):
 	'''
 	Description:
@@ -32,8 +33,10 @@ def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None
 		Use logarithmic (``True``) or linear (``False``) scale to plot the vertical axis.
 	- xrange : list or array, optional (default is full range in the input spectra)
 		Horizontal range of the plot.
-	- yrange : list or array, optional (default is full range in the input spectra)
+	- yrange : list or array, optional (default is full range in ``xrange``)
 		Vertical range of the plot.
+	- set_title : str, optional
+		Title for the plot which, if not provided, will be '``models.Models(model).name`` Atmospheric Models'.
 	- ori_res : {``True``, ``False``}, optional (default ``False``)
 		Plot (``True``) or do not plot (``False``) model spectra with the original resolution.
 	- model_dir_ori : str, list, or array
@@ -244,7 +247,10 @@ def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None
 
 	ax[0].grid(True, which='both', color='gainsboro', linewidth=0.5, alpha=1.0)
 	ax[0].set_ylabel(r'$F_\lambda\ ($erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)', size=12)
-	ax[0].set_title(f'{models.Models(model).name} Atmospheric Models')
+	if plot_title is None:
+		ax[0].set_title(f'{models.Models(model).name} Atmospheric Models')
+	else:
+		ax[0].set_title(plot_title)
 
 	#------------------------
 	# residuals
@@ -451,7 +457,7 @@ def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None
 		Use logarithmic (``True``) or linear (``False``) scale to plot the vertical axis.
 	- xrange : list or array, optional (default is full range in the input spectra)
 		Horizontal range of the plot.
-	- yrange : list or array, optional (default is full range in the input spectra)
+	- yrange : list or array, optional (default is full range in ``xrange``)
 		Vertical range of the plot.
 	- ori_res : {``True``, ``False``}, optional (default ``False``)
 		Plot (``True``) or do not plot (``False``) the best model spectrum with its original resolution.
@@ -756,7 +762,7 @@ def plot_model_coverage(model, xparam, yparam, model_dir=None, params_ranges=Non
 		If a parameter range is not provided, the full range in ``model_dir`` or the pre-saved pickle files is considered.
 	- xrange : list or array, optional (default is full range in the input spectra)
 		Horizontal range of the plot.
-	- yrange : list or array, optional (default is full range in the input spectra)
+	- yrange : list or array, optional (default is full range in ``xrange``)
 		Vertical range of the plot.
 	- xlog : {``True``, ``False``}, optional (default ``False``)
 		Use logarithmic (``True``) or linear (``False``) scale to plot the horizontal axis.
@@ -855,7 +861,7 @@ def plot_model_resolution(model, spectra_name_full, xlog=True, ylog=False, xrang
 		Use logarithmic (``True``) or linear (``False``) scale for resolution range.
 	- xrange : list or array, optional (default is full range in the input spectra)
 		Horizontal range of the plot.
-	- yrange : list or array, optional (default is full range in the input spectra)
+	- yrange : list or array, optional (default is full range in ``xrange``)
 		Vertical range of the plot.
 	- delta_wl_log : {``True``, ``False``}, optional (default ``False``)
 		Consider wavelength steps in linear (``False``) or logarithmic (``True``) scale.
@@ -1079,6 +1085,97 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False,
 		else: plt.savefig(out_file, bbox_inches='tight')
 
 	return fig, ax 
+
+#########################
+def plot_calibrate_spectrum(dic, xrange=None, yrange=None):
+	'''
+	Description:
+	------------
+		Plot flux-calibrated spectrum with observed photometry used as a reference.
+
+	Parameters:
+	-----------
+	- dic : dictionary
+		Output dictionary from ``synthetic_photometry.calibrate_spectrum``.
+	- xrange : list or array, optional (default is full range in the input spectra)
+		Horizontal range of the plot.
+	- yrange : list or array, optional (default is full range in ``xrange``)
+		Vertical range of the plot.
+
+	Returns:
+	--------
+	Plot showing a flux-calibrated spectrum, the observed photometry used as a reference, and synthetic photometry for comparison.
+
+	Example:
+	--------
+	>>> import seda
+	>>> 
+	>>> # Plot of the flux-calibrated spectrum with synthetic photometry and observed photometry.
+	>>> # 'dic' is the output dictionary from `synthetic_photometry.calibrate_spectrum``.
+	>>> # Show spectrum between 1 and 2.5 microns, as an example.
+	>>> seda.plot_calibrate_spectrum(dic=dic, xrange=[1, 2.5])
+
+	Author: Genaro Suárez
+
+	Date: 2026-05-06
+	'''
+
+
+	wl = dic['wl']
+	flux = dic['flux']
+	eflux = dic['eflux']
+	lambda_eff = dic['lambda_eff']
+	width_eff = dic['width_eff']
+	syn_flux = dic['syn_flux']
+	esyn_flux = dic['esyn_flux']
+	obs_mag = dic['obs_mag']
+	eobs_mag = dic['eobs_mag']
+	filters = dic['filters']
+	flux_unit = dic['flux_unit']
+
+	fig, ax = plt.subplots()
+
+	if xrange is None: xmin, xmax = wl.min(), wl.max()
+	else: xmin, xmax = xrange
+	if yrange is None:
+		mask = (wl>=xmin) & (wl<=xmax)
+		if flux[mask].min() >= 0: # when the minimum flux is positive
+			ymin, ymax = 0.9*flux[mask].min(), 1.1*flux[mask].max()
+		else: # when the minimum flux is negative
+			ymin, ymax = 1.1*flux[mask].min(), 1.1*flux[mask].max()
+	else: ymin, ymax = yrange
+
+	# calibrated spectrum
+	ax.plot(wl, flux, label='Calibrated fluxes')
+	if eflux is not None:
+		ax.plot(wl, eflux, label='Calibrated flux errors')
+
+	# synthetic photometry
+	ax.errorbar(
+		lambda_eff, syn_flux,
+		xerr=width_eff / 2., yerr=esyn_flux,
+		fmt='.', markersize=1., capsize=2, elinewidth=3.0,
+		markeredgewidth=0.5, label='Synthetic photometry'
+	)
+
+	# observed photometry
+	out_obs_flux = synthetic_photometry.mag_to_flux(mag=obs_mag, emag=eobs_mag, filters=filters, flux_unit=flux_unit)
+	ax.errorbar(lambda_eff, out_obs_flux['flux'], xerr=width_eff / 2., yerr=out_obs_flux['eflux'],
+	            fmt='.', markersize=1., capsize=2, elinewidth=1.0,
+	            markeredgewidth=0.5, label='Observed photometry')
+
+	ax.legend()
+
+	plt.xlim(xmin, xmax)
+	plt.ylim(ymin, ymax)
+	ax.xaxis.set_minor_locator(AutoMinorLocator())
+	ax.yaxis.set_minor_locator(AutoMinorLocator())
+	ax.grid(True, which='both', color='gainsboro', alpha=0.5)
+
+	ax.set_xlabel(r'Wavelength ($\mu$m)')
+	ax.set_ylabel(f'Flux ({flux_unit})')
+
+	return fig, ax
 
 #########################
 def plot_full_SED(out_bol_lum, xlog=True, ylog=True, xrange=None, yrange=None, 
