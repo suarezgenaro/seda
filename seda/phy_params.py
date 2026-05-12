@@ -343,31 +343,31 @@ def teff(Lbol, eLbol, R, eR, n_mc=10000, central="median",
 
 	Parameters:
 	-----------
-	Lbol : float
+	- Lbol : float
 		Bolometric luminosity in units of L_sun.
-	eLbol : float
+	- eLbol : float
 		Uncertainty in luminosity (L_sun).
-	R : float
+	- R : float
 		Radius in units of R_jup.
-	eR : float
+	- eR : float
 		Uncertainty in radius (R_jup).
-	n_mc : int, optional (default 10000)
+	- n_mc : int, optional (default 10000)
 		Number of Monte Carlo samples for uncertainties.
-	central : str, optional (default "median")
+	- central : str, optional (default "median")
 		"mean" or "median" for central value.
-	error : str, optional (default "percentile")
+	- error : str, optional (default "percentile")
 		"std" or "percentile".
-	percentiles : tuple or list, optional (default [16, 84])
+	- percentiles : tuple or list, optional (default [16, 84])
 		Lower and upper percentiles for uncertainty.
 
 	Returns:
 	--------
-	Teff : float
+	- Teff : float
 		Effective temperature in K.
-	eTeff : float or tuple
-		Effective temperature uncertainty in K.
-		If error="std": error is a scalar
-		If error="percentile": error is a tuple (lower_err, upper_err)
+	- eTeff : float or tuple
+		- Effective temperature uncertainty in K.
+		- If error="std": error is a scalar
+		- If error="percentile": error is a tuple (lower_err, upper_err)
 
 	Example:
 	--------
