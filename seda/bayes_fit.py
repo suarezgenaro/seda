@@ -2,6 +2,7 @@ import pickle
 import numpy as np
 import dynesty
 import time
+import logging
 from .utils import *
 import importlib
 import copy
@@ -57,6 +58,9 @@ def bayes(my_bayes):
 
 	Author: Genaro Suárez
 	'''
+
+    # suppress noisy Dynesty logging
+	logging.getLogger("dynesty").setLevel(logging.WARNING)
 
 	ini_time_bayes = time.time()
 	print('\n   Estimate Bayesian posteriors')
