@@ -100,8 +100,7 @@ def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None
 
 	# open results from the chi square analysis
 	try: # if given as a pickle file
-		with open(output_chi2, 'rb') as file:
-			output_chi2 = pickle.load(file)
+		output_chi2 = utils.load_output_fit(output_chi2)
 	except: # if given as the output of chi2_fit
 		pass
 	model = output_chi2['my_chi2'].model
@@ -340,8 +339,7 @@ def plot_chi2_red(output_chi2, N_best_fits=1, xlog=False, ylog=False, out_file=N
 
 	# open results from the chi square analysis
 	try: # if given as a pickle file
-		with open(output_chi2, 'rb') as file:
-			output_chi2 = pickle.load(file)
+		output_chi2 = utils.load_output_fit(output_chi2)
 	except: # if given as the output of chi2_fit
 		pass
 	model = output_chi2['my_chi2'].model
@@ -494,7 +492,7 @@ def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None
 
 	# open results from sampling
 	try: # if given as a pickle file
-		output_bayes = load_output_fit(output_bayes)
+		output_bayes = utils.load_output_fit(output_bayes)
 	except: # if given as the output of chi2_fit
 		pass
 	fit_spectra = output_bayes['my_bayes'].fit_spectra
@@ -803,9 +801,7 @@ def plot_model_coverage(model, xparam, yparam, model_dir=None, params_ranges=Non
 		# values of free parameters in the spectra
 		params = select_model_spectra(model=model, model_dir=model_dir, params_ranges=params_ranges)['params']
 	else: # coverage of the full model grid
-		# open results from the chi square analysis
-		with open(f'{path_plots}/models_aux/{model}/coverage.pickle', 'rb') as file:
-			params = pickle.load(file)['params']
+		params = utils.load_output_fit(f'{path_plots}/models_aux/{model}/coverage.pickle')['params']
 	
 	# verify that xparam and yparam are valid parameters
 	if xparam not in params: raise Exception(f'{xparam} is not a free parameter in {model}. Valid parameters: {params.keys()}')
