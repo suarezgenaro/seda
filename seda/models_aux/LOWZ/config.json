@@ -1,0 +1,29 @@
+{
+    "_comment_model": "Internal label for the atmospheric models",
+    "model": "LOWZ",
+    "_comment_ref": "Reference for the models (optional)",
+    "ref": "Meisner et al. 2021",
+    "_comment_name": "Name of the models (optional)",
+    "name": "LOWZ",
+    "_comment_bibcode": "bibcode identifier for the models (optional)",
+    "bibcode": "2021ApJ...915..120M",
+    "_comment_ADS": "ADS links to the model publication (optional)",
+    "ADS": "https://ui.adsabs.harvard.edu/abs/2021ApJ...915..120M/abstract",
+    "_comment_download": "Link to download the models (optional)",
+    "download": "https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/SJRXUO",
+    "_comment_filename_pattern": "Common pattern recognized in all spectra filenames used to select only spectra files in case there are other files in the same directory",
+    "filename_pattern": "LOW_Z_BD_GRID_CLEAR_Teff_*.txt",
+    "_comment_filename_trim": "Indices [start, end] to trim start/end of filenames for plot labels; use null for start or end of string",
+    "filename_trim": [
+        20,
+        -9
+    ],
+    "_comment_free_params": "Free parameters in the models",
+    "free_params": [
+        "Teff",
+        "logg",
+        "[M/H]",
+        "C/O",
+        "Kzz"
+    ]
+}
