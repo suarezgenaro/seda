@@ -13,7 +13,7 @@ def _read_model_spectrum(spectrum_file):
     wl_model = spec[:,0] * u.micron # um (in vacuum)
     wl_model = _vac_to_air_uv_safe(wl_model).value # um in the air
 
-    flux_model = spec[:,1] # erg/s/cm2/A
+    flux_model = spec[:,1] * 1e-07 # erg/s/cm2/A
     out = {'wl_model': wl_model, 'flux_model': flux_model}
 
     return out
