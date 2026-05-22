@@ -13,7 +13,9 @@ def _read_model_spectrum(spectrum_file):
     wl_model = spec[:,0] * u.micron # um (in vacuum)
     wl_model = _vac_to_air_uv_safe(wl_model).value # um in the air
 
-    flux_model = spec[:,1] * 1e-07 # erg/s/cm2/A
+    flux_model = spec[:,1] *  u.W / u.m**2 / u.m # erg/s/cm2/A
+    flux_model = flux_model.to(u.erg/u.s/u.cm**2/(u.nm*0.1)).value
+    
     out = {'wl_model': wl_model, 'flux_model': flux_model}
 
     return out
@@ -38,4 +40,4 @@ def _separate_params(filenames):
         logKzz[i] = float(parts[9])
 
 
-    return {'Teff': Teff, 'logg': logg, '[M/H]': logZ, 'C/O': CtoO, 'Kzz': logKzz}
+    return {'Teff': Teff, 'logg': logg, '[M/H]': logZ, 'C/O': CtoO, 'logKzz': logKzz}
