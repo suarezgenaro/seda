@@ -249,7 +249,7 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 				# complement gaps within the data and add intermediate and last input spectra
 				else:
 					# complement wavelengths in between observed spectra, if needed
-					wl_disp_threshold = 2 # threshold to identify gaps based on N-times the median wavelength dispersion
+					wl_disp_threshold = 3 # threshold to identify gaps based on N-times the median wavelength dispersion
 					wl_max_previous = max(wl_spectra_sort[i-1]+wl_disp_threshold*wl_disp[i-1])
 					wl_min_current = min(wl_spectra_sort[i]-wl_disp_threshold*wl_disp[i])
 					if wl_max_previous<wl_min_current: # there is a gap between the i and i-1 spectra
