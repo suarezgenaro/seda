@@ -6,6 +6,7 @@ import os
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter, AutoMinorLocator, StrMethodFormatter, NullFormatter
 from matplotlib.backends.backend_pdf import PdfPages # plot several pages in a single pdf
 from lmfit import Minimizer, minimize, Parameters, report_fit # model fit for non-linear least-squares problems
+from astropy import units as u
 from sys import exit
 from . import utils
 from . import models
@@ -1007,10 +1008,15 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False,
 		flux_syn = out_synthetic_photometry['syn_flux(erg/s/cm2/A)']
 		try: eflux_syn = out_synthetic_photometry['esyn_flux(erg/s/cm2/A)']
 		except: eflux_syn = np.repeat(0, len(flux_syn))
-	if flux_unit=='Jy':
+	elif flux_unit=='Jy':
 		flux_syn = out_synthetic_photometry['syn_flux(Jy)']
 		try: eflux_syn = out_synthetic_photometry['esyn_flux(Jy)'] # synthetic flux errors (Jy) for all filters
 		except: eflux_syn = np.repeat(0, len(flux_syn))
+	elif flux_unit=='erg/s/cm2/um':
+		flux_syn = out_synthetic_photometry['syn_flux(erg/s/cm2/A)']
+		try: eflux_syn = out_synthetic_photometry['esyn_flux(erg/s/cm2/A)']
+		except: eflux_syn = np.repeat(0, len(flux_syn))
+		flux = (flux*u.erg/u.s/u.cm**2/u.micron).to(u.erg/u.s/u.cm**2/(u.nm*0.1)).value # erg/s/cm2/A
 
 	mag_syn = out_synthetic_photometry['syn_mag'] # synthetic magnitude for all filters
 	try: emag_syn = out_synthetic_photometry['esyn_mag'] # synthetic magnitude error for all filters
@@ -1053,7 +1059,7 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False,
 	ax[0].grid(True, which='both', color='gainsboro', linewidth=0.5, alpha=1.0)
 	ax[0].legend(prop={'size': 8.0})#, handlelength=1.5, handletextpad=0.5, labelspacing=0.5,)
 	
-	if flux_unit=='erg/s/cm2/A': ax[0].set_ylabel(r'$F_\lambda\ ($erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)', size=12)
+	if flux_unit=='erg/s/cm2/A' or flux_unit=='erg/s/cm2/um': ax[0].set_ylabel(r'$F_\lambda\ ($erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)', size=12)
 	if flux_unit=='Jy': ax[0].set_ylabel(r'$F_\nu$ (Jy)', size=12)
 	
 	#++++++++++++++++++++++++
