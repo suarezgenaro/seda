@@ -163,7 +163,6 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, out_file=None
 			if eflux is not None: 
 				esyn_flux_erg[k] = (esyn_flux*u.erg/u.s/u.cm**2/u.micron).to(u.erg/u.s/u.cm**2/(u.nm*0.1)).value # erg/s/cm2/A
 			# in Jy
-			
 			syn_flux_Jy[k] = convert_flux(flux=syn_flux_erg[k], wl=lambda_eff[k], unit_in='erg/s/cm2/A', unit_out='Jy')['flux_out'] # in Jy
 			esyn_flux_Jy[k] = convert_flux(flux=syn_flux_erg[k], eflux=esyn_flux_erg[k], wl=lambda_eff[k], 
 			                               unit_in='erg/s/cm2/A', unit_out='Jy')['eflux_out'] # in Jy
