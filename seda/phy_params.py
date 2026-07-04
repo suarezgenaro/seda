@@ -512,14 +512,14 @@ def inclination(vsini, evsini, P, eP, R, eR, n_mc=10000, central="median",
     --------
     >>> import seda
     >>>
-    >>> # input parameters
-    >>> vsini, evsini = 26.4, 1.2  # km/s
-    >>> P, eP       =  3.1, 0.1   # hours
-    >>> R, eR       =  1.05, 0.06  # R_jup
+    >>> # 2MASS J03552337+1133437 (Suárez et al. 2023, Section 2.2)
+    >>> vsini, evsini = 12.31, 0.15  # km/s (Blake et al. 2010)
+    >>> P, eP       =  9.53, 0.19   # hours (Vos et al. 2022)
+    >>> R, eR       =  1.22, 0.02   # R_jup (Vos et al. 2022)
     >>>
     >>> seda.phy_params.inclination(vsini=vsini, evsini=evsini,
     ...                             P=P, eP=eP, R=R, eR=eR)
-        (38.6, (3.4, 3.9))   
+        (50.4, (1.9, 2.0))
  
     Author: Theo Olsen
  
