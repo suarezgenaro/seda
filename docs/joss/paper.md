@@ -243,7 +243,7 @@ Additional empirical analyses include the estimation of fundamental parameters s
 In addition, `SEDA` provides several auxiliary tools that can be used independently, including:
 $(i)$ the calculation of synthetic photometry from spectra for any filter available through SVO,
 $(ii)$ a model interpolator that generates synthetic spectra for any parameter combinations within the grid coverage of available atmospheric models, 
-$(iii)$ a model examiner that enables inspection of atmospheric model properties, such as basic and free parameters, parameter coverage, resolving power, and spectral resolution, and 
+$(iii)$ model examiners that enable inspection of atmospheric model properties, such as basic and free parameters, parameter coverage, resolving power, and spectral resolution, as well as the coverage of fundamental parameters in available evolutionary models, and 
 $(iv)$ access to 113 Spitzer IRS mid-infrared spectra of brown dwarfs from @Suarez_Metchev2022, together with associated target properties, observing logs, and measured spectral indices, and 
 
 # Mathematics {#mathematics}
