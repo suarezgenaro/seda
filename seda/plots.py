@@ -7,6 +7,7 @@ from matplotlib.ticker import MultipleLocator, FormatStrFormatter, AutoMinorLoca
 from matplotlib.backends.backend_pdf import PdfPages # plot several pages in a single pdf
 from lmfit import Minimizer, minimize, Parameters, report_fit # model fit for non-linear least-squares problems
 from astropy import units as u
+from astropy.constants import R_jup, R_sun
 from sys import exit
 from . import utils
 from . import models
@@ -836,6 +837,104 @@ def plot_model_coverage(model, xparam, yparam, model_dir=None, params_ranges=Non
 		else: plt.savefig(out_file, bbox_inches='tight')
 
 	return fig, ax 
+
+##########################
+def plot_evolutionary_coverage(model, filename, cparam='age', xlog=True, ylog=False,
+                              out_file=None, save=False):
+	'''
+	Description:
+	------------
+		Plot bolometric luminosity against radius for an evolutionary-model table,
+		with a third grid column as the color axis.
+
+	Parameters:
+	-----------
+	- model : str
+		Evolutionary models. See available models in
+		``seda.models.EvolutionaryModels().available_models``.
+	- filename : str
+		Basename of an evolutionary table inside ``evolution_aux/<model>/``.
+	- cparam : str, optional (default ``'age'``)
+		Evolutionary-grid column for the color axis (any column other than
+		``logL`` or ``radius``).
+	- xlog : {``True``, ``False``}, optional (default ``True``)
+		Use logarithmic (``True``) or linear (``False``) scale for the horizontal axis.
+	- ylog : {``True``, ``False``}, optional (default ``False``)
+		Use logarithmic (``True``) or linear (``False``) scale for the vertical axis.
+	- out_file : str, optional
+		File name to save the figure. Default is
+		``'{model}_{filename}_{cparam}_coverage.pdf'``.
+	- save : {``True``, ``False``}, optional (default ``False``)
+		Save (``True``) or do not save (``False``) the resulting figure.
+
+	Returns:
+	--------
+	- fig : matplotlib.figure.Figure
+	- ax : matplotlib.axes.Axes
+
+	Example:
+	--------
+	>>> import seda
+	>>>
+	>>> seda.plots.plot_evolutionary_coverage(
+	...     model='Sonora_Bobcat', filename='nc+0.0_co1.0_mass', cparam='Teff',
+	... )
+
+	Author: Theo Olsen
+
+	Date: 2026-07-04
+	'''
+
+	grid = models.read_evolutionary_model(filename=filename, model=model)
+	model_info = models.EvolutionaryModels(model)
+	units = model_info.units
+
+	Lbol = 10.0 ** np.asarray(grid['logL'], dtype=float)
+	radius_unit = units.get('radius', 'R_sun')
+	radius = np.asarray(grid['radius'], dtype=float)
+	if radius_unit == 'R_sun':
+		R_plot = (radius * R_sun).to(R_jup).value
+	elif radius_unit == 'R_jup':
+		R_plot = radius
+	else:
+		raise ValueError(
+			f'Unsupported evolutionary radius unit {radius_unit!r} for model {model!r}.'
+		)
+
+	interp_axes = {'logL', 'radius'}
+	valid_cparams = [col for col in grid if col not in interp_axes]
+	if cparam not in grid:
+		raise ValueError(
+			f'{cparam!r} is not a column in this table. '
+			f'Choose one of: {valid_cparams}'
+		)
+
+	fig, ax = plt.subplots()
+	sc = ax.scatter(Lbol, R_plot, c=np.asarray(grid[cparam], dtype=float), s=5, zorder=3)
+	cbar = plt.colorbar(sc, ax=ax)
+	cunit = units.get(cparam, '')
+	cbar.set_label(f'{cparam} ({cunit})' if cunit else cparam)
+
+	ax.xaxis.set_minor_locator(AutoMinorLocator())
+	ax.yaxis.set_minor_locator(AutoMinorLocator())
+	if xlog:
+		ax.set_xscale('log')
+		ax.xaxis.set_major_formatter(StrMethodFormatter('{x:.1e}'))
+	if ylog:
+		ax.set_yscale('log')
+		ax.yaxis.set_major_formatter(StrMethodFormatter('{x:.2f}'))
+	ax.grid(True, which='both', color='gainsboro', alpha=0.5)
+
+	ax.set_xlabel('Lbol (L_sun)')
+	ax.set_ylabel('R (R_jup)')
+	ax.set_title(f'{model_info.name}: {filename}')
+
+	if save:
+		if out_file is None:
+			out_file = f'{model}_{filename}_{cparam}_coverage.pdf'
+		plt.savefig(out_file, bbox_inches='tight')
+
+	return fig, ax
 
 ##########################
 def plot_model_resolution(model, spectra_name_full, xlog=True, ylog=False, xrange=None, yrange=None, 
