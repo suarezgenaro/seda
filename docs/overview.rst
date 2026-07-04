@@ -83,7 +83,8 @@ Atmospheric and Evolutionary Models
   - :func:`~seda.utils.generate_model_spectrum`: Generates a synthetic spectrum with any parameters (within the grid coverage) from the indicated atmospheric models using interpolation techniques.
   - :func:`~seda.utils.read_model_spectrum`: Reads a synthetic spectrum from :ref:`models`.
   - :func:`~seda.utils.separate_params`: Extracts parameters from model spectra file names.
-  - :func:`~seda.plots.plot_model_coverage` and :func:`~seda.plots.plot_model_resolution`: Visualize parameters' coverage and resolution of :ref:`models` (see `tutorial_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_models_examination.html>`_).
+  - :func:`~seda.plots.plot_model_coverage` and :func:`~seda.plots.plot_model_resolution`: Visualize parameters' coverage and resolution of atmospheric :ref:`models` (see `tutorial_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_models_examination.html>`_).
+  - :func:`~seda.plots.plot_evolutionary_coverage`: Visualize bolometric luminosity–radius coverage of bundled :ref:`evolutionary_models` tables (see `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_).
 
 
 .. _models:
@@ -250,7 +251,7 @@ Parameter coverage:
 Available Evolutionary Models
 -----------------------------
 
-:math:`\texttt{SEDA}` can interpolate evolutionary models to infer fundamental parameters (mass, age, surface gravity, and effective temperature) from a bolometric luminosity and radius using :func:`~seda.phy_params.evol_params`. Check out `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_ to see the parameter coverage of the bundled evolutionary tables.
+:math:`\texttt{SEDA}` can interpolate evolutionary models to infer fundamental parameters (mass, age, surface gravity, and effective temperature) from a bolometric luminosity and radius using :func:`~seda.phy_params.evol_params`. Use :func:`~seda.plots.plot_evolutionary_coverage` or `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_ to inspect the coverage of the bundled evolutionary tables.
 
 Sonora Bobcat Evolutionary Tables
 +++++++++++++++++++++++++++++++++
