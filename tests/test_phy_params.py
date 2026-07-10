@@ -363,3 +363,87 @@ def test_evolutionary_models_params_bhac_spot_check():
 	assert params['Rrad'] == pytest.approx([0.0, 1.745])
 	assert params['k2conv'] == pytest.approx([0.00124, 0.4944])
 	assert params['k2rad'] == pytest.approx([0.0, 0.3072])
+
+# ----------------------------
+# color_anomaly
+# ----------------------------
+def test_color_anomaly_faherty_l1_jh_literature():
+	"""2MASS J00040288-6410358 J-H vs Faherty et al. (2016) L1 mean."""
+	ref = seda.phy_params.color_anomaly(
+		color=0.96, color_name='J-H', spt='L1', table='faherty16',
+	)
+	assert ref == pytest.approx(0.15, abs=0.01)
+
+
+def test_color_anomaly_j0355_jk_example():
+	"""2MASS J03552337+1133437 J-K vs Faherty L5 mean (Suárez et al. 2023)."""
+	color = 14.05 - 11.526
+	anomaly = seda.phy_params.color_anomaly(
+		color=color, color_name='J-K', spt='L5', table='faherty16',
+	)
+	assert anomaly == pytest.approx(0.774, abs=0.01)
+
+
+def test_color_anomaly_spt_rounding_uses_nearest_bin():
+	"""L3.7 rounds to L4 (numeric 14) for the Faherty reference."""
+	ref_l3 = seda.empirical_aux._loaders.reference_color(
+		'J-H', 'L3', table='faherty16',
+	)
+	ref_l4 = seda.empirical_aux._loaders.reference_color(
+		'J-H', 'L4', table='faherty16',
+	)
+	anomaly = seda.phy_params.color_anomaly(
+		color=1.0, color_name='J-H', spt='L3.7', table='faherty16',
+	)
+	assert anomaly == pytest.approx(1.0 - ref_l4)
+	assert ref_l4 != ref_l3
+
+
+def test_color_anomaly_faherty_t_type_raises():
+	with pytest.raises(ValueError, match="table='faherty16' covers"):
+		seda.phy_params.color_anomaly(
+			color=1.0, color_name='J-H', spt='T5', table='faherty16',
+		)
+
+
+def test_color_anomaly_ultracool_t_type_succeeds():
+	ref = seda.empirical_aux._loaders.reference_color(
+		'J-H', 'T5', table='ultracool',
+	)
+	anomaly = seda.phy_params.color_anomaly(
+		color=ref + 0.1, color_name='J-H', spt='T5', table='ultracool',
+	)
+	assert anomaly == pytest.approx(0.1, abs=0.01)
+
+
+def test_color_anomaly_with_uncertainty():
+	out = seda.phy_params.color_anomaly(
+		color=1.0, color_name='J-H', spt='L1', table='faherty16', ecolor=0.05,
+	)
+	assert out[1] == 0.05
+	assert isinstance(out, tuple)
+
+
+def test_color_anomaly_faherty_rejects_age_group():
+	with pytest.raises(ValueError, match='age_group is not supported'):
+		seda.phy_params.color_anomaly(
+			color=1.0, color_name='J-H', spt='L5',
+			table='faherty16', age_group='young',
+		)
+
+
+def test_color_anomaly_invalid_color_raises():
+	with pytest.raises(ValueError, match='color_name'):
+		seda.phy_params.color_anomaly(
+			color=1.0, color_name='Y-J', spt='L5', table='faherty16',
+		)
+
+
+def test_ultracool_youth_filter_excludes_ambiguous():
+	from seda.empirical_aux._loaders import _matches_age_group
+
+	assert _matches_age_group('YMG', 'young') is True
+	assert _matches_age_group('YMG?', 'young') is False
+	assert _matches_age_group('YMG?', 'old') is False
+	assert _matches_age_group('N', 'old') is True
+	assert _matches_age_group('Field', 'old') is True

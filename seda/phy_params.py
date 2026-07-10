@@ -8,6 +8,7 @@ from . import input_parameters
 from . import chi2_fit 
 from . import models
 from . import utils
+from .empirical_aux._loaders import reference_color as _reference_color
 from sys import exit
 
 
@@ -638,6 +639,103 @@ def evol_params(Lbol, eLbol, R, eR, model, filename=None,
 				param, out[param], _fmt_err(out[f'e{param}']), unit_str))
 
 	return out
+
+##########################
+def color_anomaly(color, color_name, spt, table='faherty16', ecolor=None,
+		age_group=None, reference_stat='mean'):
+	'''
+	Description:
+	------------
+		Compute a photometric color anomaly relative to a reference sequence
+		for a given spectral type. The anomaly is the magnitude difference
+
+			anomaly = color - reference_color
+
+		where a positive value indicates the object is redder than the
+		reference sequence at that spectral type.
+
+	Parameters:
+	-----------
+	- color : float
+		Observed color in magnitudes.
+	- color_name : str
+		Photometric color identifier. Supported options match Faherty et al.
+		(2016) Tables 15-16: ``J-H``, ``J-K``, ``J-W1``, ``J-W2``, ``H-K``,
+		``H-W1``, ``H-W2``, ``K-W1``, ``K-W2``, and ``W1-W2``.
+		Underscores and case are accepted (e.g. ``J_H``, ``j-h``).
+	- spt : str or float
+		Spectral type (e.g. ``'L5'``, ``'T4'``, ``'M7'``, or numeric subtype
+		such as ``15.0``). Fractional types are rounded to the nearest
+		integer subtype (``L3.7`` -> ``L4``).
+	- table : str, optional (default ``'faherty16'``)
+		Reference table: ``'faherty16'`` (bundled Faherty et al. 2016
+		Tables 15-16 field/normal means, M7-L8 only) or ``'ultracool'``
+		(mean or median colors recomputed from the bundled Ultracool Sheet).
+	- ecolor : float, optional
+		Uncertainty in the observed color (mag). If provided, the same value
+		is returned as the anomaly uncertainty (reference scatter is not
+		added).
+	- age_group : str, optional (default None)
+		Ultracool Sheet age subset only: ``None`` (all objects),
+		``'young'`` (``youth_evidence`` contains YMG, lowg, SFR, or HYA),
+		or ``'old'`` (``youth_evidence`` is ``N`` or ``Field``). Entries
+		with ``?`` in ``youth_evidence`` are excluded from both subgroups.
+		Not supported for ``table='faherty16'``.
+	- reference_stat : str, optional (default ``'mean'``)
+		``'mean'`` or ``'median'`` for Ultracool-derived sequences.
+		``table='faherty16'`` always uses the published means.
+
+	Returns:
+	--------
+	- anomaly : float
+		Color anomaly in magnitudes.
+	- eanomaly : float, optional
+		Returned only when ``ecolor`` is provided.
+
+	Notes:
+	------
+	- Faherty et al. (2016, ApJS, 225, 10) Tables 15-16 list mean infrared
+	  colors for field/normal M7-L8 dwarfs using 2MASS J, H, Ks and WISE
+	  W1/W2 photometry with per-band uncertainties < 0.1 mag.
+	- Ultracool Sheet references are recomputed from bundled photometry
+	  (2MASS J/H/Ks and WISE W1/W2 only). Objects missing either band,
+	  or with per-band errors > 0.1 mag, are excluded. Integer subtype bins
+	  require at least three objects.
+	- Ultracool ``spt_adop_flt`` values use Kirkpatrick-style encoding
+	  (e.g. L5 = 85, T5 = 95); these are converted internally to standard
+	  numeric subtypes before binning.
+	- The anomaly is a magnitude difference, not a sigma-normalized offset
+	  as reported for individual objects in Faherty et al. Table 17.
+
+	Example:
+	--------
+	>>> import seda
+	>>>
+	>>> # 2MASS J03552337+1133437 (L5; Suárez et al. 2023)
+	>>> color = 14.05 - 11.526  # J-K from 2MASS photometry
+	>>> seda.phy_params.color_anomaly(
+	...     color=color, color_name='J-K', spt='L5', table='faherty16')
+	    0.774
+	>>> seda.phy_params.color_anomaly(
+	...     color=color, color_name='J-K', spt='L5',
+	...     table='faherty16', ecolor=0.04)
+	    (0.774, 0.04)
+
+	Author: Theo Olsen
+
+	Date: 2026-07-09
+	'''
+	ref = _reference_color(
+		color_name=color_name,
+		spt=spt,
+		table=table,
+		age_group=age_group,
+		reference_stat=reference_stat,
+	)
+	anomaly = float(color) - ref
+	if ecolor is None:
+		return anomaly
+	return anomaly, float(ecolor)
 
 ##################
 # function to sort input spectra as nested lists according to their minimum wavelength values
