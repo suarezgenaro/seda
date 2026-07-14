@@ -6,7 +6,6 @@ import json
 import re
 import shlex
 from functools import lru_cache
-from importlib import resources
 from pathlib import Path
 
 import numpy as np
@@ -14,16 +13,16 @@ import numpy as np
 _DATA_DIR = Path(__file__).parent
 
 _FAHERTY_COLOR_COLS = {
-    'J-H': ('J-H_avg', 'sigma_J-H'),
-    'J-K': ('J-K_avg', 'sigma_J-K'),
-    'J-W1': ('J-W1_avg', 'sigma_J-W1'),
-    'J-W2': ('J-W2_avg', 'sigma_J-W2'),
-    'H-K': ('H-K_avg', 'sigma_H-K'),
-    'H-W1': ('H-W1_avg', 'sigma_H-W1'),
-    'H-W2': ('H-W2_avg', 'sigma_H-W2'),
-    'K-W1': ('K-W1_avg', 'sigma_K-W1'),
-    'K-W2': ('K-W2_avg', 'sigma_K-W2'),
-    'W1-W2': ('W1-W2_avg', 'sigma_W1-W2'),
+    'J-H': 'J-H_avg',
+    'J-K': 'J-K_avg',
+    'J-W1': 'J-W1_avg',
+    'J-W2': 'J-W2_avg',
+    'H-K': 'H-K_avg',
+    'H-W1': 'H-W1_avg',
+    'H-W2': 'H-W2_avg',
+    'K-W1': 'K-W1_avg',
+    'K-W2': 'K-W2_avg',
+    'W1-W2': 'W1-W2_avg',
 }
 
 _SPT_OFFSETS = {'M': 0, 'L': 10, 'T': 20, 'Y': 30}
@@ -36,12 +35,12 @@ def _load_config() -> dict:
 
 
 def available_colors() -> tuple[str, ...]:
-    """Return supported color names (canonical hyphenated form)."""
+    """Return supported color names."""
     return tuple(_load_config()['colors'].keys())
 
 
 def normalize_color_name(color_name: str) -> str:
-    """Map aliases (e.g. J_H, j-h) to canonical names (J-H)."""
+    """Map aliases (e.g. J_H, j-h) to strict names (J-H)."""
     key = color_name.strip().replace('_', '-')
     canonical = {c.upper(): c for c in available_colors()}
     upper = key.upper()
@@ -56,7 +55,7 @@ def normalize_color_name(color_name: str) -> str:
 
 def parse_spt_float(spt) -> float:
     """
-    Parse spectral type to a numeric subtype (M0=0 ... Y0=30+).
+    Convert spectral type to a numeric subtype (M0=0 ... Y0=30+).
 
     Fractional subtypes are preserved (e.g. ``'L3.7'`` -> ``13.7``).
     """
@@ -81,11 +80,6 @@ def parse_spt_float(spt) -> float:
         ) from exc
 
 
-def parse_spt(spt) -> int:
-    """Parse spectral type and round to the nearest integer subtype bin."""
-    return int(round(parse_spt_float(spt)))
-
-
 def spt_label(spt_int: int) -> str:
     """Format integer subtype as a letter class string (e.g. 15 -> L5)."""
     if spt_int < 10:
@@ -101,7 +95,6 @@ def _ultracool_sheet_to_standard_int(spt_val: float) -> int:
     """
     Convert Ultracool Sheet ``spt_adop_flt`` to standard numeric subtype.
 
-    The sheet uses Kirkpatrick-style values (e.g. M7=77, L5=85, T5=95, Y0=100).
     For values >= 70, the standard subtype is ``round(spt) - 70``.
     Smaller values are treated as already-standard subtypes (0-39).
     """
@@ -151,11 +144,90 @@ def _parse_ultracool_rows() -> tuple[list[str], list[dict[str, str]]]:
 
 
 @lru_cache(maxsize=1)
-def _load_faherty_table() -> dict[int, dict[str, tuple[float, float]]]:
-    """Return {spt_flt: {color: (mean, sigma)}}."""
+def _parse_faherty_table1_rows() -> tuple[list[str], list[dict[str, str]]]:
+    """Parse the bundled Faherty et al. (2016) Table 1 low-gravity sample."""
+    path = _DATA_DIR / 'faherty16_table1_sample.dat'
+    with path.open(encoding='utf-8') as data_file:
+        header_line = data_file.readline()
+        if not header_line.startswith('#'):
+            raise ValueError(f'Expected header line in "{path}".')
+        columns = header_line.lstrip('#').split()
+
+        rows = []
+        for line in data_file:
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            parts = shlex.split(line)
+            if len(parts) != len(columns):
+                continue
+            rows.append(dict(zip(columns, parts)))
+    return columns, rows
+
+
+def _is_low_gravity(label: str, tokens: list[str]) -> bool:
+    """
+    True if a Table 1 optical/infrared gravity label indicates youth.
+
+    Labels containing '?' (e.g. 'gamma?') mark an uncertain classification
+    and are excluded, matching the Ultracool Sheet '?' convention.
+    """
+    label = (label or '').strip().strip('"')
+    if not label or '?' in label:
+        return False
+    return any(tok in label for tok in tokens)
+
+
+@lru_cache(maxsize=None)
+def _faherty_young_reference(
+    color_name: str,
+    reference_stat: str,
+) -> dict[int, float]:
+    """
+    Build {rounded_spt_int: reference_color} from Faherty et al. (2016)
+    Table 1 objects flagged low-gravity (beta/gamma/delta) in either the
+    optical or infrared spectrum. Unlike Tables 15-16, this is recomputed
+    from bundled photometry.
+    """
+    cfg = _load_config()
+    t1_cfg = cfg['faherty16_table1']
+    photometry = cfg['faherty16_table1_photometry']
+    tokens = t1_cfg['low_gravity_tokens']
+    _, rows = _parse_faherty_table1_rows()
+    bins: dict[int, list[float]] = {}
+
+    for row in rows:
+        ograv = row.get(t1_cfg['ograv_column'], '')
+        igrav = row.get(t1_cfg['igrav_column'], '')
+        if not (_is_low_gravity(ograv, tokens) or _is_low_gravity(igrav, tokens)):
+            continue
+
+        spt_val = _finite_mag(row.get(t1_cfg['spt_column'], ''))
+        if spt_val is None:
+            continue
+        spt_int = int(round(spt_val))
+
+        color_val = _object_color(row, color_name, photometry, t1_cfg['max_mag_err'])
+        if color_val is None:
+            continue
+
+        bins.setdefault(spt_int, []).append(color_val)
+
+    reducer = np.mean if reference_stat == 'mean' else np.median
+    min_count = t1_cfg['min_bin_count']
+    out: dict[int, float] = {}
+    for spt, values in bins.items():
+        if len(values) >= min_count:
+            out[spt] = float(reducer(values))
+    return out
+
+
+@lru_cache(maxsize=1)
+def _load_faherty_table() -> dict[int, dict[str, float]]:
+    """Return {spt_flt: {color: mean}} from Tables 15-16."""
     path = _DATA_DIR / 'faherty16_tables15_16.dat'
     header_cols = None
-    table: dict[int, dict[str, tuple[float, float]]] = {}
+    table: dict[int, dict[str, float]] = {}
 
     with path.open(encoding='utf-8') as data_file:
         for line in data_file:
@@ -168,11 +240,10 @@ def _load_faherty_table() -> dict[int, dict[str, tuple[float, float]]]:
             if len(parts) < 3:
                 continue
             spt_flt = int(float(parts[1]))
-            row: dict[str, tuple[float, float]] = {}
-            for color, (avg_col, sig_col) in _FAHERTY_COLOR_COLS.items():
+            row: dict[str, float] = {}
+            for color, avg_col in _FAHERTY_COLOR_COLS.items():
                 avg_idx = header_cols.index(avg_col)
-                sig_idx = header_cols.index(sig_col)
-                row[color] = (float(parts[avg_idx]), float(parts[sig_idx]))
+                row[color] = float(parts[avg_idx])
             table[spt_flt] = row
     return table
 
@@ -190,21 +261,24 @@ def _finite_mag(value: str) -> float | None:
     return out
 
 
-def _object_color(row: dict[str, str], color_name: str) -> float | None:
+def _object_color(
+    row: dict[str, str],
+    color_name: str,
+    photometry: dict[str, dict[str, str]],
+    max_mag_err: float,
+) -> float | None:
     cfg = _load_config()
     bands = cfg['colors'][color_name]
-    photo = cfg['photometry']
 
-    mag1 = _finite_mag(row.get(photo[bands['band1']]['mag'], ''))
-    mag2 = _finite_mag(row.get(photo[bands['band2']]['mag'], ''))
-    err1 = _finite_mag(row.get(photo[bands['band1']]['err'], ''))
-    err2 = _finite_mag(row.get(photo[bands['band2']]['err'], ''))
+    mag1 = _finite_mag(row.get(photometry[bands['band1']]['mag'], ''))
+    mag2 = _finite_mag(row.get(photometry[bands['band2']]['mag'], ''))
+    err1 = _finite_mag(row.get(photometry[bands['band1']]['err'], ''))
+    err2 = _finite_mag(row.get(photometry[bands['band2']]['err'], ''))
 
     if mag1 is None or mag2 is None or err1 is None or err2 is None:
         return None
 
-    max_err = cfg['ultracool']['max_mag_err']
-    if err1 > max_err or err2 > max_err:
+    if err1 > max_mag_err or err2 > max_mag_err:
         return None
 
     return mag1 - mag2
@@ -231,7 +305,9 @@ def _ultracool_reference(
             continue
         spt_int = _ultracool_sheet_to_standard_int(spt_val)
 
-        color_val = _object_color(row, color_name)
+        color_val = _object_color(
+            row, color_name, cfg['photometry'], cfg['ultracool']['max_mag_err'],
+        )
         if color_val is None:
             continue
 
@@ -266,7 +342,6 @@ def _reference_color_at_int(
     cfg = _load_config()
 
     if table == 'faherty16':
-        faherty = _load_faherty_table()
         spt_min = cfg['faherty16']['spt_min']
         spt_max = cfg['faherty16']['spt_max']
         if spt_int < spt_min or spt_int > spt_max:
@@ -276,12 +351,28 @@ def _reference_color_at_int(
                 f"Requested {spt_label(spt_int)} (numeric {spt_int}). "
                 "Use table='ultracool' for other types."
             )
-        if spt_int not in faherty or color not in faherty[spt_int]:
+
+        if age_group in (None, 'old'):
+            faherty = _load_faherty_table()
+            if spt_int not in faherty or color not in faherty[spt_int]:
+                raise ValueError(
+                    f"No Faherty et al. (2016) reference for {color} at "
+                    f"{spt_label(spt_int)}."
+                )
+            return faherty[spt_int][color]
+
+        # age_group == 'young': recomputed from Table 1 low-gravity objects.
+        grid = _faherty_young_reference(color, reference_stat)
+        if spt_int not in grid:
+            min_count = cfg['faherty16_table1']['min_bin_count']
             raise ValueError(
-                f"No Faherty et al. (2016) reference for {color} at "
-                f"{spt_label(spt_int)}."
+                f"Insufficient Faherty et al. (2016) Table 1 low-gravity "
+                f"objects to define a 'young' reference for {color} at "
+                f"{spt_label(spt_int)} (numeric {spt_int}). At least "
+                f"{min_count} objects with valid photometry are required "
+                "per integer subtype bin."
             )
-        return faherty[spt_int][color][0]
+        return grid[spt_int]
 
     if table == 'ultracool':
         grid = _ultracool_reference(color, age_group, reference_stat)
@@ -310,12 +401,11 @@ def reference_color(
     reference_stat: str = 'mean',
 ) -> float:
     """
-    Return the reference color (mag) for a spectral type and table backend.
+    Return the reference color (mag) for a spectral type and table.
 
     Integer SpT values use that bin directly. Fractional SpT values linearly
-    interpolate between the floor and ceil integer-bin references.
+    interpolate between the above and below integer references.
 
-    See color_anomaly docstring for assumptions and citations.
     """
     color = normalize_color_name(color_name)
     spt_float = parse_spt_float(spt)
@@ -327,15 +417,17 @@ def reference_color(
         )
 
     if table == 'faherty16':
-        if age_group is not None:
+        if age_group not in (None, 'old', 'young'):
             raise ValueError(
-                "age_group is not supported for table='faherty16'. "
-                "Faherty et al. (2016) Tables 15-16 are field/normal sequences."
+                f"age_group={age_group!r} is not supported for "
+                "table='faherty16'. Valid options: None, 'old', 'young'."
             )
-        if reference_stat != 'mean':
+        if age_group in (None, 'old') and reference_stat != 'mean':
             raise ValueError(
-                "table='faherty16' only supports reference_stat='mean' "
-                "(published Table 15-16 averages)."
+                "table='faherty16' with age_group=None or 'old' only "
+                "supports reference_stat='mean' (published Table 15-16 "
+                "averages). age_group='young' also supports 'median' "
+                "(recomputed from Table 1 photometry)."
             )
 
     # Exact integer SpT: look up that bin only.
@@ -355,19 +447,3 @@ def reference_color(
         color, spt_hi, table, age_group, reference_stat,
     )
     return (1.0 - frac) * ref_lo + frac * ref_hi
-
-
-def reference_scatter(
-    color_name: str,
-    spt,
-    table: str = 'faherty16',
-) -> float | None:
-    """Return published reference scatter (sigma) when available (faherty16 only)."""
-    color = normalize_color_name(color_name)
-    if table != 'faherty16':
-        return None
-    spt_int = parse_spt(spt)
-    faherty = _load_faherty_table()
-    if spt_int not in faherty or color not in faherty[spt_int]:
-        return None
-    return faherty[spt_int][color][1]

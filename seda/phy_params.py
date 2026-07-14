@@ -670,21 +670,28 @@ def color_anomaly(color, color_name, spt, table='faherty16', ecolor=None,
 		reference color between the floor and ceil integer bins.
 	- table : str, optional (default ``'faherty16'``)
 		Reference table: ``'faherty16'`` (bundled Faherty et al. 2016
-		Tables 15-16 field/normal means, M7-L8 only) or ``'ultracool'``
-		(mean or median colors recomputed from the bundled Ultracool Sheet).
+		Tables 15-16 field/normal means, or Table 1 low-gravity sample,
+		M7-L8 only) or ``'ultracool'`` (mean or median colors recomputed
+		from the bundled Ultracool Sheet).
 	- ecolor : float, optional
 		Uncertainty in the observed color (mag). If provided, the same value
-		is returned as the anomaly uncertainty (reference scatter is not
-		added).
+		is returned as the anomaly uncertainty.
 	- age_group : str, optional (default None)
-		Ultracool Sheet age subset only: ``None`` (all objects),
-		``'young'`` (``youth_evidence`` contains YMG, lowg, SFR, or HYA),
-		or ``'old'`` (``youth_evidence`` is ``N`` or ``Field``). Entries
-		with ``?`` in ``youth_evidence`` are excluded from both subgroups.
-		Not supported for ``table='faherty16'``.
+		For ``table='ultracool'``: ``None`` (all objects), ``'young'``
+		(``youth_evidence`` contains YMG, lowg, SFR, or HYA), or ``'old'``
+		(``youth_evidence`` is ``N`` or ``Field``). Entries with ``?`` in
+		``youth_evidence`` are excluded from both subgroups.
+		For ``table='faherty16'``: ``None`` or ``'old'`` use the published
+		Tables 15-16 field/normal means (identical). ``'young'`` recomputes
+		a reference from Table 1 objects flagged low surface gravity
+		(``beta``, ``gamma``, or ``delta`` in the optical and/or infrared
+		gravity classification); entries with an uncertain (``?``) gravity
+		label are excluded.
 	- reference_stat : str, optional (default ``'mean'``)
-		``'mean'`` or ``'median'`` for Ultracool-derived sequences.
-		``table='faherty16'`` always uses the published means.
+		``'mean'`` or ``'median'``. For ``table='faherty16'``,
+		``age_group=None``/``'old'`` always use the published Table 15-16
+		means; ``age_group='young'`` also accepts ``'median'`` since that
+		sequence is recomputed from Table 1 photometry.
 
 	Returns:
 	--------
@@ -698,18 +705,21 @@ def color_anomaly(color, color_name, spt, table='faherty16', ecolor=None,
 	- Faherty et al. (2016, ApJS, 225, 10) Tables 15-16 list mean infrared
 	  colors for field/normal M7-L8 dwarfs using 2MASS J, H, Ks and WISE
 	  W1/W2 photometry with per-band uncertainties < 0.1 mag.
+	- ``table='faherty16', age_group='young'`` recomputes a reference
+	  sequence from the Table 1 sample (152 low surface gravity
+	  M7-L8 objects) using the same 2MASS/WISE bands, the same < 0.1 mag
+	  per-band error cut, and a minimum-3-objects-per-bin rule. Because the young
+	  sample is small, L6 and L8 bins are unavailable.
 	- Ultracool Sheet references are recomputed from bundled photometry
-	  (2MASS J/H/Ks and WISE W1/W2 only). Objects missing either band,
-	  or with per-band errors > 0.1 mag, are excluded. Integer subtype bins
+	  (2MASS J/H/Ks and WISE W1/W2). Objects missing either band,
+	  or with per-band errors > 0.1 mag, are excluded. Integer bins
 	  require at least three objects.
-	- Ultracool ``spt_adop_flt`` values use Kirkpatrick-style encoding
-	  (e.g. L5 = 85, T5 = 95); these are converted internally to standard
-	  numeric subtypes before binning. Catalog objects are still assigned to
-	  integer SpT bins by rounding.
-	- For a fractional user SpT (e.g. ``L3.7``), the reference is
+	- For a fractional SpT input (e.g. ``L3.7``), the reference is
 	  ``(1-f)*ref(floor) + f*ref(ceil)``. Both neighboring bins must exist.
-	- The anomaly is a magnitude difference, not a sigma-normalized offset
-	  as reported for individual objects in Faherty et al. Table 17.
+	-  When reference colors are built from catalog photometry, adopted SpT
+	  follows each source: Faherty+16 ``spt_flt_assumed`` (optical when
+	  available, otherwise infrared; Faherty et al. 2016, Sec. VII) and
+	  Ultracool Sheet ``spt_adop_flt`` (optical for M/L, infrared for T).
 
 	Example:
 	--------
@@ -717,9 +727,6 @@ def color_anomaly(color, color_name, spt, table='faherty16', ecolor=None,
 	>>>
 	>>> # 2MASS J03552337+1133437 (L5; Suárez et al. 2023)
 	>>> color = 14.05 - 11.526  # J-K from 2MASS photometry
-	>>> seda.phy_params.color_anomaly(
-	...     color=color, color_name='J-K', spt='L5', table='faherty16')
-	    0.774
 	>>> seda.phy_params.color_anomaly(
 	...     color=color, color_name='J-K', spt='L5',
 	...     table='faherty16', ecolor=0.04)

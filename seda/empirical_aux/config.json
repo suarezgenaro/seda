@@ -8,6 +8,18 @@
         "spt_min": 7,
         "spt_max": 18
     },
+    "faherty16_table1": {
+        "ref": "Faherty et al. (2016) Table 1",
+        "bibcode": "2016ApJS..225...10F",
+        "note": "Low surface gravity M7-L8 sample used to build a 'young' sequence, recomputed from bundled photometry (not a published mean table).",
+        "file": "faherty16_table1_sample.dat",
+        "spt_column": "spt_flt_assumed",
+        "ograv_column": "OGrav",
+        "igrav_column": "IGrav",
+        "low_gravity_tokens": ["beta", "gamma", "delta"],
+        "max_mag_err": 0.1,
+        "min_bin_count": 3
+    },
     "ultracool": {
         "ref": "Ultracool Sheet (Main v2, less columns)",
         "file": "ultracool_sheet.dat",
@@ -34,6 +46,13 @@
         "K": {"mag": "Ks_2MASS", "err": "Kserr_2MASS"},
         "W1": {"mag": "W1", "err": "W1err"},
         "W2": {"mag": "W2", "err": "W2err"}
+    },
+    "faherty16_table1_photometry": {
+        "J": {"mag": "Jmag", "err": "e_Jmag"},
+        "H": {"mag": "Hmag", "err": "e_Hmag"},
+        "K": {"mag": "Ksmag", "err": "e_Ksmag"},
+        "W1": {"mag": "W1mag", "err": "e_W1mag"},
+        "W2": {"mag": "W2mag", "err": "e_W2mag"}
     },
     "young_tokens": ["YMG", "lowg", "SFR", "HYA"],
     "old_values": ["N", "Field"]
