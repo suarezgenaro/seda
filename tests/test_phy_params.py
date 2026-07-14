@@ -653,6 +653,17 @@ def test_faherty_low_gravity_label_excludes_ambiguous():
 	)
 
 
+def test_color_anomaly_requires_table():
+	with pytest.raises(ValueError, match='table must be specified'):
+		seda.phy_params.color_anomaly(
+			color=1.0, color_name='J-H', spt='L5', table=None,
+		)
+	with pytest.raises(ValueError, match='table must be specified'):
+		seda.phy_params.color_anomaly(
+			color=1.0, color_name='J-H', spt='L5', table='',
+		)
+
+
 def test_color_anomaly_invalid_color_raises():
 	with pytest.raises(ValueError, match='color_name'):
 		seda.phy_params.color_anomaly(

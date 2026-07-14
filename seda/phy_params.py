@@ -641,7 +641,7 @@ def evol_params(Lbol, eLbol, R, eR, model, filename=None,
 	return out
 
 ##########################
-def color_anomaly(color, color_name, spt, table='faherty16', ecolor=None,
+def color_anomaly(color, color_name, spt, table, ecolor=None,
 		age_group=None, reference_stat='mean'):
 	'''
 	Description:
@@ -665,11 +665,11 @@ def color_anomaly(color, color_name, spt, table='faherty16', ecolor=None,
 		Underscores and case are accepted (e.g. ``J_H``, ``j-h``).
 	- spt : str or float
 		Spectral type (e.g. ``'L5'``, ``'T4'``, ``'M7'``, or numeric subtype
-		such as ``15.0``). Integer SpT values use that subtype bin directly.
+		such as ``15.0`` for ``'L5'``). Integer SpT values use that subtype bin directly.
 		Fractional SpT values (e.g. ``'L3.7'``) linearly interpolate the
 		reference color between the floor and ceil integer bins.
-	- table : str, optional (default ``'faherty16'``)
-		Reference table: ``'faherty16'`` (bundled Faherty et al. 2016
+	- table : str
+		Reference table (required): ``'faherty16'`` (bundled Faherty et al. 2016
 		Tables 15-16 field/normal means, or Table 1 low-gravity sample,
 		M7-L8 only) or ``'ultracool'`` (mean or median colors recomputed
 		from the bundled Ultracool Sheet).
@@ -682,7 +682,7 @@ def color_anomaly(color, color_name, spt, table='faherty16', ecolor=None,
 		(``youth_evidence`` is ``N`` or ``Field``). Entries with ``?`` in
 		``youth_evidence`` are excluded from both subgroups.
 		For ``table='faherty16'``: ``None`` or ``'old'`` use the published
-		Tables 15-16 field/normal means (identical). ``'young'`` recomputes
+		Tables 15-16 field means (identical). ``'young'`` recomputes
 		a reference from Table 1 objects flagged low surface gravity
 		(``beta``, ``gamma``, or ``delta`` in the optical and/or infrared
 		gravity classification); entries with an uncertain (``?``) gravity
@@ -705,6 +705,8 @@ def color_anomaly(color, color_name, spt, table='faherty16', ecolor=None,
 	- Faherty et al. (2016, ApJS, 225, 10) Tables 15-16 list mean infrared
 	  colors for field/normal M7-L8 dwarfs using 2MASS J, H, Ks and WISE
 	  W1/W2 photometry with per-band uncertainties < 0.1 mag.
+	- For ``table='faherty16'``, ``age_group=None`` and
+	  ``age_group='old'`` are equivalent.
 	- ``table='faherty16', age_group='young'`` recomputes a reference
 	  sequence from the Table 1 sample (152 low surface gravity
 	  M7-L8 objects) using the same 2MASS/WISE bands, the same < 0.1 mag
@@ -736,6 +738,10 @@ def color_anomaly(color, color_name, spt, table='faherty16', ecolor=None,
 
 	Date: 2026-07-09
 	'''
+	if not table:
+		raise ValueError(
+			"table must be specified. Valid options: 'faherty16', 'ultracool'."
+		)
 	ref = _reference_color(
 		color_name=color_name,
 		spt=spt,
