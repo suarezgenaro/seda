@@ -718,7 +718,7 @@ def color_anomaly(color, color_name, spt, table, ecolor=None,
 	  require at least three objects.
 	- For a fractional SpT input (e.g. ``L3.7``), the reference is
 	  ``(1-f)*ref(floor) + f*ref(ceil)``. Both neighboring bins must exist.
-	-  When reference colors are built from catalog photometry, adopted SpT
+	- When reference colors are built from catalog photometry, adopted SpT
 	  follows each source: Faherty+16 ``spt_flt_assumed`` (optical when
 	  available, otherwise infrared; Faherty et al. 2016, Sec. VII) and
 	  Ultracool Sheet ``spt_adop_flt`` (optical for M/L, infrared for T).
