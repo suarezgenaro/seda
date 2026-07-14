@@ -54,31 +54,36 @@ def normalize_color_name(color_name: str) -> str:
     return canonical[upper]
 
 
-def parse_spt(spt) -> int:
+def parse_spt_float(spt) -> float:
     """
-    Parse spectral type to integer numeric subtype (M0=0 ... Y0=30+).
+    Parse spectral type to a numeric subtype (M0=0 ... Y0=30+).
 
-    Fractional types are rounded to the nearest integer subtype.
+    Fractional subtypes are preserved (e.g. ``'L3.7'`` -> ``13.7``).
     """
     if isinstance(spt, (int, np.integer)):
-        return int(round(int(spt)))
+        return float(spt)
     if isinstance(spt, (float, np.floating)):
-        return int(round(float(spt)))
+        return float(spt)
 
     text = str(spt).strip()
     match = re.match(r'^([MLTY])\s*(\d+(?:\.\d+)?)', text, re.IGNORECASE)
     if match:
         letter = match.group(1).upper()
         number = float(match.group(2))
-        return int(round(_SPT_OFFSETS[letter] + number))
+        return _SPT_OFFSETS[letter] + number
 
     try:
-        return int(round(float(text)))
+        return float(text)
     except ValueError as exc:
         raise ValueError(
             f"spt={spt!r} could not be parsed. "
             "Use a string like 'L5' or 'T4', or a numeric float subtype."
         ) from exc
+
+
+def parse_spt(spt) -> int:
+    """Parse spectral type and round to the nearest integer subtype bin."""
+    return int(round(parse_spt_float(spt)))
 
 
 def spt_label(spt_int: int) -> str:
@@ -250,40 +255,17 @@ def _ultracool_reference(
     return out
 
 
-def reference_color(
-    color_name: str,
-    spt,
-    table: str = 'faherty16',
-    age_group: str | None = None,
-    reference_stat: str = 'mean',
+def _reference_color_at_int(
+    color: str,
+    spt_int: int,
+    table: str,
+    age_group: str | None,
+    reference_stat: str,
 ) -> float:
-    """
-    Return the reference color (mag) for a spectral type and table backend.
-
-    See color_anomaly docstring for assumptions and citations.
-    """
-    color = normalize_color_name(color_name)
-    spt_int = parse_spt(spt)
+    """Return the reference color at a single integer SpT bin."""
     cfg = _load_config()
 
-    if reference_stat not in ('mean', 'median'):
-        raise ValueError(
-            f"reference_stat={reference_stat!r} is not recognized. "
-            "Valid options: 'mean', 'median'."
-        )
-
     if table == 'faherty16':
-        if age_group is not None:
-            raise ValueError(
-                "age_group is not supported for table='faherty16'. "
-                "Faherty et al. (2016) Tables 15-16 are field/normal sequences."
-            )
-        if reference_stat != 'mean':
-            raise ValueError(
-                "table='faherty16' only supports reference_stat='mean' "
-                "(published Table 15-16 averages)."
-            )
-
         faherty = _load_faherty_table()
         spt_min = cfg['faherty16']['spt_min']
         spt_max = cfg['faherty16']['spt_max']
@@ -318,6 +300,61 @@ def reference_color(
         f"table={table!r} is not recognized. "
         "Valid options: 'faherty16', 'ultracool'."
     )
+
+
+def reference_color(
+    color_name: str,
+    spt,
+    table: str = 'faherty16',
+    age_group: str | None = None,
+    reference_stat: str = 'mean',
+) -> float:
+    """
+    Return the reference color (mag) for a spectral type and table backend.
+
+    Integer SpT values use that bin directly. Fractional SpT values linearly
+    interpolate between the floor and ceil integer-bin references.
+
+    See color_anomaly docstring for assumptions and citations.
+    """
+    color = normalize_color_name(color_name)
+    spt_float = parse_spt_float(spt)
+
+    if reference_stat not in ('mean', 'median'):
+        raise ValueError(
+            f"reference_stat={reference_stat!r} is not recognized. "
+            "Valid options: 'mean', 'median'."
+        )
+
+    if table == 'faherty16':
+        if age_group is not None:
+            raise ValueError(
+                "age_group is not supported for table='faherty16'. "
+                "Faherty et al. (2016) Tables 15-16 are field/normal sequences."
+            )
+        if reference_stat != 'mean':
+            raise ValueError(
+                "table='faherty16' only supports reference_stat='mean' "
+                "(published Table 15-16 averages)."
+            )
+
+    # Exact integer SpT: look up that bin only.
+    if abs(spt_float - round(spt_float)) < 1e-12:
+        return _reference_color_at_int(
+            color, int(round(spt_float)), table, age_group, reference_stat,
+        )
+
+    # Fractional SpT: linear interpolation between neighboring integer bins.
+    spt_lo = int(np.floor(spt_float))
+    spt_hi = int(np.ceil(spt_float))
+    frac = spt_float - spt_lo
+    ref_lo = _reference_color_at_int(
+        color, spt_lo, table, age_group, reference_stat,
+    )
+    ref_hi = _reference_color_at_int(
+        color, spt_hi, table, age_group, reference_stat,
+    )
+    return (1.0 - frac) * ref_lo + frac * ref_hi
 
 
 def reference_scatter(

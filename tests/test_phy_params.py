@@ -384,19 +384,32 @@ def test_color_anomaly_j0355_jk_example():
 	assert anomaly == pytest.approx(0.774, abs=0.01)
 
 
-def test_color_anomaly_spt_rounding_uses_nearest_bin():
-	"""L3.7 rounds to L4 (numeric 14) for the Faherty reference."""
+def test_color_anomaly_spt_interpolation_between_bins():
+	"""Fractional SpT linearly interpolates between neighbor Faherty bins."""
 	ref_l3 = seda.empirical_aux._loaders.reference_color(
 		'J-H', 'L3', table='faherty16',
 	)
 	ref_l4 = seda.empirical_aux._loaders.reference_color(
 		'J-H', 'L4', table='faherty16',
 	)
+	# L3.7 -> 0.3*L3 + 0.7*L4
+	expected_ref = 0.3 * ref_l3 + 0.7 * ref_l4
 	anomaly = seda.phy_params.color_anomaly(
 		color=1.0, color_name='J-H', spt='L3.7', table='faherty16',
 	)
-	assert anomaly == pytest.approx(1.0 - ref_l4)
+	assert anomaly == pytest.approx(1.0 - expected_ref)
 	assert ref_l4 != ref_l3
+
+
+def test_color_anomaly_integer_spt_no_interpolation():
+	"""Exact integer SpT still uses a single bin."""
+	ref = seda.empirical_aux._loaders.reference_color(
+		'J-H', 'L4', table='faherty16',
+	)
+	anomaly = seda.phy_params.color_anomaly(
+		color=1.0, color_name='J-H', spt='L4', table='faherty16',
+	)
+	assert anomaly == pytest.approx(1.0 - ref)
 
 
 def test_color_anomaly_faherty_t_type_raises():

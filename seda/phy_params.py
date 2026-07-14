@@ -665,8 +665,9 @@ def color_anomaly(color, color_name, spt, table='faherty16', ecolor=None,
 		Underscores and case are accepted (e.g. ``J_H``, ``j-h``).
 	- spt : str or float
 		Spectral type (e.g. ``'L5'``, ``'T4'``, ``'M7'``, or numeric subtype
-		such as ``15.0``). Fractional types are rounded to the nearest
-		integer subtype (``L3.7`` -> ``L4``).
+		such as ``15.0``). Integer SpT values use that subtype bin directly.
+		Fractional SpT values (e.g. ``'L3.7'``) linearly interpolate the
+		reference color between the floor and ceil integer bins.
 	- table : str, optional (default ``'faherty16'``)
 		Reference table: ``'faherty16'`` (bundled Faherty et al. 2016
 		Tables 15-16 field/normal means, M7-L8 only) or ``'ultracool'``
@@ -703,7 +704,10 @@ def color_anomaly(color, color_name, spt, table='faherty16', ecolor=None,
 	  require at least three objects.
 	- Ultracool ``spt_adop_flt`` values use Kirkpatrick-style encoding
 	  (e.g. L5 = 85, T5 = 95); these are converted internally to standard
-	  numeric subtypes before binning.
+	  numeric subtypes before binning. Catalog objects are still assigned to
+	  integer SpT bins by rounding.
+	- For a fractional user SpT (e.g. ``L3.7``), the reference is
+	  ``(1-f)*ref(floor) + f*ref(ceil)``. Both neighboring bins must exist.
 	- The anomaly is a magnitude difference, not a sigma-normalized offset
 	  as reported for individual objects in Faherty et al. Table 17.
 
