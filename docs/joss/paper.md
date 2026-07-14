@@ -243,7 +243,7 @@ Additional empirical analyses include the estimation of fundamental parameters s
 In addition, `SEDA` provides several auxiliary tools that can be used independently, including:
 $(i)$ the calculation of synthetic photometry from spectra for any filter available through SVO,
 $(ii)$ a model interpolator that generates synthetic spectra for any parameter combinations within the grid coverage of available atmospheric models, 
-$(iii)$ model examiners that enable inspection of atmospheric model properties, such as basic and free parameters, parameter coverage, resolving power, and spectral resolution, as well as the coverage of fundamental parameters in available evolutionary models, and 
+$(iii)$ model examiners that enable inspection of atmospheric model properties, such as basic and free parameters, parameter coverage, resolving power, and spectral resolution, as well as the coverage of fundamental parameters in available evolutionary models,
 $(iv)$ access to 113 Spitzer IRS mid-infrared spectra of brown dwarfs from @Suarez_Metchev2022, together with associated target properties, observing logs, and measured spectral indices, and 
 $(v)$ estimation of rotation-axis inclination from $v\sin i$, rotation period, and radius with Monte Carlo uncertainty propagation, following @Vos_etal2017 for unphysical samples.
 
@@ -289,17 +289,17 @@ or the factor that maximizes $\ln \mathcal{L}$, which is the same that minimizes
 
 **3. Fundamental Parameters**
 
-The scaling factor $\alpha$ is used to derive the radius from the equation above, independently of evolutionary models, provided that the distance is known. 
+The scaling factor $\alpha$ is used to derive the radius from the equation $(R/d)^2$, independently of evolutionary models, provided that the distance is known. 
 The observed data are complemented with the best-fitting model to construct a full hybrid SED, which is then integrated to determine the bolometric luminosity, if the distance is available. 
 The radius and bolometric luminosity are used to estimate the effective temperature via the Stefan-Boltzmann law and can also be interpolated within evolutionary models to derive additional parameters, including mass, surface gravity, and age. 
-Rotation-axis inclination can be inferred from $v\sin i$, rotation period, and radius using Monte Carlo propagation [@Vos_etal2017]. The inclination follows from the ratio of the projected to equatorial rotation velocity,
+Rotation-axis inclination can be inferred from projected rotation velocity ($v\sin i$), rotation period (P), and radius (R) using Monte Carlo propagation via:
 
 \begin{equation}
 \sin i = \frac{v\sin i}{v_{\mathrm{eq}}} = \frac{P \, (v\sin i)}{2\pi R}
 \label{eq:sin_i}
 \end{equation}
 
-where $v\sin i$ is the projected rotation velocity, $P$ is the rotation period, $R$ is the radius, and $v_{\mathrm{eq}} = 2\pi R / P$ is the equatorial rotation velocity. Unphysical Monte Carlo samples with $\sin i > 1$ are set to $\sin i = 1$ ($i = 90^\circ$) following @Vos_etal2017.
+Unphysical Monte Carlo samples with $\sin i > 1$ are set to $\sin i = 1$ ($i = 90^\circ$), following @Vos_etal2017.
 
 # Documentation
 `SEDA` is hosted on GitHub[^2] and the most up-to-date documentation is available on Read The Docs[^3].
