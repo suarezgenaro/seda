@@ -238,13 +238,14 @@ along with additional quantities such as bolometric luminosity and radius, when 
 
 Empirical analyses of SEDs include measurements of the strengths of key spectral features produced by gas and grain species using literature-defined or user-defined spectral indices, i.e., flux ratios that quantify the depth of specific spectral signatures. 
 These indices are applied to mid-infrared features [e.g., @Cushing_etal2006; @Suarez_Metchev2022; @Suarez_Metchev2023], as well as to near-infrared diagnostics designed to identify potential variable objects [e.g., @Ashraf_etal2022; @Oliveros-Gomez_etal2022; @Oliveros-Gomez_etal2024]. 
-Additional empirical analyses include the estimation of fundamental parameters such as bolometric luminosity and radius, and the application of published relationships between fundamental parameters, including temperature-spectral type, luminosity-spectral type, and inclination-cloudiness-color trends [e.g., @Filippazzo_etal2015; @Vos_etal2017; @Kirkpatrick_etal2021; @Suarez_etal2023].
+Additional empirical analyses include the estimation of fundamental parameters such as bolometric luminosity, radius, and inclination, and the application of published relationships between fundamental parameters, including temperature-spectral type, luminosity-spectral type, and inclination-cloudiness-color trends [e.g., @Filippazzo_etal2015; @Vos_etal2017; @Kirkpatrick_etal2021; @Suarez_etal2023].
 
 In addition, `SEDA` provides several auxiliary tools that can be used independently, including:
 $(i)$ the calculation of synthetic photometry from spectra for any filter available through SVO,
 $(ii)$ a model interpolator that generates synthetic spectra for any parameter combinations within the grid coverage of available atmospheric models, 
-$(iii)$ a model examiner that enables inspection of atmospheric model properties, such as basic and free parameters, parameter coverage, resolving power, and spectral resolution, and 
-$(iv)$ access to 113 Spitzer IRS mid-infrared spectra of brown dwarfs from @Suarez_Metchev2022, together with associated target properties, observing logs, and measured spectral indices.
+$(iii)$ model examiners that enable inspection of atmospheric model properties, such as basic and free parameters, parameter coverage, resolving power, and spectral resolution, as well as the coverage of fundamental parameters in available evolutionary models,
+$(iv)$ access to 113 Spitzer IRS mid-infrared spectra of brown dwarfs from @Suarez_Metchev2022, together with associated target properties, observing logs, and measured spectral indices, and 
+$(v)$ estimation of rotation-axis inclination from $v\sin i$, rotation period, and radius with Monte Carlo uncertainty propagation, following @Vos_etal2017 for unphysical samples.
 
 # Mathematics {#mathematics}
 For model fitting, as described in [Functionality](#functionality), the code adopts two approaches:
@@ -286,9 +287,19 @@ During sampling, each generated synthetic spectrum is scaled using either
 $(R/d)^2$ if distance is known, 
 or the factor that maximizes $\ln \mathcal{L}$, which is the same that minimizes $\chi_r^2$ (\autoref{eq:alpha_chi2_r}).
 
-The scaling factor $\alpha$ is used to derive the radius from the equation above, independently of evolutionary models, provided that the distance is known. 
+**3. Fundamental Parameters**
+
+The scaling factor $\alpha$ is used to derive the radius from the equation $(R/d)^2$, independently of evolutionary models, provided that the distance is known. 
 The observed data are complemented with the best-fitting model to construct a full hybrid SED, which is then integrated to determine the bolometric luminosity, if the distance is available. 
-The radius and bolometric luminosity are used to estimate the effective temperature via the Stefan-Boltzmann law and can also be interpolated within evolutionary models to derive additional parameters, including mass, surface gravity, and age.
+The radius and bolometric luminosity are used to estimate the effective temperature via the Stefan-Boltzmann law and can also be interpolated within evolutionary models to derive additional parameters, including mass, surface gravity, and age. 
+Rotation-axis inclination can be inferred from projected rotation velocity ($v\sin i$), rotation period (P), and radius (R) using Monte Carlo propagation via:
+
+\begin{equation}
+\sin i = \frac{v\sin i}{v_{\mathrm{eq}}} = \frac{P \, (v\sin i)}{2\pi R}
+\label{eq:sin_i}
+\end{equation}
+
+Unphysical Monte Carlo samples with $\sin i > 1$ are set to $\sin i = 1$ ($i = 90^\circ$), following @Vos_etal2017.
 
 # Documentation
 `SEDA` is hosted on GitHub[^2] and the most up-to-date documentation is available on Read The Docs[^3].
@@ -313,13 +324,13 @@ In this work, we substantially expand upon that initial framework and release a 
 
 # Future Developments
 Among several planned additions that will further increase the functionality of the code, future releases will 
-$(i)$ enable measurements of projected rotational velocity ($v\sin i$) and radial velocity (RV) by incorporating rotational broadening and Doppler shifting into atmospheric model spectra, as well as inference of viewing geometry based on $v\sin i$, rotation period, and radius constraints [e.g., @Vos_etal2017], and 
+$(i)$ enable measurements of projected rotational velocity ($v\sin i$) and radial velocity (RV) by incorporating rotational broadening and Doppler shifting into atmospheric model spectra, and 
 $(ii)$ implement cross-correlation analyses to identify molecular species in medium- to high-resolution spectroscopic observations [e.g., @Petit_dit_de_la_Roche_etal2018].
 
 We welcome feedback, suggestions, and contributions from the community to help improve `SEDA` in future releases.
 
 # AI Usage Disclosure
-Generative AI tools (ChatGPT and Gemini) were used in a limited capacity to help polish the language of the documentation and to provide occasional coding suggestions or simplifications. 
+Generative AI tools (ChatGPT, Claude, and Gemini) were used in a limited capacity to help polish the language of the documentation and to provide occasional coding suggestions or simplifications. 
 All software design, implementation, and scientific decisions were developed by the authors. 
 Any AI-generated suggestions were reviewed, verified, and modified by the authors before inclusion.
 

@@ -69,6 +69,16 @@ Empirical Analysis
   - :func:`~seda.utils.read_SVO_params`: Reads parameters of interest (e.g., effective wavelength, effective width, and zero point) from SVO for a list of filters.
   - :func:`~seda.utils.convolve_spectrum`: Convolves spectra to a desired resolution at a given wavelength.
 
+Physical and Basic Parameters
++++++++++++++++++++++++++++++
+
+  - :func:`~seda.phy_params.bol_lum`: Calculates bolometric luminosity by integrating an observed SED, optionally complemented with a model spectrum (see `tutorial_bolometric_luminosity <https://seda.readthedocs.io/en/latest/notebooks/tutorial_bolometric_luminosity.html>`_).
+  - :func:`~seda.phy_params.teff`: Derives effective temperature from bolometric luminosity and radius using the Stefan–Boltzmann law, with Monte Carlo uncertainty propagation.
+  - :func:`~seda.phy_params.inclination`: Derives the rotation-axis inclination from projected rotation velocity (:math:`v\sin i`), rotation period, and radius, with Monte Carlo uncertainty propagation (`Vos et al. 2017 <https://ui.adsabs.harvard.edu/abs/2017ApJ...842...78V/abstract>`_).
+  - :func:`~seda.phy_params.evol_params`: Infers fundamental parameters (e.g., mass, age, surface gravity, temperature) by interpolating :ref:`evolutionary_models` given a bolometric luminosity and radius (see `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_).
+  - :func:`~seda.phy_params.isochrone_params`: Infers fundamental parameters (e.g., mass, radius, surface gravity, temperature) by interpolating :ref:`evolutionary_models` given a bolometric luminosity and age.
+
+
 Atmospheric and Evolutionary Models
 +++++++++++++++++++++++++++++++++++
 
@@ -76,11 +86,7 @@ Atmospheric and Evolutionary Models
   - :func:`~seda.utils.read_model_spectrum`: Reads a synthetic spectrum from :ref:`models`.
   - :func:`~seda.utils.separate_params`: Extracts parameters from model spectra file names.
   - :func:`~seda.plots.plot_model_coverage` and :func:`~seda.plots.plot_model_resolution`: Visualize parameters' coverage and resolution of :ref:`models` (see `tutorial_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_models_examination.html>`_).
-  - :func:`~seda.phy_params.bol_lum`: Calculates bolometric luminosity by integrating an observed SED, optionally complemented with a model spectrum (see `tutorial_bolometric_luminosity <https://seda.readthedocs.io/en/latest/notebooks/tutorial_bolometric_luminosity.html>`_).
-  - :func:`~seda.phy_params.teff`: Derives effective temperature from bolometric luminosity and radius using the Stefan–Boltzmann law, with Monte Carlo uncertainty propagation.
-  - :func:`~seda.phy_params.evol_params`: Infers fundamental parameters (e.g., mass, age, surface gravity, temperature) by interpolating :ref:`evolutionary_models` given a bolometric luminosity and radius (see `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_).
-  - :func:`~seda.phy_params.isochrone_params`: Infers fundamental parameters (e.g., mass, radius, surface gravity, temperature) by interpolating :ref:`evolutionary_models` given a bolometric luminosity and age.
-
+  - :func:`~seda.plots.plot_evolutionary_coverage`: Visualize bolometric luminosity–radius coverage of bundled :ref:`evolutionary_models` tables (see `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_).
 
 .. _models:
 

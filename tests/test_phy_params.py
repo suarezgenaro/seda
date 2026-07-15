@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+from astropy import units as u
 from astropy.constants import M_jup, M_sun, R_jup, R_sun
 
 import seda
@@ -135,8 +136,12 @@ def test_evol_params_invalid_filename_lists_available(capsys):
 		)
 
 	captured = capsys.readouterr()
-	assert 'nc+0.0_co1.0_mass' in captured.out
-	assert 'nc-0.5_co1.0_mass' in captured.out
+	assert 'nc+0.0_co1.0_mass' in captured.out, (
+		'invalid filename error should list available Sonora_Bobcat tables'
+	)
+	assert 'nc-0.5_co1.0_mass' in captured.out, (
+		'invalid filename error should list available Sonora_Bobcat tables'
+	)
 
 @pytest.mark.parametrize(
 	'model',
@@ -155,7 +160,9 @@ def test_evol_params_multiple_tables_without_filename_raises(model, capsys):
 
 	captured = capsys.readouterr()
 	for filename in seda.models.EvolutionaryModels(model).available_tables:
-		assert filename in captured.out
+		assert filename in captured.out, (
+			f'missing-table error for {model} should list {filename!r}'
+		)
 
 @pytest.mark.parametrize('model, filename', load_evolutionary_model_catalog())
 def test_evol_params_dynamic_output_keys(model, filename):
@@ -168,8 +175,12 @@ def test_evol_params_dynamic_output_keys(model, filename):
 	)
 
 	for param in ('mass', 'age', 'logg', 'Teff'):
-		assert param in out
-		assert f'e{param}' in out
+		assert param in out, (
+			f'evol_params output for {model}/{filename} missing key {param!r}'
+		)
+		assert f'e{param}' in out, (
+			f'evol_params output for {model}/{filename} missing uncertainty e{param!r}'
+		)
 
 @pytest.mark.parametrize('model, filename', load_evolutionary_model_catalog())
 def test_evol_params_std_error_mode(model, filename):
@@ -235,10 +246,18 @@ def test_evol_params_bundled_filenames(model, filename):
 		model=model, filename=filename, n_mc=500, verbose=False,
 	)
 
-	assert out['mass'] == pytest.approx(mass_msun_exp, rel=0.05)
-	assert out['age'] == pytest.approx(age_exp, rel=0.05)
-	assert np.isfinite(out['logg'])
-	assert np.isfinite(out['Teff'])
+	assert out['mass'] == pytest.approx(mass_msun_exp, rel=0.05), (
+		f'{model}/{filename}: expected mass ~{mass_msun_exp} M_sun, got {out["mass"]}'
+	)
+	assert out['age'] == pytest.approx(age_exp, rel=0.05), (
+		f'{model}/{filename}: expected age ~{age_exp}, got {out["age"]}'
+	)
+	assert np.isfinite(out['logg']), (
+		f'{model}/{filename}: logg should be finite, got {out["logg"]}'
+	)
+	assert np.isfinite(out['Teff']), (
+		f'{model}/{filename}: Teff should be finite, got {out["Teff"]}'
+	)
 
 def test_evol_params_bobcat_file():
 	"""Run evol_params() on the bundled solar Bobcat table and print the derived parameters."""
@@ -259,11 +278,21 @@ def test_evol_params_bobcat_file():
 	print(f"   Teff = {out['Teff']:.4g} K      (err {out['eTeff']})")
 	print(f"   samples outside grid: {out['frac_outside_grid'] * 100:.1f}%")
 
-	assert np.isfinite(out['mass'])
-	assert np.isfinite(out['age'])
-	assert np.isfinite(out['logg'])
-	assert np.isfinite(out['Teff'])
-	assert out['frac_outside_grid'] < 0.75
+	assert np.isfinite(out['mass']), (
+		f'Bobcat example mass should be finite, got {out["mass"]}'
+	)
+	assert np.isfinite(out['age']), (
+		f'Bobcat example age should be finite, got {out["age"]}'
+	)
+	assert np.isfinite(out['logg']), (
+		f'Bobcat example logg should be finite, got {out["logg"]}'
+	)
+	assert np.isfinite(out['Teff']), (
+		f'Bobcat example Teff should be finite, got {out["Teff"]}'
+	)
+	assert out['frac_outside_grid'] < 0.75, (
+		f'Bobcat example frac_outside_grid should be < 0.75, got {out["frac_outside_grid"]}'
+	)
 
 def test_evol_params_diamondback():
 	"""Sonora Diamondback evolutionary tables should round-trip through evol_params."""
@@ -278,11 +307,21 @@ def test_evol_params_diamondback():
 		model=model, filename=DIAMONDBACK_FILENAME, n_mc=1000, verbose=False,
 	)
 
-	assert out['mass'] == pytest.approx(mass_exp, rel=0.01)
-	assert out['age'] == pytest.approx(age_exp, rel=0.01)
-	assert out['Teff'] == pytest.approx(Teff_exp, rel=0.01)
-	assert out['logg'] == pytest.approx(logg_exp, rel=0.01)
-	assert out['frac_outside_grid'] < 0.1
+	assert out['mass'] == pytest.approx(mass_exp, rel=0.01), (
+		f'Diamondback round-trip mass mismatch: expected {mass_exp}, got {out["mass"]}'
+	)
+	assert out['age'] == pytest.approx(age_exp, rel=0.01), (
+		f'Diamondback round-trip age mismatch: expected {age_exp}, got {out["age"]}'
+	)
+	assert out['Teff'] == pytest.approx(Teff_exp, rel=0.01), (
+		f'Diamondback round-trip Teff mismatch: expected {Teff_exp}, got {out["Teff"]}'
+	)
+	assert out['logg'] == pytest.approx(logg_exp, rel=0.01), (
+		f'Diamondback round-trip logg mismatch: expected {logg_exp}, got {out["logg"]}'
+	)
+	assert out['frac_outside_grid'] < 0.1, (
+		f'Diamondback frac_outside_grid should be < 0.1, got {out["frac_outside_grid"]}'
+	)
 
 def test_evol_params_regular_user_output():
 	"""Show what a regular user sees when calling evol_params(verbose=True)."""
@@ -296,20 +335,36 @@ def test_evol_params_regular_user_output():
 def test_list_evolutionary_tables():
 	"""EvolutionaryModels should expose bundled table basenames for each model."""
 	bobcat_tables = seda.models.EvolutionaryModels('Sonora_Bobcat').available_tables
-	assert 'nc+0.0_co1.0_mass' in bobcat_tables
-	assert len(bobcat_tables) == 3
+	assert 'nc+0.0_co1.0_mass' in bobcat_tables, (
+		'Sonora_Bobcat bundled tables should include nc+0.0_co1.0_mass'
+	)
+	assert len(bobcat_tables) == 3, (
+		f'expected 3 Sonora_Bobcat tables, got {len(bobcat_tables)}'
+	)
 
 	diamondback_tables = seda.models.EvolutionaryModels('Sonora_Diamondback').available_tables
-	assert 'nc_m0.0_mass' in diamondback_tables
-	assert len(diamondback_tables) == 9
+	assert 'nc_m0.0_mass' in diamondback_tables, (
+		'Sonora_Diamondback bundled tables should include nc_m0.0_mass'
+	)
+	assert len(diamondback_tables) == 9, (
+		f'expected 9 Sonora_Diamondback tables, got {len(diamondback_tables)}'
+	)
 
 	atmo_tables = seda.models.EvolutionaryModels('ATMO2020').available_tables
-	assert 'ATMO_CEQ_mass.txt' in atmo_tables
-	assert len(atmo_tables) == 3
+	assert 'ATMO_CEQ_mass.txt' in atmo_tables, (
+		'ATMO2020 bundled tables should include ATMO_CEQ_mass.txt'
+	)
+	assert len(atmo_tables) == 3, (
+		f'expected 3 ATMO2020 tables, got {len(atmo_tables)}'
+	)
 
 	bhac_tables = seda.models.EvolutionaryModels('BHAC2015').available_tables
-	assert 'BHAC15_tracks+structure.txt' in bhac_tables
-	assert len(bhac_tables) == 1
+	assert 'BHAC15_tracks+structure.txt' in bhac_tables, (
+		'BHAC2015 bundled tables should include BHAC15_tracks+structure.txt'
+	)
+	assert len(bhac_tables) == 1, (
+		f'expected 1 BHAC2015 table, got {len(bhac_tables)}'
+	)
 
 def test_evolutionary_models_params_requires_model():
 	"""params should require a model name, like available_tables."""
@@ -322,182 +377,292 @@ def test_evolutionary_models_params_structure(model):
 	model_obj = seda.models.EvolutionaryModels(model)
 	params = model_obj.params
 
-	assert set(params) == set(model_obj.available_tables)
+	assert set(params) == set(model_obj.available_tables), (
+		f'{model} params keys should match available_tables'
+	)
 	for filename in model_obj.available_tables:
 		grid = seda.models.read_evolutionary_model(filename=filename, model=model)
-		assert set(params[filename]) == set(grid)
+		assert set(params[filename]) == set(grid), (
+			f'{model}/{filename} params columns should match grid columns'
+		)
 		for col, (vmin, vmax) in params[filename].items():
-			assert vmin == pytest.approx(float(grid[col].min()))
-			assert vmax == pytest.approx(float(grid[col].max()))
+			assert vmin == pytest.approx(float(grid[col].min())), (
+				f'{model}/{filename} {col} min mismatch: '
+				f'params={vmin}, grid={float(grid[col].min())}'
+			)
+			assert vmax == pytest.approx(float(grid[col].max())), (
+				f'{model}/{filename} {col} max mismatch: '
+				f'params={vmax}, grid={float(grid[col].max())}'
+			)
 
 def test_evolutionary_models_params_bobcat_spot_check():
 	"""Spot-check known coverage for the solar-metallicity Bobcat table."""
 	params = seda.models.EvolutionaryModels('Sonora_Bobcat').params['nc+0.0_co1.0_mass']
 
-	assert params['mass'] == [0.0005, 0.08]
-	assert params['age'] == [0.001, 15.0]
-	assert params['logL'] == pytest.approx([-9.213, -2.662])
-	assert params['Teff'] == [91.0, 2537.0]
-	assert params['logg'] == pytest.approx([2.654, 5.484])
-	assert params['radius'] == pytest.approx([0.0769, 0.2657])
-	assert 'logI' not in params
+	assert params['mass'] == [0.0005, 0.08], (
+		f'Bobcat mass range mismatch: {params["mass"]}'
+	)
+	assert params['age'] == [0.001, 15.0], (
+		f'Bobcat age range mismatch: {params["age"]}'
+	)
+	assert params['logL'] == pytest.approx([-9.213, -2.662]), (
+		f'Bobcat logL range mismatch: {params["logL"]}'
+	)
+	assert params['Teff'] == [91.0, 2537.0], (
+		f'Bobcat Teff range mismatch: {params["Teff"]}'
+	)
+	assert params['logg'] == pytest.approx([2.654, 5.484]), (
+		f'Bobcat logg range mismatch: {params["logg"]}'
+	)
+	assert params['radius'] == pytest.approx([0.0769, 0.2657]), (
+		f'Bobcat radius range mismatch: {params["radius"]}'
+	)
+	assert 'logI' not in params, (
+		'Bobcat table should not expose logI in params'
+	)
 
 def test_evolutionary_models_params_atmo_spot_check():
 	"""Spot-check known coverage for the ATMO 2020 CEQ table."""
 	params = seda.models.EvolutionaryModels('ATMO2020').params['ATMO_CEQ_mass.txt']
 
-	assert params['mass'] == [0.001, 0.075]
-	assert params['age'] == [0.001, 10.0]
-	assert params['logL'] == pytest.approx([-7.74437436, -1.27027279])
-	assert params['Teff'] == pytest.approx([206.71029843, 3156.67625353])
-	assert params['logg'] == pytest.approx([3.01108287, 5.51013179])
-	assert params['radius'] == pytest.approx([0.07585432, 0.79547701])
+	assert params['mass'] == [0.001, 0.075], (
+		f'ATMO mass range mismatch: {params["mass"]}'
+	)
+	assert params['age'] == [0.001, 10.0], (
+		f'ATMO age range mismatch: {params["age"]}'
+	)
+	assert params['logL'] == pytest.approx([-7.74437436, -1.27027279]), (
+		f'ATMO logL range mismatch: {params["logL"]}'
+	)
+	assert params['Teff'] == pytest.approx([206.71029843, 3156.67625353]), (
+		f'ATMO Teff range mismatch: {params["Teff"]}'
+	)
+	assert params['logg'] == pytest.approx([3.01108287, 5.51013179]), (
+		f'ATMO logg range mismatch: {params["logg"]}'
+	)
+	assert params['radius'] == pytest.approx([0.07585432, 0.79547701]), (
+		f'ATMO radius range mismatch: {params["radius"]}'
+	)
 
 def test_evolutionary_models_params_bhac_spot_check():
 	"""Spot-check known coverage for the BHAC15 tracks+structure table."""
 	params = seda.models.EvolutionaryModels('BHAC2015').params['BHAC15_tracks+structure.txt']
 
-	assert params['mass'] == [0.01, 1.4]
-	assert params['age'] == pytest.approx([5.68945, 10.000343])
-	assert params['logL'] == pytest.approx([-4.716, 0.74])
-	assert params['Teff'] == [1206.0, 6768.0]
-	assert params['logg'] == pytest.approx([3.224, 5.391])
-	assert params['radius'] == pytest.approx([0.086, 3.621])
-	assert params['logLi'] == pytest.approx([-11.1759, 0.0])
-	assert params['logTc'] == pytest.approx([5.417, 7.398])
-	assert params['logRho_c'] == pytest.approx([-0.6068, 2.8806])
-	assert params['Mrad'] == pytest.approx([0.0, 1.4])
-	assert params['Rrad'] == pytest.approx([0.0, 1.745])
-	assert params['k2conv'] == pytest.approx([0.00124, 0.4944])
-	assert params['k2rad'] == pytest.approx([0.0, 0.3072])
+	assert params['mass'] == [0.01, 1.4], (
+		f'BHAC mass range mismatch: {params["mass"]}'
+	)
+	assert params['age'] == pytest.approx([5.68945, 10.000343]), (
+		f'BHAC age range mismatch: {params["age"]}'
+	)
+	assert params['logL'] == pytest.approx([-4.716, 0.74]), (
+		f'BHAC logL range mismatch: {params["logL"]}'
+	)
+	assert params['Teff'] == [1206.0, 6768.0], (
+		f'BHAC Teff range mismatch: {params["Teff"]}'
+	)
+	assert params['logg'] == pytest.approx([3.224, 5.391]), (
+		f'BHAC logg range mismatch: {params["logg"]}'
+	)
+	assert params['radius'] == pytest.approx([0.086, 3.621]), (
+		f'BHAC radius range mismatch: {params["radius"]}'
+	)
+	assert params['logLi'] == pytest.approx([-11.1759, 0.0]), (
+		f'BHAC logLi range mismatch: {params["logLi"]}'
+	)
+	assert params['logTc'] == pytest.approx([5.417, 7.398]), (
+		f'BHAC logTc range mismatch: {params["logTc"]}'
+	)
+	assert params['logRho_c'] == pytest.approx([-0.6068, 2.8806]), (
+		f'BHAC logRho_c range mismatch: {params["logRho_c"]}'
+	)
+	assert params['Mrad'] == pytest.approx([0.0, 1.4]), (
+		f'BHAC Mrad range mismatch: {params["Mrad"]}'
+	)
+	assert params['Rrad'] == pytest.approx([0.0, 1.745]), (
+		f'BHAC Rrad range mismatch: {params["Rrad"]}'
+	)
+	assert params['k2conv'] == pytest.approx([0.00124, 0.4944]), (
+		f'BHAC k2conv range mismatch: {params["k2conv"]}'
+	)
+	assert params['k2rad'] == pytest.approx([0.0, 0.3072]), (
+		f'BHAC k2rad range mismatch: {params["k2rad"]}'
+	)
 
-# ----------------------------
-# Isochrone parameters
-# ----------------------------
-@pytest.mark.parametrize('model, filename', load_evolutionary_model_catalog())
-def test_isochrone_params_round_trip(model, filename):
+def _expected_inclination_deg(vsini, P, R):
+	"""Deterministic inclination from sin i = P*vsini / (2*pi*R)."""
+	vsini_u = vsini * u.km / u.s
+	P_u = P * u.hour
+	R_u = R * R_jup
+	v_eq = (2 * np.pi * R_u / P_u).to(u.km / u.s)
+	sin_i = (vsini_u / v_eq).decompose().value
+	return np.degrees(np.arcsin(np.clip(sin_i, -1.0, 1.0)))
+
+def _vsini_for_inclination(P, R, inc_deg):
+	"""Invert the inclination formula for a target inclination."""
+	P_u = P * u.hour
+	R_u = R * R_jup
+	v_eq = (2 * np.pi * R_u / P_u).to(u.km / u.s)
+	return (v_eq * np.sin(np.radians(inc_deg))).to(u.km / u.s).value
+
+@pytest.mark.parametrize(
+	'inc_deg, P, R',
+	[
+		(30.0, 4.0, 1.10),
+		(45.0, 5.0, 1.20),
+		(60.0, 3.1, 1.05),
+		(85.0, 2.5, 1.30),
+	],
+)
+def test_inclination_recovers_known_angle(inc_deg, P, R):
+	"""With tiny errors, inclination should round-trip the sin i formula."""
+	vsini = _vsini_for_inclination(P, R, inc_deg)
 	np.random.seed(0)
-	Lbol, R_rjup, Teff_exp, logg_exp, age_exp, mass_msun_exp = _bundled_grid_inputs(
-		model, filename,
-	)
-	R_native = _grid_radius_native(model, filename)
 
-	out = seda.phy_params.isochrone_params(
-		Lbol=Lbol, eLbol=1e-10 * Lbol, age=age_exp, eage=0.0,
-		model=model, filename=filename, n_mc=1000, verbose=False,
+	inc, einc = seda.phy_params.inclination(
+		vsini=vsini, evsini=1e-10 * vsini,
+		P=P, eP=1e-10 * P,
+		R=R, eR=1e-10 * R,
+		n_mc=5000,
 	)
 
-	assert out['radius'] == pytest.approx(R_native, rel=0.05)
-	assert out['mass'] == pytest.approx(mass_msun_exp, rel=0.05)
-	assert out['logg'] == pytest.approx(logg_exp, rel=0.05)
-	if 'Teff' in out:
-		assert out['Teff'] == pytest.approx(Teff_exp, rel=0.05)
-
-@pytest.mark.parametrize('model, filename', load_evolutionary_model_catalog())
-def test_isochrone_params_matches_evol_params(model, filename):
-	np.random.seed(0)
-	Lbol, R_rjup, _, _, age_exp, mass_msun_exp = _bundled_grid_inputs(model, filename)
-	R_native = _grid_radius_native(model, filename)
-
-	iso = seda.phy_params.isochrone_params(
-		Lbol=Lbol, eLbol=1e-10 * Lbol, age=age_exp, eage=0.0,
-		model=model, filename=filename, n_mc=1000, verbose=False,
+	assert inc == pytest.approx(inc_deg, abs=0.5), (
+		f'inclination {inc:.3f} deg did not recover expected {inc_deg} deg '
+		f'for P={P} hr, R={R} R_jup'
 	)
-	evol = seda.phy_params.evol_params(
-		Lbol=Lbol, eLbol=1e-10 * Lbol, R=R_rjup, eR=1e-10 * R_rjup,
-		model=model, filename=filename, n_mc=1000, verbose=False,
+	assert einc[0] >= 0 and einc[1] >= 0, (
+		f'inclination asymmetric errors must be non-negative, got {einc}'
 	)
 
-	assert iso['radius'] == pytest.approx(R_native, rel=0.05)
-	assert evol['age'] == pytest.approx(age_exp, rel=0.05)
-	assert iso['mass'] == pytest.approx(mass_msun_exp, rel=0.05)
-
-@pytest.mark.parametrize('model, filename', load_evolutionary_model_catalog())
-def test_isochrone_output_keys_match_evol_style(model, filename):
-	Lbol, R_rjup, _, _, age_exp, _ = _bundled_grid_inputs(model, filename)
-	grid = seda.models.read_evolutionary_model(filename=filename, model=model)
-	interp_params = [p for p in grid if p not in ('logL', 'age')]
-
-	out = seda.phy_params.isochrone_params(
-		Lbol=Lbol, eLbol=1e-10 * Lbol, age=age_exp, eage=0.0,
-		model=model, filename=filename, n_mc=500, verbose=False,
-	)
-
-	for param in interp_params:
-		assert param in out
-		assert f'e{param}' in out
-		assert not isinstance(out[param], tuple)
-
-def test_isochrone_eage_propagation():
-	np.random.seed(0)
-	model, filename = 'Sonora_Bobcat', BOBCAT_FILENAME
-	Lbol, _, _, _, age_exp, _ = _bundled_grid_inputs(model, filename)
-
-	out_fixed = seda.phy_params.isochrone_params(
-		Lbol=Lbol, eLbol=1e-10 * Lbol, age=age_exp, eage=0.0,
-		model=model, filename=filename, n_mc=2000, verbose=False,
-	)
-	np.random.seed(0)
-	out_unc = seda.phy_params.isochrone_params(
-		Lbol=Lbol, eLbol=1e-10 * Lbol, age=age_exp, eage=0.05 * age_exp,
-		model=model, filename=filename, n_mc=2000, verbose=False,
-	)
-
-	assert out_unc['eradius'][0] + out_unc['eradius'][1] > out_fixed['eradius'][0] + out_fixed['eradius'][1]
-
-def test_isochrone_eage_outside_grid_excluded():
-	"""Age MC samples outside grid coverage are excluded, not clipped to the edges."""
-	np.random.seed(0)
-	model, filename = 'Sonora_Bobcat', BOBCAT_FILENAME
-	Lbol, _, _, _, age_exp, _ = _bundled_grid_inputs(model, filename)
-
-	out = seda.phy_params.isochrone_params(
-		Lbol=Lbol, eLbol=1e-10 * Lbol,
-		age=age_exp * 100, eage=age_exp * 50,
-		model=model, filename=filename, n_mc=2000, verbose=False,
-	)
-
-	assert out['n_outside_grid'] > 0
-	assert out['frac_outside_grid'] > 0.5
-
-def test_isochrone_params_zhang2021_gj570d():
-	"""Spot-check against Zhang et al. (2021) Table 6 evolutionary values for GJ 570D."""
-	# Table 6 (evolutionary column): log(L/L_sun) = -5.54 +/- 0.03;
-	# primary-star age range 1.4-5.2 Gyr (Sec. 5). Representative age 2.7 Gyr.
-	logL = -5.54
-	e_logL = 0.03
-	Lbol = 10.0 ** logL
-	eLbol = Lbol * np.log(10) * e_logL
-	age_gyr = 2.7
+def test_inclination_matches_deterministic_formula():
+	"""Spot-check against the docstring example inputs."""
+	vsini, evsini = 26.4, 1.2
+	P, eP = 3.1, 0.1
+	R, eR = 1.05, 0.06
+	expected = _expected_inclination_deg(vsini, P, R)
 
 	np.random.seed(0)
-	out = seda.phy_params.isochrone_params(
-		Lbol=Lbol, eLbol=eLbol, age=age_gyr, eage=0.0,
-		model='Sonora_Bobcat', filename=BOBCAT_FILENAME,
-		n_mc=5000, verbose=False,
+	inc, einc = seda.phy_params.inclination(
+		vsini=vsini, evsini=evsini,
+		P=P, eP=eP, R=R, eR=eR,
+		n_mc=10000,
 	)
 
-	mass_mjup = out['mass'] * (M_sun / M_jup).value
-	radius_rjup = _grid_radius_in_rjup('Sonora_Bobcat', out['radius'])
+	assert inc == pytest.approx(expected, rel=0.05), (
+		f'inclination {inc:.3f} deg differs from deterministic formula '
+		f'prediction {expected:.3f} deg'
+	)
+	assert len(einc) == 2, (
+		f'expected two asymmetric inclination uncertainties, got {len(einc)}'
+	)
 
-	# Table 6 evolutionary: R = 0.89 +/- 0.05 R_Jup, Teff = 786 +/- 20 K,
-	# logg = 5.04 +/- 0.13, M = 34.6 (+7.5/-6.5) M_Jup (Sonora Bobcat).
-	assert radius_rjup == pytest.approx(0.89, abs=0.06)
-	assert out['Teff'] == pytest.approx(786, abs=25)
-	assert out['logg'] == pytest.approx(5.04, abs=0.15)
-	assert mass_mjup == pytest.approx(34.6, abs=5.0)
+def test_inclination_std_error_mode():
+	"""With error='std', the uncertainty should be a scalar."""
+	np.random.seed(0)
+	inc, einc = seda.phy_params.inclination(
+		vsini=20.0, evsini=1.0,
+		P=4.0, eP=0.1,
+		R=1.1, eR=0.05,
+		error='std', n_mc=5000,
+	)
+	assert np.isscalar(einc), (
+		"einc should be a scalar when error='std'"
+	)
+	assert einc > 0, (
+		f'std inclination uncertainty should be positive, got {einc}'
+	)
+	assert np.isfinite(inc), (
+		f'inclination should be finite, got {inc}'
+	)
 
-def test_isochrone_params_missing_age_raises():
-	with pytest.raises(TypeError):
-		seda.phy_params.isochrone_params(
-			Lbol=1e-3, eLbol=1e-4, model='Sonora_Bobcat',
-			filename=BOBCAT_FILENAME, n_mc=100, verbose=False,
+def test_inclination_invalid_central_raises():
+	with pytest.raises(ValueError, match='central'):
+		seda.phy_params.inclination(
+			vsini=20.0, evsini=1.0,
+			P=4.0, eP=0.1,
+			R=1.1, eR=0.05,
+			central='mode', n_mc=100,
 		)
 
-@pytest.mark.parametrize('model, filename', load_evolutionary_model_catalog())
-def test_isochrone_params_outside_grid(model, filename):
-	with pytest.raises(ValueError):
-		seda.phy_params.isochrone_params(
-			Lbol=1e10, eLbol=1e8, age=1.0, eage=0.0,
-			model=model, filename=filename, n_mc=500, verbose=False,
-		)
+def test_inclination_reproducible_with_seed():
+	"""Fixed seed should give identical MC results."""
+	kwargs = dict(
+		vsini=26.4, evsini=1.2,
+		P=3.1, eP=0.1,
+		R=1.05, eR=0.06,
+		n_mc=5000,
+	)
+	np.random.seed(42)
+	inc1, einc1 = seda.phy_params.inclination(**kwargs)
+	np.random.seed(42)
+	inc2, einc2 = seda.phy_params.inclination(**kwargs)
+
+	assert inc1 == pytest.approx(inc2), (
+		f'fixed seed gave inconsistent inclination: {inc1} vs {inc2}'
+	)
+	assert einc1 == pytest.approx(einc2), (
+		f'fixed seed gave inconsistent inclination uncertainty: {einc1} vs {einc2}'
+	)
+
+def test_inclination_face_on():
+	"""vsini = 0 should give i = 0 deg."""
+	np.random.seed(0)
+	inc, _ = seda.phy_params.inclination(
+		vsini=0.0, evsini=0.1,
+		P=5.0, eP=0.1,
+		R=1.0, eR=0.05,
+		n_mc=2000,
+	)
+	assert inc == pytest.approx(0.0, abs=0.5), (
+		f'face-on target (vsini=0) should give i ~ 0 deg, got {inc:.3f} deg'
+	)
+
+def test_inclination_reports_clipped_samples(capsys):
+	"""Unphysical draws with sin i > 1 should be clipped to 1 and reported."""
+	P, R = 10.0, 0.5
+	v_eq = (2 * np.pi * R * R_jup / (P * u.hour)).to(u.km / u.s).value
+	vsini = 0.95 * v_eq
+	evsini = 0.1 * v_eq
+
+	np.random.seed(0)
+	inc, einc = seda.phy_params.inclination(
+		vsini=vsini, evsini=evsini,
+		P=P, eP=0.5,
+		R=R, eR=0.05,
+		n_mc=1000,
+	)
+	captured = capsys.readouterr()
+	assert 'sin i > 1' in captured.out, (
+		'clipped sin i > 1 draws should be reported in stdout'
+	)
+	assert 'set to sin i = 1' in captured.out, (
+		'clipping message should mention sin i = 1'
+	)
+	assert 'MC samples used for inclination statistics' in captured.out, (
+		'clipping summary should report MC sample usage'
+	)
+	assert 0.0 < inc <= 90.0, (
+		f'clipped inclination should be in (0, 90] deg, got {inc:.3f} deg'
+	)
+	assert len(einc) == 2, (
+		f'expected two asymmetric inclination uncertainties, got {len(einc)}'
+	)
+
+def test_inclination_all_clipped_returns_edge_on(capsys):
+	"""When every draw has sin i > 1, clipped samples give i = 90 deg."""
+	np.random.seed(0)
+	inc, einc = seda.phy_params.inclination(
+		vsini=100.0, evsini=5.0,
+		P=10.0, eP=0.5,
+		R=0.5, eR=0.05,
+		n_mc=1000,
+	)
+	captured = capsys.readouterr()
+	assert 'sin i > 1' in captured.out, (
+		'all-clipped case should still report sin i > 1 in stdout'
+	)
+	assert '1000/1000 MC samples used' in captured.out, (
+		'all-clipped case should report that every MC sample was clipped'
+	)
+	assert inc == pytest.approx(90.0, abs=0.1), (
+		f'all-clipped sin i > 1 draws should give i = 90 deg, got {inc:.3f} deg'
+	)
