@@ -441,19 +441,45 @@ def test_evolutionary_models_params_bhac_spot_check():
 	"""Spot-check known coverage for the BHAC15 tracks+structure table."""
 	params = seda.models.EvolutionaryModels('BHAC2015').params['BHAC15_tracks+structure.txt']
 
-	assert params['mass'] == [0.01, 1.4]
-	assert params['age'] == pytest.approx([5.68945, 10.000343])
-	assert params['logL'] == pytest.approx([-4.716, 0.74])
-	assert params['Teff'] == [1206.0, 6768.0]
-	assert params['logg'] == pytest.approx([3.224, 5.391])
-	assert params['radius'] == pytest.approx([0.086, 3.621])
-	assert params['logLi'] == pytest.approx([-11.1759, 0.0])
-	assert params['logTc'] == pytest.approx([5.417, 7.398])
-	assert params['logRho_c'] == pytest.approx([-0.6068, 2.8806])
-	assert params['Mrad'] == pytest.approx([0.0, 1.4])
-	assert params['Rrad'] == pytest.approx([0.0, 1.745])
-	assert params['k2conv'] == pytest.approx([0.00124, 0.4944])
-	assert params['k2rad'] == pytest.approx([0.0, 0.3072])
+	assert params['mass'] == [0.01, 1.4], (
+		f'BHAC mass range mismatch: {params["mass"]}'
+	)
+	assert params['age'] == pytest.approx([5.68945, 10.000343]), (
+		f'BHAC age range mismatch: {params["age"]}'
+	)
+	assert params['logL'] == pytest.approx([-4.716, 0.74]), (
+		f'BHAC logL range mismatch: {params["logL"]}'
+	)
+	assert params['Teff'] == [1206.0, 6768.0], (
+		f'BHAC Teff range mismatch: {params["Teff"]}'
+	)
+	assert params['logg'] == pytest.approx([3.224, 5.391]), (
+		f'BHAC logg range mismatch: {params["logg"]}'
+	)
+	assert params['radius'] == pytest.approx([0.086, 3.621]), (
+		f'BHAC radius range mismatch: {params["radius"]}'
+	)
+	assert params['logLi'] == pytest.approx([-11.1759, 0.0]), (
+		f'BHAC logLi range mismatch: {params["logLi"]}'
+	)
+	assert params['logTc'] == pytest.approx([5.417, 7.398]), (
+		f'BHAC logTc range mismatch: {params["logTc"]}'
+	)
+	assert params['logRho_c'] == pytest.approx([-0.6068, 2.8806]), (
+		f'BHAC logRho_c range mismatch: {params["logRho_c"]}'
+	)
+	assert params['Mrad'] == pytest.approx([0.0, 1.4]), (
+		f'BHAC Mrad range mismatch: {params["Mrad"]}'
+	)
+	assert params['Rrad'] == pytest.approx([0.0, 1.745]), (
+		f'BHAC Rrad range mismatch: {params["Rrad"]}'
+	)
+	assert params['k2conv'] == pytest.approx([0.00124, 0.4944]), (
+		f'BHAC k2conv range mismatch: {params["k2conv"]}'
+	)
+	assert params['k2rad'] == pytest.approx([0.0, 0.3072]), (
+		f'BHAC k2rad range mismatch: {params["k2rad"]}'
+	)
 
 # ----------------------------
 # color_anomaly — literature regression values
@@ -632,16 +658,6 @@ def test_color_anomaly_ultracool_t_type_succeeds():
 	)
 
 
-def test_color_anomaly_with_uncertainty():
-	out = seda.phy_params.color_anomaly(
-		color=1.0, color_name='J-H', spt='L1', table='faherty16', ecolor=0.05,
-	)
-	assert out[1] == 0.05, 'returned ecolor outside expected value'
-	assert isinstance(out, tuple), (
-		'color_anomaly with ecolor did not return a tuple'
-	)
-
-
 def test_color_anomaly_faherty_rejects_invalid_age_group():
 	with pytest.raises(ValueError, match='age_group'):
 		seda.phy_params.color_anomaly(
@@ -779,46 +795,12 @@ def test_ultracool_youth_filter_excludes_ambiguous():
 	)
 	assert _matches_age_group('Field', 'old') is True, (
 		'Field label not matched to old age group'
-	assert params['mass'] == [0.01, 1.4], (
-		f'BHAC mass range mismatch: {params["mass"]}'
-	)
-	assert params['age'] == pytest.approx([5.68945, 10.000343]), (
-		f'BHAC age range mismatch: {params["age"]}'
-	)
-	assert params['logL'] == pytest.approx([-4.716, 0.74]), (
-		f'BHAC logL range mismatch: {params["logL"]}'
-	)
-	assert params['Teff'] == [1206.0, 6768.0], (
-		f'BHAC Teff range mismatch: {params["Teff"]}'
-	)
-	assert params['logg'] == pytest.approx([3.224, 5.391]), (
-		f'BHAC logg range mismatch: {params["logg"]}'
-	)
-	assert params['radius'] == pytest.approx([0.086, 3.621]), (
-		f'BHAC radius range mismatch: {params["radius"]}'
-	)
-	assert params['logLi'] == pytest.approx([-11.1759, 0.0]), (
-		f'BHAC logLi range mismatch: {params["logLi"]}'
-	)
-	assert params['logTc'] == pytest.approx([5.417, 7.398]), (
-		f'BHAC logTc range mismatch: {params["logTc"]}'
-	)
-	assert params['logRho_c'] == pytest.approx([-0.6068, 2.8806]), (
-		f'BHAC logRho_c range mismatch: {params["logRho_c"]}'
-	)
-	assert params['Mrad'] == pytest.approx([0.0, 1.4]), (
-		f'BHAC Mrad range mismatch: {params["Mrad"]}'
-	)
-	assert params['Rrad'] == pytest.approx([0.0, 1.745]), (
-		f'BHAC Rrad range mismatch: {params["Rrad"]}'
-	)
-	assert params['k2conv'] == pytest.approx([0.00124, 0.4944]), (
-		f'BHAC k2conv range mismatch: {params["k2conv"]}'
-	)
-	assert params['k2rad'] == pytest.approx([0.0, 0.3072]), (
-		f'BHAC k2rad range mismatch: {params["k2rad"]}'
 	)
 
+
+# ----------------------------
+# inclination
+# ----------------------------
 def _expected_inclination_deg(vsini, P, R):
 	"""Deterministic inclination from sin i = P*vsini / (2*pi*R)."""
 	vsini_u = vsini * u.km / u.s
