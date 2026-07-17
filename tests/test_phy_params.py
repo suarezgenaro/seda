@@ -529,6 +529,7 @@ def test_color_anomaly_faherty16_table17_00040288_jh():
 		color_name='J-H',
 		spt='L1',
 		table='faherty16',
+		age_group='old',
 	)
 	expected = _FAHERTY16_00040288_JH - _FAHERTY16_L1_JH
 	assert anomaly == pytest.approx(expected, abs=0.01), (
@@ -543,6 +544,7 @@ def test_color_anomaly_suarez23_j0355_jk_vs_faherty_field():
 		color_name='J-K',
 		spt='L5',
 		table='faherty16',
+		age_group='old',
 	)
 	expected = _SUAREZ23_0355_JK - _FAHERTY16_L5_JK
 	assert anomaly == pytest.approx(expected, abs=0.01), (
@@ -557,6 +559,7 @@ def test_color_anomaly_suarez23_j0355_jh_vs_faherty_field():
 		color_name='J-H',
 		spt='L5',
 		table='faherty16',
+		age_group='old',
 	)
 	expected = _SUAREZ23_0355_JH - _FAHERTY16_L5_JH
 	assert anomaly == pytest.approx(expected, abs=0.01), (
@@ -586,6 +589,7 @@ def test_color_anomaly_suarez23_vos17_0036_jk_vs_faherty_field():
 		color_name='J-K',
 		spt='L4',
 		table='faherty16',
+		age_group='old',
 	)
 	assert anomaly == pytest.approx(_SUAREZ23_0036_JK_ANOM_FIELD, abs=0.01), (
 		'0036 J-K field anomaly outside tolerable range'
@@ -602,6 +606,7 @@ def test_color_anomaly_faherty16_table15_spt_interpolation():
 		color_name='J-H',
 		spt='L3.7',
 		table='faherty16',
+		age_group='old',
 	)
 	assert anomaly == pytest.approx(observed - ref_l37, abs=1e-6), (
 		'L3.7 J-H interpolated anomaly outside tolerable range'
@@ -631,6 +636,7 @@ def test_color_anomaly_with_uncertainty():
 		color_name='J-K',
 		spt='L5',
 		table='faherty16',
+		age_group='old',
 		ecolor=ecolor,
 	)
 	assert out[1] == pytest.approx(ecolor, abs=1e-6), (
@@ -641,7 +647,8 @@ def test_color_anomaly_with_uncertainty():
 	)
 	with pytest.raises(ValueError, match="table='faherty16' covers"):
 		seda.phy_params.color_anomaly(
-			color=1.0, color_name='J-H', spt='T5', table='faherty16',
+			color=1.0, color_name='J-H', spt='T5',
+			table='faherty16', age_group='old',
 		)
 
 
@@ -665,16 +672,21 @@ def test_color_anomaly_faherty_rejects_invalid_age_group():
 		)
 
 
-def test_color_anomaly_faherty_old_matches_default():
-	"""age_group=None and age_group='old' both use Tables 15-16."""
-	ref_default = seda.empirical_aux._loaders.reference_color(
-		'J-H', 'L5', table='faherty16',
-	)
+def test_color_anomaly_faherty_requires_age_group():
+	"""Faherty tables require an explicit old or young age group."""
+	with pytest.raises(ValueError, match='combined young/old sample'):
+		seda.empirical_aux._loaders.reference_color(
+			'J-H', 'L5', table='faherty16',
+		)
+	with pytest.raises(ValueError, match='combined young/old sample'):
+		seda.phy_params.color_anomaly(
+			color=1.0, color_name='J-H', spt='L5', table='faherty16',
+		)
 	ref_old = seda.empirical_aux._loaders.reference_color(
 		'J-H', 'L5', table='faherty16', age_group='old',
 	)
-	assert ref_default == ref_old, (
-		'default and old reference colors differ unexpectedly'
+	assert ref_old == pytest.approx(_FAHERTY16_L5_JH, abs=0.01), (
+		'old reference color outside tolerable range'
 	)
 
 
@@ -703,7 +715,7 @@ def test_color_anomaly_faherty_young_redder_than_field():
 
 
 def test_color_anomaly_faherty_young_rejects_field_only_reference_stat():
-	# 'old'/None must use the published mean only.
+	# 'old' must use the published mean only.
 	with pytest.raises(ValueError, match='reference_stat'):
 		seda.phy_params.color_anomaly(
 			color=1.0, color_name='J-H', spt='L5',
@@ -817,7 +829,8 @@ def test_color_anomaly_requires_table():
 def test_color_anomaly_invalid_color_raises():
 	with pytest.raises(ValueError, match='color_name'):
 		seda.phy_params.color_anomaly(
-			color=1.0, color_name='Y-J', spt='L5', table='faherty16',
+			color=1.0, color_name='Y-J', spt='L5',
+			table='faherty16', age_group='old',
 		)
 
 

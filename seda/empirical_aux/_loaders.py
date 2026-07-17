@@ -445,7 +445,7 @@ def _reference_color_at_int(
                 "Use table='ultracool' for other types."
             )
 
-        if age_group in (None, 'old'):
+        if age_group == 'old':
             faherty = _load_faherty_table()
             if spt_int not in faherty or color not in faherty[spt_int]:
                 raise ValueError(
@@ -525,14 +525,19 @@ def reference_color(
         )
 
     if table == 'faherty16':
-        if age_group not in (None, 'old', 'young'):
+        if age_group is None:
+            raise ValueError(
+                "table='faherty16' requires age_group='old' or 'young'; "
+                "a combined young/old sample is not available from the source."
+            )
+        if age_group not in ('old', 'young'):
             raise ValueError(
                 f"age_group={age_group!r} is not supported for "
-                "table='faherty16'. Valid options: None, 'old', 'young'."
+                "table='faherty16'. Valid options: 'old', 'young'."
             )
-        if age_group in (None, 'old') and reference_stat != 'mean':
+        if age_group == 'old' and reference_stat != 'mean':
             raise ValueError(
-                "table='faherty16' with age_group=None or 'old' only "
+                "table='faherty16' with age_group='old' only "
                 "supports reference_stat='mean' (published Table 15-16 "
                 "averages). age_group='young' also supports 'median' "
                 "(recomputed from Table 1 photometry)."

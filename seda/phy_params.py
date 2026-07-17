@@ -845,14 +845,13 @@ def color_anomaly(color, color_name, spt, table, ecolor=None,
 		(``youth_evidence`` contains YMG, lowg, SFR, or HYA), or ``'old'``
 		(``youth_evidence`` is ``N`` or ``Field``). Entries with ``?`` in
 		``youth_evidence`` are excluded from both subgroups.
-		For ``table='faherty16'``: ``None`` or ``'old'`` use the published
-		Tables 15-16 field means (identical). ``'young'`` recomputes
-		a reference from all objects in Faherty et al. (2016) Table 1
-		(bundled sample).
+		For ``table='faherty16'``: required. Use ``'old'`` for the published
+		Tables 15-16 field means, or ``'young'`` to recompute from Table 1.
+		A combined young/old sample is not available from the source.
 	- reference_stat : str, optional (default ``'mean'``)
 		``'mean'`` or ``'median'``. For ``table='faherty16'``,
-		``age_group=None``/``'old'`` always use the published Table 15-16
-		means; ``age_group='young'`` also accepts ``'median'`` since that
+		``age_group='old'`` always uses the published Table 15-16 means;
+		``age_group='young'`` also accepts ``'median'`` since that
 		sequence is recomputed from Table 1 photometry.
 
 	Returns:
@@ -867,8 +866,8 @@ def color_anomaly(color, color_name, spt, table, ecolor=None,
 	- Faherty et al. (2016, ApJS, 225, 10) Tables 15-16 list mean infrared
 	  colors for field/normal M7-L8 dwarfs using 2MASS J, H, Ks and WISE
 	  W1/W2 photometry with per-band uncertainties < 0.1 mag.
-	- For ``table='faherty16'``, ``age_group=None`` and
-	  ``age_group='old'`` are equivalent.
+	- For ``table='faherty16'``, set ``age_group='old'`` (Tables 15-16) or
+	  ``age_group='young'`` (Table 1).
 	- ``table='faherty16', age_group='young'`` recomputes a reference
 	  sequence from all objects in the bundled Table 1 sample using the
 	  same 2MASS/WISE bands and a minimum-3-objects-per-bin rule. Integer bins with too few
@@ -895,7 +894,7 @@ def color_anomaly(color, color_name, spt, table, ecolor=None,
 	>>> color = 14.05 - 11.526  # J-K from 2MASS photometry
 	>>> seda.phy_params.color_anomaly(
 	...     color=color, color_name='J-K', spt='L5',
-	...     table='faherty16', ecolor=0.04)
+	...     table='faherty16', age_group='old', ecolor=0.04)
 	    (0.774, 0.04)
 
 	Author: Theo Olsen
