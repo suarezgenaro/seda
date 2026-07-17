@@ -3,7 +3,7 @@ import importlib
 import pickle
 import numpy as np
 import os
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter, AutoMinorLocator, StrMethodFormatter, NullFormatter
+from matplotlib.ticker import MultipleLocator, FormatStrFormatter, AutoMinorLocator, StrMethodFormatter, NullFormatter, LogLocator, LogFormatterSciNotation
 from matplotlib.backends.backend_pdf import PdfPages # plot several pages in a single pdf
 from lmfit import Minimizer, minimize, Parameters, report_fit # model fit for non-linear least-squares problems
 from astropy import units as u
@@ -1386,3 +1386,164 @@ def plot_full_SED(out_bol_lum, xlog=True, ylog=True, xrange=None, yrange=None,
 		else: plt.savefig(out_file, bbox_inches='tight')
 
 	return fig, ax 
+
+##########################
+def _evolutionary_param_values(grid, model, param):
+	"""Return grid values for a column or derived observable (Lbol, R)."""
+
+	if param == 'Lbol':
+		if 'logL' not in grid:
+			raise ValueError(
+				f"Cannot derive {param!r} because this table has no 'logL' column."
+			)
+		return 10.0 ** grid['logL']
+	if param == 'R':
+		if 'radius' not in grid:
+			raise ValueError(
+				f"Cannot derive {param!r} because this table has no 'radius' column."
+			)
+		return models._convert_radius_to_rjup(grid['radius'], model)
+	if param not in grid:
+		raise ValueError(
+			f"{param!r} is not available for this table. "
+			f"Choose a grid column or one of: 'Lbol', 'R'."
+		)
+	return grid[param]
+
+
+def _evolutionary_param_label(model, param, units):
+	"""Axis/color-bar label for an evolutionary grid parameter."""
+
+	if param == 'Lbol':
+		return 'Lbol (L_sun)'
+	if param == 'logL':
+		return r'log10(L/L_sun)'
+	if param == 'R':
+		return 'R (R_jup)'
+	unit = units.get(param, '')
+	return f'{param} ({unit})' if unit else param
+
+
+def _configure_evolutionary_log_axis(ax, axis):
+	"""Major ticks for a logarithmic evolutionary-grid axis."""
+
+	locator = LogLocator(base=10, numticks=8)
+	formatter = LogFormatterSciNotation()
+	if axis == 'x':
+		ax.set_xscale('log')
+		ax.xaxis.set_major_locator(locator)
+		ax.xaxis.set_major_formatter(formatter)
+		ax.tick_params(axis='x', which='minor', labelbottom=False)
+		for label in ax.get_xticklabels():
+			label.set_rotation(45)
+			label.set_horizontalalignment('right')
+	else:
+		ax.set_yscale('log')
+		ax.yaxis.set_major_locator(locator)
+		ax.yaxis.set_major_formatter(formatter)
+		ax.tick_params(axis='y', which='minor', labelleft=False)
+
+
+def _configure_evolutionary_linear_axis(ax, axis):
+	"""Minor ticks for a linear evolutionary-grid axis."""
+
+	if axis == 'x':
+		ax.xaxis.set_minor_locator(AutoMinorLocator())
+	else:
+		ax.yaxis.set_minor_locator(AutoMinorLocator())
+
+
+def plot_evolutionary_coverage(model, filename, xparam='Lbol', yparam='R', zparam='age',
+		cparam=None, xlog=True, ylog=False, out_file=None, save=False):
+	'''
+	Description:
+	------------
+		Plot evolutionary-grid coverage for three parameters: two axes and a
+		color scale. Defaults to bolometric luminosity versus radius (the
+		observables used by :func:`~seda.phy_params.evol_params`), with a
+		third column as color (e.g. ``age`` for
+		:func:`~seda.phy_params.isochrone_params`).
+
+	Parameters:
+	-----------
+	- model : str
+		Evolutionary models. See available models in
+		``seda.models.EvolutionaryModels().available_models``.
+	- filename : str
+		Basename of an evolutionary table inside ``evolution_aux/<model>/``.
+	- xparam : str, optional (default ``'Lbol'``)
+		Horizontal axis: any grid column, ``'Lbol'`` (from ``logL``), or
+		``'R'`` (radius converted to R_jup).
+	- yparam : str, optional (default ``'R'``)
+		Vertical axis; same options as ``xparam``.
+	- zparam : str, optional (default ``'age'``)
+		Color axis; same options as ``xparam``.
+	- cparam : str, optional
+		Deprecated alias for ``zparam`` (kept for backward compatibility).
+	- xlog : {``True``, ``False``}, optional (default ``True``)
+		Use logarithmic (``True``) or linear (``False``) scale for the
+		horizontal axis.
+	- ylog : {``True``, ``False``}, optional (default ``False``)
+		Use logarithmic (``True``) or linear (``False``) scale for the
+		vertical axis.
+	- out_file : str, optional
+		File name to save the figure. Default is
+		``'{model}_{filename}_{zparam}_coverage.pdf'``.
+	- save : {``True``, ``False``}, optional (default ``False``)
+		Save (``True``) or do not save (``False``) the resulting figure.
+
+	Returns:
+	--------
+	- fig : matplotlib.figure.Figure
+	- ax : matplotlib.axes.Axes
+
+	Example:
+	--------
+	>>> import seda
+	>>>
+	>>> seda.plots.plot_evolutionary_coverage(
+	...     model='Sonora_Bobcat', filename='nc+0.0_co1.0_mass', zparam='Teff',
+	... )
+
+	Author: Theo Olsen
+
+	Date: 2026-07-04 (generalized 2026-07-16)
+	'''
+
+	if cparam is not None:
+		zparam = cparam
+
+	model_info = models.EvolutionaryModels(model)
+	grid = models.read_evolutionary_model(filename=filename, model=model)
+	units = model_info.units
+
+	xvals = _evolutionary_param_values(grid, model, xparam)
+	yvals = _evolutionary_param_values(grid, model, yparam)
+	zvals = _evolutionary_param_values(grid, model, zparam)
+
+	fig, ax = plt.subplots()
+	sc = ax.scatter(xvals, yvals, c=zvals, s=5, zorder=3)
+	cbar = plt.colorbar(sc, ax=ax)
+	cbar.set_label(_evolutionary_param_label(model, zparam, units))
+
+	if xlog:
+		_configure_evolutionary_log_axis(ax, 'x')
+	else:
+		_configure_evolutionary_linear_axis(ax, 'x')
+	if ylog:
+		_configure_evolutionary_log_axis(ax, 'y')
+	else:
+		_configure_evolutionary_linear_axis(ax, 'y')
+	ax.grid(True, which='both', color='gainsboro', alpha=0.5)
+
+	ax.set_xlabel(_evolutionary_param_label(model, xparam, units))
+	ax.set_ylabel(_evolutionary_param_label(model, yparam, units))
+	ax.set_title(f'{model_info.name}: {filename}')
+	fig.tight_layout()
+
+	if save:
+		if out_file is None:
+			out_file = f'{model}_{filename}_{zparam}_coverage.pdf'
+		plt.savefig(out_file, bbox_inches='tight')
+
+	return fig, ax
