@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 import shlex
+import warnings
 from functools import lru_cache
 from pathlib import Path
 
@@ -145,7 +146,7 @@ def _parse_ultracool_rows() -> tuple[list[str], list[dict[str, str]]]:
 
 @lru_cache(maxsize=1)
 def _parse_faherty_table1_rows() -> tuple[list[str], list[dict[str, str]]]:
-    """Parse the bundled Faherty et al. (2016) Table 1 low-gravity sample."""
+    """Parse the bundled Faherty et al. (2016) Table 1 sample."""
     path = _DATA_DIR / 'faherty16_table1_sample.dat'
     with path.open(encoding='utf-8') as data_file:
         header_line = data_file.readline()
@@ -178,43 +179,65 @@ def _is_low_gravity(label: str, tokens: list[str]) -> bool:
     return any(tok in label for tok in tokens)
 
 
+def _spt_bin_suarez(spt_val: float) -> int:
+    """
+    Assign an integer SpT bin using half-open intervals
+    ``[spt_int - 0.5, spt_int + 0.5)``, matching the binning used in
+    Suárez et al. (2023) (e.g. L4.5 falls in the L5 bin, not L4).
+
+    This differs from plain ``round()``, which uses round-half-to-even
+    and would put 14.5 in the L4 bin instead of L5.
+    """
+    return int(np.floor(spt_val + 0.5))
+
+
+@lru_cache(maxsize=None)
+def _faherty_young_reference_bins(color_name: str) -> dict[int, list[float]]:
+    """
+    Per-integer-bin colors from all Table 1 objects with valid photometry.
+
+    Bin membership follows Suárez et al. (2023)-style half-open intervals
+    (``_spt_bin_suarez``), so half-integer ``spt_flt_assumed`` values (e.g.
+    14.5) are grouped with the nearer-higher integer bin (L5), not rounded
+    down to L4.
+    """
+
+    cfg = _load_config()
+    t1_cfg = cfg['faherty16_table1']
+    photometry = cfg['faherty16_table1_photometry']
+    _, rows = _parse_faherty_table1_rows()
+    bins: dict[int, list[float]] = {}
+
+    for row in rows:
+        spt_val = _finite_mag(row.get(t1_cfg['spt_column'], ''))
+        if spt_val is None:
+            continue
+        spt_int = _spt_bin_suarez(spt_val)
+
+        color_val = _object_color(row, color_name, photometry, max_mag_err=None)
+        if color_val is None:
+            continue
+
+        bins.setdefault(spt_int, []).append(color_val)
+
+    return bins
+
+
 @lru_cache(maxsize=None)
 def _faherty_young_reference(
     color_name: str,
     reference_stat: str,
 ) -> dict[int, float]:
     """
-    Build {rounded_spt_int: reference_color} from Faherty et al. (2016)
-    Table 1 objects flagged low-gravity (beta/gamma/delta) in either the
-    optical or infrared spectrum. Unlike Tables 15-16, this is recomputed
-    from bundled photometry.
+    Build {rounded_spt_int: reference_color} from all Faherty et al. (2016)
+    Table 1 objects in the bundled sample. Unlike Tables 15-16, this is
+    recomputed from bundled photometry. Bins with fewer than min_bin_count
+    objects are omitted here; see sparse-bin and interpolation fallbacks.
     """
     cfg = _load_config()
-    t1_cfg = cfg['faherty16_table1']
-    photometry = cfg['faherty16_table1_photometry']
-    tokens = t1_cfg['low_gravity_tokens']
-    _, rows = _parse_faherty_table1_rows()
-    bins: dict[int, list[float]] = {}
-
-    for row in rows:
-        ograv = row.get(t1_cfg['ograv_column'], '')
-        igrav = row.get(t1_cfg['igrav_column'], '')
-        if not (_is_low_gravity(ograv, tokens) or _is_low_gravity(igrav, tokens)):
-            continue
-
-        spt_val = _finite_mag(row.get(t1_cfg['spt_column'], ''))
-        if spt_val is None:
-            continue
-        spt_int = int(round(spt_val))
-
-        color_val = _object_color(row, color_name, photometry, t1_cfg['max_mag_err'])
-        if color_val is None:
-            continue
-
-        bins.setdefault(spt_int, []).append(color_val)
-
+    bins = _faherty_young_reference_bins(color_name)
     reducer = np.mean if reference_stat == 'mean' else np.median
-    min_count = t1_cfg['min_bin_count']
+    min_count = cfg['faherty16_table1']['min_bin_count']
     out: dict[int, float] = {}
     for spt, values in bins.items():
         if len(values) >= min_count:
@@ -265,7 +288,7 @@ def _object_color(
     row: dict[str, str],
     color_name: str,
     photometry: dict[str, dict[str, str]],
-    max_mag_err: float,
+    max_mag_err: float | None = 0.1,
 ) -> float | None:
     cfg = _load_config()
     bands = cfg['colors'][color_name]
@@ -275,11 +298,14 @@ def _object_color(
     err1 = _finite_mag(row.get(photometry[bands['band1']]['err'], ''))
     err2 = _finite_mag(row.get(photometry[bands['band2']]['err'], ''))
 
-    if mag1 is None or mag2 is None or err1 is None or err2 is None:
+    if mag1 is None or mag2 is None:
         return None
 
-    if err1 > max_mag_err or err2 > max_mag_err:
-        return None
+    if max_mag_err is not None:
+        if err1 is None or err2 is None:
+            return None
+        if err1 > max_mag_err or err2 > max_mag_err:
+            return None
 
     return mag1 - mag2
 
@@ -331,6 +357,73 @@ def _ultracool_reference(
     return out
 
 
+def _faherty_young_reference_interpolated(
+    grid: dict[int, float],
+    spt_int: int,
+    color: str,
+    reference_stat: str,
+) -> float | None:
+    """
+    Linearly interpolate a young Table 1 reference when an integer bin is
+    missing but bracketing bins are available (e.g. L6 from L5 and L7).
+    """
+    available = sorted(grid)
+    below = [k for k in available if k < spt_int]
+    above = [k for k in available if k > spt_int]
+    if not below or not above:
+        return None
+
+    spt_lo = below[-1]
+    spt_hi = above[0]
+    frac = (spt_int - spt_lo) / (spt_hi - spt_lo)
+    ref_lo = grid[spt_lo]
+    ref_hi = grid[spt_hi]
+    ref = (1.0 - frac) * ref_lo + frac * ref_hi
+
+    warnings.warn(
+        f"Faherty et al. (2016) Table 1 'young' reference for {color} at "
+        f"{spt_label(spt_int)} has insufficient objects in that bin; "
+        f"interpolating between {spt_label(spt_lo)} "
+        f"({reference_stat}={ref_lo:.4f} mag) and {spt_label(spt_hi)} "
+        f"({reference_stat}={ref_hi:.4f} mag) with weight {frac:.2f} toward "
+        f"{spt_label(spt_hi)} (interpolated {reference_stat}={ref:.4f} mag).",
+        UserWarning,
+        stacklevel=4,
+    )
+    return ref
+
+
+def _faherty_young_reference_sparse(
+    bins: dict[int, list[float]],
+    spt_int: int,
+    color: str,
+    reference_stat: str,
+    min_count: int,
+) -> float | None:
+    """
+    Use a sparse integer bin (1 <= n < min_bin_count objects) when no
+    bracketing interpolation is available (e.g. L8 with one object).
+    """
+    values = bins.get(spt_int)
+    if not values or len(values) >= min_count:
+        return None
+
+    reducer = np.mean if reference_stat == 'mean' else np.median
+    ref = float(reducer(values))
+    n_obj = len(values)
+    obj_word = 'object' if n_obj == 1 else 'objects'
+    warnings.warn(
+        f"Faherty et al. (2016) Table 1 'young' reference for {color} at "
+        f"{spt_label(spt_int)} has only {n_obj} {obj_word} with valid "
+        f"photometry (fewer than the usual minimum of {min_count}); using "
+        f"the bin {reference_stat}={ref:.4f} mag from the available "
+        f"{obj_word}.",
+        UserWarning,
+        stacklevel=4,
+    )
+    return ref
+
+
 def _reference_color_at_int(
     color: str,
     spt_int: int,
@@ -361,18 +454,33 @@ def _reference_color_at_int(
                 )
             return faherty[spt_int][color]
 
-        # age_group == 'young': recomputed from Table 1 low-gravity objects.
+        # age_group == 'young': recomputed from all Table 1 objects.
+        min_count = cfg['faherty16_table1']['min_bin_count']
+        bins = _faherty_young_reference_bins(color)
         grid = _faherty_young_reference(color, reference_stat)
-        if spt_int not in grid:
-            min_count = cfg['faherty16_table1']['min_bin_count']
-            raise ValueError(
-                f"Insufficient Faherty et al. (2016) Table 1 low-gravity "
-                f"objects to define a 'young' reference for {color} at "
-                f"{spt_label(spt_int)} (numeric {spt_int}). At least "
-                f"{min_count} objects with valid photometry are required "
-                "per integer subtype bin."
-            )
-        return grid[spt_int]
+        if spt_int in grid:
+            return grid[spt_int]
+
+        interpolated = _faherty_young_reference_interpolated(
+            grid, spt_int, color, reference_stat,
+        )
+        if interpolated is not None:
+            return interpolated
+
+        sparse = _faherty_young_reference_sparse(
+            bins, spt_int, color, reference_stat, min_count,
+        )
+        if sparse is not None:
+            return sparse
+
+        raise ValueError(
+            f"Insufficient Faherty et al. (2016) Table 1 "
+            f"objects to define a 'young' reference for {color} at "
+            f"{spt_label(spt_int)} (numeric {spt_int}). At least "
+            f"{min_count} objects with valid photometry are required "
+            "per integer subtype bin, and no bracketing bins were "
+            "available for interpolation."
+        )
 
     if table == 'ultracool':
         grid = _ultracool_reference(color, age_group, reference_stat)

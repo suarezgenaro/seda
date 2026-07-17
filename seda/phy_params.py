@@ -834,7 +834,7 @@ def color_anomaly(color, color_name, spt, table, ecolor=None,
 		reference color between the floor and ceil integer bins.
 	- table : str
 		Reference table (required): ``'faherty16'`` (bundled Faherty et al. 2016
-		Tables 15-16 field/normal means, or Table 1 low-gravity sample,
+		Tables 15-16 field/normal means, or the full Table 1 sample,
 		M7-L8 only) or ``'ultracool'`` (mean or median colors recomputed
 		from the bundled Ultracool Sheet).
 	- ecolor : float, optional
@@ -847,10 +847,8 @@ def color_anomaly(color, color_name, spt, table, ecolor=None,
 		``youth_evidence`` are excluded from both subgroups.
 		For ``table='faherty16'``: ``None`` or ``'old'`` use the published
 		Tables 15-16 field means (identical). ``'young'`` recomputes
-		a reference from Table 1 objects flagged low surface gravity
-		(``beta``, ``gamma``, or ``delta`` in the optical and/or infrared
-		gravity classification); entries with an uncertain (``?``) gravity
-		label are excluded.
+		a reference from all objects in Faherty et al. (2016) Table 1
+		(bundled sample).
 	- reference_stat : str, optional (default ``'mean'``)
 		``'mean'`` or ``'median'``. For ``table='faherty16'``,
 		``age_group=None``/``'old'`` always use the published Table 15-16
@@ -872,10 +870,12 @@ def color_anomaly(color, color_name, spt, table, ecolor=None,
 	- For ``table='faherty16'``, ``age_group=None`` and
 	  ``age_group='old'`` are equivalent.
 	- ``table='faherty16', age_group='young'`` recomputes a reference
-	  sequence from the Table 1 sample (152 low surface gravity
-	  M7-L8 objects) using the same 2MASS/WISE bands, the same < 0.1 mag
-	  per-band error cut, and a minimum-3-objects-per-bin rule. Because the young
-	  sample is small, L6 and L8 bins are unavailable.
+	  sequence from all objects in the bundled Table 1 sample using the
+	  same 2MASS/WISE bands and a minimum-3-objects-per-bin rule. Integer bins with too few
+	  objects but with valid bracketing bins (L6) are
+	  linearly interpolated and a :class:`UserWarning` is issued. Edge bins
+	  with only one or two objects (e.g. L8) use those objects directly,
+	  also with a warning.
 	- Ultracool Sheet references are recomputed from bundled photometry
 	  (2MASS J/H/Ks and WISE W1/W2). Objects missing either band,
 	  or with per-band errors > 0.1 mag, are excluded. Integer bins

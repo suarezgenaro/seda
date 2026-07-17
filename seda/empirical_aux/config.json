@@ -11,13 +11,12 @@
     "faherty16_table1": {
         "ref": "Faherty et al. (2016) Table 1",
         "bibcode": "2016ApJS..225...10F",
-        "note": "Low surface gravity M7-L8 sample used to build a 'young' sequence, recomputed from bundled photometry (not a published mean table).",
+        "note": "Full Table 1 M7-L8 sample used to build a 'young' sequence, recomputed from bundled photometry (not a published mean table).",
         "file": "faherty16_table1_sample.dat",
         "spt_column": "spt_flt_assumed",
         "ograv_column": "OGrav",
         "igrav_column": "IGrav",
         "low_gravity_tokens": ["beta", "gamma", "delta"],
-        "max_mag_err": 0.1,
         "min_bin_count": 3
     },
     "ultracool": {

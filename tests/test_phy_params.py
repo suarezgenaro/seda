@@ -573,9 +573,8 @@ def test_color_anomaly_suarez23_j0355_jk_young_lowg_reference():
 		table='faherty16',
 		age_group='young',
 	)
-	# SEDA rebuilds the young sequence from Faherty Table 1; expect the same
-	# sign and comparable magnitude as Suárez et al. (2023) vs their 2.153 mag ref.
-	assert anomaly == pytest.approx(_SUAREZ23_0355_JK_ANOM_LOWG, abs=0.05), (
+	# Suárez et al. (2023) Table 2: low-gravity L5 mean J-K = 2.153 mag.
+	assert anomaly == pytest.approx(_SUAREZ23_0355_JK_ANOM_LOWG, abs=0.01), (
 		'J0355 young J-K anomaly outside tolerable range'
 	)
 
@@ -731,11 +730,55 @@ def test_color_anomaly_faherty_young_accepts_median():
 	)
 
 
-def test_color_anomaly_faherty_young_insufficient_data_raises():
-	# L8 has too few low-gravity Table 1 objects with valid photometry.
-	with pytest.raises(ValueError, match='Insufficient'):
-		seda.empirical_aux._loaders.reference_color(
+def test_color_anomaly_faherty_young_l6_interpolates_l5_l7():
+	"""L6 young reference interpolates between L5 and L7 when the L6 bin is sparse."""
+	grid = seda.empirical_aux._loaders._faherty_young_reference('J-K', 'mean')
+	expected = 0.5 * grid[15] + 0.5 * grid[17]
+	with pytest.warns(UserWarning, match='L6 has insufficient objects.*L5.*L7'):
+		ref = seda.empirical_aux._loaders.reference_color(
+			'J-K', 'L6', table='faherty16', age_group='young',
+		)
+	assert ref == pytest.approx(expected, abs=1e-12), (
+		'L6 young J-K reference not interpolated from L5 and L7'
+	)
+	with pytest.warns(UserWarning, match='L6 has insufficient objects.*L5.*L7'):
+		anomaly = seda.phy_params.color_anomaly(
+			color=_SUAREZ23_0355_JK,
+			color_name='J-K',
+			spt='L6',
+			table='faherty16',
+			age_group='young',
+		)
+	assert anomaly == pytest.approx(_SUAREZ23_0355_JK - expected, abs=1e-12), (
+		'L6 young J-K anomaly inconsistent with interpolated reference'
+	)
+
+
+def test_color_anomaly_faherty_young_l8_uses_sparse_bin():
+	"""L8 young reference uses sparse Table 1 bins (one object) when present."""
+	bins_jh = seda.empirical_aux._loaders._faherty_young_reference_bins('J-H')
+	bins_jk = seda.empirical_aux._loaders._faherty_young_reference_bins('J-K')
+	with pytest.warns(UserWarning, match='L8 has only 1 object'):
+		ref_jh = seda.empirical_aux._loaders.reference_color(
 			'J-H', 'L8', table='faherty16', age_group='young',
+		)
+	with pytest.warns(UserWarning, match='L8 has only 1 object'):
+		ref_jk = seda.empirical_aux._loaders.reference_color(
+			'J-K', 'L8', table='faherty16', age_group='young',
+		)
+	assert ref_jh == pytest.approx(float(np.mean(bins_jh[18])), abs=1e-12), (
+		'L8 young J-H reference not taken from the single available object'
+	)
+	assert ref_jk == pytest.approx(float(np.mean(bins_jk[18])), abs=1e-12), (
+		'L8 young J-K reference not taken from the single available object'
+	)
+
+
+def test_color_anomaly_faherty_young_insufficient_data_raises():
+	# Outside the Faherty M7-L8 range; no young reference can be built.
+	with pytest.raises(ValueError, match="table='faherty16' covers"):
+		seda.empirical_aux._loaders.reference_color(
+			'J-H', 'T5', table='faherty16', age_group='young',
 		)
 
 
