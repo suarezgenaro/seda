@@ -7,11 +7,16 @@ from astropy import units as u
 from .. import utils
 from sys import exit
 
-def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, out_file=None): 
+def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='photon', out_file=None): 
 	'''
 	Description:
 	------------
-		Compute synthetic photometry for any SVO filters from an input spectrum.
+		Compute synthetic photometry from an input spectrum and a set of
+		photometric filters compiled by SVO.
+
+		Synthetic fluxes are computed using photon-counting weighting by default,
+		which is appropriate for most astronomical detectors. Energy-integrating
+		weighting can be selected with ``detector='energy'``.
 
 	Parameters:
 	-----------
@@ -29,6 +34,10 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, out_file=None
 		File name to save the synthetic photometry (in erg/s/cm2/A) as prettytable.
 		The file name can include a path e.g. my_path/syn_phot.dat
 		If not provided, the synthetic photometry will not be saved.
+	- detector : str, optional
+		Detector response assumed when computing synthetic photometry:
+			- ``'photon'`` (default): photon-counting detectors. The synthetic flux is computed as a photon-weighted integral, appropriate for most astronomical detectors (CCDs, IR arrays).
+			- ``'energy'``: energy-integrating detectors.
 
 	Returns:
 	--------
@@ -48,10 +57,11 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, out_file=None
 		- ``'label'`` : label indicating if the filters are fully ('complete'), partially ('incomplete'), or no ('none') covered by the input spectrum or no recognized by SVO ('unrecognizable').
 		- ``'coverage_perc'`` : percentage of the filter transmission covered by the spectrum.
 		- ``'transmission'`` : dictionary with 2D arrays for the filter transmissions, where the first first entry is wavelength in microns and the second one is the transmission.
-		- ``'wl'`` : input spectrum wavelengths.
-		- ``'flux'`` : input spectrum fluxes.
-		- ``'eflux'`` : input spectrum flux uncertainties (if input ``eflux`` is provided)..
-		- ``'flux_unit'`` : flux units of the input spectrum.
+		- ``'detector'`` : detector response assumed when computing synthetic photometry
+		- ``'wl'`` : input spectrum wavelengths in micron.
+		- ``'flux'`` : input spectrum fluxes in Jy (the spectrum is internally converted to Jy, if necessary, before computing the synthetic photometry).
+		- ``'eflux'`` : input spectrum flux uncertainties in Jy (if input ``eflux`` is provided)..
+		- ``'flux_unit'`` : units of the internally stored spectrum fluxes (``'Jy'``).
 
 	Example:
 	--------
@@ -65,12 +75,16 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, out_file=None
 	>>> 
 	>>>	# run the code
 	>>> out = seda.synthetic_photometry.synthetic_photometry(wl=wl, flux=flux, eflux=eflux, 
-	>>>                                                      flux_unit='erg/s/cm2/A', filters=filters)
+	>>>                                                      flux_unit='erg/s/cm2/A',
+	>>>                                                      filters=filters)
 	>>> 
 	>>> # visualize the derived synthetic fluxes
 	>>> seda.plots.plot_synthetic_photometry(out)
 
 	Author: Genaro Suárez
+
+	Initial implementation: 2020
+	Last updated: 2026-07-18
 	'''
 
 	dir_sep = os.sep # directory separator for the current operating system
@@ -98,13 +112,27 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, out_file=None
 	filterID = maskedcolumn_to_numpy(filterID)
 	ZeroPoint = maskedcolumn_to_numpy(ZeroPoint)
 
+	# convert input spectrum to F_lambda (erg/s/cm2/A), if needed
+	if flux_unit == 'Jy':
+		out = convert_flux(flux=flux, eflux=eflux, wl=wl,
+						   unit_in='Jy', unit_out='erg/s/cm2/A')
+		flux = out['flux_out'] # in erg/s/cm2/A
+		if eflux is not None: eflux = out['eflux_out'] # in erg/s/cm2/A
+	
+	elif flux_unit == 'erg/s/cm2/um':
+		flux = (flux*u.erg/u.s/u.cm**2/u.micron).to(u.erg/u.s/u.cm**2/(u.nm*0.1)).value # in erg/s/cm2/A
+		if eflux is not None:
+			eflux = (eflux*u.erg/u.s/u.cm**2/u.micron).to(u.erg/u.s/u.cm**2/(u.nm*0.1)).value # in erg/s/cm2/A
+	
+	flux_unit = 'erg/s/cm2/A'
+
 	# initialize arrays to store relevant information
 	n_filters = len(filters)
 	# assign NaN values to be the output for unrecognized filters by SVO
-	syn_flux_Jy = np.full(n_filters, np.nan)
-	esyn_flux_Jy = np.full(n_filters, np.nan)
 	syn_flux_erg = np.full(n_filters, np.nan)
 	esyn_flux_erg = np.full(n_filters, np.nan)
+	syn_flux_Jy = np.full(n_filters, np.nan)
+	esyn_flux_Jy = np.full(n_filters, np.nan)
 	syn_mag = np.full(n_filters, np.nan)
 	esyn_mag = np.full(n_filters, np.nan)
 	lambda_eff = np.full(n_filters, np.nan)
@@ -143,35 +171,17 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, out_file=None
 			label[k] = 'incomplete'
 
 		# compute synthetic flux
-		out_synt_flux = compute_synthetic_flux(wl, flux, filter_wl, filter_flux, eflux)
-		syn_flux = out_synt_flux['syn_flux']
-		esyn_flux = out_synt_flux['esyn_flux']
-		lambda_eff[k] = out_synt_flux['lambda_eff']
-		width_eff[k] = out_synt_flux['width_eff']
-		
-		# convert flux into magnitudes
-		# first from erg/s/cm2/A to Jy (if needed) and then from Jy to mag
-		if flux_unit == 'erg/s/cm2/A':
-			syn_flux_Jy[k] = convert_flux(syn_flux, lambda_eff[k], flux_unit, 'Jy')['flux_out'] # in Jy
-			if eflux is not None: esyn_flux_Jy[k] = esyn_flux / syn_flux * syn_flux_Jy[k] # in Jy
-			syn_flux_erg[k] = syn_flux # in erg/s/cm2/A
-			if eflux is not None: esyn_flux_erg[k] = esyn_flux # in erg/s/cm2/A
+		out_synt_flux = _compute_synthetic_flux(wl=wl, flux=flux, eflux=eflux, filter_wl=filter_wl, filter_flux=filter_flux, detector=detector)
+		syn_flux_erg[k] = out_synt_flux['syn_flux'] # in erg/s/cm2/A
+		esyn_flux_erg[k] = out_synt_flux['esyn_flux'] # in erg/s/cm2/A
+		lambda_eff[k] = out_synt_flux['lambda_eff'] # in um
+		width_eff[k] = out_synt_flux['width_eff'] # in um
 
-		elif flux_unit == 'erg/s/cm2/um':
-			# erg/s/cm2/um to erg/s/cm2/A
-			syn_flux_erg[k] = (syn_flux*u.erg/u.s/u.cm**2/u.micron).to(u.erg/u.s/u.cm**2/(u.nm*0.1)).value # erg/s/cm2/A
-			if eflux is not None: 
-				esyn_flux_erg[k] = (esyn_flux*u.erg/u.s/u.cm**2/u.micron).to(u.erg/u.s/u.cm**2/(u.nm*0.1)).value # erg/s/cm2/A
-			# in Jy
-			syn_flux_Jy[k] = convert_flux(flux=syn_flux_erg[k], wl=lambda_eff[k], unit_in='erg/s/cm2/A', unit_out='Jy')['flux_out'] # in Jy
-			esyn_flux_Jy[k] = convert_flux(flux=syn_flux_erg[k], eflux=esyn_flux_erg[k], wl=lambda_eff[k], 
-			                               unit_in='erg/s/cm2/A', unit_out='Jy')['eflux_out'] # in Jy
-			
-		elif flux_unit == 'Jy': # convert Jy to erg/s/cm2/A to be an output
-			syn_flux_erg[k] = convert_flux(syn_flux, lambda_eff[k], flux_unit, 'erg/s/cm2/A')['flux_out'] # in erg/s/cm2/A
-			if eflux is not None: esyn_flux_erg[k] = esyn_flux / syn_flux * syn_flux_erg[k] # in erg/s/cm2/A
-			syn_flux_Jy[k] = syn_flux # in Jy
-			if eflux is not None: esyn_flux_Jy[k] = esyn_flux # in Jy
+		# derive synthetic magnitudes
+		# convert first synthetic fluxes from erg/s/cm2/A into Jy		
+		out = convert_flux(flux=syn_flux_erg[k], eflux=esyn_flux_erg[k], wl=lambda_eff[k], unit_in='erg/s/cm2/A', unit_out='Jy')
+		syn_flux_Jy[k] = out['flux_out'] # in Jy
+		if eflux is not None: esyn_flux_Jy[k] = out['eflux_out'] # in Jy
 
 		# from Jy to mag
 		mask_filt = filterID == filt
@@ -187,7 +197,7 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, out_file=None
 	# output dictionary
 	out = {'syn_flux(Jy)': syn_flux_Jy, 'syn_flux(erg/s/cm2/A)': syn_flux_erg, 'syn_mag': syn_mag, 'lambda_eff(um)': lambda_eff, 
 	       'width_eff(um)': width_eff, 'lambda_eff_SVO(um)': lambda_eff_SVO, 'width_eff_SVO(um)': width_eff_SVO, 
-	       'zero_point(Jy)': zero_point, 'label': label, 'coverage_perc': coverage_perc, 'transmission': transmission, 
+	       'zero_point(Jy)': zero_point, 'label': label, 'coverage_perc': coverage_perc, 'detector': detector, 'transmission': transmission, 
 	       'wl': wl, 'flux': flux, 'flux_unit': flux_unit, 'filters': filters}
 	if eflux is not None: 
 		out['esyn_flux(Jy)'] = esyn_flux_Jy
@@ -744,8 +754,16 @@ def filter_coverage_fraction(wl, filter_wl, filter_flux):
 	return label, fraction
 
 #+++++++++++++++++
-def compute_synthetic_flux(wl, flux, filter_wl, filter_flux, eflux=None):
-	#"""Compute synthetic flux, flux error, lambda_eff, width_eff"""
+def _compute_synthetic_flux(wl, flux, filter_wl, filter_flux, eflux=None, detector='photon'):
+	"""
+	Compute synthetic flux, flux error, lambda_eff, and width_eff.
+	
+	This is an internal helper function used by ``synthetic_photometry``.
+	The input spectrum must be provided as F_lambda. The synthetic flux is
+	computed using photon-counting weighting by default, appropriate for most
+	astronomical detectors. Energy-integrating weighting can be selected with
+	``detector='energy'``.
+	"""
 
 	# spectrum wavelengths within the filter wavelength range
 	mask_wl = (wl >= filter_wl.min()) & (wl <= filter_wl.max())
@@ -753,19 +771,31 @@ def compute_synthetic_flux(wl, flux, filter_wl, filter_flux, eflux=None):
 	# resample filter transmission to the spectrum wavelength
 	filter_flux_resam = np.interp(wl[mask_wl], filter_wl, filter_flux) # dimensionless
 
-	# normalize the transmission curve (it was dimensionless but now it has 1/um units)
-	filter_flux_norm = filter_flux_resam / utils.np_trapz(filter_flux_resam, wl[mask_wl]) # 1/um
+	# detector weighting
+	if detector == 'photon':
+		weight = wl[mask_wl] * filter_flux_resam # photon-counting detector
+	elif detector == 'energy':
+		weight = filter_flux_resam # energy-integrating detector
+	else:
+		raise ValueError("detector must be either 'photon' or 'energy'")
+
+	# normalize the transmission curve
+	weight_norm = weight / utils.np_trapz(weight, wl[mask_wl]) # 1/um
 
 	# synthetic flux density
-	syn_flux = utils.np_trapz(flux[mask_wl] * filter_flux_norm, wl[mask_wl]) # in input flux units (erg/s/cm2/A or Jy)
+	syn_flux = utils.np_trapz(flux[mask_wl] * weight_norm, wl[mask_wl]) # in input F_lambda units
 	esyn_flux = None
 	if eflux is not None:
 		esyn_flux = np.median(eflux[mask_wl] / flux[mask_wl]) * syn_flux # synthetic flux error as the median fractional flux uncertainties in the filter passband
 
 	# compute the filter's effective wavelength and effective width
-	lambda_eff = utils.np_trapz(wl[mask_wl] * filter_flux_resam * flux[mask_wl], wl[mask_wl]) / \
-				 utils.np_trapz(filter_flux_resam * flux[mask_wl], wl[mask_wl]) # in um
-	width_eff = utils.np_trapz(filter_flux_resam, wl[mask_wl]) / filter_flux_resam.max() # in um
+	# effective wavelength
+	lambda_eff = utils.np_trapz(wl[mask_wl] * flux[mask_wl] * weight, wl[mask_wl]) / \
+	             utils.np_trapz(flux[mask_wl] * weight, wl[mask_wl])
+	
+	# SVO effective width (always energy-counter definition)
+	width_eff = utils.np_trapz(wl[mask_wl] * filter_flux_resam, wl[mask_wl]) / \
+	            (wl[mask_wl] * filter_flux_resam).max()
 
 	# output dictionary
 	out = {'syn_flux': syn_flux, 'esyn_flux': esyn_flux, 'lambda_eff': lambda_eff, 'width_eff': width_eff}
