@@ -317,7 +317,7 @@ def flux_to_mag(flux, filters, flux_unit='Jy', eflux=None, svo_data=None):
 	- flux_unit : str, optional (default ``'Jy'``)
 		Units of ``flux``: ``'Jy'`` or ``'erg/s/cm2/A'``.
 	- eflux : array, float, optional
- 		Flux uncertainties for ``flux`` in ``unit_in``.
+ 		Flux uncertainties for ``flux`` in ``flux_unit``.
 	- svo_data : SVO table, optional
 		Astropoy table from SVO.
 
