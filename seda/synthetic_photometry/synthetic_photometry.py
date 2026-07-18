@@ -83,8 +83,8 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 
 	Author: Genaro Suárez
 
-    Initial implementation: 2020
-    Last updated: 2026-07-18
+	Initial implementation: 2020
+	Last updated: 2026-07-18
 	'''
 
 	dir_sep = os.sep # directory separator for the current operating system
