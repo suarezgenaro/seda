@@ -789,9 +789,13 @@ def _compute_synthetic_flux(wl, flux, filter_wl, filter_flux, eflux=None, detect
 		esyn_flux = np.median(eflux[mask_wl] / flux[mask_wl]) * syn_flux # synthetic flux error as the median fractional flux uncertainties in the filter passband
 
 	# compute the filter's effective wavelength and effective width
-	lambda_eff = utils.np_trapz(wl[mask_wl] * filter_flux_resam * flux[mask_wl], wl[mask_wl]) / \
-				 utils.np_trapz(filter_flux_resam * flux[mask_wl], wl[mask_wl]) # in um
-	width_eff = utils.np_trapz(filter_flux_resam, wl[mask_wl]) / filter_flux_resam.max() # in um
+	# effective wavelength
+	lambda_eff = utils.np_trapz(wl[mask_wl] * flux[mask_wl] * weight, wl[mask_wl]) / \
+	             utils.np_trapz(flux[mask_wl] * weight, wl[mask_wl])
+	
+	# SVO effective width (always energy-counter definition)
+	width_eff = utils.np_trapz(wl[mask_wl] * filter_flux_resam, wl[mask_wl]) / \
+	            (wl[mask_wl] * filter_flux_resam).max()
 
 	# output dictionary
 	out = {'syn_flux': syn_flux, 'esyn_flux': esyn_flux, 'lambda_eff': lambda_eff, 'width_eff': width_eff}
