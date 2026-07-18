@@ -57,6 +57,7 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 		- ``'label'`` : label indicating if the filters are fully ('complete'), partially ('incomplete'), or no ('none') covered by the input spectrum or no recognized by SVO ('unrecognizable').
 		- ``'coverage_perc'`` : percentage of the filter transmission covered by the spectrum.
 		- ``'transmission'`` : dictionary with 2D arrays for the filter transmissions, where the first first entry is wavelength in microns and the second one is the transmission.
+		- ``'detector'`` : detector response assumed when computing synthetic photometry
 		- ``'wl'`` : input spectrum wavelengths in micron.
 		- ``'flux'`` : input spectrum fluxes in Jy (the spectrum is internally converted to Jy, if necessary, before computing the synthetic photometry).
 		- ``'eflux'`` : input spectrum flux uncertainties in Jy (if input ``eflux`` is provided)..
@@ -192,7 +193,7 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 	# output dictionary
 	out = {'syn_flux(Jy)': syn_flux_Jy, 'syn_flux(erg/s/cm2/A)': syn_flux_erg, 'syn_mag': syn_mag, 'lambda_eff(um)': lambda_eff, 
 	       'width_eff(um)': width_eff, 'lambda_eff_SVO(um)': lambda_eff_SVO, 'width_eff_SVO(um)': width_eff_SVO, 
-	       'zero_point(Jy)': zero_point, 'label': label, 'coverage_perc': coverage_perc, 'transmission': transmission, 
+	       'zero_point(Jy)': zero_point, 'label': label, 'coverage_perc': coverage_perc, 'detector': detector, 'transmission': transmission, 
 	       'wl': wl, 'flux': flux, 'flux_unit': flux_unit, 'filters': filters}
 	if eflux is not None: 
 		out['esyn_flux(Jy)'] = esyn_flux_Jy
