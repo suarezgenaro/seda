@@ -21,7 +21,7 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 	Parameters:
 	-----------
 	- wl : array
-		Wavelength in um.
+		Wavelength in micron.
 	- flux : array
 		Fluxes in units specified by ``flux_unit``.
 	- filters : list, array, or str
