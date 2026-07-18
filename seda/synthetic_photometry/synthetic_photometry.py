@@ -75,12 +75,16 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 	>>> 
 	>>>	# run the code
 	>>> out = seda.synthetic_photometry.synthetic_photometry(wl=wl, flux=flux, eflux=eflux, 
-	>>>                                                      flux_unit='erg/s/cm2/A', filters=filters)
+	>>>                                                      flux_unit='erg/s/cm2/A',
+	>>>                                                      filters=filters)
 	>>> 
 	>>> # visualize the derived synthetic fluxes
 	>>> seda.plots.plot_synthetic_photometry(out)
 
 	Author: Genaro Suárez
+
+    Initial implementation: 2020
+    Last updated: 2026-07-18
 	'''
 
 	dir_sep = os.sep # directory separator for the current operating system
