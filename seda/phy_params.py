@@ -1,20 +1,23 @@
 import numpy as np
 import pickle
+import arviz as az
 from astropy import units as u
 from astropy.constants import L_sun, sigma_sb, R_jup, R_sun
 from scipy.interpolate import LinearNDInterpolator
+from scipy.stats import gaussian_kde
 from .synthetic_photometry import synthetic_photometry
 from . import input_parameters
 from . import chi2_fit 
 from . import models
 from . import utils
+from . import inclination_sampler
 from sys import exit
 
 
 ##########################
 def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=None, distance=None, edistance=None, 
-	        flux_unit=None, wl_model=None, flux_model=None, params=None, scale_model=True, convolve_model=True, 
-	        res=None, lam_res=None, complement_SED=True):
+			flux_unit=None, wl_model=None, flux_model=None, params=None, scale_model=True, convolve_model=True, 
+			res=None, lam_res=None, complement_SED=True):
 	'''
 	Description:
 	------------
@@ -128,7 +131,7 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 				# read the entire best fit model spectrum (the one stored in 
 				# output_fit was trimmed to the wavelength range of the data)
 				output_best_chi2_fits = utils.best_chi2_fits(output_chi2=output_fit, N_best_fits=1, 
-				                                             model_dir_ori=model_dir, ori_res=True)
+															 model_dir_ori=model_dir, ori_res=True)
 				wl_model = output_best_chi2_fits['wl_model_best'][0] # um
 				flux_model = output_best_chi2_fits['flux_model_best'][0] # erg/s/cm2/A scaled to match the input spectra
 				spectra_name_best = output_best_chi2_fits['spectra_name_best'][0]
@@ -158,7 +161,7 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 				# read the entire best fit model spectrum (the one stored in output_fit 
 				# was trimmed to the wavelength range of the data)
 				output_best_bayesian_fit = best_bayesian_fit(output_bayes=output_fit, 
-				                                             model_dir_ori=model_dir, ori_res=True)
+															 model_dir_ori=model_dir, ori_res=True)
 				wl_model = output_best_bayesian_fit['wl_model_ori'] # um
 				flux_model = output_best_bayesian_fit['flux_model_ori'] # erg/cm2/s/A
 				params = output_best_bayesian_fit['params_med']
@@ -166,7 +169,7 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 		else: # no output_fit is provided
 			# handle input data
 			my_data = input_parameters.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, eflux_spectra=eflux_spectra, 
-			                                     flux_unit=flux_unit, res=res, distance=distance, edistance=edistance)
+												 flux_unit=flux_unit, res=res, distance=distance, edistance=edistance)
 			N_spectra = my_data.N_spectra
 			wl_spectra = my_data.wl_spectra # um
 			flux_spectra = my_data.flux_spectra # erg/cm2/s/A
@@ -202,8 +205,8 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 			if scale_model: # scale model fluxes to minimize the chi-square statistics
 				# find scaling factor by running the chi-square minimization
 				my_data = input_parameters.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, 
-				                                     eflux_spectra=eflux_spectra, flux_unit=flux_unit, 
-				                                     res=res, distance=distance, edistance=edistance)
+													 eflux_spectra=eflux_spectra, flux_unit=flux_unit, 
+													 res=res, distance=distance, edistance=edistance)
 				my_model = input_parameters.ModelOptions(wl_model=wl_model, flux_model=flux_model)
 				my_chi2 = input_parameters.Chi2Options(my_data=my_data, my_model=my_model)
 				out_chi2 = chi2_fit.chi2(my_chi2=my_chi2)
@@ -323,22 +326,22 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 
 	# output dictionary
 	out = {'flux_tot': flux_tot, 'eflux_tot': eflux_tot, 'Lbol_tot': Lbol_tot, 'eLbol_tot': eLbol_tot, 
-	       'logLbol_tot': logLbol_tot, 'elogLbol_tot': elogLbol_tot}
+		   'logLbol_tot': logLbol_tot, 'elogLbol_tot': elogLbol_tot}
 
 	if complement_SED: # if the SED will be complemented with a model spectrum
 		out.update({'flux_tot_obs': flux_tot_obs, 'eflux_tot_obs': eflux_tot_obs, 'Lbol_tot_obs': Lbol_tot_obs, 
-		                 'eLbol_tot_obs': eLbol_tot_obs, 'logLbol_tot_obs': logLbol_tot_obs, 'elogLbol_tot_obs': elogLbol_tot_obs, 
-		                 'contribution_percentage': contribution, 'contribution_percentage_obs': contribution_obs,
-		                 'wl_SED': wl_SED, 'flux_SED': flux_SED, 'eflux_SED': eflux_SED, 'params': params, 
-		                 'wl_spectra': wl_spectra, 'flux_spectra': flux_spectra, 'eflux_spectra': eflux_spectra,
-		                 'wl_model': wl_model, 'flux_model': flux_model,
-		                 'N_spectra': N_spectra, 'completeness_obs': completeness})
+						 'eLbol_tot_obs': eLbol_tot_obs, 'logLbol_tot_obs': logLbol_tot_obs, 'elogLbol_tot_obs': elogLbol_tot_obs, 
+						 'contribution_percentage': contribution, 'contribution_percentage_obs': contribution_obs,
+						 'wl_SED': wl_SED, 'flux_SED': flux_SED, 'eflux_SED': eflux_SED, 'params': params, 
+						 'wl_spectra': wl_spectra, 'flux_spectra': flux_spectra, 'eflux_spectra': eflux_spectra,
+						 'wl_model': wl_model, 'flux_model': flux_model,
+						 'N_spectra': N_spectra, 'completeness_obs': completeness})
 
 	return out
 
 ##########################
 def teff(Lbol, eLbol, R, eR, n_mc=10000, central="median", 
-	     error="percentile", percentiles=(16, 84)):
+		 error="percentile", percentiles=(16, 84)):
 	'''
 	Description:
 	------------
@@ -383,7 +386,7 @@ def teff(Lbol, eLbol, R, eR, n_mc=10000, central="median",
 	>>>
 	>>> # derive Teff (in K) from Stefan–Boltzmann law
 	>>> seda.phy_params.teff(Lbol=Lbol, eLbol=eLbol, R=R, eR=eR)
-	    (1592.0020910445828, (57.98628122105015, 65.18365052510921))
+		(1592.0020910445828, (57.98628122105015, 65.18365052510921))
 
 
 	Author: Genaro Suárez
@@ -451,173 +454,206 @@ def teff(Lbol, eLbol, R, eR, n_mc=10000, central="median",
 	return Teff_val, Teff_err
 ##########################
 def inclination(vsini, evsini, P, eP, R, eR, n_mc=10000, central="median",
-                error="percentile", percentiles=(16, 84)):
-    '''
-    Description:
-    ------------
-        Calculate the inclination angle from an objects
-        projected rotation velocity (v sin i), rotation period (P),
-        and radius (R), using:
+				error="percentile", percentiles=(16, 84), mode="cosi"):
+	'''
+	Description:
+	------------
+		Calculate the inclination angle from an objects
+		projected rotation velocity (v sin i), rotation period (P),
+		and radius (R), using:
  
-            sin i = (P * vsini) / (2 * pi * R)
+			sin i = (P * vsini) / (2 * pi * R)
  
-        Uncertainty is propagated via Monte Carlo sampling.
+		Uncertainty is propagated via Monte Carlo sampling.
  
-    Parameters:
-    -----------
-    - vsini : float
-        Projected rotation velocity in units of km/s.
-    - evsini : float
-        Uncertainty in vsini (km/s).
-    - P : float
-        Rotation period in hours.
-    - eP : float
-        Uncertainty in the rotation period (hours).
-    - R : float
-        Radius in units of R_jup.
-    - eR : float
-        Uncertainty in radius (R_jup).
-    - n_mc : int, optional (default 10000)
-        Number of Monte Carlo samples for uncertainty propagation.
-    - central : str, optional (default "median")
-        "mean" or "median" for the central value of the inclination.
-    - error : str, optional (default "percentile")
-        "std" for symmetric standard deviation, or "percentile" for
-        asymmetric percentile-based errors (recommended, since the
-        posterior for i is generically asymmetric near 90 deg).
-    - percentiles : tuple or list, optional (default (16, 84))
-        Lower and upper percentiles used when error="percentile".
+	Parameters:
+	-----------
+	- vsini : float
+		Projected rotation velocity in units of km/s.
+	- evsini : float
+		Uncertainty in vsini (km/s).
+	- P : float
+		Rotation period in hours.
+	- eP : float
+		Uncertainty in the rotation period (hours).
+	- R : float
+		Radius in units of R_jup.
+	- eR : float
+		Uncertainty in radius (R_jup).
+	- n_mc : int, optional (default 10000)
+		Number of Monte Carlo samples for uncertainty propagation.
+	- central : str, optional (default "median")
+		"mean", "median", or "mode" for the central value of the 
+		inclination.
+	- error : str, optional (default "percentile")
+		"std" for symmetric standard deviation, or "percentile" for
+		asymmetric percentile-based errors (recommended, since the
+		posterior for i is generically asymmetric near 90 deg).
+	- percentiles : tuple or list, optional (default (16, 84))
+		Lower and upper percentiles used when error="percentile".
+	- mode : str, optional (default "cosi")
+		"sini" or "cosi" to determine which method is used to
+		calculate the inclination. "cosi" refers to the 
+		Masuda&Winn2020 paper which calculates the posterior
+		PDF for cosi and samples this with MCMC.
  
-    Returns:
-    --------
-    - inc : float
-        Inclination angle in degrees.
-    - einc : float or tuple
-        Inclination uncertainty in degrees.
-        - If error="std": scalar symmetric uncertainty.
-        - If error="percentile": tuple (lower_err, upper_err).
+	Returns:
+	--------
+	- inc : float
+		Inclination angle in degrees.
+	- einc : float or tuple
+		Inclination uncertainty in degrees.
+		- If error="std": scalar symmetric uncertainty.
+		- If error="percentile": tuple (lower_err, upper_err).
  
-    Notes:
-    ------
-    - MC samples with sin i > 1 are unphysical (vsini exceeds v_eq for those
-      draws). Following Vos et al. (2017), these are set to sin i = 1 (i = 90 deg)
-      rather than discarded. The number of clipped samples is reported.
-    - Samples with NaN (e.g. from non-physical period draws) are excluded from
-      the statistics; the number of samples estimated vs used is printed.
-    - The inclination posterior is bounded at 90 deg (sin i <= 1), so
-      error="percentile" is strongly preferred over "std" when vsini is
-      close to 2*pi*R/P.
+	Notes:
+	------
+	- MC samples with sin i > 1 are unphysical (vsini exceeds v_eq for those
+	  draws). Following Vos et al. (2017), these are set to sin i = 1 (i = 90 deg)
+	  rather than discarded. The number of clipped samples is reported.
+	- Samples with NaN (e.g. from non-physical period draws) are excluded from
+	  the statistics; the number of samples estimated vs used is printed.
+	- The inclination posterior is bounded at 90 deg (sin i <= 1), so
+	  error="percentile" is strongly preferred over "std" when vsini is
+	  close to 2*pi*R/P.
  
-    Example:
-    --------
-    >>> import seda
-    >>>
-    >>> # 2MASS J03552337+1133437 (Suárez et al. 2023, Section 2.2)
-    >>> vsini, evsini = 12.31, 0.15  # km/s (Blake et al. 2010)
-    >>> P, eP       =  9.53, 0.19   # hours (Vos et al. 2022)
-    >>> R, eR       =  1.22, 0.02   # R_jup (Vos et al. 2022)
-    >>>
-    >>> seda.phy_params.inclination(vsini=vsini, evsini=evsini,
-    ...                             P=P, eP=eP, R=R, eR=eR)
-        (50.4, (1.9, 2.0))
+	Example:
+	--------
+	>>> import seda
+	>>>
+	>>> # 2MASS J03552337+1133437 (Suárez et al. 2023, Section 2.2)
+	>>> vsini, evsini = 12.31, 0.15  # km/s (Blake et al. 2010)
+	>>> P, eP       =  9.53, 0.19   # hours (Vos et al. 2022)
+	>>> R, eR       =  1.22, 0.02   # R_jup (Vos et al. 2022)
+	>>>
+	>>> seda.phy_params.inclination(vsini=vsini, evsini=evsini,
+	...                             P=P, eP=eP, R=R, eR=eR)
+		(50.4, (1.9, 2.0))
  
-    Author: Theo Olsen
+	Author: Theo Olsen
  
-    Date: 2026-06-10
-    '''
+	Date: 2026-06-10
+	'''
  
-    # ensure percentiles is a tuple
-    percentiles = tuple(percentiles)
+	# ensure percentiles is a tuple
+	percentiles = tuple(percentiles)
  
-    # validate "central" and "error"
-    central_valid = ["mean", "median"]
-    if central not in central_valid:
-        raise ValueError(
-            f"central={central!r} is not recognized. "
-            f"Valid options: {central_valid}."
-        )
-    error_valid = ["std", "percentile"]
-    if error not in error_valid:
-        raise ValueError(
-            f"error={error!r} is not recognized. "
-            f"Valid options: {error_valid}."
-        )
+	# validate "central" and "error"
+	central_valid = ["mean", "median", "mode"]
+	if central not in central_valid:
+		raise ValueError(
+			f"central={central!r} is not recognized. "
+			f"Valid options: {central_valid}."
+		)
+	error_valid = ["std", "percentile"]
+	if error not in error_valid:
+		raise ValueError(
+			f"error={error!r} is not recognized. "
+			f"Valid options: {error_valid}."
+		)
+	mode_valid = ["cosi", "sini"]
+	if mode not in mode_valid:
+		raise ValueError(
+			f"mode={mode!r} is not recognized. "
+			f"Valid options: {central_valid}."
+		)
  
-    # attach units
-    vsini_u  = vsini  * u.km / u.s
-    evsini_u = evsini * u.km / u.s
+	# attach units
+	vsini_u  = vsini  * u.km / u.s
+	evsini_u = evsini * u.km / u.s
  
-    P_u  = P  * u.hour
-    eP_u = eP * u.hour
+	P_u  = P  * u.hour
+	eP_u = eP * u.hour
  
-    R_u  = R  * R_jup
-    eR_u = eR * R_jup
- 
-    # deterministic inclination (sanity check, not returned)
-    v_eq_det = (2 * np.pi * R_u / P_u).to(u.km / u.s)
-    sin_i_det = (vsini_u / v_eq_det).value
-    sin_i_det = np.clip(sin_i_det, -1.0, 1.0)
-    inc_det   = np.degrees(np.arcsin(sin_i_det))
- 
-    # Monte Carlo samples — drawn from Gaussian distributions
-    vsini_samples = np.random.normal(vsini_u.value,  evsini_u.value, n_mc) * vsini_u.unit
-    P_samples     = np.random.normal(P_u.value,      eP_u.value,     n_mc) * P_u.unit
-    R_samples     = np.random.normal(R_u.value,      eR_u.value,     n_mc) * R_u.unit
- 
-    # equatorial velocity for each sample
-    v_eq_samples = (2 * np.pi * R_samples / P_samples).to(u.km / u.s)
- 
-    # sin i for each sample
-    sin_i_samples = (vsini_samples / v_eq_samples).value
+	R_u  = R  * R_jup
+	eR_u = eR * R_jup
 
-    # Vos et al. (2017): set unphysical sin i > 1 to 1 instead of discarding
-    n_clipped = int(np.sum(sin_i_samples > 1.0))
-    sin_i_used = np.where(sin_i_samples > 1.0, 1.0, sin_i_samples)
+	if mode=="cosi":
+		c = inclination_sampler.CosI(vsini_u.value, evsini_u.value, R_u.to(R_sun).value, eR_u.to(R_sun).value, P_u.value/24, eP_u.value/24)
 
-    mask_valid = ~np.isnan(sin_i_used)
-    n_nan = int(np.sum(~mask_valid))
-    n_used = int(np.sum(mask_valid))
+		sampler = c.run_mcmc(100, n_mc)
 
-    if n_clipped > 0:
-        print(
-            f"{n_clipped}/{n_mc} MC samples had sin i > 1 and were set to sin i = 1 "
-            f"(Vos et al. 2017)."
-        )
-    if n_nan > 0:
-        print(f"{n_nan}/{n_mc} MC samples were NaN and excluded from statistics.")
-    print(f"{n_used}/{n_mc} MC samples used for inclination statistics.")
+		cosi_samples = c.get_posterior(sampler)
 
-    sin_i_valid = sin_i_used[mask_valid]
+		inc_samples = np.arccos(cosi_samples) * 180 / np.pi
+	elif mode=="sini":
+		# deterministic inclination (sanity check, not returned)
+		v_eq_det = (2 * np.pi * R_u / P_u).to(u.km / u.s)
+		sin_i_det = (vsini_u / v_eq_det).value
+		sin_i_det = np.clip(sin_i_det, -1.0, 1.0)
+		inc_det   = np.degrees(np.arcsin(sin_i_det))
+	
+		# Monte Carlo samples — drawn from Gaussian distributions
+		vsini_samples = np.random.normal(vsini_u.value,  evsini_u.value, n_mc) * vsini_u.unit
+		P_samples     = np.random.normal(P_u.value,      eP_u.value,     n_mc) * P_u.unit
+		R_samples     = np.random.normal(R_u.value,      eR_u.value,     n_mc) * R_u.unit
+	
+		# equatorial velocity for each sample
+		v_eq_samples = (2 * np.pi * R_samples / P_samples).to(u.km / u.s)
+	
+		# sin i for each sample
+		sin_i_samples = (vsini_samples / v_eq_samples).value
 
-    # inclination in degrees
-    inc_samples = np.degrees(np.arcsin(sin_i_valid))
+		# Vos et al. (2017): set unphysical sin i > 1 to 1 instead of discarding
+		n_clipped = int(np.sum(sin_i_samples > 1.0))
+		sin_i_used = np.where(sin_i_samples > 1.0, 1.0, sin_i_samples)
 
-    if inc_samples.size == 0:
-        raise ValueError(
-            'All Monte Carlo samples were NaN. '
-            'Check that vsini, P, and R are mutually consistent.'
-        )
+		mask_valid = ~np.isnan(sin_i_used)
+		n_nan = int(np.sum(~mask_valid))
+		n_used = int(np.sum(mask_valid))
 
-    # central value
-    if central == "mean":
-        inc_val = np.mean(inc_samples)
-    elif central == "median":
-        inc_val = np.median(inc_samples)
- 
-    # uncertainty
-    if error == "std":
-        inc_err = np.std(inc_samples)
- 
-    elif error == "percentile":
-        p_lo, p_hi = np.percentile(inc_samples, percentiles)
-        inc_err = (inc_val - p_lo, p_hi - inc_val)
- 
-    return inc_val, inc_err
+		if n_clipped > 0:
+			print(
+				f"{n_clipped}/{n_mc} MC samples had sin i > 1 and were set to sin i = 1 "
+				f"(Vos et al. 2017)."
+			)
+		if n_nan > 0:
+			print(f"{n_nan}/{n_mc} MC samples were NaN and excluded from statistics.")
+		print(f"{n_used}/{n_mc} MC samples used for inclination statistics.")
+
+		sin_i_valid = sin_i_used[mask_valid]
+
+		# inclination in degrees
+		inc_samples = np.degrees(np.arcsin(sin_i_valid))
+
+		if inc_samples.size == 0:
+			raise ValueError(
+				'All Monte Carlo samples were NaN. '
+				'Check that vsini, P, and R are mutually consistent.'
+			)
+
+	# central value
+	if central == "mean":
+		inc_val = np.mean(inc_samples)
+	elif central == "median":
+		inc_val = np.median(inc_samples)
+	elif central == "mode":
+		kde = gaussian_kde(inc_samples)
+		x_vals = np.linspace(np.min(inc_samples), np.max(inc_samples), n_mc)
+		kde_vals = kde(x_vals)
+		inc_val = x_vals[np.argmax(kde_vals)]
+
+	# uncertainty
+	if error == "std":
+		inc_err = np.std(inc_samples)
+
+	elif error == "percentile":
+		if central == "mode":
+			hdi = az.hdi(inc_samples, hdi_prob=(percentiles[1]-percentiles[0])/100)
+			p_lo = hdi[0]
+			p_hi = hdi[1]
+
+		else:
+			p_lo, p_hi = np.percentile(inc_samples, percentiles)
+
+		inc_err = (inc_val - p_lo, p_hi - inc_val)
+
+	return inc_val, inc_err
 
 ##########################
 def evol_params(Lbol, eLbol, R, eR, model, filename=None,
-                n_mc=10000, central="median", error="percentile", 
-                percentiles=(16, 84), verbose=True):
+				n_mc=10000, central="median", error="percentile", 
+				percentiles=(16, 84), verbose=True):
 	'''
 	Description:
 	------------
@@ -677,7 +713,7 @@ def evol_params(Lbol, eLbol, R, eR, model, filename=None,
 	>>> out = seda.phy_params.evol_params(Lbol=Lbol, eLbol=eLbol, R=R, eR=eR,
 	>>>                                   model='Sonora_Bobcat', filename='nc+0.0_co1.0_mass')
 	>>> out['mass'], out['age']
-	    (0.0133, 0.51)  
+		(0.0133, 0.51)  
 
 	Author: Theo Olsen
 
@@ -768,14 +804,14 @@ def evol_params(Lbol, eLbol, R, eR, model, filename=None,
 	n_outside = int(np.sum(np.isnan(first_samples)))
 	frac_outside = n_outside / n_mc
 	print(f'{n_outside}/{n_mc} ({100*frac_outside:.1f}%) Monte Carlo samples fell '
-	             'outside the evolutionary grid and were excluded from the statistics.')
+				 'outside the evolutionary grid and were excluded from the statistics.')
 	if frac_outside > 0.5:
 		print(' More than half of the Monte Carlo samples are outside the '
-		             'grid; the inferred values are poorly constrained.')
+					 'grid; the inferred values are poorly constrained.')
 	if n_outside == n_mc:
 		raise ValueError('All Monte Carlo samples fell outside the evolutionary grid. '
-		                 'Check that Lbol and R are within the model coverage '
-		                 'and that the table units/column order are correct.')
+						 'Check that Lbol and R are within the model coverage '
+						 'and that the table units/column order are correct.')
 
 	for param, samples in param_samples.items():
 		val, err = _summarize(samples)
@@ -810,7 +846,7 @@ def sort_nested_list(wl_spectra, flux_spectra, eflux_spectra):
 	# minimum wavelength of each input spectrum
 	min_vals = np.zeros(len(wl_spectra))
 	for i in range(len(wl_spectra)):
-	    min_vals[i] = min(wl_spectra[i])
+		min_vals[i] = min(wl_spectra[i])
 
 	wl_spectra = [wl_spectra[i] for i in np.argsort(min_vals)]
 	flux_spectra = [flux_spectra[i] for i in np.argsort(min_vals)]
