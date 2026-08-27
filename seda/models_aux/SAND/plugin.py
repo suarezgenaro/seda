@@ -1,6 +1,7 @@
-import xarray
-import numpy as np
+from astropy.io import ascii
+from astropy.io import fits
 import astropy.units as u
+import numpy as np
 from seda.models_aux._plugin_helpers import _vac_to_air_uv_safe
 
 def _read_model_spectrum(spectrum_file):

@@ -91,13 +91,10 @@ class Models:
 			for key, value in config.items():
 				if not key.startswith('_comment'):
 					setattr(self, key, value)
-                    
-			# set attributes related to coverage of the free parameters
-			pickle_file = self.path_models_aux / self.model / 'coverage.pickle'
 
-			if pickle_file.is_file():
-				self.model_ranges()
-            
+			# set attributes related to coverage of the free parameters
+			self.model_ranges()
+
 	def _load_model_configs(self):
 		"""
 		Scan model folders, ensure config + plugin exist,
