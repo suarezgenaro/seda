@@ -6,6 +6,7 @@ import json
 import xarray
 import importlib.util
 from astropy import units as u
+from astropy.constants import R_jup, R_sun
 from astropy.io import ascii
 from pathlib import Path
 from importlib import resources
@@ -650,6 +651,145 @@ def _compute_evolutionary_param_ranges(model):
 		grid = read_evolutionary_model(filename=filename, model=model)
 		ranges[filename] = _param_ranges_from_grid(grid)
 	return ranges
+
+##########################
+def _split_evolutionary_tracks(grid):
+	"""Split a bundled evolutionary table into constant-mass cooling tracks."""
+
+	mass = np.asarray(grid['mass'], dtype=float)
+	tracks = []
+	for mass_val in np.unique(mass):
+		mask = mass == mass_val
+		track = {
+			col: np.asarray(grid[col], dtype=float)[mask]
+			for col in grid
+		}
+		order = np.argsort(track['age'])
+		track = {col: track[col][order] for col in track}
+		tracks.append(track)
+	return tracks
+
+
+def _build_isochrone(tracks, age):
+	"""Build a constant-age isochrone by interpolating each mass track to ``age``."""
+
+	age = float(age)
+	isochrone = {col: [] for col in tracks[0]}
+	for track in tracks:
+		ages = track['age']
+		if age < ages[0] or age > ages[-1]:
+			continue
+		for col in track:
+			val = np.interp(age, ages, track[col])
+			isochrone[col].append(val)
+
+	if not isochrone['age']:
+		return {col: np.array([], dtype=float) for col in isochrone}
+
+	isochrone = {col: np.asarray(vals, dtype=float) for col, vals in isochrone.items()}
+	order = np.argsort(isochrone['logL'])
+	return {col: isochrone[col][order] for col in isochrone}
+
+
+def _interp_on_isochrone(isochrone, logL_targets):
+	"""Interpolate isochrone columns at target log10(L/Lsun) values."""
+
+	logL_targets = np.atleast_1d(np.asarray(logL_targets, dtype=float))
+	logL_grid = np.asarray(isochrone['logL'], dtype=float)
+
+	if logL_grid.size < 2:
+		return {
+			col: np.full(logL_targets.shape, np.nan, dtype=float)
+			for col in isochrone if col != 'logL'
+		}
+
+	sort_idx = np.argsort(logL_grid)
+	logL_sorted = logL_grid[sort_idx]
+
+	out = {}
+	for col, values in isochrone.items():
+		if col == 'logL':
+			continue
+		val_sorted = np.asarray(values, dtype=float)[sort_idx]
+		out[col] = np.interp(
+			logL_targets, logL_sorted, val_sorted,
+			left=np.nan, right=np.nan,
+		)
+	return out
+
+
+def _evolutionary_radius_unit(model):
+	"""Return the native radius unit string from an evolutionary model config."""
+
+	config, _ = _load_evolutionary_model(model)
+	return config.get('units', {}).get('radius', 'R_sun')
+
+
+def _convert_radius_to_rjup(radius, model):
+	"""Convert evolutionary-grid radius values to R_jup."""
+
+	radius = np.asarray(radius, dtype=float)
+	unit = _evolutionary_radius_unit(model)
+	if unit == 'R_sun':
+		return (radius * R_sun).to(R_jup).value
+	if unit == 'R_jup':
+		return radius
+	raise ValueError(
+		f'Unsupported evolutionary radius unit {unit!r} for model {model!r}.'
+	)
+
+
+def _precompute_isochrone_cache(tracks, grid):
+	"""Pre-build isochrones at every tabulated age in an evolutionary grid."""
+
+	tabulated_ages = np.unique(np.asarray(grid['age'], dtype=float))
+	return {
+		float(age): _build_isochrone(tracks, float(age))
+		for age in tabulated_ages
+	}
+
+
+def _nan_on_isochrone(isochrone, logL_targets):
+	"""Return NaN interpolation results for every non-logL isochrone column."""
+
+	logL_targets = np.atleast_1d(np.asarray(logL_targets, dtype=float))
+	return {
+		col: np.full(logL_targets.shape, np.nan, dtype=float)
+		for col in isochrone if col != 'logL'
+	}
+
+
+def _lookup_on_isochrone_grid(isochrone_cache, tabulated_ages, age, logL_targets):
+	"""Look up evolutionary parameters at ``(age, logL)``, interpolating in age."""
+
+	logL_targets = np.atleast_1d(np.asarray(logL_targets, dtype=float))
+	tabulated_ages = np.asarray(tabulated_ages, dtype=float)
+	age = float(age)
+	age_min = float(tabulated_ages[0])
+	age_max = float(tabulated_ages[-1])
+
+	if age < age_min or age > age_max:
+		return _nan_on_isochrone(isochrone_cache[age_min], logL_targets)
+
+	hi = int(np.searchsorted(tabulated_ages, age))
+	if hi >= len(tabulated_ages):
+		return _interp_on_isochrone(isochrone_cache[age_max], logL_targets)
+
+	age_lo = float(tabulated_ages[hi - 1])
+	age_hi = float(tabulated_ages[hi])
+	if age_lo == age_hi or age == age_lo:
+		return _interp_on_isochrone(isochrone_cache[age_lo], logL_targets)
+	if age == age_hi:
+		return _interp_on_isochrone(isochrone_cache[age_hi], logL_targets)
+
+	weight = (age - age_lo) / (age_hi - age_lo)
+	interp_lo = _interp_on_isochrone(isochrone_cache[age_lo], logL_targets)
+	interp_hi = _interp_on_isochrone(isochrone_cache[age_hi], logL_targets)
+
+	out = {}
+	for col in interp_lo:
+		out[col] = (1.0 - weight) * interp_lo[col] + weight * interp_hi[col]
+	return out
 
 ##########################
 # short name for plot legends for model spectra

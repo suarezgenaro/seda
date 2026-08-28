@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from astropy import units as u
-from astropy.constants import R_jup, R_sun
+from astropy.constants import M_jup, M_sun, R_jup, R_sun
 
 import seda
 from tests.conftest import load_evolutionary_model_catalog, load_evolutionary_table_catalog
@@ -20,6 +20,13 @@ def _grid_radius_in_rjup(model, radius):
 	if radius_unit == 'R_jup':
 		return float(radius)
 	raise ValueError(f'Unsupported evolutionary grid radius unit: {radius_unit!r}')
+
+def _grid_radius_native(model, filename, idx=500):
+	"""Return native-grid radius for one row of a bundled evolutionary table."""
+	grid = seda.models.read_evolutionary_model(filename=filename, model=model)
+	if idx < 0:
+		idx = len(grid['mass']) + idx
+	return float(grid['radius'][idx])
 
 def _bundled_grid_inputs(model, filename, idx=500):
 	"""Return (Lbol, R, Teff, logg, age, mass) for one row of a bundled evolutionary table."""
