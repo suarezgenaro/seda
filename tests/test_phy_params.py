@@ -481,6 +481,382 @@ def test_evolutionary_models_params_bhac_spot_check():
 		f'BHAC k2rad range mismatch: {params["k2rad"]}'
 	)
 
+# ----------------------------
+# color_anomaly — literature regression values
+# ----------------------------
+# Photometry and reference colors are taken from peer-reviewed tables.
+# Expected anomalies are computed from those published inputs.
+
+# Faherty et al. 2016, ApJS, 225, 10 — Table 15 field/normal means (M7–L8)
+_FAHERTY16_L1_JH = 0.81
+_FAHERTY16_L3_JH = 0.96
+_FAHERTY16_L4_JH = 1.07
+_FAHERTY16_L4_JK = 1.74
+_FAHERTY16_L5_JH = 1.09
+_FAHERTY16_L5_JK = 1.75
+
+# Faherty et al. 2016 — Table 17, 2MASS J00040288-6410358 (L1γ)
+_FAHERTY16_00040288_JH = 0.96
+
+# Suárez et al. 2023, ApJL, 954, L6 — Table 2 (2MASS J03552337+1133437)
+_SUAREZ23_0355_J = 14.050
+_SUAREZ23_0355_H = 12.530
+_SUAREZ23_0355_KS = 11.526
+_SUAREZ23_0355_JH = _SUAREZ23_0355_J - _SUAREZ23_0355_H  # 1.520 mag
+_SUAREZ23_0355_JK = _SUAREZ23_0355_J - _SUAREZ23_0355_KS  # 2.524 mag
+# Suárez et al. (2023) Table 2 low-gravity L5 mean J−Ks = 2.153 mag
+_SUAREZ23_0355_JK_LOWG_REF = 2.153
+_SUAREZ23_0355_JK_ANOM_LOWG = _SUAREZ23_0355_JK - _SUAREZ23_0355_JK_LOWG_REF  # 0.371
+
+# Suárez et al. 2023, ApJL, 954, L6 — Table 2 (2MASS J00361617+1821104;
+# inclination 51±9 deg from Vos et al. 2017, ApJ, 842, 78)
+_SUAREZ23_0036_J = 12.466
+_SUAREZ23_0036_KS = 11.058
+_SUAREZ23_0036_JK = _SUAREZ23_0036_J - _SUAREZ23_0036_KS  # 1.408 mag
+_SUAREZ23_0036_JK_ANOM_FIELD = _SUAREZ23_0036_JK - _FAHERTY16_L4_JK  # -0.332
+
+# Suárez & Metchev 2022, MNRAS, 513, 5701 — table photometry for
+# 2MASS J04151954-0935066 (T8; Burgasser et al. 2004)
+_SUAREZ22_0415_J = 15.695
+_SUAREZ22_0415_KS = 15.429
+_SUAREZ22_0415_JK = _SUAREZ22_0415_J - _SUAREZ22_0415_KS  # 0.266 mag
+
+
+def test_color_anomaly_faherty16_table17_00040288_jh():
+	"""Faherty et al. (2016) Table 17 vs Table 15 field L1 mean."""
+	anomaly = seda.phy_params.color_anomaly(
+		color=_FAHERTY16_00040288_JH,
+		color_name='J-H',
+		spt='L1',
+		table='faherty16',
+		age_group='old',
+	)
+	expected = _FAHERTY16_00040288_JH - _FAHERTY16_L1_JH
+	assert anomaly == pytest.approx(expected, abs=0.01), (
+		'Faherty L1 J-H anomaly outside tolerable range'
+	)
+
+
+def test_color_anomaly_suarez23_j0355_jk_vs_faherty_field():
+	"""Suárez et al. (2023) photometry vs Faherty field L5 (Tables 15–16)."""
+	anomaly = seda.phy_params.color_anomaly(
+		color=_SUAREZ23_0355_JK,
+		color_name='J-K',
+		spt='L5',
+		table='faherty16',
+		age_group='old',
+	)
+	expected = _SUAREZ23_0355_JK - _FAHERTY16_L5_JK
+	assert anomaly == pytest.approx(expected, abs=0.01), (
+		'J0355 J-K field anomaly outside tolerable range'
+	)
+
+
+def test_color_anomaly_suarez23_j0355_jh_vs_faherty_field():
+	"""Suárez et al. (2023) J−H for J0355+1133 vs Faherty field L5 mean."""
+	anomaly = seda.phy_params.color_anomaly(
+		color=_SUAREZ23_0355_JH,
+		color_name='J-H',
+		spt='L5',
+		table='faherty16',
+		age_group='old',
+	)
+	expected = _SUAREZ23_0355_JH - _FAHERTY16_L5_JH
+	assert anomaly == pytest.approx(expected, abs=0.01), (
+		'J0355 J-H field anomaly outside tolerable range'
+	)
+
+
+def test_color_anomaly_suarez23_j0355_jk_young_lowg_reference():
+	"""Suárez et al. (2023) low-gravity reference for J0355+1133 (Table 2)."""
+	anomaly = seda.phy_params.color_anomaly(
+		color=_SUAREZ23_0355_JK,
+		color_name='J-K',
+		spt='L5',
+		table='faherty16',
+		age_group='young',
+	)
+	# Suárez et al. (2023) Table 2: low-gravity L5 mean J-K = 2.153 mag.
+	assert anomaly == pytest.approx(_SUAREZ23_0355_JK_ANOM_LOWG, abs=0.01), (
+		'J0355 young J-K anomaly outside tolerable range'
+	)
+
+
+def test_color_anomaly_suarez23_vos17_0036_jk_vs_faherty_field():
+	"""Suárez et al. (2023) photometry for Vos et al. (2017) 0036+1821."""
+	anomaly = seda.phy_params.color_anomaly(
+		color=_SUAREZ23_0036_JK,
+		color_name='J-K',
+		spt='L4',
+		table='faherty16',
+		age_group='old',
+	)
+	assert anomaly == pytest.approx(_SUAREZ23_0036_JK_ANOM_FIELD, abs=0.01), (
+		'0036 J-K field anomaly outside tolerable range'
+	)
+
+
+def test_color_anomaly_faherty16_table15_spt_interpolation():
+	"""Fractional SpT uses Faherty et al. (2016) Table 15 L3/L4 J−H means."""
+	# L3.7 → 0.3*L3 + 0.7*L4 (Table 15: L3=0.96, L4=1.07 mag)
+	ref_l37 = 0.3 * _FAHERTY16_L3_JH + 0.7 * _FAHERTY16_L4_JH
+	observed = 1.10
+	anomaly = seda.phy_params.color_anomaly(
+		color=observed,
+		color_name='J-H',
+		spt='L3.7',
+		table='faherty16',
+		age_group='old',
+	)
+	assert anomaly == pytest.approx(observed - ref_l37, abs=1e-6), (
+		'L3.7 J-H interpolated anomaly outside tolerable range'
+	)
+
+
+def test_color_anomaly_suarez22_0415_t8_ultracool():
+	"""Suárez & Metchev (2022) T8 photometry with Ultracool Sheet backend."""
+	anomaly = seda.phy_params.color_anomaly(
+		color=_SUAREZ22_0415_JK,
+		color_name='J-K',
+		spt='T8',
+		table='ultracool',
+	)
+	# Regression value from Suárez & Metchev (2022) photometry and the bundled
+	# Ultracool Sheet reference (recomputed; not a published mean sequence).
+	assert anomaly == pytest.approx(0.354, abs=0.01), (
+		'T8 ultracool J-K anomaly outside tolerable range'
+	)
+
+
+def test_color_anomaly_with_uncertainty():
+	"""Suárez et al. (2023) Table 2 J and Ks uncertainties for J0355+1133."""
+	ecolor = float(np.hypot(0.024, 0.021))
+	out = seda.phy_params.color_anomaly(
+		color=_SUAREZ23_0355_JK,
+		color_name='J-K',
+		spt='L5',
+		table='faherty16',
+		age_group='old',
+		ecolor=ecolor,
+	)
+	assert out[1] == pytest.approx(ecolor, abs=1e-6), (
+		'returned ecolor outside tolerable range'
+	)
+	assert isinstance(out, tuple), (
+		'color_anomaly with ecolor did not return a tuple'
+	)
+	with pytest.raises(ValueError, match="table='faherty16' covers"):
+		seda.phy_params.color_anomaly(
+			color=1.0, color_name='J-H', spt='T5',
+			table='faherty16', age_group='old',
+		)
+
+
+def test_color_anomaly_ultracool_t_type_succeeds():
+	ref = seda.empirical_aux._loaders.reference_color(
+		'J-H', 'T5', table='ultracool',
+	)
+	anomaly = seda.phy_params.color_anomaly(
+		color=ref + 0.1, color_name='J-H', spt='T5', table='ultracool',
+	)
+	assert anomaly == pytest.approx(0.1, abs=0.01), (
+		'ultracool T5 offset outside tolerable range'
+	)
+
+
+def test_color_anomaly_faherty_rejects_invalid_age_group():
+	with pytest.raises(ValueError, match='age_group'):
+		seda.phy_params.color_anomaly(
+			color=1.0, color_name='J-H', spt='L5',
+			table='faherty16', age_group='not-a-group',
+		)
+
+
+def test_color_anomaly_faherty_requires_age_group():
+	"""Faherty tables require an explicit old or young age group."""
+	with pytest.raises(ValueError, match='combined young/old sample'):
+		seda.empirical_aux._loaders.reference_color(
+			'J-H', 'L5', table='faherty16',
+		)
+	with pytest.raises(ValueError, match='combined young/old sample'):
+		seda.phy_params.color_anomaly(
+			color=1.0, color_name='J-H', spt='L5', table='faherty16',
+		)
+	ref_old = seda.empirical_aux._loaders.reference_color(
+		'J-H', 'L5', table='faherty16', age_group='old',
+	)
+	assert ref_old == pytest.approx(_FAHERTY16_L5_JH, abs=0.01), (
+		'old reference color outside tolerable range'
+	)
+
+
+def test_color_anomaly_faherty_young_redder_than_field():
+	"""Suárez et al. (2023) J0355+1133 is redder vs field than vs young sequence."""
+	anomaly_field = seda.phy_params.color_anomaly(
+		color=_SUAREZ23_0355_JK,
+		color_name='J-K',
+		spt='L5',
+		table='faherty16',
+		age_group='old',
+	)
+	anomaly_young = seda.phy_params.color_anomaly(
+		color=_SUAREZ23_0355_JK,
+		color_name='J-K',
+		spt='L5',
+		table='faherty16',
+		age_group='young',
+	)
+	assert anomaly_field == pytest.approx(
+		_SUAREZ23_0355_JK - _FAHERTY16_L5_JK, abs=0.01,
+	), 'J0355 field J-K anomaly outside tolerable range'
+	assert anomaly_young < anomaly_field, (
+		'young anomaly not less than field anomaly'
+	)
+
+
+def test_color_anomaly_faherty_young_rejects_field_only_reference_stat():
+	# 'old' must use the published mean only.
+	with pytest.raises(ValueError, match='reference_stat'):
+		seda.phy_params.color_anomaly(
+			color=1.0, color_name='J-H', spt='L5',
+			table='faherty16', age_group='old', reference_stat='median',
+		)
+
+
+def test_color_anomaly_faherty_young_accepts_median():
+	"""Young sequence can use median; Suárez et al. (2023) J0355+1133 at L5."""
+	ref = seda.empirical_aux._loaders.reference_color(
+		'J-H', 'L5', table='faherty16', age_group='young',
+		reference_stat='median',
+	)
+	anomaly = seda.phy_params.color_anomaly(
+		color=_SUAREZ23_0355_JH,
+		color_name='J-H',
+		spt='L5',
+		table='faherty16',
+		age_group='young',
+		reference_stat='median',
+	)
+	assert anomaly == pytest.approx(_SUAREZ23_0355_JH - ref, abs=0.01), (
+		'young median J-H anomaly outside tolerable range'
+	)
+
+
+def test_color_anomaly_faherty_young_l6_interpolates_l5_l7():
+	"""L6 young reference interpolates between L5 and L7 when the L6 bin is sparse."""
+	grid = seda.empirical_aux._loaders._faherty_young_reference('J-K', 'mean')
+	expected = 0.5 * grid[15] + 0.5 * grid[17]
+	with pytest.warns(UserWarning, match='L6 has insufficient objects.*L5.*L7'):
+		ref = seda.empirical_aux._loaders.reference_color(
+			'J-K', 'L6', table='faherty16', age_group='young',
+		)
+	assert ref == pytest.approx(expected, abs=1e-12), (
+		'L6 young J-K reference not interpolated from L5 and L7'
+	)
+	with pytest.warns(UserWarning, match='L6 has insufficient objects.*L5.*L7'):
+		anomaly = seda.phy_params.color_anomaly(
+			color=_SUAREZ23_0355_JK,
+			color_name='J-K',
+			spt='L6',
+			table='faherty16',
+			age_group='young',
+		)
+	assert anomaly == pytest.approx(_SUAREZ23_0355_JK - expected, abs=1e-12), (
+		'L6 young J-K anomaly inconsistent with interpolated reference'
+	)
+
+
+def test_color_anomaly_faherty_young_l8_uses_sparse_bin():
+	"""L8 young reference uses sparse Table 1 bins (one object) when present."""
+	bins_jh = seda.empirical_aux._loaders._faherty_young_reference_bins('J-H')
+	bins_jk = seda.empirical_aux._loaders._faherty_young_reference_bins('J-K')
+	with pytest.warns(UserWarning, match='L8 has only 1 object'):
+		ref_jh = seda.empirical_aux._loaders.reference_color(
+			'J-H', 'L8', table='faherty16', age_group='young',
+		)
+	with pytest.warns(UserWarning, match='L8 has only 1 object'):
+		ref_jk = seda.empirical_aux._loaders.reference_color(
+			'J-K', 'L8', table='faherty16', age_group='young',
+		)
+	assert ref_jh == pytest.approx(float(np.mean(bins_jh[18])), abs=1e-12), (
+		'L8 young J-H reference not taken from the single available object'
+	)
+	assert ref_jk == pytest.approx(float(np.mean(bins_jk[18])), abs=1e-12), (
+		'L8 young J-K reference not taken from the single available object'
+	)
+
+
+def test_color_anomaly_faherty_young_insufficient_data_raises():
+	# Outside the Faherty M7-L8 range; no young reference can be built.
+	with pytest.raises(ValueError, match="table='faherty16' covers"):
+		seda.empirical_aux._loaders.reference_color(
+			'J-H', 'T5', table='faherty16', age_group='young',
+		)
+
+
+def test_faherty_low_gravity_label_excludes_ambiguous():
+	from seda.empirical_aux._loaders import _is_low_gravity
+
+	tokens = ['beta', 'gamma', 'delta']
+	assert _is_low_gravity('gamma', tokens) is True, (
+		'gamma label not recognized as low gravity'
+	)
+	assert _is_low_gravity('beta gamma', tokens) is True, (
+		'beta gamma label not recognized as low gravity'
+	)
+	assert _is_low_gravity('gamma?', tokens) is False, (
+		'ambiguous gamma? label incorrectly accepted'
+	)
+	assert _is_low_gravity('-', tokens) is False, (
+		'field dash label incorrectly accepted as low gravity'
+	)
+	assert _is_low_gravity('', tokens) is False, (
+		'empty gravity label incorrectly accepted'
+	)
+
+
+def test_color_anomaly_requires_table():
+	with pytest.raises(ValueError, match='table must be specified'):
+		seda.phy_params.color_anomaly(
+			color=1.0, color_name='J-H', spt='L5', table=None,
+		)
+	with pytest.raises(ValueError, match='table must be specified'):
+		seda.phy_params.color_anomaly(
+			color=1.0, color_name='J-H', spt='L5', table='',
+		)
+
+
+def test_color_anomaly_invalid_color_raises():
+	with pytest.raises(ValueError, match='color_name'):
+		seda.phy_params.color_anomaly(
+			color=1.0, color_name='Y-J', spt='L5',
+			table='faherty16', age_group='old',
+		)
+
+
+def test_ultracool_youth_filter_excludes_ambiguous():
+	from seda.empirical_aux._loaders import _matches_age_group
+
+	assert _matches_age_group('YMG', 'young') is True, (
+		'YMG not matched to young age group'
+	)
+	assert _matches_age_group('YMG?', 'young') is False, (
+		'ambiguous YMG? incorrectly matched to young'
+	)
+	assert _matches_age_group('YMG?', 'old') is False, (
+		'ambiguous YMG? incorrectly matched to old'
+	)
+	assert _matches_age_group('N', 'old') is True, (
+		'field N not matched to old age group'
+	)
+	assert _matches_age_group('Field', 'old') is True, (
+		'Field label not matched to old age group'
+	)
+
+
+# ----------------------------
+# inclination
+# ----------------------------
 def _expected_inclination_deg(vsini, P, R):
 	"""Deterministic inclination from sin i = P*vsini / (2*pi*R)."""
 	vsini_u = vsini * u.km / u.s
