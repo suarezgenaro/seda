@@ -1522,7 +1522,7 @@ def read_SVO_table():
 	if os.path.exists(svo_table): 
 		svo_data = Table.read(svo_table, format='votable') # open downloaded table with filters' info
 	else:
-		svo_data = Table.read('https://svo.cab.inta-csic.es/files/svo/Public/HowTo/FPS/FPS_info.xml', format='votable') # this SVO link will be updated as soon as new filters are added to FPS. 
+		svo_data = Table.read('https://svo.cab.inta-csic.es/wp-content/uploads/download/FPS_info.xml', format='votable') # this SVO link will be updated as soon as new filters are added to FPS. 
 		svo_data.write(svo_table, format='votable') # save the table to avoid reading it from the web each time the code is run, which can take a few seconds
 
 	return svo_data
