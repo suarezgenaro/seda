@@ -52,7 +52,7 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 		- ``'lambda_eff(um)'`` : filters' effective wavelengths in microns computed using the input spectrum.
 		- ``'width_eff(um)'`` : filters' effective width in micron computed using the input spectrum.
 		- ``'lambda_eff_SVO(um)'`` : filters' effective wavelengths in microns from SVO.
-		- ``'width_eff(um)'`` : filters' effective width in micron from SVO.
+		- ``'width_eff_SVO(um)'`` : filters' effective width in micron from SVO.
 		- ``'zero_point(Jy)'`` : filters' zero points in Jy.
 		- ``'label'`` : label indicating if the filters are fully ('complete'), partially ('incomplete'), or no ('none') covered by the input spectrum or no recognized by SVO ('unrecognizable').
 		- ``'coverage_perc'`` : percentage of the filter transmission covered by the spectrum.
