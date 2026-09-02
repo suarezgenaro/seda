@@ -495,7 +495,7 @@ def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None
 	# open results from sampling
 	try: # if given as a pickle file
 		output_bayes = utils.load_output_fit(output_bayes)
-	except: # if given as the output of chi2_fit
+	except: # if given as the output of bayes_fit
 		pass
 	fit_spectra = output_bayes['my_bayes'].fit_spectra
 	fit_photometry = output_bayes['my_bayes'].fit_photometry
