@@ -444,7 +444,7 @@ def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None
 	'''
 	Description:
 	------------
-		Plot the spectra and best model fit from the Bayesian sampling.
+		Plot the observed data and best model fit from the Bayesian sampling.
 
 	Parameters:
 	-----------
@@ -479,7 +479,7 @@ def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None
 
 	Returns:
 	--------
-	Plot of the spectra and best model fit from the Bayesian sampling that will be stored if ``save`` with the name ``out_file``.
+	Plot of the observed data and best model fit from the Bayesian sampling that will be stored if ``save`` with the name ``out_file``.
 
 	Example:
 	--------
