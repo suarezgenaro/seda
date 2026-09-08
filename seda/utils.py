@@ -396,7 +396,7 @@ def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spect
 	'''
 	Description:
 	------------
-		Generate a synthetic spectrum for an arbitrary combination of free
+		Generate a synthetic spectrum for a desired combination of free
 		parameters within the coverage of the input atmospheric model grid.
 		
 		The Python SciPy-based RegularGridInterpolator is used to perform
