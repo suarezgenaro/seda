@@ -1069,8 +1069,8 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False, 
 		Use logarithmic (``True``) or linear (``False``) scale to plot wavelengths.
 	- ylog : {``True``, ``False``}, optional (default ``False``)
 		Use logarithmic (``True``) or linear (``False``) scale to plot fluxes.
-	- flux_unit : str
-		Unit to plot the spectrum fluxes and synthetic fluxes: ``'erg/s/cm2/A'``, ``'Jy'``, or ``erg/s/cm2/um``.
+	- flux_unit : str, optional (default 'erg/s/cm2/A')
+		Unit to plot the spectrum fluxes and synthetic fluxes: ``'erg/s/cm2/A'`` (default), ``'Jy'``, or ``erg/s/cm2/um``.
 	- out_file : str, optional
 		File name to save the figure (it can include a path e.g. my_path/figure.pdf). 
 		Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
