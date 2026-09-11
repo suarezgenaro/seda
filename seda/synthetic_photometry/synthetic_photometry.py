@@ -59,9 +59,9 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 		- ``'transmission'`` : dictionary with 2D arrays for the filter transmissions, where the first first entry is wavelength in microns and the second one is the transmission.
 		- ``'detector'`` : detector response assumed when computing synthetic photometry
 		- ``'wl'`` : input spectrum wavelengths in micron.
-		- ``'flux'`` : input spectrum fluxes in Jy (the spectrum is internally converted to Jy, if necessary, before computing the synthetic photometry).
-		- ``'eflux'`` : input spectrum flux uncertainties in Jy (if input ``eflux`` is provided)..
-		- ``'flux_unit'`` : units of the internally stored spectrum fluxes (``'Jy'``).
+		- ``'flux'`` : input spectrum fluxes in erg/s/cm2/A (the spectrum is internally converted to erg/s/cm2/A, if necessary, before computing the synthetic photometry).
+		- ``'eflux'`` : input spectrum flux uncertainties in erg/s/cm2/A (if input ``eflux`` is provided)..
+		- ``'flux_unit'`` : units of the internally stored spectrum fluxes (``'erg/s/cm2/A'``).
 
 	Example:
 	--------
