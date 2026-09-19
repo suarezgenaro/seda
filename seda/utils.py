@@ -1364,7 +1364,7 @@ def select_model_spectra(model, model_dir, params_ranges=None, filename_pattern=
 	return out
 
 ##########################
-def read_SVO_params(filters, params):
+def read_SVO_params(filters, params, svo_data=None):
 	'''
 	Description:
 	------------
@@ -1402,14 +1402,14 @@ def read_SVO_params(filters, params):
 #	params = var_to_numpy(params)
 
 	# read SVO table
-	SVO_data = read_SVO_table()
-	SVO_filterID = SVO_data['filterID'] # SVO ID
+	if svo_data == None: svo_data = read_SVO_table()
+	SVO_filterID = svo_data['filterID'] # SVO ID
 
 	# verify that all params are in SVO
 	params_good = []
 	params_bad = []
 	for param in params:
-		if param in SVO_data.colnames:
+		if param in svo_data.colnames:
 			params_good.append(param)
 		else:
 			params_bad.append(param)
@@ -1423,7 +1423,7 @@ def read_SVO_params(filters, params):
 	# for clarity add the parameter 'filterID', if not requested
 	params_ori = params.copy() # copy to save input params recognized by SVO
 	if 'filterID' not in params: params.insert(0, 'filterID')
-	SVO_data_sel = SVO_data[mask][params]
+	SVO_data_sel = svo_data[mask][params]
 
 	# dictionary with the table subset
 	filters_params = {}
@@ -1495,12 +1495,13 @@ def set_model_wl_range(model_wl_range, wl_spectra_min, wl_spectra_max):
 
 ##########################
 # set wavelength range for photometry to cut models for comparisons via chi-square or Bayes techniques
-def set_fit_phot_range(fit_phot_range, filters):
+def set_fit_phot_range(fit_phot_range, filters, svo_data=None):
 	if fit_phot_range is None: # define fit_phot_range when not provided
 		# get effective wavelengths from SVO for the input filters
-		SVO_data = read_SVO_table()
-		SVO_filterID = SVO_data['filterID'] # SVO ID
-		SVO_WavelengthEff = u.Quantity(SVO_data['WavelengthEff'].data, u.nm*0.1).to(u.micron).value # effective wavelength in um
+		if svo_data == None:
+			svo_data = read_SVO_table()
+		SVO_filterID = svo_data['filterID'] # SVO ID
+		SVO_WavelengthEff = u.Quantity(svo_data['WavelengthEff'].data, u.nm*0.1).to(u.micron).value # effective wavelength in um
 		matching_indices = []
 		for index, element in enumerate(SVO_filterID):
 			if element in filters:

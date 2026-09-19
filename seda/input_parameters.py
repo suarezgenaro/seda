@@ -98,7 +98,7 @@ class InputData:
 	def __init__(self, fit_spectra=True, fit_photometry=False, wl_spectra=None, 
 	    flux_spectra=None, eflux_spectra=None, flux_unit=None, 
 	    res=None, lam_res=None, phot=None, ephot=None, filters=None, phot_unit=None,
-	    distance=None, edistance=None):	
+	    distance=None, edistance=None, svo_data=None):	
 
 		self.fit_spectra = fit_spectra
 		self.fit_photometry = fit_photometry
@@ -225,7 +225,7 @@ class InputData:
 
 			# obtain relevant parameters from SVO for input filters
 			params = ['WavelengthEff', 'WidthEff']
-			out = utils.read_SVO_params(filters=filters, params=params)
+			out = utils.read_SVO_params(filters=filters, params=params, svo_data=svo_data)
 			lambda_eff_SVO = u.Quantity(out['WavelengthEff'].data, u.nm*0.1).to(u.micron).value # in um
 			width_eff_SVO = u.Quantity(out['WidthEff'].data, u.nm*0.1).to(u.micron).value # in um
 
@@ -234,7 +234,7 @@ class InputData:
 			# convert input photometry to erg/s/cm2/A, if needed
 			if phot_unit=='mag': # if photometry given in magnitudes
 				out_mag_to_flux = synthetic_photometry.mag_to_flux(mag=phot, emag=ephot, filters=filters, 
-				                                                   flux_unit='erg/s/cm2/A')
+				                                                   flux_unit='erg/s/cm2/A', svo_data=svo_data)
 				phot = out_mag_to_flux['flux']
 				ephot = out_mag_to_flux['eflux']
 			if phot_unit=='Jy': # if photometry is given in Jy
@@ -496,7 +496,7 @@ class Chi2Options:
 		fit_wl_range=None, disp_wl_range=None, model_wl_range=None, fit_phot_range=None, 
 		weight_label='dataset', extinction_free_param=False, scaling_free_param=True, 
 		scaling=None, avoid_IR_excess=False, IR_excess_limit=3, save_results=True,
-		chi2_pickle_file=None, chi2_table_file=None):
+		chi2_pickle_file=None, chi2_table_file=None, svo_data = None):
 
 		ini_time_mychi2 = utils.time.time() # to estimate the time elapsed running chi2
 
@@ -602,7 +602,7 @@ class Chi2Options:
 		# handle input photometry
 		if fit_photometry:
 			# handle fit_phot_range
-			fit_phot_range = utils.set_fit_phot_range(fit_phot_range=fit_phot_range, filters=filters)
+			fit_phot_range = utils.set_fit_phot_range(fit_phot_range=fit_phot_range, filters=filters, svo_data=svo_data)
 			self.fit_phot_range = fit_phot_range
 
 		# file name to save the chi2 results as a pickle
