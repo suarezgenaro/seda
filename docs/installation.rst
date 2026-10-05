@@ -22,6 +22,16 @@ Installation of :math:`\texttt{SEDA}` via GitHub:
 All required dependencies are installed automatically.
 
 
+Uninstallation
+--------------
+
+To uninstall :math:`\texttt{SEDA}`:
+
+.. code-block:: console
+
+    $ python -m pip uninstall seda
+
+
 Dependencies
 ------------
 
