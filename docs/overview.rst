@@ -7,8 +7,14 @@ Overview
 
 Presentations introducing :math:`\texttt{SEDA}` and its main functionality are available from the following conferences:
 
-* The `III New York Area Exoplanets Meeting (2026) <https://suarezgenaro.github.io/seda/presentations/SEDA_slides_2026NYAEM_GSuarez.pdf>`_.
-* The `245th AAS Meeting (2025) <https://suarezgenaro.github.io/seda/presentations/SEDA_slides_AAS245_GSuarez.pdf>`_.
+* The `III New York Area Exoplanets Meeting (2026) <_static/presentations/SEDA_slides_2026NYAEM_GSuarez.pdf>`_.
+* The `245th AAS Meeting (2025) <_static/presentations/SEDA_slides_AAS245_GSuarez.pdf>`_.
+
+* The `III New York Area Exoplanets Meeting (2026) <https://seda.readthedocs.io/en/latest/_static/presentations/SEDA_slides_2026NYAEM_GSuarez.pdf>`_.
+* The `245th AAS Meeting (2025) <https://seda.readthedocs.io/en/latest/_static/presentations/SEDA_slides_AAS245_GSuarez.pdf>`_.
+
+* The `III New York Area Exoplanets Meeting (2026) <https://github.com/suarezgenaro/seda/blob/main/docs/_static/presentations/SEDA_slides_2026NYAEM_GSuarez.pdf>`_.
+* The `245th AAS Meeting (2025) <https://github.com/suarezgenaro/seda/blob/main/docs/_static/presentations/SEDA_slides_AAS245_GSuarez.pdf>`_.
 
 .. _seda_overview:
 
