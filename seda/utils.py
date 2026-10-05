@@ -2391,6 +2391,9 @@ def save_prettytable(my_dict, table_name):
 # convert spectral type from string to float
 def spt_str_to_float(spt):
 
+	# ensure it is a string
+	if isinstance(spt, np.ndarray): spt = str(spt)
+
 	if 'M' in spt: spt = spt.replace('M', '0')
 	if 'L' in spt: spt = spt.replace('L', '1')
 	if 'T' in spt: spt = spt.replace('T', '2')

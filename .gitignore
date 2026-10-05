@@ -49,11 +49,14 @@ docs/_build/
 # folders
 __pycache__
 \.ipynb_checkpoints
-logo
-aux
+backups/
+joss/
+AJ/
 tmp
 docs/notebooks/old
 seda/synthetic_photometry/filter_transmissions
+venv310/
+venv311/
 # files
 headaches
 docs/notebooks/*.dat

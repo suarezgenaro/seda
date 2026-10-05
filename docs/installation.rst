@@ -17,12 +17,25 @@ Installation of :math:`\texttt{SEDA}` via GitHub:
 
     $ git clone https://github.com/suarezgenaro/seda.git
     $ cd seda
-    $ python -m pip install -e .
+    $ python -m pip install .
+
+All required dependencies are installed automatically.
+
+
+Uninstallation
+--------------
+
+To uninstall :math:`\texttt{SEDA}`:
+
+.. code-block:: console
+
+    $ python -m pip uninstall seda
+
 
 Dependencies
 ------------
 
-:math:`\texttt{SEDA}` uses several python packages. All dependencies are automatically installed when you install SEDA using ``pip install -e .`` as shown above. The dependencies are defined in ``pyproject.toml`` and include:
+:math:`\texttt{SEDA}` uses several python packages. All dependencies are automatically installed when SEDA is installed. The dependencies are defined in ``pyproject.toml`` and include:
 
 * `astropy <http://www.astropy.org/>`_
 * `corner <http://corner.readthedocs.io/en/latest/>`_
@@ -37,38 +50,61 @@ Dependencies
 * `tqdm <https://pypi.org/project/tqdm/>`_
 * `xarray <https://docs.xarray.dev/en/stable/>`_
 
-:math:`\texttt{SEDA}` has been tested in Python versions 3.9-3.14.
-
-:math:`\texttt{SEDA}` has been tested on Linux, Windows, and macOS.
+:math:`\texttt{SEDA}` has been tested in Python versions 3.9--3.14 and on Linux, Windows, and macOS.
 
 
 Developer Installation
 ----------------------
 
-To set up a development environment:
+To install SEDA in editable mode for development:
 
 .. code-block:: console
 
-    $ git fork https://github.com/suarezgenaro/seda.git
-    $ git clone <your-fork-url>
+    $ git clone https://github.com/suarezgenaro/seda.git
     $ cd seda
-    $ pip install -e .[docs]
+    $ python -m pip install -e ".[docs]"
     $ pre-commit install
 
-Run the test suite:
+The ``-e`` option installs SEDA in editable mode, so changes made to the source code are immediately available in the installed package.
+
+Run the test suite with:
 
 .. code-block:: console
 
     $ pytest
 
 
+Contributing
+------------
+
+Contributions to SEDA are welcome. To contribute to the code:
+
+1. Fork the `SEDA repository <https://github.com/suarezgenaro/seda>`_ on GitHub.
+
+2. Clone your fork:
+
+   .. code-block:: console
+
+      $ git clone https://github.com/<your-username>/seda.git
+      $ cd seda
+
+3. Create a new branch for your changes:
+
+   .. code-block:: console
+
+      $ git checkout -b <branch-name>
+
+4. Install SEDA following the `Developer Installation`_ instructions.
+
+
 Build the Documentation
 -----------------------
 
-Build HTML docs:
+Build the HTML documentation with:
 
 .. code-block:: console
 
     $ sphinx-build -b html docs docs/_build/html
 
-Open the generated documentation in your web browser.
+
+Open ``docs/_build/html/index.html`` in your web browser to view the generated documentation.
