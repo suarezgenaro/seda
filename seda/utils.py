@@ -2361,7 +2361,10 @@ def read_prettytable(filename):
 
 ##########################
 # save dictionary as ascii table using prettytable
-def save_prettytable(my_dict, table_name):
+def save_prettytable(my_dict, table_name, out_fmt='pretty_fmt'):
+	# out_fmt: indicates the format of the output file
+	#	pretty_fmt (default) : Pretty Table format
+	# 	csv : comma-separated file (ASCII table)
 
 	# create a PrettyTable object
 	table = PrettyTable()
@@ -2384,8 +2387,12 @@ def save_prettytable(my_dict, table_name):
 	ascii_table = table.get_string()
 
 	# save file
-	with open(table_name, 'w') as f:
-		f.write(ascii_table)
+	if out_fmt=='pretty_fmt':
+		with open(table_name, 'w') as f:
+			f.write(ascii_table)
+	elif out_fmt=='csv':
+		with open(table_name, 'w', newline='', encoding='utf-8') as f: 
+			f.write(table.get_csv_string())
 
 ##########################
 # convert spectral type from string to float
