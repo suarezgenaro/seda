@@ -7,14 +7,12 @@ Overview
 
 Presentations introducing :math:`\texttt{SEDA}` and its main functionality are available from the following conferences:
 
-* The `III New York Area Exoplanets Meeting (2026) <_static/presentations/SEDA_slides_2026NYAEM_GSuarez.pdf>`_.
-* The `245th AAS Meeting (2025) <_static/presentations/SEDA_slides_AAS245_GSuarez.pdf>`_.
 
-* The `III New York Area Exoplanets Meeting (2026) 1 <https://seda.readthedocs.io/en/latest/_static/presentations/SEDA_slides_2026NYAEM_GSuarez.pdf>`_.
-* The `245th AAS Meeting (2025) 1 <https://seda.readthedocs.io/en/latest/_static/presentations/SEDA_slides_AAS245_GSuarez.pdf>`_.
+* The :download:`III New York Area Exoplanets Meeting (2026) <presentations/SEDA_slides_2026NYAEM_GSuarez.pdf>`.
+* The :download:`245th AAS Meeting (2025) <presentations/SEDA_slides_AAS245_GSuarez.pdf>`.
 
-* The `III New York Area Exoplanets Meeting (2026) 2 <https://github.com/suarezgenaro/seda/blob/main/docs/_static/presentations/SEDA_slides_2026NYAEM_GSuarez.pdf>`_.
-* The `245th AAS Meeting (2025) 2 <https://github.com/suarezgenaro/seda/blob/main/docs/_static/presentations/SEDA_slides_AAS245_GSuarez.pdf>`_.
+* The `III New York Area Exoplanets Meeting (2026) 2 <https://github.com/suarezgenaro/seda/blob/main/docs/presentations/SEDA_slides_2026NYAEM_GSuarez.pdf>`_.
+* The `245th AAS Meeting (2025) 2 <https://github.com/suarezgenaro/seda/blob/main/docs/presentations/SEDA_slides_AAS245_GSuarez.pdf>`_.
 
 .. _seda_overview:
 
