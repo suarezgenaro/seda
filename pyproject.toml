@@ -28,6 +28,7 @@ dependencies = [
   "spectres",
   "tqdm",
   "xarray",
+  "arviz"
 ]
 
 [project.optional-dependencies]
