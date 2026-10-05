@@ -67,6 +67,19 @@ Because the returned objects are standard Matplotlib figures and axes,
 any Matplotlib customization supported by ``fig`` and ``ax`` can be
 applied in the same way as for user-generated plots.
 
+When working in a Jupyter notebook, ``fig`` and ``ax`` (or ``axs``) can
+also be reused and customized in a separate cell. After making the
+desired changes, the updated figure can be displayed explicitly using
+``display(fig)``. For example:
+
+.. code-block:: python
+
+   # Customize the figure in a separate cell
+   axs[0].set_title('Synthetic photometry', fontsize=15)
+
+   # Display the updated figure
+   display(fig)
+
 
 SEDA is not recognized in my Jupyter notebook
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
