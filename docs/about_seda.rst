@@ -3,7 +3,7 @@ About SEDA
 
 Attribution
 -----------
-**The SEDA release paper is** `Suárez et al. (2026, submmited to JOSS) <https:xxx>`__, while the foundation was introduced in `Suárez et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...920...99S/abstract>`__. Please cite these references if :math:`\texttt{SEDA}` has contributed to your research. Additionally, ensure to give appropriate credit to the models (see :ref:`models`) and other relevant Python packages (e.g., see :ref:`seda_overview`) used via :math:`\texttt{SEDA}`.
+**The SEDA release paper is** `Suárez et al. (2026, submmited to AJ) <https:xxx>`__, while the foundation was introduced in `Suárez et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...920...99S/abstract>`__. Please cite these references if :math:`\texttt{SEDA}` has contributed to your research. Additionally, ensure to give appropriate credit to the models (see :ref:`models`) and other relevant Python packages (e.g., see :ref:`seda_overview`) used via :math:`\texttt{SEDA}`.
 
 Contributing
 ------------
