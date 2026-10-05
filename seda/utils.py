@@ -11,7 +11,7 @@ from spectres import spectres
 from astropy import units as u
 from astropy.io import ascii
 from astropy.table import Column, MaskedColumn, Table
-from astropy.convolution import Gaussian1DKernel, convolve
+from astropy.convolution import Gaussian1DKernel, convolve, convolve_fft
 from scipy.interpolate import RegularGridInterpolator
 from scipy.interpolate import interp1d
 from tqdm.auto import tqdm
@@ -125,9 +125,17 @@ def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=Non
 
 	mask_conv = (wl>=convolve_wl_range[0]) & (wl<=convolve_wl_range[1]) # range to convolve the spectrum
 
-	flux_conv = convolve(flux[mask_conv], gauss) # convolve only the selected wavelength range 
+    # on large kernels, even 1-D ones, such as this one (in a sample run, 
+    # shape of (5947,)), it's more efficient to use convolve_fft instead
+    # if we need to be even faster, we can directly substitute scipy's fft
+    # implementation, but right now this should be sufficient
+	flux_conv = convolve_fft(flux[mask_conv], gauss) # convolve only the selected wavelength range 
+	# np.testing.assert_allclose(flux_conv, flux_conv_fft)
+
 	wl_conv = wl[mask_conv] # corresponding wavelength data points for convolved fluxes
-	if eflux is not None: eflux_conv = convolve(eflux[mask_conv], gauss)
+
+	if eflux is not None: eflux_conv = convolve_fft(eflux[mask_conv], gauss) 
+		# np.testing.assert_allclose(eflux_conv, eflux_conv_fft)
 
 	out = {'wl_conv': wl_conv, 'flux_conv': flux_conv}
 	if (eflux is not None): out['eflux_conv'] = eflux_conv
