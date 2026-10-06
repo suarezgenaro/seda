@@ -56,16 +56,23 @@ Dependencies
 Developer Installation
 ----------------------
 
-To install SEDA in editable mode for development:
+To install the development version of :math:`\texttt{SEDA}` in editable mode:
 
 .. code-block:: console
 
     $ git clone https://github.com/suarezgenaro/seda.git
     $ cd seda
-    $ python -m pip install -e ".[docs]"
+    $ git checkout develop
+    $ python3 -m pip install -e ".[docs]"
     $ pre-commit install
 
-The ``-e`` option installs SEDA in editable mode, so changes made to the source code are immediately available in the installed package.
+The ``-e`` option installs :math:`\texttt{SEDA}` in editable mode, so changes made to the source code are immediately available in the installed package. The ``[docs]`` extra installs the dependencies required to build the documentation.
+
+.. note::
+
+    Avoid installing :math:`\texttt{SEDA}` in both regular (``pip install .``)
+    and editable (``pip install -e .``) modes within the same environment, as
+    this may lead to conflicting installations.
 
 Run the test suite with:
 
