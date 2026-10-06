@@ -58,6 +58,8 @@ seda = [
   "evolution_aux/**/*",
 
   # Observational data
-  "observations_aux/spitzer_irs/*",
-  "observations_aux/Suarez_Metchev_2022_tables.dat"
+  "observations_aux/**/*",
+
+  # Empirical reference tables
+  "empirical_aux/**/*",
 ]
