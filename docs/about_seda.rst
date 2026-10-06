@@ -7,7 +7,16 @@ Attribution
 
 Contributing
 ------------
-The :math:`\texttt{SEDA}` package is under active development. Help us improve :math:`\texttt{SEDA}` by reporting `issues <https://github.com/suarezgenaro/seda/issues>`__ on the GitHub repository.
+The :math:`\texttt{SEDA}` package is under active development. Help us improve :math:`\texttt{SEDA}` by reporting `issues <https://github.com/suarezgenaro/seda/issues>`_ on the GitHub repository.
+
+Code contributions are also welcome. Contributors should create feature branches from ``develop`` and open pull requests to ``develop``. The contribution and release workflow is summarized below.
+
+.. figure:: _static/Workflow_SEDA_New_Release.png
+   :width: 100%
+   :align: center
+   :alt: SEDA contribution and release workflow
+
+   Contribution and release workflow for :math:`\texttt{SEDA}`.
 
 Questions and feedback
 ----------------------
