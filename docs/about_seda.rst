@@ -35,7 +35,6 @@ FAQs
    :local:
    :depth: 1
 
-
 How can users customize output plots?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
