@@ -892,10 +892,11 @@ def color_anomaly(color, color_name, spt, table, ecolor=None,
 	>>>
 	>>> # 2MASS J03552337+1133437 (L5; Suárez et al. 2023)
 	>>> color = 14.05 - 11.526  # J-K from 2MASS photometry
+	>>> ecolor = np.sqrt(0.024**2 + 0.031**2)
 	>>> seda.phy_params.color_anomaly(
 	...     color=color, color_name='J-K', spt='L5',
-	...     table='faherty16', age_group='old', ecolor=0.04)
-	    (0.774, 0.04)
+	...     table='faherty16', age_group='young', ecolor=color)
+	    (0.37071428571428644, 0.03920459156782532)
 
 	Author: Theo Olsen
 
