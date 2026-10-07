@@ -79,6 +79,8 @@ Physical and Basic Parameters
   - :func:`~seda.phy_params.teff`: Derives effective temperature from bolometric luminosity and radius using the Stefan–Boltzmann law, with Monte Carlo uncertainty propagation.
   - :func:`~seda.phy_params.inclination`: Derives the rotation-axis inclination from projected rotation velocity (:math:`v\sin i`), rotation period, and radius, with Monte Carlo uncertainty propagation (`Vos et al. 2017 <https://ui.adsabs.harvard.edu/abs/2017ApJ...842...78V/abstract>`_).
   - :func:`~seda.phy_params.evol_params`: Infers fundamental parameters (e.g., mass, age, surface gravity, temperature) by interpolating :ref:`evolutionary_models` given a bolometric luminosity and radius (see `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_).
+  - :func:`~seda.phy_params.isochrone_params`: Infers fundamental parameters (e.g., mass, radius, surface gravity, temperature) by interpolating :ref:`evolutionary_models` given a bolometric luminosity and age.
+
 
 Atmospheric and Evolutionary Models
 +++++++++++++++++++++++++++++++++++
@@ -86,9 +88,8 @@ Atmospheric and Evolutionary Models
   - :func:`~seda.utils.generate_model_spectrum`: Generates a synthetic spectrum with any parameters (within the grid coverage) from the indicated atmospheric models using interpolation techniques.
   - :func:`~seda.utils.read_model_spectrum`: Reads a synthetic spectrum from :ref:`models`.
   - :func:`~seda.utils.separate_params`: Extracts parameters from model spectra file names.
-  - :func:`~seda.plots.plot_model_coverage` and :func:`~seda.plots.plot_model_resolution`: Visualize parameters' coverage and resolution of atmospheric :ref:`models` (see `tutorial_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_models_examination.html>`_).
+  - :func:`~seda.plots.plot_model_coverage` and :func:`~seda.plots.plot_model_resolution`: Visualize parameters' coverage and resolution of :ref:`models` (see `tutorial_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_models_examination.html>`_).
   - :func:`~seda.plots.plot_evolutionary_coverage`: Visualize bolometric luminosity–radius coverage of bundled :ref:`evolutionary_models` tables (see `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_).
-
 
 .. _models:
 
@@ -254,7 +255,7 @@ Parameter coverage:
 Available Evolutionary Models
 -----------------------------
 
-:math:`\texttt{SEDA}` can interpolate evolutionary models to infer fundamental parameters (mass, age, surface gravity, and effective temperature) from a bolometric luminosity and radius using :func:`~seda.phy_params.evol_params`. Use :func:`~seda.plots.plot_evolutionary_coverage` or `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_ to inspect the coverage of the bundled evolutionary tables.
+:math:`\texttt{SEDA}` can interpolate evolutionary models to infer fundamental parameters (mass, age, surface gravity, and effective temperature) from a bolometric luminosity and radius using :func:`~seda.phy_params.evol_params`, or from bolometric luminosity and age using :func:`~seda.phy_params.isochrone_params`. Check out `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_ to see the parameter coverage of the bundled evolutionary tables.
 
 Sonora Bobcat Evolutionary Tables
 +++++++++++++++++++++++++++++++++
@@ -365,7 +366,12 @@ Bundled table (``filename`` may be omitted):
   - ``BHAC15_tracks+structure.txt``
 
 :func:`~seda.phy_params.evol_params` reads a bundled evolutionary table selected by ``filename``.
-If a model folder contains only one table, ``filename`` may be omitted. Inferred parameters
-are returned in the native units defined in each model's ``config.json`` (mass in M\ :sub:`sun`\ ,
-age in Gyr for Sonora/ATMO or log10(yr) for BHAC15, etc.). See :doc:`notebooks/tutorial_ingest_evolutionary_models` to add custom models.
+If a model folder contains only one table, ``filename`` may be omitted. For every model,
+:func:`~seda.phy_params.evol_params` takes radius in R\ :sub:`Jup`\ and returns mass in
+M\ :sub:`Jup`\ and age in Gyr. :func:`~seda.phy_params.isochrone_params` takes age in Gyr
+and returns mass in M\ :sub:`Jup`\ and radius in R\ :sub:`Jup`\ . ``Teff`` is in Kelvin.
+The bundled tables stay in the units listed in each model's ``config.json`` (for example
+BHAC15 age is stored as log10(yr)); each plugin converts age, mass, and radius at the
+function boundary, and interpolation stays in those table coordinates.
+Other returned columns keep their ``config.json`` units. See :doc:`notebooks/tutorial_ingest_evolutionary_models` to add custom models.
 

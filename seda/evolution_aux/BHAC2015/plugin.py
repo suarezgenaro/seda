@@ -3,7 +3,18 @@ from pathlib import Path
 import numpy as np
 from astropy.constants import R_jup, R_sun
 
+from seda.evolution_aux.units import age_from_gyr, to_user_units
+
 _MODEL_DIR = Path(__file__).parent
+
+# Bundled-table column units. Must match config.json. phy_params converts
+# mass, age, and radius to M_jup, Gyr, and R_jup at the user boundary.
+# Age stays log10(yr) inside the table so interpolation is unchanged.
+_FILE_UNITS = {
+    'mass': 'M_sun',
+    'age': 'log10(yr)',
+    'radius': 'R_sun',
+}
 
 
 def _read_evolutionary_model(filename):
@@ -57,3 +68,15 @@ def _convert_inputs(Lbol, eLbol, R, eR):
         'logL': logL, 'e_logL': e_logL,
         'radius': R_rsun, 'e_radius': eR_rsun,
     }
+
+
+def _age_to_grid(age_gyr):
+    """Convert a user age in Gyr to this table's log10(yr) age coordinate."""
+
+    return age_from_gyr(age_gyr, _FILE_UNITS['age'])
+
+
+def _to_user_units(param, values):
+    """Convert an interpolated column to M_jup, Gyr, or R_jup when applicable."""
+
+    return to_user_units(param, values, _FILE_UNITS)
