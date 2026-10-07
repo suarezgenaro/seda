@@ -157,10 +157,10 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 	
 				# read the entire best fit model spectrum (the one stored in output_fit 
 				# was trimmed to the wavelength range of the data)
-				output_best_bayesian_fit = best_bayesian_fit(output_bayes=output_fit, 
-				                                             model_dir_ori=model_dir, ori_res=True)
-				wl_model = output_best_bayesian_fit['wl_model_ori'] # um
-				flux_model = output_best_bayesian_fit['flux_model_ori'] # erg/cm2/s/A
+				output_best_bayesian_fit = utils.best_bayesian_fit(output_bayes=output_fit, 
+				                                                   model_dir_ori=model_dir, ori_res=True)
+				wl_model = output_best_bayesian_fit['wl_model_best'] # um
+				flux_model = output_best_bayesian_fit['flux_model_best'] # erg/cm2/s/A
 				params = output_best_bayesian_fit['params_med']
 	
 		else: # no output_fit is provided

@@ -444,7 +444,7 @@ def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None
 	'''
 	Description:
 	------------
-		Plot the spectra and best model fit from the Bayesian sampling.
+		Plot the observed data and best model fit from the Bayesian sampling.
 
 	Parameters:
 	-----------
@@ -479,7 +479,7 @@ def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None
 
 	Returns:
 	--------
-	Plot of the spectra and best model fit from the Bayesian sampling that will be stored if ``save`` with the name ``out_file``.
+	Plot of the observed data and best model fit from the Bayesian sampling that will be stored if ``save`` with the name ``out_file``.
 
 	Example:
 	--------
@@ -495,7 +495,7 @@ def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None
 	# open results from sampling
 	try: # if given as a pickle file
 		output_bayes = utils.load_output_fit(output_bayes)
-	except: # if given as the output of chi2_fit
+	except: # if given as the output of bayes_fit
 		pass
 	fit_spectra = output_bayes['my_bayes'].fit_spectra
 	fit_photometry = output_bayes['my_bayes'].fit_photometry
@@ -1054,7 +1054,7 @@ def plot_model_resolution(model, spectra_name_full, xlog=True, ylog=False, xrang
 	return fig, ax 
 
 #########################
-def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False, 
+def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False, flux_unit='erg/s/cm2/A',
 	                          out_file=None, save=False, spectrum_kwargs=None, phot_kwargs=None):
 	'''
 	Description:
@@ -1069,6 +1069,8 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False,
 		Use logarithmic (``True``) or linear (``False``) scale to plot wavelengths.
 	- ylog : {``True``, ``False``}, optional (default ``False``)
 		Use logarithmic (``True``) or linear (``False``) scale to plot fluxes.
+	- flux_unit : str, optional (default 'erg/s/cm2/A')
+		Unit to plot the spectrum fluxes and synthetic fluxes: ``'erg/s/cm2/A'`` (default), ``'Jy'``, or ``erg/s/cm2/um``.
 	- out_file : str, optional
 		File name to save the figure (it can include a path e.g. my_path/figure.pdf). 
 		Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
@@ -1097,8 +1099,8 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False,
 
 	# extract parameters from the output dictionary by synthetic_photometry
 	wl = out_synthetic_photometry['wl'] # input spectrum wavelength
-	flux = out_synthetic_photometry['flux'] # input spectrum fluxes
-	flux_unit = out_synthetic_photometry['flux_unit'] # units of input spectrum fluxes
+	flux = out_synthetic_photometry['flux'] # input spectrum fluxes in erg/s/cm2/A
+#	flux_unit = out_synthetic_photometry['flux_unit'] # units of input spectrum fluxes
 	filters = out_synthetic_photometry['filters'] # filters used to calculate synthetic photometry
 	eff_wl = out_synthetic_photometry['lambda_eff(um)'] # effective wavelength (um) for all filters
 	eff_width = out_synthetic_photometry['width_eff(um)'] # effective width (um) for all filters
@@ -1108,14 +1110,15 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False,
 		try: eflux_syn = out_synthetic_photometry['esyn_flux(erg/s/cm2/A)']
 		except: eflux_syn = np.repeat(0, len(flux_syn))
 	elif flux_unit=='Jy':
+		flux = synthetic_photometry.convert_flux(flux=flux, wl=wl, unit_in='erg/s/cm2/A', unit_out='Jy')['flux_out'] # in Jy
 		flux_syn = out_synthetic_photometry['syn_flux(Jy)']
 		try: eflux_syn = out_synthetic_photometry['esyn_flux(Jy)'] # synthetic flux errors (Jy) for all filters
 		except: eflux_syn = np.repeat(0, len(flux_syn))
 	elif flux_unit=='erg/s/cm2/um':
+		flux = (flux*u.erg/u.s/u.cm**2/(u.nm*0.1)).to(u.erg/u.s/u.cm**2/u.micron).value # in erg/s/cm2/um
 		flux_syn = out_synthetic_photometry['syn_flux(erg/s/cm2/A)']
 		try: eflux_syn = out_synthetic_photometry['esyn_flux(erg/s/cm2/A)']
 		except: eflux_syn = np.repeat(0, len(flux_syn))
-		flux = (flux*u.erg/u.s/u.cm**2/u.micron).to(u.erg/u.s/u.cm**2/(u.nm*0.1)).value # erg/s/cm2/A
 
 	mag_syn = out_synthetic_photometry['syn_mag'] # synthetic magnitude for all filters
 	try: emag_syn = out_synthetic_photometry['esyn_mag'] # synthetic magnitude error for all filters
@@ -1158,8 +1161,9 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False,
 	ax[0].grid(True, which='both', color='gainsboro', linewidth=0.5, alpha=1.0)
 	ax[0].legend(prop={'size': 8.0})#, handlelength=1.5, handletextpad=0.5, labelspacing=0.5,)
 	
-	if flux_unit=='erg/s/cm2/A' or flux_unit=='erg/s/cm2/um': ax[0].set_ylabel(r'$F_\lambda\ ($erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)', size=12)
-	if flux_unit=='Jy': ax[0].set_ylabel(r'$F_\nu$ (Jy)', size=12)
+	if flux_unit=='erg/s/cm2/A': ax[0].set_ylabel(r'$F_\lambda\ ($erg s$^{-1}$ cm$^{-2}$ $\AA^{-1}$)', size=12)
+	elif flux_unit=='erg/s/cm2/um': ax[0].set_ylabel(r'$F_\lambda\ ($erg s$^{-1}$ cm$^{-2}$ $\mu$m$^{-1}$)', size=12)
+	elif flux_unit=='Jy': ax[0].set_ylabel(r'$F_\nu$ (Jy)', size=12)
 	
 	#++++++++++++++++++++++++
 	# determine color: use phot_kwargs['color'] if given, otherwise None to use default cycle
