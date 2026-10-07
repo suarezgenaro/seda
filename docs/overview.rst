@@ -311,6 +311,50 @@ Bundled tables (pass as ``filename`` basename):
 
 For more information on these filenames, please refer to the 'Evolution' section at `Sonora Diamondback models <https://zenodo.org/records/12735103>`_.
 
+Sonora Red Diamondback Evolutionary Tables
+++++++++++++++++++++++++++++++++++++++++++
+
+Low-metallicity cloudy evolutionary tables by `Davis et al. (2025) <https://ui.adsabs.harvard.edu/abs/2025ApJ...994..198D/abstract>`_. Three ``RedDiamondback_*_mass`` tables (constant-mass cooling tracks) are bundled with :math:`\texttt{SEDA}` for [M/H] = -0.5, 0.0, and 0.5. The original tables are available from `Zenodo <https://doi.org/10.5281/zenodo.17343710>`_. The bundled files store mass in M\ :sub:`sun`\ and radius in R\ :sub:`sun`\ .
+
+Parameter coverage:
+
+.. code-block:: console
+
+  - mass = [0.52, 84] Mjup (0.0005 to 0.08 Msun)
+  - age = [0.001, 15] Gyr
+  - Lbol = [1.6e-8, 5.8e-2] Lsun (log L/Lsun = [-7.81, -1.23])
+  - R = [0.74, 8.72] Rjup
+  - logg = [2.20, 5.48] (g in cgs)
+  - Teff = [201, 3199] K
+  - Metallicity [M/H] = -0.5, 0.0, and 0.5 dex
+
+Bundled tables (pass as ``filename`` basename):
+
+.. code-block:: console
+
+  - ``RedDiamondback_Zm050_mass``  ([M/H] = -0.5)
+  - ``RedDiamondback_Zp000_mass``  ([M/H] = 0.0)
+  - ``RedDiamondback_Zp050_mass``  ([M/H] = +0.5)
+
+Sonora Flame Skimmer Evolutionary Tables
+++++++++++++++++++++++++++++++++++++++++
+
+Evolutionary tables from the `Sonora Flame Skimmer grid <https://doi.org/10.5281/zenodo.20030439>`_. Fifty-six tables are bundled, for equilibrium (``eq``) and disequilibrium (``deq``) chemistry at seven metallicities and four C/O ratios. The bundled files already use M\ :sub:`Jup`\ , Gyr, and R\ :sub:`Jup`\ . Pass the basename, for example ``eq_mh+0.0_co1.0.txt``.
+
+Parameter coverage:
+
+.. code-block:: console
+
+  - mass = [0.047, 105] Mjup (4.5e-5 to 0.10 Msun)
+  - age = [0.0001, 10] Gyr
+  - Lbol = [2.4e-11, 0.47] Lsun (log L/Lsun = [-10.6, -0.33])
+  - R = [0.31, 17.2] Rjup
+  - logg = [1.38, 5.63] (g in cgs)
+  - Teff = [66, 4320] K
+  - Chemistry = equilibrium (``eq``) or disequilibrium (``deq``)
+  - Metallicity [M/H] = -1.0, -0.5, 0.0, +0.5, +1.0, +1.5, and +2.0
+  - C/O = 0.5, 1.0, 1.5, and 2.5
+
 ATMO 2020 Evolutionary Tables
 +++++++++++++++++++++++++++++
 
@@ -335,6 +379,24 @@ Bundled tables (pass as ``filename`` basename):
   - ``ATMO_CEQ_mass.txt``  (equilibrium chemistry)
   - ``ATMO_NEQ_weak_mass.txt``  (non-equilibrium chemistry due to weak vertical mixing; logKzz = 4)
   - ``ATMO_NEQ_strong_mass.txt``  (non-equilibrium chemistry due to strong vertical mixing; logKzz = 6)
+
+SANDee Evolutionary Tables
+++++++++++++++++++++++++++
+
+Low-mass-star and brown-dwarf evolutionary tables by `Gerasimov et al. (2024) <https://ui.adsabs.harvard.edu/abs/2024ApJ...971...65G/abstract>`_. Twenty-four ``SAND_*_mass.txt`` tables are bundled, one per metallicity and alpha-element combination in the published grid. They are derived from the authors' MESA histories, ages below 1 Gyr are omitted, and the bundled files already use M\ :sub:`Jup`\ , Gyr, and R\ :sub:`Jup`\ . The MESA archive is available from `Zenodo <https://doi.org/10.5281/zenodo.11582126>`_, and ``build_tables.py`` in the model folder regenerates the bundled tables from that archive. Pass the basename, for example ``SAND_z0.1_a0.0_mass.txt``.
+
+Parameter coverage:
+
+.. code-block:: console
+
+  - mass = [63, 741] Mjup (0.060 to 0.71 Msun)
+  - age = [1, 15.5] Gyr
+  - Lbol = [1.8e-6, 9.5e-2] Lsun (log L/Lsun = [-5.75, -1.02])
+  - R = [0.67, 6.54] Rjup
+  - logg = [4.63, 5.69] (g in cgs)
+  - Teff = [785, 3911] K
+  - Metallicity [M/H] = -2.4 to +0.3
+  - Alpha enhancement = -0.05 to +0.4
 
 BHAC15 Evolutionary Tables
 ++++++++++++++++++++++++++

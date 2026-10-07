@@ -18,6 +18,9 @@ PUBLISHED_EVOLUTIONARY_FILE_UNITS = {
 	'Sonora_Diamondback': {'mass': 'M_sun', 'age': 'Gyr', 'radius': 'R_jup'},
 	'ATMO2020': {'mass': 'M_sun', 'age': 'Gyr', 'radius': 'R_sun'},
 	'BHAC2015': {'mass': 'M_sun', 'age': 'log10(yr)', 'radius': 'R_sun'},
+	'Sonora_Flame_Skimmer': {'mass': 'M_jup', 'age': 'Gyr', 'radius': 'R_jup'},
+	'SANDee': {'mass': 'M_jup', 'age': 'Gyr', 'radius': 'R_jup'},
+	'Sonora_Red_Diamondback': {'mass': 'M_sun', 'age': 'Gyr', 'radius': 'R_sun'},
 }
 
 # ----------------------------
@@ -144,7 +147,8 @@ def _infer_age_unit(age, mass, radius, mass_unit, radius_unit):
 	plausible = {}
 	for unit in ('Gyr', 'log10(yr)'):
 		age_gyr = _ages_in_gyr(age, unit)
-		plausible[unit] = bool(np.all((age_gyr > 1.0e-4) & (age_gyr < 20.0)))
+		# 1e-4 Gyr is 100 kyr, the youngest age stored in some bundled grids.
+		plausible[unit] = bool(np.all((age_gyr >= 1.0e-4) & (age_gyr < 20.0)))
 	candidates = [unit for unit, ok in plausible.items() if ok]
 	if len(candidates) == 1:
 		return candidates[0]
@@ -166,18 +170,24 @@ def _grid_radius_in_rjup(model, radius):
 	"""Convert a native grid radius value to R_jup using published file units."""
 	return _independent_user_value(model, 'radius', radius)
 
+def _table_row(n_rows, idx):
+	"""Return ``idx`` when that row exists, otherwise the middle row."""
+	if idx < 0:
+		idx = n_rows + idx
+	if idx < 0 or idx >= n_rows:
+		return n_rows // 2
+	return idx
+
 def _grid_radius_native(model, filename, idx=500):
 	"""Return native-grid radius for one row of a bundled evolutionary table."""
 	grid = seda.models.read_evolutionary_model(filename=filename, model=model)
-	if idx < 0:
-		idx = len(grid['mass']) + idx
+	idx = _table_row(len(grid['mass']), idx)
 	return float(grid['radius'][idx])
 
 def _bundled_grid_inputs(model, filename, idx=500):
 	"""Return (Lbol, R, Teff, logg, age, mass) for one row of a bundled evolutionary table."""
 	grid = seda.models.read_evolutionary_model(filename=filename, model=model)
-	if idx < 0:
-		idx = len(grid['mass']) + idx
+	idx = _table_row(len(grid['mass']), idx)
 
 	Lbol = 10.0 ** grid['logL'][idx]
 	R_rjup = _grid_radius_in_rjup(model, grid['radius'][idx])
@@ -664,6 +674,30 @@ def test_list_evolutionary_tables():
 	)
 	assert len(bhac_tables) == 1, (
 		f'expected 1 BHAC2015 table, got {len(bhac_tables)}'
+	)
+
+	flame_tables = seda.models.EvolutionaryModels('Sonora_Flame_Skimmer').available_tables
+	assert 'eq_mh+0.0_co1.0.txt' in flame_tables, (
+		'Sonora Flame Skimmer bundled tables should include eq_mh+0.0_co1.0.txt'
+	)
+	assert len(flame_tables) == 56, (
+		f'expected 56 Sonora Flame Skimmer tables, got {len(flame_tables)}'
+	)
+
+	sandee_tables = seda.models.EvolutionaryModels('SANDee').available_tables
+	assert 'SAND_z0.1_a0.0_mass.txt' in sandee_tables, (
+		'SANDee bundled tables should include SAND_z0.1_a0.0_mass.txt'
+	)
+	assert len(sandee_tables) == 24, (
+		f'expected 24 SANDee tables, got {len(sandee_tables)}'
+	)
+
+	red_tables = seda.models.EvolutionaryModels('Sonora_Red_Diamondback').available_tables
+	assert 'RedDiamondback_Zp000_mass' in red_tables, (
+		'Sonora Red Diamondback bundled tables should include RedDiamondback_Zp000_mass'
+	)
+	assert len(red_tables) == 3, (
+		f'expected 3 Sonora Red Diamondback tables, got {len(red_tables)}'
 	)
 
 def test_evolutionary_models_params_requires_model():
