@@ -896,7 +896,7 @@ def _load_evolutionary_model(model):
 	spec.loader.exec_module(plugin)
 
 	# validate required functions in model folder
-	for func in ['_read_evolutionary_model', '_convert_inputs']:
+	for func in ['_read_evolutionary_model', '_convert_inputs', '_age_to_grid', '_to_user_units']:
 		if not hasattr(plugin, func):
 			raise AttributeError(
 				f"{model}/plugin.py (evolution_aux) must define '{func}'"

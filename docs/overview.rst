@@ -366,7 +366,12 @@ Bundled table (``filename`` may be omitted):
   - ``BHAC15_tracks+structure.txt``
 
 :func:`~seda.phy_params.evol_params` reads a bundled evolutionary table selected by ``filename``.
-If a model folder contains only one table, ``filename`` may be omitted. Inferred parameters
-are returned in the native units defined in each model's ``config.json`` (mass in M\ :sub:`sun`\ ,
-age in Gyr for Sonora/ATMO or log10(yr) for BHAC15, etc.). See :doc:`notebooks/tutorial_ingest_evolutionary_models` to add custom models.
+If a model folder contains only one table, ``filename`` may be omitted. For every model,
+:func:`~seda.phy_params.evol_params` takes radius in R\ :sub:`Jup`\ and returns mass in
+M\ :sub:`Jup`\ and age in Gyr. :func:`~seda.phy_params.isochrone_params` takes age in Gyr
+and returns mass in M\ :sub:`Jup`\ and radius in R\ :sub:`Jup`\ . ``Teff`` is in Kelvin.
+The bundled tables stay in the units listed in each model's ``config.json`` (for example
+BHAC15 age is stored as log10(yr)); each plugin converts age, mass, and radius at the
+function boundary, and interpolation stays in those table coordinates.
+Other returned columns keep their ``config.json`` units. See :doc:`notebooks/tutorial_ingest_evolutionary_models` to add custom models.
 
