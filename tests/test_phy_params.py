@@ -585,6 +585,30 @@ def test_list_evolutionary_tables():
 		f'expected 1 BHAC2015 table, got {len(bhac_tables)}'
 	)
 
+	flame_tables = seda.models.EvolutionaryModels('Sonora_Flame_Skimmer').available_tables
+	assert 'eq_mh+0.0_co1.0.txt' in flame_tables, (
+		'Sonora Flame Skimmer bundled tables should include eq_mh+0.0_co1.0.txt'
+	)
+	assert len(flame_tables) == 56, (
+		f'expected 56 Sonora Flame Skimmer tables, got {len(flame_tables)}'
+	)
+
+	sandee_tables = seda.models.EvolutionaryModels('SANDee').available_tables
+	assert 'SAND_z0.1_a0.0_mass.txt' in sandee_tables, (
+		'SANDee bundled tables should include SAND_z0.1_a0.0_mass.txt'
+	)
+	assert len(sandee_tables) == 24, (
+		f'expected 24 SANDee tables, got {len(sandee_tables)}'
+	)
+
+	red_tables = seda.models.EvolutionaryModels('Sonora_Red_Diamondback').available_tables
+	assert 'RedDiamondback_Zp000_mass' in red_tables, (
+		'Sonora Red Diamondback bundled tables should include RedDiamondback_Zp000_mass'
+	)
+	assert len(red_tables) == 3, (
+		f'expected 3 Sonora Red Diamondback tables, got {len(red_tables)}'
+	)
+
 def test_evolutionary_models_params_requires_model():
 	"""params should require a model name, like available_tables."""
 	with pytest.raises(Exception, match='Pass a model name'):

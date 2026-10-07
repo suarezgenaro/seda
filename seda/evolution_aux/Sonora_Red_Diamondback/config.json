@@ -1,0 +1,27 @@
+{
+    "_comment_model": "Internal label for the evolutionary models",
+    "model": "Sonora_Red_Diamondback",
+    "_comment_ref": "Reference for the models (optional)",
+    "ref": "Davis et al. (2025)",
+    "_comment_name": "Name of the models (optional)",
+    "name": "Sonora Red Diamondback",
+    "_comment_bibcode": "bibcode identifier for the models (optional)",
+    "bibcode": "2025ApJ...994..198D",
+    "_comment_ADS": "ADS link to the model publication (optional)",
+    "ADS": "https://ui.adsabs.harvard.edu/abs/2025ApJ...994..198D/abstract",
+    "_comment_download": "Link to download the models (optional)",
+    "download": "https://doi.org/10.5281/zenodo.17343710",
+    "_comment_filename_pattern": "Common pattern recognized in evolutionary table filenames",
+    "filename_pattern": "RedDiamondback_*_mass",
+    "_comment_columns": "Columns in each evolutionary table data row",
+    "columns": ["mass", "age", "logL", "Teff", "logg", "radius"],
+    "_comment_units": "Units of the parsed grid quantities returned by _read_evolutionary_model",
+    "units": {
+        "mass": "M_sun",
+        "age": "Gyr",
+        "logL": "log10(L/Lsun)",
+        "Teff": "K",
+        "logg": "cgs dex",
+        "radius": "R_sun"
+    }
+}
