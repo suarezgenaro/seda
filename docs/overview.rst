@@ -314,7 +314,7 @@ For more information on these filenames, please refer to the 'Evolution' section
 Sonora Red Diamondback Evolutionary Tables
 ++++++++++++++++++++++++++++++++++++++++++
 
-Low-metallicity cloudy evolutionary tables by `Davis et al. (2025) <https://ui.adsabs.harvard.edu/abs/2025ApJ...994..198D/abstract>`_. Three ``RedDiamondback_*_mass`` tables (constant-mass cooling tracks) are bundled with :math:`\texttt{SEDA}` for [M/H] = -0.5, 0.0, and 0.5. The original tables are available from `Zenodo <https://doi.org/10.5281/zenodo.17343710>`_. The bundled files store mass in M\ :sub:`sun`\ and radius in R\ :sub:`sun`\ .
+Low-metallicity cloudy evolutionary tables by `Davis et al. (2025) <https://ui.adsabs.harvard.edu/abs/2025ApJ...994..198D/abstract>`_. Three ``RedDiamondback_*_mass`` tables (constant-mass cooling tracks) are bundled with :math:`\texttt{SEDA}` for [M/H] = -0.5, 0.0, and 0.5. The original tables are available from the `Sonora Red Diamondback models <https://doi.org/10.5281/zenodo.17343710>`_. The bundled files store mass in M\ :sub:`sun`\ and radius in R\ :sub:`sun`\ .
 
 Parameter coverage:
 
@@ -383,7 +383,7 @@ Bundled tables (pass as ``filename`` basename):
 SANDee Evolutionary Tables
 ++++++++++++++++++++++++++
 
-Low-mass-star and brown-dwarf evolutionary tables by `Gerasimov et al. (2024) <https://ui.adsabs.harvard.edu/abs/2024ApJ...971...65G/abstract>`_. Twenty-four ``SAND_*_mass.txt`` tables are bundled, one per metallicity and alpha-element combination in the published grid. They are derived from the authors' MESA histories, ages below 1 Gyr are omitted, and the bundled files already use M\ :sub:`Jup`\ , Gyr, and R\ :sub:`Jup`\ . The MESA archive is available from `Zenodo <https://doi.org/10.5281/zenodo.11582126>`_, and ``build_tables.py`` in the model folder regenerates the bundled tables from that archive. Pass the basename, for example ``SAND_z0.1_a0.0_mass.txt``.
+Low-mass-star and brown-dwarf evolutionary tables by `Gerasimov et al. (2024) <https://ui.adsabs.harvard.edu/abs/2024ApJ...971...65G/abstract>`_. Twenty-four ``SAND_*_mass.txt`` tables are bundled, one per metallicity and alpha-element combination in the published grid. They are derived from the authors' MESA histories, ages below 1 Gyr are omitted, and the bundled files already use M\ :sub:`Jup`\ , Gyr, and R\ :sub:`Jup`\ . The MESA archive is available from the `SANDee models <https://doi.org/10.5281/zenodo.11582126>`_, and ``build_tables.py`` in the model folder regenerates the bundled tables from that archive. Pass the basename, for example ``SAND_z0.1_a0.0_mass.txt``.
 
 Parameter coverage:
 
