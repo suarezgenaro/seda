@@ -459,13 +459,14 @@ def inclination(vsini, evsini, P, eP, R, eR, n_mc=10000, central="median",
 	'''
 	Description:
 	------------
-		Calculate the inclination angle from an objects
-		projected rotation velocity (v sin i), rotation period (P),
-		and radius (R), using:
- 
-			sin i = (P * vsini) / (2 * pi * R)
- 
-		Uncertainty is propagated via Monte Carlo sampling.
+		Calculate the inclination angle of an object from its
+		projected rotational velocity (v sin i), rotation period (P),
+		and radius (R), using either the 'sini' or 'cosi' method.
+		Inclination and uncertainties are estimated from the
+		resulting probability distribution.
+		
+		See Notes for details on the methods, statistical estimators,
+		and their limitations.
  
 	Parameters:
 	-----------
@@ -509,15 +510,26 @@ def inclination(vsini, evsini, P, eP, R, eR, n_mc=10000, central="median",
  
 	Notes:
 	------
-	- MC samples with sin i > 1 are unphysical (vsini exceeds v_eq for those
-	  draws). Following Vos et al. (2017), these are set to sin i = 1 (i = 90 deg)
-	  rather than discarded. The number of clipped samples is reported.
-	- Samples with NaN (e.g. from non-physical period draws) are excluded from
-	  the statistics; the number of samples estimated vs used is printed.
-	- The inclination posterior is bounded at 90 deg (sin i <= 1), so
-	  error="percentile" is strongly preferred over "std" when vsini is
-	  close to 2*pi*R/P.
- 
+	- The 'sini' method uses sin i = (P * vsini) / (2 * pi * R),
+	  propagating uncertainties through Monte Carlo sampling.
+	- The 'cosi' method follows the Bayesian approach of
+	  Masuda & Winn (2020), with an implementation based on
+	  Fields et al. (2025).
+	- The inclination can be estimated from the mode of the
+	  posterior distribution using kernel density estimation (KDE),
+	  with uncertainties derived from highest density intervals (HDI)
+	  at the user-specified probability level.
+	- For the 'sini' method, MC samples with sin i > 1 are unphysical
+	  (vsini exceeds v_eq for those draws). Following Vos et al. (2017),
+	  these are set to sin i = 1 (i = 90 deg) rather than discarded.
+	  The number of clipped samples is reported.
+	- Samples with NaN (e.g., from non-physical period draws) are
+	  excluded from the statistics; the number of samples estimated
+	  vs used is printed.
+	- For the 'sini' method, the inclination posterior is bounded at
+	  90 deg (sin i <= 1), so error="percentile" is strongly preferred
+	  over "std" when vsini is close to 2*pi*R/P.
+
 	Example:
 	--------
 	>>> import seda
@@ -529,11 +541,13 @@ def inclination(vsini, evsini, P, eP, R, eR, n_mc=10000, central="median",
 	>>>
 	>>> seda.phy_params.inclination(vsini=vsini, evsini=evsini,
 	...                             P=P, eP=eP, R=R, eR=eR)
-		(50.4, (1.9, 2.0))
+		(50.6, (1.9, 2.1))
  
 	Author: Theo Olsen
- 
 	Date: 2026-06-10
+
+	Updated by: Maddie Lam
+	Date: 2026-10-08
 	'''
  
 	# ensure percentiles is a tuple
