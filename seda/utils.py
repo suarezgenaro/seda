@@ -5,6 +5,7 @@ import fnmatch
 import xarray
 import pickle
 import astropy
+import warnings
 from prettytable import PrettyTable
 from spectres import spectres
 from astropy import units as u
@@ -395,7 +396,7 @@ def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spect
 	'''
 	Description:
 	------------
-		Generate a synthetic spectrum for an arbitrary combination of free
+		Generate a synthetic spectrum for a desired combination of free
 		parameters within the coverage of the input atmospheric model grid.
 		
 		The Python SciPy-based RegularGridInterpolator is used to perform
@@ -619,11 +620,11 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 
 	Returns:
 	--------
-	Dictionary with the model grid either convolved and resampled (if requested) or synthetic photometry:
+	Dictionary with the model grid either convolved and resampled (if requested):
 		- ``'wavelength'`` : wavelengths in microns for the model spectra in the grid.
 		- ``'flux'`` : fluxes in erg/s/cm2/A for the model spectra in the grid.
-		- ``'params_unique'`` : dictionary with unique (non-repetitive) values for each model free parameter
-		- ``'N_model_spectra'`` : dictionary with unique (non-repetitive) values for each model free parameter
+		- ``'params_unique'`` : dictionary with unique (non-repetitive) values for each model free parameter.
+		- ``'N_model_spectra'`` : number of model spectra in the grid.
 
 	Example:
 	--------
@@ -742,6 +743,23 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 			flux_model = out_read_model_spectrum['flux_model'] # in erg/s/cm2/A
 			wl_model = out_read_model_spectrum['wl_model'] # in um
 
+			# check the original wavelength of each spectrum against the first spectrum
+			if first_spec:
+				# save the original wavelength grid for comparison
+				wl_reference = wl_model.copy()
+			
+				# save first spectrum name
+				first_spectrum_name = spectra_name[mask][0]
+
+			else: # for all the model spectra but the first one
+				# warn if the new spectrum has a different original wavelength grid
+				if (wl_model.shape != wl_reference.shape or	not np.allclose(wl_model, wl_reference)):
+					warnings.warn(
+						f"Spectrum {spectra_name[mask][0]} has a different "
+						f"original wavelength grid compared to the first spectrum "
+						f"({first_spectrum_name})."
+					)				
+
 			# convolve (if requested) the model spectrum to the indicated resolution
 			if convolve and not skip_convolution: # convolve spectra only if convolve is True and skip_convolution is False
 				if path_save_spectra_conv is None: # do not save the convolved spectrum
@@ -777,9 +795,14 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 				first_spec = False # to avoid initializing grid arrays in future iterations
 
 			else: # all but first parameters' combinations	 
-				# ensure the new spectrum has the same number of data points as the first one read
-				if wl_model.shape!=wl_grid.shape[-1:]:
-					raise ValueError(f'Spectrum {spectra_name[mask]} has a different number of data points compared to the previous ones')
+				# ensure the new spectrum has the same wavelength grid as the first one
+				if (wl_model.shape != wl_grid.shape or not np.allclose(wl_model, wl_grid)):
+					raise ValueError(
+						f"Spectrum {spectra_name[mask][0]} has a different "
+						f"processed wavelength grid compared to the first spectrum "
+						f"({first_spectrum_name})."
+					)
+
 				# save spectrum
 #				wl_grid[index] = wl_model
 				flux_grid[index] = flux_model
@@ -836,11 +859,13 @@ def read_grid_phot(model, model_dir, filters, params_ranges=None, fit_phot_range
 
 	Returns:
 	--------
-	Dictionary with the model grid either convolved and resampled (if requested) or synthetic photometry:
-		- ``'wavelength'`` : wavelengths in microns for the model spectra in the grid.
-		- ``'flux'`` : fluxes in erg/s/cm2/A for synthetic photometry in the grid.
-		- ``'params_unique'`` : dictionary with unique (non-repetitive) values for each model free parameter
-		- ``'N_model_spectra'`` : dictionary with unique (non-repetitive) values for each model free parameter
+	Dictionary with the model grid of synthetic photometry:
+		- ``'wavelength'`` : fixed SVO effective wavelengths in microns for the filters.
+		- ``'flux'`` : synthetic fluxes in erg/s/cm2/A for each combination of model parameters and filters.
+		- ``'lambda_eff'`` : model-dependent effective wavelengths in microns for each combination of model parameters and filters.
+		- ``'width_eff'`` : model-dependent effective filter widths in microns for each combination of model parameters and filters.
+		- ``'params_unique'`` : dictionary with unique (non-repetitive) values for each model free parameter.
+		- ``'N_model_spectra'`` : number of model spectra in the grid.
 
 	Example:
 	--------
@@ -895,12 +920,12 @@ def read_grid_phot(model, model_dir, filters, params_ranges=None, fit_phot_range
 	desc = 'Deriving synthetic photometry from model spectra'
 	grid_bar = tqdm(total=len(spectra_name), desc=desc)
 
-	# save synthetic fluxes for each combination of free parameter values
-	# define arrays to save the grid
-	# add a last dimension with the number of synthetic fluxes
-	wl_grid = np.repeat(np.expand_dims(arr, -1), len(filters), axis=-1) # to save the effective wavelength at each grid point
-	flux_grid = np.repeat(np.expand_dims(arr, -1), len(filters), axis=-1) # to save the synthetic flux at each grid point
-	first_spec = True # reference to read effective wavelengths from the first spectrum only
+	# to save relevant parameters for for each combination of free parameter values
+	flux_grid = np.repeat(np.expand_dims(arr, -1), len(filters), axis=-1) # for synthetic fluxes
+	lambda_eff_grid = np.repeat(np.expand_dims(arr, -1), len(filters), axis=-1) # for effective wavelength
+	width_eff_grid = np.repeat(np.expand_dims(arr, -1), len(filters), axis=-1) # for effective width
+	wl_grid = None # fixed wavelength reference for the photometric grid
+	first_spec = True # reference to read the fixed wavelength reference from the first spectrum only
 	for index in np.ndindex(arr.shape): # iterate over all possible combinations of the free parameter unique values
 		# update the progress bar
 		grid_bar.update(1)
@@ -929,11 +954,18 @@ def read_grid_phot(model, model_dir, filters, params_ranges=None, fit_phot_range
 				# derive synthetic photometry
 				out_syn_phot = synthetic_photometry(wl=wl_model, flux=flux_model, flux_unit='erg/s/cm2/A', filters=filters)
 				flux_syn = out_syn_phot['syn_flux(erg/s/cm2/A)'] # erg/s/cm2/A
-
-				# estimate filters' effective wavelengths from the first spectrum to be the wavelength reference
+				lambda_eff = out_syn_phot['lambda_eff(um)'] # um
+				width_eff = out_syn_phot['width_eff(um)'] # um
+				
+				# use the SVO wavelength as the fixed wavelength reference
 				if first_spec:
-					lambda_eff = out_syn_phot['lambda_eff(um)'] # um
-					first_spec =  False # to avoid estimating effective wavelengths again
+					wl_grid = out_syn_phot['lambda_eff_SVO(um)'].copy()
+					first_spec =  False
+
+#				# estimate filters' effective wavelengths from the first spectrum to be the wavelength reference
+#				if first_spec:
+#					lambda_eff = out_syn_phot['lambda_eff(um)'] # um
+#					first_spec =  False # to avoid estimating effective wavelengths again
 
 				# store synthetic photometric
 				if path_save_syn_phot is not None:
@@ -982,26 +1014,34 @@ def read_grid_phot(model, model_dir, filters, params_ranges=None, fit_phot_range
 				# get from the table only parameters for the input filters within the fit range
 				flux_syn_each = []
 				lambda_eff_each = []
+				width_eff_each = []
+				lambda_eff_svo_each = []
 				for filt in filters_fit:
 					if filt in out_syn_phot['filters']: # filter is in the table with synthetic photometry
 						ind = out_syn_phot['filters']==filt # index in the table for filter in the iteration
 						# store filters' parameters in the lists
 						flux_syn_each.append(out_syn_phot['syn_flux(erg/s/cm2/A)'][ind][0]) # erg/s/cm2/A
 						lambda_eff_each.append(out_syn_phot['lambda_eff(um)'][ind][0]) # um
-
+						width_eff_each.append(out_syn_phot['width_eff(um)'][ind][0]) # um
+						lambda_eff_svo_each.append(out_syn_phot['lambda_eff_SVO(um)'][ind][0]) # um
+				
 					else:
-						raise Exception(f'There is not synthetic photometry for filter "{filt}" and model "{spectrum_name}".')
-
-				# store filters' parameters in the lists
+						raise ValueError(f'There is no synthetic photometry for filter "{filt}" and model "{spectrum_name}".')
+				
+				# filter parameters as arrays
 				flux_syn = np.array(flux_syn_each)
-				# consider the effective wavelengths from the first model as wavelength references
-				if first_spec:
-					lambda_eff = np.array(lambda_eff_each)
-					first_spec =  False # to avoid estimating effective wavelengths again
+				lambda_eff = np.array(lambda_eff_each)
+				width_eff = np.array(width_eff_each)
 
-			# save synthetic fluxes for each combination
-			wl_grid[index] = lambda_eff
+				# use the SVO effective wavelength as the fixed wavelength reference
+				if first_spec:
+					wl_grid = np.array(lambda_eff_svo_each)
+					first_spec = False
+
+			# save synthetic photometry for each combination
 			flux_grid[index] = flux_syn
+			lambda_eff_grid[index] = lambda_eff
+			width_eff_grid[index] = width_eff
 
 	# close the progress bar
 	grid_bar.close()
@@ -1009,12 +1049,13 @@ def read_grid_phot(model, model_dir, filters, params_ranges=None, fit_phot_range
 	fin_time_grid = time.time()
 	print_time(fin_time_grid-ini_time_grid)
 
-	out = {'wavelength': wl_grid, 'flux': flux_grid, 'params_unique': params_unique, 'N_model_spectra': len(spectra_name)}
+	out = {'wavelength': wl_grid, 'flux': flux_grid, 'lambda_eff': lambda_eff_grid, 'width_eff': width_eff_grid, 
+	       'params_unique': params_unique, 'N_model_spectra': len(spectra_name)}
 
 	return out
 
 ##########################
-def best_bayesian_fit(output_bayes, grid=None, model_dir_ori=None, ori_res=False, save_spectrum=False):
+def best_bayesian_fit(output_bayes, grid_spec=None, grid_phot=None, model_dir_ori=None, ori_res=False, save_spectrum=False):
 	'''
 	Description:
 	------------
@@ -1025,8 +1066,12 @@ def best_bayesian_fit(output_bayes, grid=None, model_dir_ori=None, ori_res=False
 	- 'output_bayes' : dictionary or str
 		Output dictionary with the results from the nested sampling by ``bayes``.
 		It can be either the name of the pickle file or simply the output dictionary.
-	- grid : dictionary, optional
+	- grid_spec : dictionary, optional
 		Model grid (``'wavelength'`` and ``'flux'``) generated by ``seda.utils.read_grid`` for interpolations.
+		If not provided (default), then a grid subset with model spectra around the median posteriors is read.
+		If provided, the code will skip reading the grid, which will save some time.
+	- grid_phot : dictionary, optional
+		Model grid (``'wavelength'`` and ``'flux'``) generated by ``seda.utils.read_grid_phot`` for interpolations.
 		If not provided (default), then a grid subset with model spectra around the median posteriors is read.
 		If provided, the code will skip reading the grid, which will save some time.
 	- ori_res : {``True``, ``False``}, optional (default ``False``)
@@ -1137,44 +1182,55 @@ def best_bayesian_fit(output_bayes, grid=None, model_dir_ori=None, ori_res=False
 			params_errors[param] = [lower, upper]
 
 	# read grid, if needed
-	if grid is None:
+	if grid_spec is None and fit_spectra: # no grid_spec is provided but spectra are used in the fit
 		# grid values around the desired parameter values
 		params_ranges = {}
 		for param in params_models: # for each free parameter in the grid
 			params_ranges[param] = find_two_nearest(params_models[param], params_med[param])
 
 		# read grid, convolve it (if not skip_convolution), and resample it to the input spectra
-		if fit_spectra:
-			grid_spec = [] #  to save a grid appropriate for each input spectrum
-			for i in range(N_spectra): # for each input observed spectrum
-				print(f'\nFor input spectrum {i+1} of {N_spectra}')
-				if not skip_convolution: # read and convolve original model spectra
-					grid_each = read_grid(model=model, model_dir=model_dir, params_ranges=params_ranges, 
-					                      convolve=True, res=res[i], lam_res=lam_res[i], 
-					                      fit_wl_range=fit_wl_range[i], wl_resample=wl_spectra_fit[i])
-				else: # read model spectra already convolved to the data resolution
-					# set filename_pattern to look for model spectra with the corresponding resolution
-					filename_pattern.append(models.Models(model).filename_pattern+f'_R{res[i]}at{lam_res[i]}um.nc')
-					grid_each = read_grid(model=model, model_dir=model_dir, params_ranges=params_ranges, 
-					                      res=res[i], lam_res=lam_res[i], 
-					                      fit_wl_range=fit_wl_range[i], wl_resample=wl_spectra_fit[i], 
-					                      skip_convolution=skip_convolution, filename_pattern=filename_pattern[i])
-				# add resampled grid for each input spectrum to the same list
-				grid_spec.append(grid_each)
+		grid_spec = [] #  to save a grid appropriate for each input spectrum
+		for i in range(N_spectra): # for each input observed spectrum
+			print(f'\nFor input spectrum {i+1} of {N_spectra}')
+			if not skip_convolution: # read and convolve original model spectra
+				grid_each = read_grid(model=model, model_dir=model_dir, params_ranges=params_ranges, 
+				                      convolve=True, res=res[i], lam_res=lam_res[i], 
+				                      fit_wl_range=fit_wl_range[i], wl_resample=wl_spectra_fit[i])
+			else: # read model spectra already convolved to the data resolution
+				# set filename_pattern to look for model spectra with the corresponding resolution
+				filename_pattern.append(models.Models(model).filename_pattern+f'_R{res[i]}at{lam_res[i]}um.nc')
+				grid_each = read_grid(model=model, model_dir=model_dir, params_ranges=params_ranges, 
+				                      res=res[i], lam_res=lam_res[i], 
+				                      fit_wl_range=fit_wl_range[i], wl_resample=wl_spectra_fit[i], 
+				                      skip_convolution=skip_convolution, filename_pattern=filename_pattern[i])
+			# add resampled grid for each input spectrum to the same list
+			grid_spec.append(grid_each)
+	elif grid_spec is not None and fit_spectra: # grid_spec is provided and spectra are used in the fit
+		if not isinstance(grid_spec, list): # if grid_spec is not a list
+			grid_spec = [grid_spec]
 
-		if fit_photometry:
-			# set filename_pattern to look for model spectra
-			filename_pattern = [models.Models(model).filename_pattern]
-			grid_phot = read_grid_phot(model=model, model_dir=model_dir, params_ranges=params_ranges, filters=filters_fit)
-			grid_phot = [grid_phot] # grid as list to follow structure from then fit_spectra
+	if grid_phot is None and fit_photometry: # no grid_phot is provided but photometry is used in the fit
+		# grid values around the desired parameter values
+		params_ranges = {}
+		for param in params_models: # for each free parameter in the grid
+			params_ranges[param] = find_two_nearest(params_models[param], params_med[param])
 
-		# define grid depending whether spectra and/or photometry were provided
-		if fit_spectra and not fit_photometry:
-			grid = grid_spec
-		if not fit_spectra and fit_photometry:
-			grid = grid_phot 
-		if fit_spectra and fit_photometry:
-			grid = grid_spec + grid_phot 
+		# set filename_pattern to look for model spectra
+		filename_pattern = [models.Models(model).filename_pattern]
+		grid_phot = read_grid_phot(model=model, model_dir=model_dir, params_ranges=params_ranges, filters=filters_fit)
+		grid_phot = [grid_phot] # grid as list to follow structure from then fit_spectra
+
+	elif grid_phot is not None and fit_photometry: # grid_phot is provided but photometry is used in the fit
+		if not isinstance(grid_phot, list): # if grid_phot is not a list
+			grid_phot = [grid_phot]
+
+	# define grid depending whether spectra and/or photometry were provided
+	if fit_spectra and not fit_photometry:
+		grid = grid_spec
+	if not fit_spectra and fit_photometry:
+		grid = grid_phot 
+	if fit_spectra and fit_photometry:
+		grid = grid_spec + grid_phot 
 
 	# generate a synthetic spectrum with the median parameter values for only the free parameters in the models
 	# (avoid radius, if included in params_med)
@@ -1183,7 +1239,7 @@ def best_bayesian_fit(output_bayes, grid=None, model_dir_ori=None, ori_res=False
 		params[param] = params_med[param]
 	wl = []
 	flux = []
-	for i in range(len(grid)): # for each input observed spectrum
+	for i in range(len(grid)): # for each input observation (spectrum or photometry)
 		syn_spectrum = generate_model_spectrum(params=params, model=model, grid=grid[i])
 		wl.append(syn_spectrum['wavelength'])
 		flux.append(syn_spectrum['flux'])
@@ -1522,7 +1578,7 @@ def read_SVO_table():
 	if os.path.exists(svo_table): 
 		svo_data = Table.read(svo_table, format='votable') # open downloaded table with filters' info
 	else:
-		svo_data = Table.read('https://svo.cab.inta-csic.es/files/svo/Public/HowTo/FPS/FPS_info.xml', format='votable') # this SVO link will be updated as soon as new filters are added to FPS. 
+		svo_data = Table.read('https://svo.cab.inta-csic.es/wp-content/uploads/download/FPS_info.xml', format='votable') # this SVO link will be updated as soon as new filters are added to FPS. 
 		svo_data.write(svo_table, format='votable') # save the table to avoid reading it from the web each time the code is run, which can take a few seconds
 
 	return svo_data
@@ -2305,7 +2361,10 @@ def read_prettytable(filename):
 
 ##########################
 # save dictionary as ascii table using prettytable
-def save_prettytable(my_dict, table_name):
+def save_prettytable(my_dict, table_name, out_fmt='pretty_fmt'):
+	# out_fmt: indicates the format of the output file
+	#	pretty_fmt (default) : Pretty Table format
+	# 	csv : comma-separated file (ASCII table)
 
 	# create a PrettyTable object
 	table = PrettyTable()
@@ -2328,12 +2387,19 @@ def save_prettytable(my_dict, table_name):
 	ascii_table = table.get_string()
 
 	# save file
-	with open(table_name, 'w') as f:
-		f.write(ascii_table)
+	if out_fmt=='pretty_fmt':
+		with open(table_name, 'w') as f:
+			f.write(ascii_table)
+	elif out_fmt=='csv':
+		with open(table_name, 'w', newline='', encoding='utf-8') as f: 
+			f.write(table.get_csv_string())
 
 ##########################
 # convert spectral type from string to float
 def spt_str_to_float(spt):
+
+	# ensure it is a string
+	if isinstance(spt, np.ndarray): spt = str(spt)
 
 	if 'M' in spt: spt = spt.replace('M', '0')
 	if 'L' in spt: spt = spt.replace('L', '1')

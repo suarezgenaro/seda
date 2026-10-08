@@ -3,11 +3,20 @@ About SEDA
 
 Attribution
 -----------
-**The SEDA release paper is** `Suárez et al. (2026, submmited to JOSS) <https:xxx>`__, while the foundation was introduced in `Suárez et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...920...99S/abstract>`__. Please cite these references if :math:`\texttt{SEDA}` has contributed to your research. Additionally, ensure to give appropriate credit to the models (see :ref:`models`) and other relevant Python packages (e.g., see :ref:`seda_overview`) used via :math:`\texttt{SEDA}`.
+**The SEDA release paper is** `Suárez et al. (2026, submmited to AJ) <https:xxx>`__, while the foundation was introduced in `Suárez et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...920...99S/abstract>`__. Please cite these references if :math:`\texttt{SEDA}` has contributed to your research. Additionally, ensure to give appropriate credit to the models (see :ref:`models`) and other relevant Python packages (e.g., see :ref:`seda_overview`) used via :math:`\texttt{SEDA}`.
 
 Contributing
 ------------
-The :math:`\texttt{SEDA}` package is under active development. Help us improve :math:`\texttt{SEDA}` by reporting `issues <https://github.com/suarezgenaro/seda/issues>`__ on the GitHub repository.
+The :math:`\texttt{SEDA}` package is under active development. Help us improve :math:`\texttt{SEDA}` by reporting `issues <https://github.com/suarezgenaro/seda/issues>`_ on the GitHub repository.
+
+Code contributions are also welcome. Contributors should create feature branches from ``develop`` and open pull requests to ``develop``. The contribution and release workflow is summarized below.
+
+.. figure:: _static/Workflow_SEDA_New_Release.png
+   :width: 100%
+   :align: center
+   :alt: SEDA contribution and release workflow
+
+   Contribution and release workflow for :math:`\texttt{SEDA}`.
 
 Questions and feedback
 ----------------------
@@ -25,7 +34,6 @@ FAQs
 .. contents::
    :local:
    :depth: 1
-
 
 How can users customize output plots?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -66,6 +74,19 @@ Below is an example showing how to customize a plot produced by
 Because the returned objects are standard Matplotlib figures and axes,
 any Matplotlib customization supported by ``fig`` and ``ax`` can be
 applied in the same way as for user-generated plots.
+
+When working in a Jupyter notebook, ``fig`` and ``ax`` (or ``axs``) can
+also be reused and customized in a separate cell. After making the
+desired changes, the updated figure can be displayed explicitly using
+``display(fig)``. For example:
+
+.. code-block:: python
+
+   # Customize the figure in a separate cell
+   axs[0].set_title('Synthetic photometry', fontsize=15)
+
+   # Display the updated figure
+   display(fig)
 
 
 SEDA is not recognized in my Jupyter notebook

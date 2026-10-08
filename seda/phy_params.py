@@ -11,6 +11,7 @@ from . import chi2_fit
 from . import models
 from . import utils
 from . import inclination_sampler
+from .empirical_aux._loaders import reference_color as _reference_color
 from sys import exit
 
 
@@ -160,10 +161,10 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 	
 				# read the entire best fit model spectrum (the one stored in output_fit 
 				# was trimmed to the wavelength range of the data)
-				output_best_bayesian_fit = best_bayesian_fit(output_bayes=output_fit, 
-															 model_dir_ori=model_dir, ori_res=True)
-				wl_model = output_best_bayesian_fit['wl_model_ori'] # um
-				flux_model = output_best_bayesian_fit['flux_model_ori'] # erg/cm2/s/A
+				output_best_bayesian_fit = utils.best_bayesian_fit(output_bayes=output_fit, 
+				                                                   model_dir_ori=model_dir, ori_res=True)
+				wl_model = output_best_bayesian_fit['wl_model_best'] # um
+				flux_model = output_best_bayesian_fit['flux_model_best'] # erg/cm2/s/A
 				params = output_best_bayesian_fit['params_med']
 	
 		else: # no output_fit is provided
@@ -838,6 +839,120 @@ def evol_params(Lbol, eLbol, R, eR, model, filename=None,
 				param, out[param], _fmt_err(out[f'e{param}']), unit_str))
 
 	return out
+
+##########################
+def color_anomaly(color, color_name, spt, table, ecolor=None,
+		age_group=None, reference_stat='mean'):
+	'''
+	Description:
+	------------
+		Compute a photometric color anomaly relative to a reference sequence
+		for a given spectral type. The anomaly is the magnitude difference
+
+			anomaly = color - reference_color
+
+		where a positive value indicates the object is redder than the
+		reference sequence at that spectral type.
+
+	Parameters:
+	-----------
+	- color : float
+		Observed color in magnitudes.
+	- color_name : str
+		Photometric color identifier. Supported options match Faherty et al.
+		(2016) Tables 15-16: ``J-H``, ``J-K``, ``J-W1``, ``J-W2``, ``H-K``,
+		``H-W1``, ``H-W2``, ``K-W1``, ``K-W2``, and ``W1-W2``.
+		Underscores and case are accepted (e.g. ``J_H``, ``j-h``).
+	- spt : str or float
+		Spectral type (e.g. ``'L5'``, ``'T4'``, ``'M7'``, or numeric subtype
+		such as ``15.0`` for ``'L5'``). Integer SpT values use that subtype bin directly.
+		Fractional SpT values (e.g. ``'L3.7'``) linearly interpolate the
+		reference color between the floor and ceil integer bins.
+	- table : str
+		Reference table (required): ``'faherty16'`` (bundled Faherty et al. 2016
+		Tables 15-16 field/normal means, or the full Table 1 sample,
+		M7-L8 only) or ``'ultracool'`` (mean or median colors recomputed
+		from the bundled Ultracool Sheet).
+	- ecolor : float, optional
+		Uncertainty in the observed color (mag). If provided, the same value
+		is returned as the anomaly uncertainty.
+	- age_group : str, optional (default None)
+		For ``table='ultracool'``: ``None`` (all objects), ``'young'``
+		(``youth_evidence`` contains YMG, lowg, SFR, or HYA), or ``'old'``
+		(``youth_evidence`` is ``N`` or ``Field``). Entries with ``?`` in
+		``youth_evidence`` are excluded from both subgroups.
+		For ``table='faherty16'``: required. Use ``'old'`` for the published
+		Tables 15-16 field means, or ``'young'`` to recompute from Table 1.
+		A combined young/old sample is not available from the source.
+	- reference_stat : str, optional (default ``'mean'``)
+		``'mean'`` or ``'median'``. For ``table='faherty16'``,
+		``age_group='old'`` always uses the published Table 15-16 means;
+		``age_group='young'`` also accepts ``'median'`` since that
+		sequence is recomputed from Table 1 photometry.
+
+	Returns:
+	--------
+	- anomaly : float
+		Color anomaly in magnitudes.
+	- eanomaly : float, optional
+		Returned only when ``ecolor`` is provided.
+
+	Notes:
+	------
+	- Faherty et al. (2016, ApJS, 225, 10) Tables 15-16 list mean infrared
+	  colors for field/normal M7-L8 dwarfs using 2MASS J, H, Ks and WISE
+	  W1/W2 photometry with per-band uncertainties < 0.1 mag.
+	- For ``table='faherty16'``, set ``age_group='old'`` (Tables 15-16) or
+	  ``age_group='young'`` (Table 1).
+	- ``table='faherty16', age_group='young'`` recomputes a reference
+	  sequence from all objects in the bundled Table 1 sample using the
+	  same 2MASS/WISE bands and a minimum-3-objects-per-bin rule. Integer bins with too few
+	  objects but with valid bracketing bins (L6) are
+	  linearly interpolated and a :class:`UserWarning` is issued. Edge bins
+	  with only one or two objects (e.g. L8) use those objects directly,
+	  also with a warning.
+	- Ultracool Sheet references are recomputed from bundled photometry
+	  (2MASS J/H/Ks and WISE W1/W2). Objects missing either band,
+	  or with per-band errors > 0.1 mag, are excluded. Integer bins
+	  require at least three objects.
+	- For a fractional SpT input (e.g. ``L3.7``), the reference is
+	  ``(1-f)*ref(floor) + f*ref(ceil)``. Both neighboring bins must exist.
+	- When reference colors are built from catalog photometry, adopted SpT
+	  follows each source: Faherty+16 ``spt_flt_assumed`` (optical when
+	  available, otherwise infrared; Faherty et al. 2016, Sec. VII) and
+	  Ultracool Sheet ``spt_adop_flt`` (optical for M/L, infrared for T).
+
+	Example:
+	--------
+	>>> import seda
+	>>>
+	>>> # 2MASS J03552337+1133437 (L5; Suárez et al. 2023)
+	>>> color = 14.05 - 11.526  # J-K from 2MASS photometry
+	>>> ecolor = np.sqrt(0.024**2 + 0.031**2)
+	>>> seda.phy_params.color_anomaly(
+	...     color=color, color_name='J-K', spt='L5',
+	...     table='faherty16', age_group='young', ecolor=color)
+	    (0.37071428571428644, 0.03920459156782532)
+
+	Author: Theo Olsen
+
+	Date: 2026-07-09
+	'''
+	if not table:
+		raise ValueError(
+			"table must be specified. Valid options: 'faherty16', 'ultracool'."
+		)
+	ref = _reference_color(
+		color_name=color_name,
+		spt=spt,
+		table=table,
+		age_group=age_group,
+		reference_stat=reference_stat,
+	)
+	anomaly = float(color) - ref
+	if ecolor is None:
+		return anomaly
+	return anomaly, float(ecolor)
 
 ##################
 # function to sort input spectra as nested lists according to their minimum wavelength values
