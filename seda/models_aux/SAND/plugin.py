@@ -1,13 +1,12 @@
-from astropy.io import ascii
-from astropy.io import fits
-import astropy.units as u
 import numpy as np
+import astropy.units as u
 from seda.models_aux._plugin_helpers import _vac_to_air_uv_safe
 
 def _read_model_spectrum(spectrum_file):
     """ 
     Read a model spectrum and return wavelength wavelength (micron) and flux (erg/s/cm2/A).
     """
+
     from astropy.io import fits
     spec = fits.open(spectrum_file)
 
