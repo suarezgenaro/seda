@@ -21,6 +21,7 @@ dependencies = [
   "dynesty",
   "lmfit",
   "matplotlib",
+  "netCDF4",
   "numpy",
   "prettytable",
   "scipy",
