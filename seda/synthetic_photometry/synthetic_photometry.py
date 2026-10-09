@@ -7,7 +7,7 @@ from astropy import units as u
 from .. import utils
 from sys import exit
 
-def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='photon', out_file=None): 
+def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='photon', out_file=None, svo_data=None): 
 	'''
 	Description:
 	------------
@@ -105,7 +105,7 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 	if isinstance(filters, str): filters = [filters]
 
 	# read filters' transmission curves and zero points
-	svo_data = utils.read_SVO_table()
+	if svo_data is None: svo_data = utils.read_SVO_table()
 	filterID = svo_data['filterID'] # SVO ID
 	ZeroPoint = svo_data['ZeroPoint'] # in Jy
 	# fill masked values if needed
@@ -187,7 +187,7 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 		mask_filt = filterID == filt
 		if any(mask_filt) is False: raise Exception(f'   \nERROR: No zero point for filter {filt}')
 
-		out_mag = flux_to_mag(flux=syn_flux_Jy[k], eflux=esyn_flux_Jy[k], filters=filt, flux_unit='Jy')
+		out_mag = flux_to_mag(flux=syn_flux_Jy[k], eflux=esyn_flux_Jy[k], filters=filt, flux_unit='Jy', svo_data=svo_data)
 		syn_mag[k] = out_mag['mag'][0] # in mag
 		if eflux is not None: esyn_mag[k] = out_mag['emag'][0] # in mag
 		lambda_eff_SVO[k] = out_mag['lambda_eff_SVO(um)'][0] # um

@@ -396,7 +396,7 @@ def teff(Lbol, eLbol, R, eR, n_mc=10000, central="median",
 	'''
    
 	# ensure percentiles is a tuple
-	percentiles = tuple((18, 84))
+	percentiles = tuple(percentiles)
 	
 	# verify "central" and "error" are valid parameters
 	central_valid = ["mean", "median"]
