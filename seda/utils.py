@@ -1357,7 +1357,7 @@ def select_model_spectra(model, model_dir, params_ranges=None, filename_pattern=
 	params_noranges = {}
 	for key, value in params.items():
 		if key not in params_ranges:
-			params_noranges[key] = [value.min(), value.max()]
+			params_noranges[key] = [float(value.min()), float(value.max())]
 
 	print(f'\n      {len(spectra_name)} model spectra')
 	print(f'         user-constrained parameters:')
