@@ -6,7 +6,6 @@ import json
 import xarray
 import importlib.util
 from astropy import units as u
-from astropy.constants import R_jup, R_sun
 from astropy.io import ascii
 from pathlib import Path
 from importlib import resources
@@ -599,7 +598,10 @@ def read_evolutionary_model(filename, model):
 	--------
 	Dictionary with evolutionary grid columns parsed by the model plugin.
 	Each model defines its own columns; all tables must provide ``logL`` and
-	``radius`` for interpolation. See ``config.json`` ``units`` for column units.
+	``radius`` for interpolation. Every model returns ``mass`` in M_jup,
+	``age`` in Gyr, ``radius`` in R_jup, ``Teff`` in Kelvin, ``logL`` as
+	log10(L/Lsun), and ``logg`` as log10(g[cm/s^2]), whatever units the
+	published table uses. See ``config.json`` ``units`` for any extra columns.
 
 	Example:
 	--------
@@ -716,27 +718,6 @@ def _interp_on_isochrone(isochrone, logL_targets):
 			left=np.nan, right=np.nan,
 		)
 	return out
-
-
-def _evolutionary_radius_unit(model):
-	"""Return the native radius unit string from an evolutionary model config."""
-
-	config, _ = _load_evolutionary_model(model)
-	return config.get('units', {}).get('radius', 'R_sun')
-
-
-def _convert_radius_to_rjup(radius, model):
-	"""Convert evolutionary-grid radius values to R_jup."""
-
-	radius = np.asarray(radius, dtype=float)
-	unit = _evolutionary_radius_unit(model)
-	if unit == 'R_sun':
-		return (radius * R_sun).to(R_jup).value
-	if unit == 'R_jup':
-		return radius
-	raise ValueError(
-		f'Unsupported evolutionary radius unit {unit!r} for model {model!r}.'
-	)
 
 
 def _precompute_isochrone_cache(tracks, grid):
@@ -896,7 +877,7 @@ def _load_evolutionary_model(model):
 	spec.loader.exec_module(plugin)
 
 	# validate required functions in model folder
-	for func in ['_read_evolutionary_model', '_convert_inputs', '_age_to_grid', '_to_user_units']:
+	for func in ['_read_evolutionary_model']:
 		if not hasattr(plugin, func):
 			raise AttributeError(
 				f"{model}/plugin.py (evolution_aux) must define '{func}'"

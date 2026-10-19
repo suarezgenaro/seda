@@ -7,7 +7,6 @@ from matplotlib.ticker import MultipleLocator, FormatStrFormatter, AutoMinorLoca
 from matplotlib.backends.backend_pdf import PdfPages # plot several pages in a single pdf
 from lmfit import Minimizer, minimize, Parameters, report_fit # model fit for non-linear least-squares problems
 from astropy import units as u
-from astropy.constants import R_jup, R_sun
 from sys import exit
 from . import utils
 from . import models
@@ -890,16 +889,7 @@ def plot_evolutionary_coverage(model, filename, cparam='age', xlog=True, ylog=Fa
 	units = model_info.units
 
 	Lbol = 10.0 ** np.asarray(grid['logL'], dtype=float)
-	radius_unit = units.get('radius', 'R_sun')
-	radius = np.asarray(grid['radius'], dtype=float)
-	if radius_unit == 'R_sun':
-		R_plot = (radius * R_sun).to(R_jup).value
-	elif radius_unit == 'R_jup':
-		R_plot = radius
-	else:
-		raise ValueError(
-			f'Unsupported evolutionary radius unit {radius_unit!r} for model {model!r}.'
-		)
+	R_plot = np.asarray(grid['radius'], dtype=float)
 
 	interp_axes = {'logL', 'radius'}
 	valid_cparams = [col for col in grid if col not in interp_axes]
@@ -1406,7 +1396,7 @@ def _evolutionary_param_values(grid, model, param):
 			raise ValueError(
 				f"Cannot derive {param!r} because this table has no 'radius' column."
 			)
-		return models._convert_radius_to_rjup(grid['radius'], model)
+		return grid['radius']
 	if param not in grid:
 		raise ValueError(
 			f"{param!r} is not available for this table. "
@@ -1477,7 +1467,7 @@ def plot_evolutionary_coverage(model, filename, xparam='Lbol', yparam='R', zpara
 		Basename of an evolutionary table inside ``evolution_aux/<model>/``.
 	- xparam : str, optional (default ``'Lbol'``)
 		Horizontal axis: any grid column, ``'Lbol'`` (from ``logL``), or
-		``'R'`` (radius converted to R_jup).
+		``'R'`` (alias for the ``radius`` column, in R_jup).
 	- yparam : str, optional (default ``'R'``)
 		Vertical axis; same options as ``xparam``.
 	- zparam : str, optional (default ``'age'``)

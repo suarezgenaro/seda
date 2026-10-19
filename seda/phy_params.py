@@ -8,7 +8,6 @@ from . import input_parameters
 from . import chi2_fit 
 from . import models
 from . import utils
-from .evolution_aux.units import USER_UNITS
 from .empirical_aux._loaders import reference_color as _reference_color
 from sys import exit
 
@@ -632,60 +631,30 @@ def _summarize_mc_samples(samples, central, error, percentiles):
 		err = (val - p_lo, p_hi - val)
 	return val, err
 
-def _param_unit_label(param, config_units):
-	"""Unit string for an inferred parameter.
-
-	``mass``, ``age``, and ``radius`` are always M_jup, Gyr, and R_jup.
-	Other columns keep the units declared in the model config.
-	"""
-
-	if param in USER_UNITS:
-		return USER_UNITS[param]
-	return config_units.get(param, '')
-
-def _samples_in_user_units(plugin, param, samples):
-	"""Convert interpolated Monte Carlo samples to phy_params user units."""
-
-	return np.asarray(plugin._to_user_units(param, samples), dtype=float)
-
-def _require_user_unit_hooks(model, plugin):
-	"""Require plugin hooks that convert age, mass, and radius for users."""
-
-	missing = [
-		name for name in ('_age_to_grid', '_to_user_units')
-		if not hasattr(plugin, name)
-	]
-	if missing:
-		raise NotImplementedError(
-			f'Evolutionary model "{model}" must define {", ".join(missing)} '
-			f'in plugin.py. See the tutorial on ingesting evolutionary models.'
-		)
-
 ##########################
-def isochrone_params(Lbol, eLbol, age, eage, model, filename=None,
+def isochrone_params(logL, elogL, age, eage, model, filename=None,
                      n_mc=10000, central="median", error="percentile",
                      percentiles=(16, 84), verbose=True):
 	'''
 	Description:
 	------------
 		Infer fundamental parameters by interpolating evolutionary-model
-		isochrones given a bolometric luminosity and age. Uncertainties are
-		propagated with a Monte Carlo simulation. This is the complement to :func:`evol_params`, which uses
-		``(Lbol, R)`` instead of ``(Lbol, age)``.
+		isochrones given a logarithmic bolometric luminosity and age.
+		Uncertainties are propagated with a Monte Carlo simulation. This is
+		the complement to :func:`evol_params`, which uses ``(logL, R)`` instead
+		of ``(logL, age)``.
 
-		``age`` is always in Gyr, for every model. ``mass`` and ``radius`` are
-		returned in M_jup and R_jup, and ``Teff`` is in Kelvin. The bundled
-		tables stay in the units in each model's ``config.json``; the model
-		plugin converts age, mass, and radius at the boundary of this function.
-		Interpolation itself stays in the table coordinates (including
-		``log10(yr)`` age).
+		Every evolutionary model reads its tables into the same units, so
+		``age`` is in Gyr, ``mass`` and ``radius`` are returned in M_jup and
+		R_jup, and ``Teff`` is in Kelvin, whatever units the published table
+		uses.
 
 	Parameters:
 	-----------
-	- Lbol : float
-		Bolometric luminosity in units of L_sun.
-	- eLbol : float
-		Uncertainty in bolometric luminosity (L_sun).
+	- logL : float
+		Bolometric luminosity as log10(L/L_sun).
+	- elogL : float
+		Uncertainty in log10(L/L_sun).
 	- age : float
 		Object age in Gyr.
 	- eage : float
@@ -714,8 +683,9 @@ def isochrone_params(Lbol, eLbol, age, eage, model, filename=None,
 	Dictionary with inferred grid columns and uncertainties:
 		- One key per interpolated column (e.g. ``'mass'``, ``'radius'``,
 		  ``'logg'``, ``'Teff'``). For every model, ``mass`` is in M_jup,
-		  ``radius`` is in R_jup, and ``Teff`` is in Kelvin. Other columns stay
-		  in the units declared in the model ``config.json``.
+		  ``radius`` is in R_jup, ``Teff`` is in Kelvin, and ``logg`` is
+		  log10(g[cm/s^2]). Any extra column keeps the unit declared in the
+		  model ``config.json``.
 		- Matching uncertainty keys prefixed with ``e`` (e.g. ``'emass'``,
 		  ``'eradius'``). Each uncertainty is a scalar if ``error="std"`` or a
 		  ``(lower, upper)`` tuple if ``error="percentile"``.
@@ -726,10 +696,10 @@ def isochrone_params(Lbol, eLbol, age, eage, model, filename=None,
 	--------
 	>>> import seda
 	>>>
-	>>> Lbol, eLbol = 6.324e-5, 6.978e-6  # in Lsun
+	>>> logL, elogL = -4.199, 0.048  # log10(L/Lsun)
 	>>>
 	>>> out = seda.phy_params.isochrone_params(
-	...     Lbol=Lbol, eLbol=eLbol, age=0.5, eage=0.0,
+	...     logL=logL, elogL=elogL, age=0.5, eage=0.0,
 	...     model='Sonora_Bobcat', filename='nc+0.0_co1.0_mass',
 	... )
 	>>> out['mass'], out['radius']  # M_jup, R_jup
@@ -753,8 +723,8 @@ def isochrone_params(Lbol, eLbol, age, eage, model, filename=None,
 			f"Valid options: {error_valid}."
 		)
 
-	if Lbol <= 0:
-		raise ValueError(f"Lbol must be positive, got {Lbol}.")
+	if not np.isfinite(logL):
+		raise ValueError(f"logL must be finite, got {logL}.")
 	if age <= 0:
 		raise ValueError(f"age must be positive and in Gyr, got {age}.")
 	if eage < 0:
@@ -772,32 +742,12 @@ def isochrone_params(Lbol, eLbol, age, eage, model, filename=None,
 	grid = models.read_evolutionary_model(filename=basename, model=model)
 	tracks = models._split_evolutionary_tracks(grid)
 
-	_, plugin = models._load_evolutionary_model(model)
-	if not hasattr(plugin, '_convert_inputs'):
-		raise NotImplementedError(
-			f'Evolutionary model "{model}" has no _convert_inputs in plugin.py. '
-			f'See the tutorial on ingesting evolutionary models.'
-		)
-	_require_user_unit_hooks(model, plugin)
-	# Radius is not used for isochrone lookup; only logL / e_logL from the plugin.
-	converted = plugin._convert_inputs(Lbol, eLbol, 1.0, 0.0)
-	for key in ('logL', 'e_logL'):
-		if key not in converted:
-			raise ValueError(
-				f'{model}/plugin.py _convert_inputs must return {key!r} '
-				f'for Monte Carlo sampling on the isochrone logL axis.'
-			)
-
-	logL_samples = np.random.normal(converted['logL'], converted['e_logL'], n_mc)
-	# Sample age in Gyr, then map each draw onto the table age coordinate.
-	# For log10(yr) tables this mapping is nonlinear, so the uncertainty
-	# must not be converted as a single Gaussian sigma in log age.
+	# Monte Carlo on the isochrone axes: logL and age in Gyr
+	logL_samples = np.random.normal(logL, elogL, n_mc)
 	if eage == 0:
-		age_grid = float(np.asarray(plugin._age_to_grid(age), dtype=float).reshape(-1)[0])
-		age_samples = np.full(n_mc, age_grid, dtype=float)
+		age_samples = np.full(n_mc, float(age), dtype=float)
 	else:
-		age_user_samples = np.random.normal(age, eage, n_mc)
-		age_samples = np.asarray(plugin._age_to_grid(age_user_samples), dtype=float)
+		age_samples = np.random.normal(age, eage, n_mc)
 
 	output_cols = [col for col in grid if col not in ('logL', 'age')]
 	param_pools = {col: np.full(n_mc, np.nan) for col in output_cols}
@@ -805,8 +755,8 @@ def isochrone_params(Lbol, eLbol, age, eage, model, filename=None,
 	def _assign_mc_draw(index, interp_row):
 		if 'radius' not in interp_row:
 			return
-		r_native = float(np.asarray(interp_row['radius']).ravel()[0])
-		if np.isnan(r_native):
+		radius = float(np.asarray(interp_row['radius']).ravel()[0])
+		if np.isnan(radius):
 			return
 		for col in output_cols:
 			if col in interp_row:
@@ -815,7 +765,7 @@ def isochrone_params(Lbol, eLbol, age, eage, model, filename=None,
 				)
 
 	if eage == 0:
-		isochrone = models._build_isochrone(tracks, age_grid)
+		isochrone = models._build_isochrone(tracks, float(age))
 		interp_batch = models._interp_on_isochrone(isochrone, logL_samples)
 		for i in range(n_mc):
 			interp_row = {col: interp_batch[col][i] for col in interp_batch}
@@ -846,12 +796,11 @@ def isochrone_params(Lbol, eLbol, age, eage, model, filename=None,
 	if n_outside == n_mc:
 		raise ValueError(
 			'All Monte Carlo samples fell outside the evolutionary grid. '
-			'Check that Lbol and age are within the model coverage.'
+			'Check that logL and age are within the model coverage.'
 		)
 
 	out = {}
 	for param, samples in param_pools.items():
-		samples = _samples_in_user_units(plugin, param, samples)
 		val, err = _summarize_mc_samples(samples, central, error, percentiles)
 		out[param] = val
 		out[f'e{param}'] = err
@@ -868,7 +817,7 @@ def isochrone_params(Lbol, eLbol, age, eage, model, filename=None,
 			return '{:.4g}'.format(err)
 		print(f'\nInferred fundamental parameters ({model_info.name}, {basename}):')
 		for param in output_cols:
-			unit = _param_unit_label(param, units)
+			unit = units.get(param, '')
 			unit_str = f' {unit}' if unit else ''
 			print('   {} = {:.4g} {}{}'.format(
 				param, out[param], _fmt_err(out[f'e{param}']), unit_str))
@@ -876,29 +825,28 @@ def isochrone_params(Lbol, eLbol, age, eage, model, filename=None,
 	return out
 
 ##########################
-def evol_params(Lbol, eLbol, R, eR, model, filename=None,
+def evol_params(logL, elogL, R, eR, model, filename=None,
                 n_mc=10000, central="median", error="percentile", 
                 percentiles=(16, 84), verbose=True):
 	'''
 	Description:
 	------------
-		Infer fundamental parameters by interpolating evolutionary models given a 
-		bolometric luminosity and radius. Uncertainties are propagated with a 
-		Monte Carlo simulation.
+		Infer fundamental parameters by interpolating evolutionary models given a
+		logarithmic bolometric luminosity and radius. Uncertainties are propagated
+		with a Monte Carlo simulation. This is the complement to
+		:func:`isochrone_params`, which uses ``(logL, age)`` instead of
+		``(logL, R)``.
 
-		``R`` is in R_jup. Returned ``mass`` is in M_jup, returned ``age``
-		is in Gyr, and ``Teff`` is in Kelvin, for every model. The bundled
-		tables stay in the units in each model's ``config.json``; the model
-		plugin converts age, mass, and radius at the boundary of this function.
-		Interpolation itself stays in the table coordinates (including
-		``log10(yr)`` age).
+		Every evolutionary model reads its tables into the same units, so ``R``
+		is in R_jup, returned ``mass`` is in M_jup, returned ``age`` is in Gyr,
+		and ``Teff`` is in Kelvin, whatever units the published table uses.
 
 	Parameters:
 	-----------
-	- Lbol : float
-		Bolometric luminosity in units of L_sun.
-	- eLbol : float
-		Uncertainty in bolometric luminosity (L_sun).
+	- logL : float
+		Bolometric luminosity as log10(L/L_sun).
+	- elogL : float
+		Uncertainty in log10(L/L_sun).
 	- R : float
 		Radius in units of R_jup.
 	- eR : float
@@ -925,9 +873,9 @@ def evol_params(Lbol, eLbol, R, eR, model, filename=None,
 	--------
 	Dictionary with inferred grid columns and uncertainties:
 		- One key per interpolated column (e.g. ``'mass'``, ``'age'``, ``'logg'``, ``'Teff'``).
-		  For every model, ``mass`` is in M_jup, ``age`` is in Gyr, and ``Teff``
-		  is in Kelvin. Other columns stay in the units declared in the model
-		  ``config.json``.
+		  For every model, ``mass`` is in M_jup, ``age`` is in Gyr, ``Teff``
+		  is in Kelvin, and ``logg`` is log10(g[cm/s^2]). Any extra column
+		  keeps the unit declared in the model ``config.json``.
 		- Matching uncertainty keys prefixed with ``e`` (e.g. ``'emass'``, ``'eage'``).
 		  Each uncertainty is a scalar if ``error="std"`` or a ``(lower, upper)`` tuple if 
 		  ``error="percentile"``.
@@ -939,14 +887,14 @@ def evol_params(Lbol, eLbol, R, eR, model, filename=None,
 	>>> import seda
 	>>>
 	>>> # input bolometric luminosity and radius with errors
-	>>> Lbol, eLbol = 6.324e-5, 6.978e-6  # in Lsun
-	>>> R, eR = 1.018, 0.059              # in Rjup
+	>>> logL, elogL = -4.199, 0.048  # log10(L/Lsun)
+	>>> R, eR = 1.018, 0.059         # in Rjup
 	>>>
 	>>> # infer parameters using the bundled solar-metallicity Bobcat table
-	>>> out = seda.phy_params.evol_params(Lbol=Lbol, eLbol=eLbol, R=R, eR=eR,
+	>>> out = seda.phy_params.evol_params(logL=logL, elogL=elogL, R=R, eR=eR,
 	>>>                                   model='Sonora_Bobcat', filename='nc+0.0_co1.0_mass')
 	>>> out['mass'], out['age']  # M_jup, Gyr
-	    (41.92, 0.508)  
+	    (39.24, 0.366)  
 
 	Author: Theo Olsen
 
@@ -967,8 +915,8 @@ def evol_params(Lbol, eLbol, R, eR, model, filename=None,
 			f"Valid options: {error_valid}."
 		)
 
-	if Lbol <= 0:
-		raise ValueError(f"Lbol must be positive, got {Lbol}.")
+	if not np.isfinite(logL):
+		raise ValueError(f"logL must be finite, got {logL}.")
 
 	available_models = models.EvolutionaryModels().available_models
 	if model not in available_models:
@@ -981,31 +929,13 @@ def evol_params(Lbol, eLbol, R, eR, model, filename=None,
 	basename = models.resolve_evolutionary_table(model, filename) #find basename for called model (or only model if left blank)
 	grid = models.read_evolutionary_model(filename=basename, model=model)
 
-	_, plugin = models._load_evolutionary_model(model)
-	if not hasattr(plugin, '_convert_inputs'):
-		raise NotImplementedError(
-			f'Evolutionary model "{model}" has no _convert_inputs in plugin.py. '
-			f'See the tutorial on ingesting evolutionary models.'
-		)
-	_require_user_unit_hooks(model, plugin)
-	converted = plugin._convert_inputs(Lbol, eLbol, R, eR)
-
-	interp_axes = ('logL', 'radius')
-	for axis in interp_axes:
-		e_axis = f'e_{axis}'
-		if axis not in converted or e_axis not in converted:
-			raise ValueError(
-				f'{model}/plugin.py _convert_inputs must return {axis!r} and {e_axis!r} '
-				f'for Monte Carlo sampling on the grid interpolation axes.'
-			)
-
 	grid_logL = np.asarray(grid['logL'], dtype=float)
 	grid_R    = np.asarray(grid['radius'], dtype=float)
 	points = np.column_stack((grid_logL, grid_R))
 
-	# Monte Carlo simulation on grid interpolation axes (units set by plugin)
-	logL_samples = np.random.normal(converted['logL'], converted['e_logL'], n_mc)
-	R_samples    = np.random.normal(converted['radius'], converted['e_radius'], n_mc)
+	# Monte Carlo simulation on the grid interpolation axes: logL and R in R_jup
+	logL_samples = np.random.normal(logL, elogL, n_mc)
+	R_samples    = np.random.normal(R, eR, n_mc)
 
 	xi = np.column_stack((logL_samples, R_samples))
 
@@ -1030,11 +960,10 @@ def evol_params(Lbol, eLbol, R, eR, model, filename=None,
 		             'grid; the inferred values are poorly constrained.')
 	if n_outside == n_mc:
 		raise ValueError('All Monte Carlo samples fell outside the evolutionary grid. '
-		                 'Check that Lbol and R are within the model coverage '
+		                 'Check that logL and R are within the model coverage '
 		                 'and that the table units/column order are correct.')
 
 	for param, samples in param_samples.items():
-		samples = _samples_in_user_units(plugin, param, samples)
 		val, err = _summarize_mc_samples(samples, central, error, percentiles)
 		out[param] = val
 		out[f'e{param}'] = err
@@ -1053,7 +982,7 @@ def evol_params(Lbol, eLbol, R, eR, model, filename=None,
 		for param in grid:
 			if param in ('logL', 'radius'):
 				continue
-			unit = _param_unit_label(param, units)
+			unit = units.get(param, '')
 			unit_str = f' {unit}' if unit else ''
 			print('   {} = {:.4g} {}{}'.format(
 				param, out[param], _fmt_err(out[f'e{param}']), unit_str))

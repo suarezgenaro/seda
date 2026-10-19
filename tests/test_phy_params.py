@@ -1,62 +1,28 @@
 import numpy as np
 import pytest
+from astropy import constants as const
 from astropy import units as u
 from astropy.constants import G, M_jup, M_sun, R_jup, R_sun
 
 import seda
-from seda.evolution_aux.units import age_from_gyr, age_to_gyr, mass_to_mjup, radius_to_rjup
 from tests.conftest import load_evolutionary_model_catalog, load_evolutionary_table_catalog
 
 BOBCAT_FILENAME = 'nc+0.0_co1.0_mass'
 DIAMONDBACK_FILENAME = 'nc_m0.0_mass'
 
-# Units of the bundled tables as published. Deliberately not read from
-# config.json or plugin.py: those are the pieces a bad conversion edit
-# would change together. phy_params must still return M_jup, Gyr, and R_jup.
-PUBLISHED_EVOLUTIONARY_FILE_UNITS = {
-	'Sonora_Bobcat': {'mass': 'M_sun', 'age': 'Gyr', 'radius': 'R_sun'},
-	'Sonora_Diamondback': {'mass': 'M_sun', 'age': 'Gyr', 'radius': 'R_jup'},
-	'ATMO2020': {'mass': 'M_sun', 'age': 'Gyr', 'radius': 'R_sun'},
-	'BHAC2015': {'mass': 'M_sun', 'age': 'log10(yr)', 'radius': 'R_sun'},
+# Units every evolutionary plugin must return, whatever the published table uses.
+AGREED_OUTPUT_UNITS = {
+	'mass': 'M_jup',
+	'age': 'Gyr',
+	'radius': 'R_jup',
+	'Teff': 'K',
+	'logL': 'log10(L/Lsun)',
+	'logg': 'log(g[cm/s^2])',
 }
 
 # ----------------------------
 # Helpers
 # ----------------------------
-def _published_file_units(model):
-	"""Return the published units of one bundled evolutionary table."""
-	try:
-		return PUBLISHED_EVOLUTIONARY_FILE_UNITS[model]
-	except KeyError as exc:
-		raise AssertionError(
-			f'{model} is missing from PUBLISHED_EVOLUTIONARY_FILE_UNITS. '
-			f'Add its bundled mass, age, and radius units before trusting conversions.'
-		) from exc
-
-def _convert_file_value(param, file_value, unit):
-	"""Convert one raw table value with astropy. Does not call a plugin."""
-	file_value = np.asarray(file_value, dtype=float)
-	if param == 'mass':
-		if unit == 'M_sun':
-			return (file_value * M_sun).to(M_jup).value
-		if unit == 'M_jup':
-			return file_value
-	elif param == 'radius':
-		if unit == 'R_sun':
-			return (file_value * R_sun).to(R_jup).value
-		if unit == 'R_jup':
-			return file_value
-	elif param == 'age':
-		if unit == 'Gyr':
-			return file_value
-		if unit == 'log10(yr)':
-			return ((10.0 ** file_value) * u.yr).to(u.Gyr).value
-	raise AssertionError(f'Cannot convert {param} from unit {unit!r}.')
-
-def _independent_user_value(model, param, file_value):
-	"""Convert one table value using the published file units, not the plugin."""
-	return _convert_file_value(param, file_value, _published_file_units(model)[param])
-
 def _predict_logg(mass, radius, mass_unit, radius_unit):
 	"""log10(g [cm/s^2]) from mass and radius interpreted in the given units."""
 	mass_qty = mass * (M_sun if mass_unit == 'M_sun' else M_jup)
@@ -100,17 +66,21 @@ def _infer_mass_radius_units(mass, radius, logg):
 	return {'mass': mass_unit, 'radius': radius_unit}, residuals
 
 def _ages_in_gyr(age, unit):
-	return np.asarray(_convert_file_value('age', age, unit), dtype=float)
+	"""Read an age column as Gyr or as log10(yr), with astropy doing the year."""
+	age = np.asarray(age, dtype=float)
+	if unit == 'Gyr':
+		return age
+	if unit == 'log10(yr)':
+		return ((10.0 ** age) * u.yr).to(u.Gyr).value
+	raise AssertionError(f'Cannot read an age column in unit {unit!r}.')
 
-def _pre_ms_contraction_is_young(age, mass, radius, mass_unit, radius_unit, age_unit):
+def _pre_ms_contraction_is_young(age, mass_mjup, radius_rjup, age_unit):
 	"""True when an inflated >=0.5 Msun track is still <50 Myr at maximum radius.
 
 	False when no such track exists, or when maximum radius falls at an older age.
 	"""
-	mass_msun = np.asarray(_convert_file_value('mass', mass, mass_unit), dtype=float)
-	mass_msun = (mass_msun * M_jup).to(M_sun).value
-	radius_rsun = np.asarray(_convert_file_value('radius', radius, radius_unit), dtype=float)
-	radius_rsun = (radius_rsun * R_jup).to(R_sun).value
+	mass_msun = (np.asarray(mass_mjup, dtype=float) * M_jup).to(M_sun).value
+	radius_rsun = (np.asarray(radius_rjup, dtype=float) * R_jup).to(R_sun).value
 	age = np.asarray(age, dtype=float)
 	saw_inflated_track = False
 	for mass_val in np.unique(np.round(mass_msun, decimals=6)):
@@ -131,58 +101,56 @@ def _pre_ms_contraction_is_young(age, mass, radius, mass_unit, radius_unit, age_
 			return False
 	return saw_inflated_track
 
-def _infer_age_unit(age, mass, radius, mass_unit, radius_unit):
-	"""Return Gyr or log10(yr), whichever is physically possible for this table.
+def _infer_age_unit(age, mass_mjup, radius_rjup):
+	"""Return Gyr or log10(yr), whichever is physically possible for this column.
 
 	A column that includes values below 5 cannot be log10(yr): that would be
 	an age under about a day, while the same column also reaches many Gyr.
 	A column whose values all sit near 6–10 can be either several Gyr or
 	log10(yr). In that case a contracting stellar track must be younger than
-	50 Myr at its largest radius, which only the log10(yr) reading satisfies
-	for BHAC15.
+	50 Myr at its largest radius.
 	"""
 	plausible = {}
 	for unit in ('Gyr', 'log10(yr)'):
 		age_gyr = _ages_in_gyr(age, unit)
-		plausible[unit] = bool(np.all((age_gyr > 1.0e-4) & (age_gyr < 20.0)))
+		# 1e-4 Gyr is 100 kyr, the youngest age stored in some bundled grids.
+		plausible[unit] = bool(np.all((age_gyr >= 1.0e-4) & (age_gyr < 20.0)))
 	candidates = [unit for unit, ok in plausible.items() if ok]
 	if len(candidates) == 1:
 		return candidates[0]
 	young = {
-		unit: _pre_ms_contraction_is_young(
-			age, mass, radius, mass_unit, radius_unit, unit,
-		)
+		unit: _pre_ms_contraction_is_young(age, mass_mjup, radius_rjup, unit)
 		for unit in ('Gyr', 'log10(yr)')
 	}
 	candidates = [unit for unit, ok in young.items() if ok]
 	if len(candidates) != 1:
 		raise AssertionError(
-			'Table age unit is ambiguous. '
+			'Age column unit is ambiguous. '
 			f'Plausible Gyr window: {plausible}. Young inflated track: {young}.'
 		)
 	return candidates[0]
 
-def _grid_radius_in_rjup(model, radius):
-	"""Convert a native grid radius value to R_jup using published file units."""
-	return _independent_user_value(model, 'radius', radius)
-
-def _grid_radius_native(model, filename, idx=500):
-	"""Return native-grid radius for one row of a bundled evolutionary table."""
-	grid = seda.models.read_evolutionary_model(filename=filename, model=model)
+def _table_row(n_rows, idx):
+	"""Return ``idx`` when that row exists, otherwise the middle row."""
 	if idx < 0:
-		idx = len(grid['mass']) + idx
-	return float(grid['radius'][idx])
+		idx = n_rows + idx
+	if idx < 0 or idx >= n_rows:
+		return n_rows // 2
+	return idx
 
 def _bundled_grid_inputs(model, filename, idx=500):
-	"""Return (Lbol, R, Teff, logg, age, mass) for one row of a bundled evolutionary table."""
-	grid = seda.models.read_evolutionary_model(filename=filename, model=model)
-	if idx < 0:
-		idx = len(grid['mass']) + idx
+	"""Return (logL, R, Teff, logg, age, mass) for one row of a bundled evolutionary table.
 
-	Lbol = 10.0 ** grid['logL'][idx]
-	R_rjup = _grid_radius_in_rjup(model, grid['radius'][idx])
-	mass_msun = grid['mass'][idx]
-	return Lbol, R_rjup, grid['Teff'][idx], grid['logg'][idx], grid['age'][idx], mass_msun
+	Every column is already in the agreed output units: R_jup, K, Gyr, M_jup.
+	"""
+	grid = seda.models.read_evolutionary_model(filename=filename, model=model)
+	idx = _table_row(len(grid['mass']), idx)
+
+	return (
+		float(grid['logL'][idx]), float(grid['radius'][idx]),
+		float(grid['Teff'][idx]), float(grid['logg'][idx]),
+		float(grid['age'][idx]), float(grid['mass'][idx]),
+	)
 
 def _grid_sample_indices(n_rows, n_samples=5):
 	"""Return evenly spaced row indices across an evolutionary table."""
@@ -211,19 +179,19 @@ def _evol_sb_teff_cases():
 # ----------------------------
 @pytest.mark.parametrize('model, filename, idx', _evol_sb_teff_cases())
 def test_evol_teff_matches_stefan_boltzmann(model, filename, idx):
-	"""Teff from evol_params should match phy_params.teff (SB law) for the same (Lbol, R)."""
+	"""Teff from evol_params should match phy_params.teff (SB law) for the same (logL, R)."""
 	np.random.seed(0)
-	Lbol, R_rjup, _, _, _, _ = _bundled_grid_inputs(model, filename, idx=idx)
-	eLbol = 1e-12 * Lbol
+	logL, R_rjup, _, _, _, _ = _bundled_grid_inputs(model, filename, idx=idx)
+	Lbol = 10.0 ** logL
 	eR = 1e-12 * R_rjup
 
 	teff_evol = seda.phy_params.evol_params(
-		Lbol=Lbol, eLbol=eLbol, R=R_rjup, eR=eR,
+		logL=logL, elogL=1e-12, R=R_rjup, eR=eR,
 		model=model, filename=filename, n_mc=1000, verbose=False,
 	)['Teff']
 
 	teff_sb, _ = seda.phy_params.teff(
-		Lbol=Lbol, eLbol=eLbol, R=R_rjup, eR=eR, n_mc=1000,
+		Lbol=Lbol, eLbol=1e-12 * Lbol, R=R_rjup, eR=eR, n_mc=1000,
 	)
 
 	assert teff_evol == pytest.approx(teff_sb, rel=0.02), (
@@ -233,16 +201,14 @@ def test_evol_teff_matches_stefan_boltzmann(model, filename, idx):
 
 @pytest.mark.parametrize('model, filename', load_evolutionary_model_catalog())
 def test_evol_params_round_trip(model, filename):
-	"""Feeding a grid row's (Lbol, R) should recover that row's mass/age/logg/Teff."""
+	"""Feeding a grid row's (logL, R) should recover that row's mass/age/logg/Teff."""
 	np.random.seed(0)
-	Lbol, R_rjup, Teff_exp, logg_exp, age_native, mass_native = _bundled_grid_inputs(
+	logL, R_rjup, Teff_exp, logg_exp, age_exp, mass_exp = _bundled_grid_inputs(
 		model, filename,
 	)
-	mass_exp = _independent_user_value(model, 'mass', mass_native)
-	age_exp = _independent_user_value(model, 'age', age_native)
 
 	out = seda.phy_params.evol_params(
-		Lbol=Lbol, eLbol=1e-10 * Lbol, R=R_rjup, eR=1e-10 * R_rjup,
+		logL=logL, elogL=1e-10, R=R_rjup, eR=1e-10 * R_rjup,
 		model=model, filename=filename, n_mc=2000, verbose=False,
 	)
 
@@ -269,7 +235,7 @@ def test_evol_params_outside_grid_raises(model, filename):
 
 	with pytest.raises(ValueError):
 		seda.phy_params.evol_params(
-			Lbol=1e10, eLbol=1e8, R=1.0, eR=1e-4,
+			logL=10.0, elogL=0.01, R=1.0, eR=1e-4,
 			model=model, filename=filename, n_mc=500, verbose=False,
 		)
 
@@ -277,7 +243,7 @@ def test_evol_params_invalid_filename_lists_available(capsys):
 	"""An unrecognized filename should list available tables and raise."""
 	with pytest.raises(ValueError, match='not recognized'):
 		seda.phy_params.evol_params(
-			Lbol=1e-3, eLbol=1e-4, R=1.0, eR=0.1,
+			logL=-3.0, elogL=0.05, R=1.0, eR=0.1,
 			model='Sonora_Bobcat',
 			filename='not_a_real_table', n_mc=100, verbose=False,
 		)
@@ -301,7 +267,7 @@ def test_evol_params_multiple_tables_without_filename_raises(model, capsys):
 	"""Models with multiple tables must list them when filename is omitted."""
 	with pytest.raises(ValueError, match='Multiple evolutionary tables'):
 		seda.phy_params.evol_params(
-			Lbol=1e-3, eLbol=1e-4, R=1.0, eR=0.1,
+			logL=-3.0, elogL=0.05, R=1.0, eR=0.1,
 			model=model, n_mc=100, verbose=False,
 		)
 
@@ -314,10 +280,10 @@ def test_evol_params_multiple_tables_without_filename_raises(model, capsys):
 @pytest.mark.parametrize('model, filename', load_evolutionary_model_catalog())
 def test_evol_params_dynamic_output_keys(model, filename):
 	"""Returned keys should match grid columns with e-prefix uncertainties."""
-	Lbol, R_rjup, _, _, _, _ = _bundled_grid_inputs(model, filename)
+	logL, R_rjup, _, _, _, _ = _bundled_grid_inputs(model, filename)
 
 	out = seda.phy_params.evol_params(
-		Lbol=Lbol, eLbol=1e-10 * Lbol, R=R_rjup, eR=1e-10 * R_rjup,
+		logL=logL, elogL=1e-10, R=R_rjup, eR=1e-10 * R_rjup,
 		model=model, filename=filename, n_mc=500, verbose=False,
 	)
 
@@ -332,10 +298,10 @@ def test_evol_params_dynamic_output_keys(model, filename):
 @pytest.mark.parametrize('model, filename', load_evolutionary_model_catalog())
 def test_evol_params_std_error_mode(model, filename):
 	"""With error='std' the uncertainties should be returned as scalars."""
-	Lbol, R_rjup, _, _, _, _ = _bundled_grid_inputs(model, filename)
+	logL, R_rjup, _, _, _, _ = _bundled_grid_inputs(model, filename)
 
 	out = seda.phy_params.evol_params(
-		Lbol=Lbol, eLbol=1e-10 * Lbol, R=R_rjup, eR=1e-10 * R_rjup,
+		logL=logL, elogL=1e-10, R=R_rjup, eR=1e-10 * R_rjup,
 		model=model, filename=filename, error="std", n_mc=1000, verbose=False,
 	)
 
@@ -345,30 +311,30 @@ def test_evol_params_std_error_mode(model, filename):
 	assert np.isscalar(out["eTeff"]), "eTeff should be a scalar when error='std'"
 
 @pytest.mark.parametrize('model, filename', load_evolutionary_model_catalog())
-def test_evol_params_nonpositive_lbol_raises(model, filename):
-	"""A non-positive bolometric luminosity should raise an error."""
-	with pytest.raises(ValueError):
+def test_evol_params_nonfinite_logl_raises(model, filename):
+	"""A non-finite log bolometric luminosity should raise an error."""
+	with pytest.raises(ValueError, match='logL'):
 		seda.phy_params.evol_params(
-			Lbol=0.0, eLbol=1e-5, R=1.0, eR=0.1,
+			logL=np.nan, elogL=0.05, R=1.0, eR=0.1,
 			model=model, filename=filename, n_mc=500, verbose=False,
 		)
 
 @pytest.mark.parametrize('model, filename', load_evolutionary_model_catalog())
 def test_evol_params_reproducible_with_seed(model, filename):
 	"""Fixing the random seed should make the Monte Carlo results reproducible."""
-	Lbol, R_rjup, _, _, _, _ = _bundled_grid_inputs(model, filename)
+	logL, R_rjup, _, _, _, _ = _bundled_grid_inputs(model, filename)
 	grid = seda.models.read_evolutionary_model(filename=filename, model=model)
 	interp_params = [p for p in grid if p not in ('logL', 'radius')]
 
 	np.random.seed(0)
 	out1 = seda.phy_params.evol_params(
-		Lbol=Lbol, eLbol=1e-4 * Lbol, R=R_rjup, eR=1e-4 * R_rjup,
+		logL=logL, elogL=1e-4, R=R_rjup, eR=1e-4 * R_rjup,
 		model=model, filename=filename, n_mc=5000, verbose=False,
 	)
 
 	np.random.seed(0)
 	out2 = seda.phy_params.evol_params(
-		Lbol=Lbol, eLbol=1e-4 * Lbol, R=R_rjup, eR=1e-4 * R_rjup,
+		logL=logL, elogL=1e-4, R=R_rjup, eR=1e-4 * R_rjup,
 		model=model, filename=filename, n_mc=5000, verbose=False,
 	)
 
@@ -384,14 +350,12 @@ def test_evol_params_reproducible_with_seed(model, filename):
 def test_evol_params_bundled_filenames(model, filename):
 	"""Each bundled evolutionary table should recover a grid row."""
 	np.random.seed(0)
-	Lbol, R_rjup, Teff_exp, logg_exp, age_native, mass_native = _bundled_grid_inputs(
+	logL, R_rjup, Teff_exp, logg_exp, age_exp, mass_exp = _bundled_grid_inputs(
 		model, filename, idx=500,
 	)
-	mass_exp = _independent_user_value(model, 'mass', mass_native)
-	age_exp = _independent_user_value(model, 'age', age_native)
 
 	out = seda.phy_params.evol_params(
-		Lbol=Lbol, eLbol=1e-10 * Lbol, R=R_rjup, eR=1e-10 * R_rjup,
+		logL=logL, elogL=1e-10, R=R_rjup, eR=1e-10 * R_rjup,
 		model=model, filename=filename, n_mc=500, verbose=False,
 	)
 
@@ -412,11 +376,11 @@ def test_evol_params_bobcat_file():
 	"""Run evol_params() on the bundled solar Bobcat table and print the derived parameters."""
 	np.random.seed(0)
 
-	Lbol, eLbol = 6.324e-5, 6.978e-6  # Lsun
-	R, eR = 1.018, 0.059              # Rjup
+	logL, elogL = -4.199, 0.048  # log10(L/Lsun)
+	R, eR = 1.018, 0.059         # Rjup
 
 	out = seda.phy_params.evol_params(
-		Lbol=Lbol, eLbol=eLbol, R=R, eR=eR,
+		logL=logL, elogL=elogL, R=R, eR=eR,
 		model='Sonora_Bobcat', filename=BOBCAT_FILENAME, verbose=True,
 	)
 
@@ -447,14 +411,12 @@ def test_evol_params_diamondback():
 	"""Sonora Diamondback evolutionary tables should round-trip through evol_params."""
 	np.random.seed(0)
 	model = 'Sonora_Diamondback'
-	Lbol, R_rjup, Teff_exp, logg_exp, age_native, mass_native = _bundled_grid_inputs(
+	logL, R_rjup, Teff_exp, logg_exp, age_exp, mass_exp = _bundled_grid_inputs(
 		model, DIAMONDBACK_FILENAME, idx=500,
 	)
-	mass_exp = _independent_user_value(model, 'mass', mass_native)
-	age_exp = _independent_user_value(model, 'age', age_native)
 
 	out = seda.phy_params.evol_params(
-		Lbol=Lbol, eLbol=1e-10 * Lbol, R=R_rjup, eR=1e-10 * R_rjup,
+		logL=logL, elogL=1e-10, R=R_rjup, eR=1e-10 * R_rjup,
 		model=model, filename=DIAMONDBACK_FILENAME, n_mc=1000, verbose=False,
 	)
 
@@ -479,139 +441,96 @@ def test_evol_params_regular_user_output():
 	np.random.seed(0)
 
 	seda.phy_params.evol_params(
-		Lbol=6.324e-5, eLbol=6.978e-6, R=1.018, eR=0.059,
+		logL=-4.199, elogL=0.048, R=1.018, eR=0.059,
 		model='Sonora_Bobcat', filename=BOBCAT_FILENAME, error="percentile", verbose=True,
 	)
 
-def test_user_unit_conversions_match_astropy():
-	"""Age, mass, and radius conversions use astropy year and solar/Jupiter constants."""
-	assert mass_to_mjup(1.0, 'M_sun') == pytest.approx((1.0 * M_sun).to(M_jup).value)
-	assert mass_to_mjup(2.5, 'M_jup') == pytest.approx(2.5)
-	assert radius_to_rjup(1.0, 'R_sun') == pytest.approx((1.0 * R_sun).to(R_jup).value)
-	assert radius_to_rjup(1.25, 'R_jup') == pytest.approx(1.25)
-
-	assert age_to_gyr(9.0, 'log10(yr)') == pytest.approx(1.0)
-	assert age_to_gyr(6.0, 'log10(yr)') == pytest.approx(1e-3)
-	assert float(age_from_gyr(1.0, 'log10(yr)')) == pytest.approx(9.0)
-	assert age_to_gyr(4.5, 'Gyr') == pytest.approx(4.5)
-	assert float(age_from_gyr(4.5, 'Gyr')) == pytest.approx(4.5)
-
-	# 1 Gyr -> log10(yr) -> Gyr must close.
-	log_age = age_from_gyr(np.array([0.001, 1.0, 10.0]), 'log10(yr)')
-	assert age_to_gyr(log_age, 'log10(yr)') == pytest.approx([0.001, 1.0, 10.0])
-
-	nonpositive = age_from_gyr(np.array([-0.1, 0.0, 1.0]), 'log10(yr)')
-	assert np.isnan(nonpositive[0]) and np.isnan(nonpositive[1])
-	assert nonpositive[2] == pytest.approx(9.0)
-
 @pytest.mark.parametrize('model', sorted(seda.models.EvolutionaryModels().available_models))
-def test_plugin_file_units_match_config(model):
-	"""Plugin conversion units must be the bundled-table units in config.json."""
-	config, plugin = seda.models._load_evolutionary_model(model)
-	for key in ('mass', 'age', 'radius'):
-		assert plugin._FILE_UNITS[key] == config['units'][key], (
-			f'{model} plugin _FILE_UNITS[{key!r}]={plugin._FILE_UNITS[key]!r} '
-			f'does not match config.json {config["units"][key]!r}'
+def test_config_units_declare_the_agreed_output_units(model):
+	"""Every config.json must declare the units _read_evolutionary_model returns."""
+	config, _ = seda.models._load_evolutionary_model(model)
+	for key, unit in AGREED_OUTPUT_UNITS.items():
+		assert config['units'][key] == unit, (
+			f'{model} config.json declares {key} as {config["units"][key]!r}, '
+			f'but every plugin must return {key} in {unit!r}'
 		)
 
 @pytest.mark.parametrize('model, filename', load_evolutionary_table_catalog())
-def test_original_table_units_are_fixed_by_the_numbers(model, filename):
-	"""Mass, radius, and age units must be the ones the table numbers require.
+def test_returned_table_units_are_fixed_by_the_numbers(model, filename):
+	"""The numbers themselves must prove the reader returned M_jup, R_jup, and Gyr.
 
-	log g is recomputed from each mass/radius unit pair. Only the original
-	pair reproduces the table (the others miss by at least ~1 dex). Age is
-	kept only if that reading lands on real brown-dwarf and stellar ages;
-	for BHAC15 the alternate reading puts a still-contracting star at several
-	Gyr. config.json and the plugin have to use those inferred units, and
-	the converted values have to match astropy from that reading.
+	This is independent of plugin.py: nothing here reads a declared unit. log g
+	is recomputed from the returned mass and radius under all four unit pairs,
+	and only (M_jup, R_jup) can reproduce the returned log g column; the wrong
+	pairs miss by at least ~0.4 dex. The returned age is kept only if that
+	reading lands on real brown-dwarf and stellar ages, which rules out a table
+	whose log10(yr) column was passed through unconverted. Stefan-Boltzmann
+	then ties logL to the returned radius in R_jup.
 	"""
 	grid = seda.models.read_evolutionary_model(filename=filename, model=model)
 	inferred, residuals = _infer_mass_radius_units(
 		grid['mass'], grid['radius'], grid['logg'],
 	)
-	inferred['age'] = _infer_age_unit(
-		grid['age'], grid['mass'], grid['radius'],
-		inferred['mass'], inferred['radius'],
+	assert inferred == {'mass': 'M_jup', 'radius': 'R_jup'}, (
+		f'{model}/{filename}: the returned numbers are in {inferred}, not '
+		f'M_jup and R_jup. Median |logg residual| per unit pair: {residuals}'
 	)
 
-	published = _published_file_units(model)
-	config, plugin = seda.models._load_evolutionary_model(model)
-	for key in ('mass', 'age', 'radius'):
-		assert inferred[key] == published[key], (
-			f'{model}/{filename}: table numbers require {key} in {inferred[key]!r}, '
-			f'not the published-unit entry {published[key]!r}. logg residuals: {residuals}'
-		)
-		assert config['units'][key] == inferred[key], (
-			f'{model}/{filename}: config.json {key} is {config["units"][key]!r}, '
-			f'but the table numbers require {inferred[key]!r}. logg residuals: {residuals}'
-		)
-		assert plugin._FILE_UNITS[key] == inferred[key], (
-			f'{model}/{filename}: plugin reads {key} as {plugin._FILE_UNITS[key]!r}, '
-			f'but the table numbers require {inferred[key]!r}. logg residuals: {residuals}'
-		)
+	age_unit = _infer_age_unit(grid['age'], grid['mass'], grid['radius'])
+	assert age_unit == 'Gyr', (
+		f'{model}/{filename}: the returned age column reads as {age_unit!r}, '
+		f'not Gyr'
+	)
 
-	idx = min(500, len(grid['mass']) - 1)
-	for param in ('mass', 'age', 'radius'):
-		expected = _convert_file_value(param, grid[param][idx], inferred[param])
-		converted = plugin._to_user_units(param, grid[param][idx])
-		assert float(np.asarray(converted).reshape(-1)[0]) == pytest.approx(
-			float(np.asarray(expected).reshape(-1)[0]), rel=1e-10, abs=1e-12,
-		), (
-			f'{model}/{filename}: {param} conversion does not follow the '
-			f'{inferred[param]} reading of the table'
-		)
+	radius = np.asarray(grid['radius'], dtype=float) * R_jup
+	teff = np.asarray(grid['Teff'], dtype=float) * u.K
+	lum = (4 * np.pi * radius**2 * const.sigma_sb * teff**4).to(u.Lsun).value
+	usable = lum > 0
+	assert np.median(np.abs(
+		np.log10(lum[usable]) - np.asarray(grid['logL'], dtype=float)[usable]
+	)) < 0.01, (
+		f'{model}/{filename}: logL does not follow Stefan-Boltzmann from the '
+		f'returned radius in R_jup and Teff in K'
+	)
 
-	for param in ('Teff', 'logg'):
-		raw = float(grid[param][idx])
-		converted = float(np.asarray(plugin._to_user_units(param, raw)).reshape(-1)[0])
-		assert converted == pytest.approx(raw), (
-			f'{model}/{filename}: {param} should stay in table units, got {converted}'
-		)
-
-def test_bhac_evol_params_keeps_structure_columns_in_file_units():
-	"""BHAC radiative-core columns are not mass/radius and stay in file units."""
+def test_bhac_evol_params_converts_radiative_core_columns():
+	"""BHAC radiative-core mass and radius are converted like the main columns."""
 	np.random.seed(0)
 	model = 'BHAC2015'
 	filename = 'BHAC15_tracks+structure.txt'
 	grid = seda.models.read_evolutionary_model(filename=filename, model=model)
 	idx = 800
-	Lbol = 10.0 ** float(grid['logL'][idx])
-	R_rjup = _grid_radius_in_rjup(model, grid['radius'][idx])
+	logL = float(grid['logL'][idx])
+	R_rjup = float(grid['radius'][idx])
 
 	out = seda.phy_params.evol_params(
-		Lbol=Lbol, eLbol=1e-12 * Lbol, R=R_rjup, eR=1e-12 * R_rjup,
+		logL=logL, elogL=1e-12, R=R_rjup, eR=1e-12 * R_rjup,
 		model=model, filename=filename, n_mc=400, verbose=False,
 	)
 
-	assert out['mass'] == pytest.approx(
-		_independent_user_value(model, 'mass', grid['mass'][idx]), rel=0.05,
-	)
-	assert out['age'] == pytest.approx(
-		_independent_user_value(model, 'age', grid['age'][idx]), rel=0.05,
-	)
-	assert out['age'] != pytest.approx(float(grid['age'][idx]), rel=0.01), (
-		f'BHAC age should be Gyr, not the log10(yr) table value {grid["age"][idx]}'
-	)
-	assert out['Mrad'] == pytest.approx(float(grid['Mrad'][idx]), rel=0.05), (
-		f'BHAC Mrad should stay in M_sun, got {out["Mrad"]}'
-	)
-	assert out['Rrad'] == pytest.approx(float(grid['Rrad'][idx]), rel=0.05), (
-		f'BHAC Rrad should stay in R_sun, got {out["Rrad"]}'
+	for param in ('mass', 'age', 'Mrad', 'Rrad'):
+		assert out[param] == pytest.approx(float(grid[param][idx]), rel=0.05), (
+			f'BHAC {param} should match the grid value {grid[param][idx]}, '
+			f'got {out[param]}'
+		)
+	assert out['Mrad'] < out['mass'], (
+		f'BHAC radiative-core mass {out["Mrad"]} M_jup should be below the '
+		f'total mass {out["mass"]} M_jup'
 	)
 
 @pytest.mark.parametrize('model, filename', load_evolutionary_model_catalog())
 def test_isochrone_params_user_units_round_trip(model, filename):
-	"""A grid row's (Lbol, age in Gyr) should recover mass in M_jup and radius in R_jup."""
+	"""A grid row's (logL, age in Gyr) should recover mass in M_jup and radius in R_jup."""
 	np.random.seed(0)
 	grid = seda.models.read_evolutionary_model(filename=filename, model=model)
 	idx = min(500, len(grid['mass']) - 1)
-	Lbol = 10.0 ** float(grid['logL'][idx])
-	age_gyr = _independent_user_value(model, 'age', grid['age'][idx])
-	mass_exp = _independent_user_value(model, 'mass', grid['mass'][idx])
-	radius_exp = _independent_user_value(model, 'radius', grid['radius'][idx])
+	logL = float(grid['logL'][idx])
+	age_gyr = float(grid['age'][idx])
+	mass_exp = float(grid['mass'][idx])
+	radius_exp = float(grid['radius'][idx])
 
 	out = seda.phy_params.isochrone_params(
-		Lbol=Lbol, eLbol=1e-12 * Lbol, age=age_gyr, eage=0.0,
+		logL=logL, elogL=1e-12, age=age_gyr, eage=0.0,
 		model=model, filename=filename, n_mc=300, verbose=False,
 	)
 
@@ -628,7 +547,7 @@ def test_isochrone_params_user_units_round_trip(model, filename):
 def test_isochrone_params_rejects_nonpositive_age():
 	with pytest.raises(ValueError, match='Gyr'):
 		seda.phy_params.isochrone_params(
-			Lbol=1e-4, eLbol=1e-6, age=0.0, eage=0.0,
+			logL=-4.0, elogL=0.01, age=0.0, eage=0.0,
 			model='Sonora_Bobcat', filename=BOBCAT_FILENAME, n_mc=50, verbose=False,
 		)
 
@@ -699,7 +618,7 @@ def test_evolutionary_models_params_bobcat_spot_check():
 	"""Spot-check known coverage for the solar-metallicity Bobcat table."""
 	params = seda.models.EvolutionaryModels('Sonora_Bobcat').params['nc+0.0_co1.0_mass']
 
-	assert params['mass'] == [0.0005, 0.08], (
+	assert params['mass'] == pytest.approx([0.5237828, 83.8052412]), (
 		f'Bobcat mass range mismatch: {params["mass"]}'
 	)
 	assert params['age'] == [0.001, 15.0], (
@@ -714,7 +633,7 @@ def test_evolutionary_models_params_bobcat_spot_check():
 	assert params['logg'] == pytest.approx([2.654, 5.484]), (
 		f'Bobcat logg range mismatch: {params["logg"]}'
 	)
-	assert params['radius'] == pytest.approx([0.0769, 0.2657]), (
+	assert params['radius'] == pytest.approx([0.7483261, 2.5855689]), (
 		f'Bobcat radius range mismatch: {params["radius"]}'
 	)
 	assert 'logI' not in params, (
@@ -725,7 +644,7 @@ def test_evolutionary_models_params_atmo_spot_check():
 	"""Spot-check known coverage for the ATMO 2020 CEQ table."""
 	params = seda.models.EvolutionaryModels('ATMO2020').params['ATMO_CEQ_mass.txt']
 
-	assert params['mass'] == [0.001, 0.075], (
+	assert params['mass'] == pytest.approx([1.0475655, 78.5674136]), (
 		f'ATMO mass range mismatch: {params["mass"]}'
 	)
 	assert params['age'] == [0.001, 10.0], (
@@ -740,7 +659,7 @@ def test_evolutionary_models_params_atmo_spot_check():
 	assert params['logg'] == pytest.approx([3.01108287, 5.51013179]), (
 		f'ATMO logg range mismatch: {params["logg"]}'
 	)
-	assert params['radius'] == pytest.approx([0.07585432, 0.79547701]), (
+	assert params['radius'] == pytest.approx([0.7381504, 7.7409131]), (
 		f'ATMO radius range mismatch: {params["radius"]}'
 	)
 
@@ -748,10 +667,10 @@ def test_evolutionary_models_params_bhac_spot_check():
 	"""Spot-check known coverage for the BHAC15 tracks+structure table."""
 	params = seda.models.EvolutionaryModels('BHAC2015').params['BHAC15_tracks+structure.txt']
 
-	assert params['mass'] == [0.01, 1.4], (
+	assert params['mass'] == pytest.approx([10.4756551, 1466.5917205]), (
 		f'BHAC mass range mismatch: {params["mass"]}'
 	)
-	assert params['age'] == pytest.approx([5.68945, 10.000343]), (
+	assert params['age'] == pytest.approx([0.000489159, 10.007900987]), (
 		f'BHAC age range mismatch: {params["age"]}'
 	)
 	assert params['logL'] == pytest.approx([-4.716, 0.74]), (
@@ -763,7 +682,7 @@ def test_evolutionary_models_params_bhac_spot_check():
 	assert params['logg'] == pytest.approx([3.224, 5.391]), (
 		f'BHAC logg range mismatch: {params["logg"]}'
 	)
-	assert params['radius'] == pytest.approx([0.086, 3.621]), (
+	assert params['radius'] == pytest.approx([0.8368797, 35.2365258]), (
 		f'BHAC radius range mismatch: {params["radius"]}'
 	)
 	assert params['logLi'] == pytest.approx([-11.1759, 0.0]), (
@@ -775,10 +694,10 @@ def test_evolutionary_models_params_bhac_spot_check():
 	assert params['logRho_c'] == pytest.approx([-0.6068, 2.8806]), (
 		f'BHAC logRho_c range mismatch: {params["logRho_c"]}'
 	)
-	assert params['Mrad'] == pytest.approx([0.0, 1.4]), (
+	assert params['Mrad'] == pytest.approx([0.0, 1466.5917205]), (
 		f'BHAC Mrad range mismatch: {params["Mrad"]}'
 	)
-	assert params['Rrad'] == pytest.approx([0.0, 1.745]), (
+	assert params['Rrad'] == pytest.approx([0.0, 16.9808720]), (
 		f'BHAC Rrad range mismatch: {params["Rrad"]}'
 	)
 	assert params['k2conv'] == pytest.approx([0.00124, 0.4944]), (

@@ -78,8 +78,8 @@ Physical and Basic Parameters
   - :func:`~seda.phy_params.bol_lum`: Calculates bolometric luminosity by integrating an observed SED, optionally complemented with a model spectrum (see `tutorial_bolometric_luminosity <https://seda.readthedocs.io/en/latest/notebooks/tutorial_bolometric_luminosity.html>`_).
   - :func:`~seda.phy_params.teff`: Derives effective temperature from bolometric luminosity and radius using the Stefan–Boltzmann law, with Monte Carlo uncertainty propagation.
   - :func:`~seda.phy_params.inclination`: Derives the rotation-axis inclination from projected rotation velocity (:math:`v\sin i`), rotation period, and radius, with Monte Carlo uncertainty propagation (`Vos et al. 2017 <https://ui.adsabs.harvard.edu/abs/2017ApJ...842...78V/abstract>`_).
-  - :func:`~seda.phy_params.evol_params`: Infers fundamental parameters (e.g., mass, age, surface gravity, temperature) by interpolating :ref:`evolutionary_models` given a bolometric luminosity and radius (see `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_).
-  - :func:`~seda.phy_params.isochrone_params`: Infers fundamental parameters (e.g., mass, radius, surface gravity, temperature) by interpolating :ref:`evolutionary_models` given a bolometric luminosity and age.
+  - :func:`~seda.phy_params.evol_params`: Infers fundamental parameters (e.g., mass, age, surface gravity, temperature) by interpolating :ref:`evolutionary_models` given a logarithmic bolometric luminosity (log\ :sub:`10`\ (L/L\ :sub:`sun`\ )) and radius (see `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_).
+  - :func:`~seda.phy_params.isochrone_params`: Infers fundamental parameters (e.g., mass, radius, surface gravity, temperature) by interpolating :ref:`evolutionary_models` given a logarithmic bolometric luminosity and age.
 
 
 Atmospheric and Evolutionary Models
@@ -255,7 +255,7 @@ Parameter coverage:
 Available Evolutionary Models
 -----------------------------
 
-:math:`\texttt{SEDA}` can interpolate evolutionary models to infer fundamental parameters (mass, age, surface gravity, and effective temperature) from a bolometric luminosity and radius using :func:`~seda.phy_params.evol_params`, or from bolometric luminosity and age using :func:`~seda.phy_params.isochrone_params`. Check out `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_ to see the parameter coverage of the bundled evolutionary tables.
+:math:`\texttt{SEDA}` can interpolate evolutionary models to infer fundamental parameters (mass, age, surface gravity, and effective temperature) from a logarithmic bolometric luminosity and radius using :func:`~seda.phy_params.evol_params`, or from a logarithmic bolometric luminosity and age using :func:`~seda.phy_params.isochrone_params`. Check out `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_ to see the parameter coverage of the bundled evolutionary tables.
 
 Sonora Bobcat Evolutionary Tables
 +++++++++++++++++++++++++++++++++
@@ -345,8 +345,8 @@ Parameter coverage:
 
 .. code-block:: console
 
-  - mass = [0.01, 1.4] Msun
-  - age = [5.69, 10.0] log10(yr) (~0.0005 to 10 Gyr)
+  - mass = [10.5, 1467] Mjup (0.01 to 1.4 Msun)
+  - age = [0.00049, 10.0] Gyr
   - Lbol = [1.9e-5, 5.5] Lsun (log L/Lsun = [-4.72, 0.74])
   - R = [0.84, 35.2] Rjup (0.086 to 3.62 Rsun)
   - logg = [3.22, 5.39] (g in cgs)
@@ -354,8 +354,8 @@ Parameter coverage:
   - log(Li/Li0) = [-11.2, 0.0] (ratio of surface lithium abundance to initial lithium abundance)
   - log Tc = [5.42, 7.40] (log10 K) (central temperature)
   - log rho_c = [-0.61, 2.88] (log10 g/cm^3) (central density)
-  - Mrad = [0.0, 1.4] Msun (radiative core mass)
-  - Rrad = [0.0, 1.75] Rsun (radiative core radius)
+  - Mrad = [0.0, 1467] Mjup (radiative core mass)
+  - Rrad = [0.0, 17.0] Rjup (radiative core radius)
   - k2conv = [0.0012, 0.49] (convective gyration radius)
   - k2rad = [0.0, 0.31] (radiative gyration radius)
 
@@ -366,12 +366,15 @@ Bundled table (``filename`` may be omitted):
   - ``BHAC15_tracks+structure.txt``
 
 :func:`~seda.phy_params.evol_params` reads a bundled evolutionary table selected by ``filename``.
-If a model folder contains only one table, ``filename`` may be omitted. For every model,
+If a model folder contains only one table, ``filename`` may be omitted. Both functions take
+bolometric luminosity as log\ :sub:`10`\ (L/L\ :sub:`sun`\ ):
 :func:`~seda.phy_params.evol_params` takes radius in R\ :sub:`Jup`\ and returns mass in
-M\ :sub:`Jup`\ and age in Gyr. :func:`~seda.phy_params.isochrone_params` takes age in Gyr
-and returns mass in M\ :sub:`Jup`\ and radius in R\ :sub:`Jup`\ . ``Teff`` is in Kelvin.
-The bundled tables stay in the units listed in each model's ``config.json`` (for example
-BHAC15 age is stored as log10(yr)); each plugin converts age, mass, and radius at the
-function boundary, and interpolation stays in those table coordinates.
-Other returned columns keep their ``config.json`` units. See :doc:`notebooks/tutorial_ingest_evolutionary_models` to add custom models.
+M\ :sub:`Jup`\ and age in Gyr, while :func:`~seda.phy_params.isochrone_params` takes age in Gyr
+and returns mass in M\ :sub:`Jup`\ and radius in R\ :sub:`Jup`\ . ``Teff`` is in Kelvin and
+``logg`` is log\ :sub:`10`\ (g[cm/s\ :sup:`2`\ ]).
+The bundled tables are kept exactly as the modelers published them, whatever units they use
+(for example BHAC15 stores age as log10(yr) and mass in M\ :sub:`sun`\ ). Each model's
+``plugin.py`` converts to the units above as it reads the table, so everything downstream,
+including the coverage listed above, is already in those units.
+Any extra column keeps the unit declared in the model's ``config.json``. See :doc:`notebooks/tutorial_ingest_evolutionary_models` to add custom models.
 
