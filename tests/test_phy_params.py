@@ -1199,7 +1199,7 @@ def test_inclination_invalid_central_raises():
 			vsini=20.0, evsini=1.0,
 			P=4.0, eP=0.1,
 			R=1.1, eR=0.05,
-			central='mode', n_mc=100,
+			central='bogus', n_mc=100,
 		)
 
 def test_inclination_reproducible_with_seed():
@@ -1248,6 +1248,7 @@ def test_inclination_reports_clipped_samples(capsys):
 		P=P, eP=0.5,
 		R=R, eR=0.05,
 		n_mc=1000,
+		mode='sini',
 	)
 	captured = capsys.readouterr()
 	assert 'sin i > 1' in captured.out, (
@@ -1274,13 +1275,14 @@ def test_inclination_all_clipped_returns_edge_on(capsys):
 		P=10.0, eP=0.5,
 		R=0.5, eR=0.05,
 		n_mc=1000,
+		mode='sini',
 	)
 	captured = capsys.readouterr()
 	assert 'sin i > 1' in captured.out, (
 		'all-clipped case should still report sin i > 1 in stdout'
 	)
 	assert '1000/1000 MC samples used' in captured.out, (
-		'all-clipped case should report that every MC sample was clipped'
+		'all-clipped case should report every MC sample in the statistics'
 	)
 	assert inc == pytest.approx(90.0, abs=0.1), (
 		f'all-clipped sin i > 1 draws should give i = 90 deg, got {inc:.3f} deg'
