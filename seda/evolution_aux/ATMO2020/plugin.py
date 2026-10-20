@@ -32,6 +32,7 @@ def _read_evolutionary_model(filename):
         )
 
     # map file columns to SEDA grid keys, converting to the returned units
+    # (the bundled ATMO tables store mass in M_sun and radius in R_sun)
     out = {
         'mass':   data[:, 0] * _MSUN_TO_MJUP,
         'age':    data[:, 1],

@@ -362,7 +362,7 @@ For more information on these filenames, please refer to the 'Evolution' section
 Sonora Red Diamondback Evolutionary Tables
 ++++++++++++++++++++++++++++++++++++++++++
 
-Low-metallicity cloudy evolutionary tables by `Davis et al. (2025) <https://ui.adsabs.harvard.edu/abs/2025ApJ...994..198D/abstract>`_. Three ``RedDiamondback_*_mass`` tables (constant-mass cooling tracks) are bundled with :math:`\texttt{SEDA}` for [M/H] = -0.5, 0.0, and 0.5. The original tables are available from the `Sonora Red Diamondback models <https://doi.org/10.5281/zenodo.17343710>`_. The bundled files store mass in M\ :sub:`sun`\ and radius in R\ :sub:`sun`\ .
+Low-metallicity cloudy evolutionary tables by `Davis et al. (2025) <https://ui.adsabs.harvard.edu/abs/2025ApJ...994..198D/abstract>`_. Three ``RedDiamondback_*_mass`` tables (constant-mass cooling tracks) are bundled with :math:`\texttt{SEDA}` for [M/H] = -0.5, 0.0, and 0.5. The original tables are available from the `Sonora Red Diamondback models <https://doi.org/10.5281/zenodo.17343710>`_ and store mass in M\ :sub:`sun`\ and radius in R\ :sub:`sun`\ on disk; ``plugin.py`` converts them to M\ :sub:`Jup`\ and R\ :sub:`Jup`\ when reading.
 
 Parameter coverage:
 
