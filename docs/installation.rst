@@ -63,8 +63,9 @@ To install the development version of :math:`\texttt{SEDA}` in editable mode:
     $ git clone https://github.com/suarezgenaro/seda.git
     $ cd seda
     $ git checkout develop
-    $ python3 -m pip install -e ".[docs]"
-    $ pre-commit install
+    $ python -m pip install -e ".[docs]"
+
+The ``develop`` branch contains the latest development changes, while ``main`` contains the stable version of :math:`\texttt{SEDA}`.
 
 The ``-e`` option installs :math:`\texttt{SEDA}` in editable mode, so changes made to the source code are immediately available in the installed package. The ``[docs]`` extra installs the dependencies required to build the documentation.
 
