@@ -101,7 +101,7 @@ Available Atmospheric Models
 Sonora Flame
 ++++++++++++
 
-Cloud-free models with equilibrium and disequilibrium chemistry from `Mang et al. (2026) <https://ui.adsabs.harvard.edu/abs/2026arXiv260806454M/abstract>`_. The disequilibrium models include vertical mixing parameterized by the eddy diffusion coefficient, Kzz. Download the `Sonora Flame Skimmer models <https://zenodo.org/records/20030439>`_. **Note: logKzz = 0 is used as a label for models with equilibrium chemistry and should not be interpreted as a physical Kzz value.**
+Cloud-free models with equilibrium and disequilibrium chemistry from `Mang et al. (2026) <https://ui.adsabs.harvard.edu/abs/2026ApJ..1008..254M/abstract>`__. The disequilibrium models include vertical mixing parameterized by the eddy diffusion coefficient, Kzz. Download the `Sonora Flame Skimmer models <https://zenodo.org/records/20030439>`_. **Note: logKzz = 0 is used as a label for models with equilibrium chemistry and should not be interpreted as a physical Kzz value.**
 
 Parameter coverage:
 
@@ -306,7 +306,7 @@ Available Evolutionary Models
 Sonora Flame Skimmer
 ++++++++++++++++++++
 
-Evolutionary tables from the Sonora Flame Skimmer grid by `Mang et al. (2026) <https://ui.adsabs.harvard.edu/abs/2026ApJ..1008..254M/abstract>`_. Fifty-six `Sonora Flame Skimmer evolutionary tables <https://doi.org/10.5281/zenodo.20030439>`_  are bundled, for equilibrium (``eq``) and disequilibrium (``deq``) chemistry at seven metallicities and four C/O ratios. The bundled files already use M\ :sub:`Jup`\ , Gyr, and R\ :sub:`Jup`\ . Pass the basename, for example ``eq_mh+0.0_co1.0.txt``.
+Evolutionary tables from the Sonora Flame Skimmer grid by `Mang et al. (2026) <https://ui.adsabs.harvard.edu/abs/2026ApJ..1008..254M/abstract>`__. Fifty-six `Sonora Flame Skimmer evolutionary tables <https://doi.org/10.5281/zenodo.20030439>`_  are bundled, for equilibrium (``eq``) and disequilibrium (``deq``) chemistry at seven metallicities and four C/O ratios. The bundled files already use M\ :sub:`Jup`\ , Gyr, and R\ :sub:`Jup`\ . Pass the basename, for example ``eq_mh+0.0_co1.0.txt``.
 
 Parameter coverage:
 
