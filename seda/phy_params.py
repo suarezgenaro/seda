@@ -672,11 +672,11 @@ def _summarize_mc_samples(samples, central, error, percentiles):
 	good = samples[~np.isnan(samples)]
 	if central == "mean":
 		val = np.mean(good)
-	else:
+	elif central == "median":
 		val = np.median(good)
 	if error == "std":
 		err = np.std(good)
-	else:
+	elif error == "percentile":
 		p_lo, p_hi = np.percentile(good, percentiles)
 		err = (val - p_lo, p_hi - val)
 	return val, err
