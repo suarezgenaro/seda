@@ -326,7 +326,8 @@ def resolve_evolutionary_table(model, filename=None):
 		Evolutionary models. See available models in
 		``seda.models.EvolutionaryModels().available_models``.
 	- filename : str, optional
-		Basename of a table file inside ``evolution_aux/<model>/``.
+		Basename of a table file inside ``evolution_aux/<model>/`` available using 
+		``seda.models.EvolutionaryModels('model').available_tables``.
 		If omitted and exactly one table exists, it is selected automatically.
 		If omitted and multiple tables exist, available basenames are printed
 		and a ``ValueError`` is raised.
@@ -351,12 +352,8 @@ def resolve_evolutionary_table(model, filename=None):
 	if filename is None:   #automatically return only avaialble table
 		if len(tables) == 1:
 			return tables[0]
-		print(f'Available evolutionary tables for "{model}":')
-		for name in tables:
-			print(f'  - {name}')
 		raise ValueError(
-			f'Multiple evolutionary tables are available for "{model}". '
-			f'Pass filename=<basename> to select one.'
+			f"Table '{filename}' not found. Available tables: {tables}"
 		)
 
 	if filename not in tables:
