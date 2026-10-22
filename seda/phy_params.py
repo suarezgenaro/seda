@@ -715,7 +715,7 @@ def isochrone_params(logL, elogL, age, eage, model, filename=None,
 		Basename of an evolutionary table inside ``evolution_aux/<model>/``.
 		If only one table is bundled, it is selected automatically.
 		If multiple tables exist, available basenames are printed.
-		See available tables using seda.models.EvolutionaryModels('model').available_tables
+		See available tables using ``seda.models.EvolutionaryModels('model').available_tables``.
 	- n_mc : int, optional (default 10000)
 		Number of Monte Carlo samples for uncertainties.
 	- central : str, optional (default "median")
