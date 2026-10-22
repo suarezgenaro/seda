@@ -663,7 +663,7 @@ def inclination(vsini, evsini, P, eP, R, eR, n_mc=10000, central="median",
 
 		inc_err = (inc_val - p_lo, p_hi - inc_val)
 
-	return inc_val, inc_err
+	return _to_python_types(inc_val), _to_python_types(inc_err)
 
 ##########################
 def _summarize_mc_samples(samples, central, error, percentiles):
