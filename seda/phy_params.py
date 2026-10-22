@@ -682,6 +682,44 @@ def _summarize_mc_samples(samples, central, error, percentiles):
 	return val, err
 
 ##########################
+def _to_python_types(obj):
+    """Convert NumPy scalars to native Python types."""
+
+    # Convert NumPy scalars to their corresponding Python types
+    if isinstance(obj, np.generic):
+        return obj.item()
+
+    # Process each dictionary value while preserving its key
+    if isinstance(obj, dict):
+        new_dict = {}
+
+        for key, value in obj.items():
+            new_dict[key] = _to_python_types(value)
+
+        return new_dict
+
+    # Convert elements of a tuple while preserving its structure
+    if isinstance(obj, tuple):
+        new_tuple = []
+
+        for value in obj:
+            new_tuple.append(_to_python_types(value))
+
+        return tuple(new_tuple)
+
+    # Convert elements of a list
+    if isinstance(obj, list):
+        new_list = []
+
+        for value in obj:
+            new_list.append(_to_python_types(value))
+
+        return new_list
+
+    # Leave other types unchanged (e.g., strings and NumPy arrays)
+    return obj
+
+##########################
 def isochrone_params(logL, elogL, age, eage, model, filename=None,
                      n_mc=10000, central="median", error="percentile",
                      percentiles=(16, 84), verbose=True):
@@ -872,6 +910,9 @@ def isochrone_params(logL, elogL, age, eage, model, filename=None,
 			print('   {} = {:.4g} {}{}'.format(
 				param, out[param], _fmt_err(out[f'e{param}']), unit_str))
 
+	# convert NumPy scalars to native Python types
+	out = _to_python_types(out)
+
 	return out
 
 ##########################
@@ -1036,6 +1077,9 @@ def evol_params(logL, elogL, R, eR, model, filename=None,
 			unit_str = f' {unit}' if unit else ''
 			print('   {} = {:.4g} {}{}'.format(
 				param, out[param], _fmt_err(out[f'e{param}']), unit_str))
+
+	# convert NumPy scalars to native Python types
+	out = _to_python_types(out)
 
 	return out
 
