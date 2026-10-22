@@ -357,12 +357,8 @@ def resolve_evolutionary_table(model, filename=None):
 		)
 
 	if filename not in tables:
-		print(f'Available evolutionary tables for "{model}":')
-		for name in tables:
-			print(f'  - {name}')
 		raise ValueError(
-			f'filename={filename!r} is not recognized for "{model}". '
-			f'Choose one of the available table basenames listed above.'
+			f"Table '{filename}' not found. Available tables: {tables}"
 		)
 
 	return filename
