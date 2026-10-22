@@ -601,7 +601,7 @@ def read_evolutionary_model(filename, model):
 	--------
 	Dictionary with evolutionary grid columns parsed by the model plugin.
 	Each model defines its own columns; all tables must provide ``logL`` and
-	``radius`` for interpolation. Every model returns ``mass`` in M_jup,
+	``radius`` or ``age`` for interpolation. Every model returns ``mass`` in M_jup,
 	``age`` in Gyr, ``radius`` in R_jup, ``Teff`` in Kelvin, ``logL`` as
 	log10(L/Lsun), and ``logg`` as log10(g[cm/s^2]), whatever units the
 	published table uses. See ``config.json`` ``units`` for any extra columns.
