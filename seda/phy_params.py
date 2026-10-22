@@ -689,15 +689,14 @@ def isochrone_params(logL, elogL, age, eage, model, filename=None,
 	Description:
 	------------
 		Infer fundamental parameters by interpolating evolutionary-model
-		isochrones given a logarithmic bolometric luminosity and age.
+		isochrones given a logarithmic bolometric luminosity and an age.
 		Uncertainties are propagated with a Monte Carlo simulation. This is
 		the complement to :func:`evol_params`, which uses ``(logL, R)`` instead
 		of ``(logL, age)``.
 
-		Every evolutionary model reads its tables into the same units, so
-		``age`` is in Gyr, ``mass`` and ``radius`` are returned in M_jup and
-		R_jup, and ``Teff`` is in Kelvin, whatever units the published table
-		uses.
+		Every evolutionary model reads its tables into the same units, namely
+		``age`` in Gyr, ``mass`` in M_jup, ``radius`` R_jup, and ``Teff`` in Kelvin, 
+		whatever units the published table uses.
 
 	Parameters:
 	-----------
@@ -710,12 +709,13 @@ def isochrone_params(logL, elogL, age, eage, model, filename=None,
 	- eage : float
 		Uncertainty in age (Gyr). Use ``0`` for a fixed age.
 	- model : str, required
-		Evolutionary models whose tables are used. See available models in
+		Evolutionary models whose tables are used. See available models using 
 		``seda.models.EvolutionaryModels().available_models``.
 	- filename : str, optional
 		Basename of an evolutionary table inside ``evolution_aux/<model>/``.
 		If only one table is bundled, it is selected automatically.
 		If multiple tables exist, available basenames are printed.
+		See available tables using seda.models.EvolutionaryModels('model').available_tables
 	- n_mc : int, optional (default 10000)
 		Number of Monte Carlo samples for uncertainties.
 	- central : str, optional (default "median")
@@ -730,8 +730,8 @@ def isochrone_params(logL, elogL, age, eage, model, filename=None,
 
 	Returns:
 	--------
-	Dictionary with inferred grid columns and uncertainties:
-		- One key per interpolated column (e.g. ``'mass'``, ``'radius'``,
+	Dictionary with inferred parameters and uncertainties:
+		- One key per interpolated parameter (e.g. ``'mass'``, ``'radius'``,
 		  ``'logg'``, ``'Teff'``). For every model, ``mass`` is in M_jup,
 		  ``radius`` is in R_jup, ``Teff`` is in Kelvin, and ``logg`` is
 		  log10(g[cm/s^2]). Any extra column keeps the unit declared in the
@@ -753,7 +753,7 @@ def isochrone_params(logL, elogL, age, eage, model, filename=None,
 	...     model='Sonora_Bobcat', filename='nc+0.0_co1.0_mass',
 	... )
 	>>> out['mass'], out['radius']  # M_jup, R_jup
-	    (44.96, 0.984)
+	    (45.02, 0.98)
 
 	Author: Theo Olsen
 
