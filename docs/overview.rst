@@ -98,8 +98,8 @@ Available Atmospheric Models
 
 :math:`\texttt{SEDA}` can use several modern and widely used atmospheric models, as indicated below. Check out `tutorial_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_models_examination.html>`_ to see the parameters' coverage and resolution of the models.
 
-Sonora Flame
-++++++++++++
+Sonora Flame Skimmer 
+++++++++++++++++++++
 
 Cloud-free models with equilibrium and disequilibrium chemistry from `Mang et al. (2026) <https://ui.adsabs.harvard.edu/abs/2026ApJ..1008..254M/abstract>`__. The disequilibrium models include vertical mixing parameterized by the eddy diffusion coefficient, Kzz. Download the `Sonora Flame Skimmer models <https://zenodo.org/records/20030439>`_. **Note: logKzz = 0 is used as a label for models with equilibrium chemistry and should not be interpreted as a physical Kzz value.**
 
