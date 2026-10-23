@@ -1514,8 +1514,19 @@ def set_fit_phot_range(fit_phot_range, filters, svo_data=None):
 	return fit_phot_range
 
 ##########################
-# read the SVO table with filter properties and save it locally if it doesn't already exist
 def read_SVO_table():
+	"""
+	Read the SVO Filter Profile Service table containing filter properties.
+
+	The table is read from a local file if available. Otherwise, it is
+	downloaded from SVO and saved locally for future use.
+
+	Returns
+	-------
+	svo_data : astropy.table.Table
+		Astropy table containing the SVO filter properties.
+	"""
+
 	dir_sep = os.sep # directory separator for the current operating system
 	path_synthetic_photometry = os.path.dirname(__file__)+dir_sep
 	# read zero points for each filter
