@@ -653,7 +653,8 @@ def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None, svo_
 
 	# calibrate synthetic fluxes
 	out_syn_flux = mag_to_flux(mag=syn_mag_calib, emag=esyn_mag_calib, 
-	                           filters=filters, flux_unit=flux_unit)
+	                           filters=filters, flux_unit=flux_unit, 
+	                           svo_data=svo_data)
 	syn_flux_calib = out_syn_flux['flux']
 	if eflux is not None: esyn_flux_calib = out_syn_flux['eflux']
 	else: esyn_flux_calib = None
