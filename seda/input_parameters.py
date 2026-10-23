@@ -790,12 +790,14 @@ class Chi2Options:
 						model_bar.update(1)
 
 						# read model spectrum with original resolution in the full model_wl_range_each
-						out_read_model_spectrum = models.read_model_spectrum(spectrum_name_full=spectra_name_full[i], model=model, model_wl_range=model_wl_range)
+						out_read_model_spectrum = models.read_model_spectrum(spectrum_name_full=spectra_name_full[i], 
+						                                                     model=model, model_wl_range=model_wl_range)
 						wl_model = out_read_model_spectrum['wl_model'] # um
 						flux_model = out_read_model_spectrum['flux_model'] # erg/s/cm2/A
 
 						# derive synthetic photometry
-						out_syn_phot = synthetic_photometry.synthetic_photometry(wl=wl_model, flux=flux_model, flux_unit='erg/s/cm2/A', filters=filters_fit, svo_data=svo_data)
+						out_syn_phot = synthetic_photometry.synthetic_photometry(wl=wl_model, flux=flux_model, flux_unit='erg/s/cm2/A', 
+						                                                         filters=filters_fit, svo_data=svo_data)
 
 						# store filters' parameters in the lists
 						flux_syn_array_model_fit.append(out_syn_phot['syn_flux(erg/s/cm2/A)']) # erg/s/cm2/A
