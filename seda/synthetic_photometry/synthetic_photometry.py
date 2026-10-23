@@ -373,8 +373,7 @@ def flux_to_mag(flux, filters, flux_unit='Jy', eflux=None, svo_data=None):
 	if len(flux)!=len(filters): raise Exception('filters does not have the size as flux')
 
 	# if the SVO is not provided
-	if svo_data is None:
-		svo_data = utils.read_SVO_table()
+	if svo_data is None: svo_data = utils.read_SVO_table()
 
 	filterID = svo_data['filterID'] # SVO ID
 	ZeroPoint = svo_data['ZeroPoint'] # in Jy
@@ -498,8 +497,7 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, svo_data=None):
 	if len(mag)!=len(filters): raise Exception('filters does not have the size as mag')
 
 	# if the SVO is not provided
-	if svo_data is None:
-		svo_data = utils.read_SVO_table()
+	if svo_data is None: svo_data = utils.read_SVO_table()
 
 	filterID = svo_data['filterID'] # SVO ID
 	ZeroPoint = svo_data['ZeroPoint'] # zero points in Jy
