@@ -7,7 +7,7 @@ from astropy import units as u
 from .. import utils
 from sys import exit
 
-def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='photon', out_file=None, svo_data=None): 
+def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='photon', svo_data=None, out_file=None): 
 	'''
 	Description:
 	------------
@@ -30,6 +30,8 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 		Flux and flux error units: ``'erg/s/cm2/A'``, ``'Jy'``, or ``erg/s/cm2/um``.
 	- eflux : array (optional) 
 		Flux uncertainties in units specified by ``flux_unit``.
+	- svo_data : astropy.table.Table, optional
+		Astropy table retrieved from SVO using :func:`read_SVO_table`.
 	- out_file : str, optional
 		File name to save the synthetic photometry (in erg/s/cm2/A) as prettytable.
 		The file name can include a path e.g. my_path/syn_phot.dat
@@ -318,8 +320,8 @@ def flux_to_mag(flux, filters, flux_unit='Jy', eflux=None, svo_data=None):
 		Units of ``flux``: ``'Jy'`` or ``'erg/s/cm2/A'``.
 	- eflux : array, float, optional
  		Flux uncertainties for ``flux`` in ``flux_unit``.
-	- svo_data : SVO table, optional
-		Astropoy table from SVO.
+	- svo_data : astropy.table.Table, optional
+		Astropy table retrieved from SVO using :func:`read_SVO_table`.
 
 	Returns:
 	--------
@@ -442,8 +444,8 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, svo_data=None):
 		Units to return flux: ``'Jy'`` or ``'erg/s/cm2/A'``.
 	- emag : array, float, optional
  		Magnitude uncertainties for ``mag`` in mag.
-	- svo_data : SVO table, optional
-		Astropoy table from SVO.
+	- svo_data : astropy.table.Table, optional
+		Astropy table retrieved from SVO using :func:`read_SVO_table`.
 
 	Returns:
 	--------
