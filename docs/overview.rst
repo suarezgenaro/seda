@@ -78,7 +78,9 @@ Physical and Basic Parameters
   - :func:`~seda.phy_params.bol_lum`: Calculates bolometric luminosity by integrating an observed SED, optionally complemented with a model spectrum (see `tutorial_bolometric_luminosity <https://seda.readthedocs.io/en/latest/notebooks/tutorial_bolometric_luminosity.html>`_).
   - :func:`~seda.phy_params.teff`: Derives effective temperature from bolometric luminosity and radius using the Stefan–Boltzmann law, with Monte Carlo uncertainty propagation.
   - :func:`~seda.phy_params.inclination`: Derives the rotation-axis inclination from projected rotation velocity (:math:`v\sin i`), rotation period, and radius, with Monte Carlo uncertainty propagation (`Vos et al. 2017 <https://ui.adsabs.harvard.edu/abs/2017ApJ...842...78V/abstract>`_).
-  - :func:`~seda.phy_params.evol_params`: Infers fundamental parameters (e.g., mass, age, surface gravity, temperature) by interpolating :ref:`evolutionary_models` given a bolometric luminosity and radius (see `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_).
+  - :func:`~seda.phy_params.evol_params`: Infers fundamental parameters (e.g., mass, age, surface gravity, temperature) by interpolating :ref:`evolutionary_models` given a logarithmic bolometric luminosity (log\ :sub:`10`\ (L/L\ :sub:`sun`\ )) and radius (see `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_).
+  - :func:`~seda.phy_params.isochrone_params`: Infers fundamental parameters (e.g., mass, radius, surface gravity, temperature) by interpolating :ref:`evolutionary_models` given a logarithmic bolometric luminosity and age.
+
 
 Atmospheric and Evolutionary Models
 +++++++++++++++++++++++++++++++++++
@@ -86,9 +88,8 @@ Atmospheric and Evolutionary Models
   - :func:`~seda.utils.generate_model_spectrum`: Generates a synthetic spectrum with any parameters (within the grid coverage) from the indicated atmospheric models using interpolation techniques.
   - :func:`~seda.utils.read_model_spectrum`: Reads a synthetic spectrum from :ref:`models`.
   - :func:`~seda.utils.separate_params`: Extracts parameters from model spectra file names.
-  - :func:`~seda.plots.plot_model_coverage` and :func:`~seda.plots.plot_model_resolution`: Visualize parameters' coverage and resolution of atmospheric :ref:`models` (see `tutorial_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_models_examination.html>`_).
-  - :func:`~seda.plots.plot_evolutionary_coverage`: Visualize bolometric luminosity–radius coverage of bundled :ref:`evolutionary_models` tables (see `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_).
-
+  - :func:`~seda.plots.plot_model_coverage` and :func:`~seda.plots.plot_model_resolution`: Visualize parameters' coverage and resolution of :ref:`models` (see `tutorial_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_models_examination.html>`_).
+  - :func:`~seda.plots.plot_evolutionary_coverage`: Visualize three free parameters (horizontal, vertical, and auxiliary color axes) bundled in :ref:`evolutionary_models` tables (see `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_).
 
 .. _models:
 
@@ -97,8 +98,26 @@ Available Atmospheric Models
 
 :math:`\texttt{SEDA}` can use several modern and widely used atmospheric models, as indicated below. Check out `tutorial_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_models_examination.html>`_ to see the parameters' coverage and resolution of the models.
 
-Sonora Diamondback Models
-+++++++++++++++++++++++++
+Sonora Flame Skimmer 
+++++++++++++++++++++
+
+Cloud-free models with equilibrium and disequilibrium chemistry from `Mang et al. (2026) <https://ui.adsabs.harvard.edu/abs/2026ApJ..1008..254M/abstract>`__. The disequilibrium models include vertical mixing parameterized by the eddy diffusion coefficient, Kzz. Download the `Sonora Flame Skimmer models <https://zenodo.org/records/20030439>`_. **Note: logKzz = 0 is used as a label for models with equilibrium chemistry and should not be interpreted as a physical Kzz value.**
+
+Parameter coverage:
+
+.. code-block:: console
+  
+  - wavelength = [0.5, 30] um
+  - Teff = [50, 2400] K (varying in steps from 50 K to 100 K)
+  - logg = [2.0, 5.5] in steps of 0.25 (g in cgs)
+  - [M/H] = [-1.0, 2.0] in steps of 0.5 dex
+  - C/O = 0.5, 1.0, 1.5, 2.5
+  - logKzz = 0 (CEQ), 2, 4, 7, 8, 9 (Kzz in cm2/s)
+
+.. _evolutionary_models:
+
+Sonora Diamondback
+++++++++++++++++++
 
 Cloudy (silicate clouds) atmospheric models assuming chemical equilibrium but considering the effect of both clouds and metallicity by `Morley et al (2024) <https://ui.adsabs.harvard.edu/abs/2024ApJ...975...59M/abstract>`_. Download the `Sonora Diamondback models <https://zenodo.org/records/12735103>`_.
 
@@ -112,9 +131,8 @@ Parameter coverage:
   - [M/H] = [-0.5, 0.5] (cgs) in steps of 0.5
   - fsed = 1, 2, 3, 4, 8, nc
 
-
-Sonora Elf Owl Models
-+++++++++++++++++++++
+Sonora Elf Owl
+++++++++++++++
 
 Models with atmospheric mixing and chemical disequilibrium with varying metallicity and C/O by `Mukherjee et al. (2024) <https://ui.adsabs.harvard.edu/abs/2024ApJ...963...73M/abstract>`_. Download the Sonora Elf Owl models for `L-type <https://zenodo.org/records/10385987>`_, `T-type <https://zenodo.org/records/10385821>`_, and `Y-type <https://zenodo.org/records/10381250>`_.
 
@@ -129,8 +147,23 @@ Parameter coverage:
   - [M/H] = -1.0, -0.5, +0.0, +0.5, +0.7, and +1.0 (cgs)
   - C/O = 0.5, 1.0, 1.5, 2.5 (relative to solar C/O, assumed as 0.458) (these are the values in the filenames). It corresponds to C/O=[0.22, 1.12] with values of 0.22, 0.458, 0.687, and 1.12 (e.g. 0.5 in the filename means 0.5*0.458=0.22)
 
-Lacy & Burrows (2023) Models
-++++++++++++++++++++++++++++
+SAND
+++++
+
+Models incorporating condensate clouds and disequilibrium chemistry from `Alvarado et al. (2024) <https://ui.adsabs.harvard.edu/abs/2024RNAAS...8..134A/abstract>`_. The [M/H] and alpha-enhancement [α/Fe] values were chosen to sample the abundance distribution of Milky Way stars inferred from APOGEE spectra (`Mackereth et al. 2019 <https://ui.adsabs.harvard.edu/abs/2019MNRAS.482.3426M/abstract>`_). Download the `SAND models <https://zenodo.org/records/10989779>`_.
+
+Parameter coverage:
+  
+.. code-block:: console
+
+  - wavelength = [1.e-4, 1000] um
+  - Teff = [700, 4000] K in steps of 100 K
+  - logg = [4.0, 6.0] in steps of 0.5 (g in cgs)
+  - [M/H] = [-2.4 , -2.2 , -1.95, -1.75, -1.5 , -1.3 , -1.1 , -0.85, -0.6 ,-0.35, -0.15,  0.1 ,  0.3]
+  - [a/Fe] = [-0.05,  0.  ,  0.1 ,  0.15,  0.2 ,  0.3 ,  0.35,  0.4]
+  
+Lacy & Burrows (2023)
++++++++++++++++++++++
 
 Cloudy (water clouds) atmospheric models with equilibrium and non-equilibrium chemistry for Y-dwarf atmospheres by `Lacy & Burrows (2023) <https://ui.adsabs.harvard.edu/abs/2023ApJ...950....8L/abstract>`_. Download the `LB23 models <https://zenodo.org/records/7779180>`_. The extended models are shared on request to the authors. The models include four grids: 
 
@@ -171,8 +204,8 @@ Extended models (additions to models in the paper). This grid replaces the origi
   - Teff up to 800 K
   - Hmix (mixing length) = 1.0, 0.1, and 0.01
 
-Sonora Cholla Models
-++++++++++++++++++++
+Sonora Cholla
++++++++++++++
 
 Cloudless models with non-equilibrium chemistry due to different eddy diffusion parameters by `Karalidi et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...923..269K/abstract>`_. Download the `Sonora Cholla models <https://zenodo.org/records/4450269>`_.
 
@@ -186,8 +219,8 @@ Parameter coverage:
   - logg = [3.00, 5.50] in steps of 0.25 (g in cgs)
   - log Kzz=2, 4, and 7
 
-Sonora Bobcat Models
-++++++++++++++++++++
+Sonora Bobcat
++++++++++++++
 
 Cloudless models in chemical equilibrium by `Marley et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...920...85M/abstract>`_. Download the `Sonora Bobcat models <https://zenodo.org/records/5063476>`_.
 
@@ -202,8 +235,24 @@ Parameter coverage:
   - C/O = 0.5, 1.0 (solar C/O), and 1.5 for solar metallicity models
   - R = [6000, 200000] (the resolving power varies with wavelength but is otherwise the same for all spectra)
 
-ATMO 2020 Models
-++++++++++++++++
+LOWZ
+++++
+
+Cloud-free models assuming chemical equilibrium from `Meisner et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...915..120M/abstract>`_. Download the `LOWZ models <https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/SJRXUO>`_.
+
+Parameter coverage:
+
+.. code-block:: console
+
+  - wavelength = [0.1, 10] um
+  - Teff = [500, 1600] K (varying in steps from 50 K to 100 K)
+  - logg = [3.5, 4, 4.5, 5, 5.25] (g in cgs)
+  - [M/H] = [-2.5, -2, -1.5, -1, -0.5, 0.25, 0, 0.25, 0.5, 0.75, 1]
+  - C/O = 0.1, 0.55, 0.85
+  - logKzz = −1 ,2, 10 (Kzz in cm2/s) 
+
+ATMO 2020
++++++++++
 
 Cloudless atmospheric models with chemical and non-chemical equilibrium by `Phillips et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020A%26A...637A..38P/abstract>`_. SEDA uses the `ATMO_2020_neweos_update' models, available for download at <https://noctis.erc-atmo.eu/fsdownload/zyU96xA6o/phillips2020>`_. The models include three grids:
   
@@ -220,8 +269,8 @@ Parameter coverage:
   - logg = [2.5, 5.5] in steps of 0.5 (g in cgs)
   - logKzz = 0 (ATMO2020_CEQ), 4 (ATMO2020_NEQ_weak), and 6 (ATMO2020_NEQ_strong)
 
-BT-Settl Models
-+++++++++++++++
+BT-Settl
+++++++++
 
 Cloudy models with non-equilibrium chemistry by `Allard et al. (2012) <https://ui.adsabs.harvard.edu/abs/2012RSPTA.370.2765A/abstract>`_. Download the `BT-Settl models <http://phoenix.ens-lyon.fr/simulator/>`_.
 
@@ -234,8 +283,8 @@ Parameter coverage:
   - logg = [2.0, 5.5] in steps of 0.5 (g in cgs)
   - R = [100000, 500000] (the resolving power varies with wavelength)
 
-Saumon & Marley (2008) Models
-+++++++++++++++++++++++++++++
+Saumon & Marley (2008)
+++++++++++++++++++++++
 
 Cloudy models with equilibrium chemistry by `Saumon & Marley (2008) <https://ui.adsabs.harvard.edu/abs/2008ApJ...689.1327S>`_. SM08 models are shared on request to the authors.
 
@@ -249,65 +298,34 @@ Parameter coverage:
   - fsed = 1, 2, 3, 4
   - R = [100000, 700000] (the resolving power varies with wavelength)
 
-
-SAND Models
-+++++++++++++++++++++++++++++
-
-Models incorporating condensate clouds and disequilibrium chemistry from `Alvarado et al. (2024) <https://ui.adsabs.harvard.edu/abs/2024RNAAS...8..134A/abstract>`_. The [M/H] and alpha-enhancement [α/Fe] values were chosen to sample the abundance distribution of Milky Way stars inferred from APOGEE spectra (`Mackereth et al. 2019 <https://ui.adsabs.harvard.edu/abs/2019MNRAS.482.3426M/abstract>`_). Download the `SAND models <https://zenodo.org/records/10989779>`_.
-
-Parameter coverage:
-  
-.. code-block:: console
-
-  - wavelength = [1.e-4, 1000] um
-  - Teff = [700, 4000] K in steps of 100 K
-  - logg = [4.0, 6.0] in steps of 0.5 (g in cgs)
-  - [M/H] = [-2.4 , -2.2 , -1.95, -1.75, -1.5 , -1.3 , -1.1 , -0.85, -0.6 ,-0.35, -0.15,  0.1 ,  0.3]
-  - [a/Fe] = [-0.05,  0.  ,  0.1 ,  0.15,  0.2 ,  0.3 ,  0.35,  0.4]
-  
-LOWZ Models
-+++++++++++++++++++++++++++++
-
-Cloud-free models assuming chemical equilibrium from `Meisner et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...915..120M/abstract>`_. Download the `LOWZ models <https://dataverse.harvard.edu/dataset.xhtml?persistentId=doi:10.7910/DVN/SJRXUO>`_.
-
-Parameter coverage:
-
-.. code-block:: console
-
-  - wavelength = [0.1, 10] um
-  - Teff = [500, 1600] K (varying in steps from 50 K to 100 K)
-  - logg = [3.5, 4, 4.5, 5, 5.25] (g in cgs)
-  - [M/H] = [-2.5, -2, -1.5, -1, -0.5, 0.25, 0, 0.25, 0.5, 0.75, 1]
-  - C/O = 0.1, 0.55, 0.85
-  - logKzz = −1 ,2, 10 (Kzz in cm2/s) 
-
-Sonora Flame Skimmer Models
-+++++++++++++++++++++++++++++
-
-Cloud-free models with equilibrium and disequilibrium chemistry from `Mang et al. (2026) <https://ui.adsabs.harvard.edu/abs/2026arXiv260806454M/abstract>`_. The disequilibrium models include vertical mixing parameterized by the eddy diffusion coefficient, Kzz. Download the `Sonora Flame Skimmer models <https://zenodo.org/records/20030439>`_. **Note: logKzz = 0 is used as a label for models with equilibrium chemistry and should not be interpreted as a physical Kzz value.**
-
-Parameter coverage:
-
-.. code-block:: console
-  
-  - wavelength = [0.5, 30] um
-  - Teff = [50, 2400] K (varying in steps from 50 K to 100 K)
-  - logg = [2.0, 5.5] in steps of 0.25 (g in cgs)
-  - [M/H] = [-1.0, 2.0] in steps of 0.5 dex
-  - C/O = 0.5, 1.0, 1.5, 2.5
-  - logKzz = 0 (CEQ), 2, 4, 7, 8, 9 (Kzz in cm2/s)
-
-.. _evolutionary_models:
-
 Available Evolutionary Models
 -----------------------------
 
-:math:`\texttt{SEDA}` can interpolate evolutionary models to infer fundamental parameters (mass, age, surface gravity, and effective temperature) from a bolometric luminosity and radius using :func:`~seda.phy_params.evol_params`. Use :func:`~seda.plots.plot_evolutionary_coverage` or `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_ to inspect the coverage of the bundled evolutionary tables.
+:math:`\texttt{SEDA}` can interpolate evolutionary models to infer fundamental parameters (mass, surface gravity, effective temperature, and age or radius) from a logarithmic bolometric luminosity and radius using :func:`~seda.phy_params.evol_params`, or from a logarithmic bolometric luminosity and age using :func:`~seda.phy_params.isochrone_params`. Check out `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_ to see the parameter coverage of the bundled evolutionary tables.
 
-Sonora Bobcat Evolutionary Tables
-+++++++++++++++++++++++++++++++++
+Sonora Flame Skimmer
+++++++++++++++++++++
 
-Evolutionary tables accompanying the cloudless, chemical-equilibrium atmospheric models by `Marley et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...920...85M/abstract>`_. Three ``*_mass`` tables (constant-mass cooling tracks) at solar C/O are bundled with :math:`\texttt{SEDA}` for [M/H] = -0.5, 0.0, and 0.5. The original tables are also available from the `Sonora Bobcat models <https://zenodo.org/records/5063476>`_ (``evolution_and_photometry`` archive).
+Evolutionary tables from the Sonora Flame Skimmer grid by `Mang et al. (2026) <https://ui.adsabs.harvard.edu/abs/2026ApJ..1008..254M/abstract>`__. Fifty-six `Sonora Flame Skimmer evolutionary tables <https://doi.org/10.5281/zenodo.20030439>`_  are bundled, for equilibrium (``eq``) and disequilibrium (``deq``) chemistry at seven metallicities and four C/O ratios. The bundled files already use M\ :sub:`Jup`\ , Gyr, and R\ :sub:`Jup`\ . Pass the basename, for example ``eq_mh+0.0_co1.0.txt``.
+
+Parameter coverage:
+
+.. code-block:: console
+
+  - mass = [0.047, 105] Mjup (4.5e-5 to 0.10 Msun)
+  - age = [0.0001, 10] Gyr
+  - Lbol = [2.4e-11, 0.47] Lsun (log L/Lsun = [-10.6, -0.33])
+  - R = [0.31, 17.2] Rjup
+  - logg = [1.38, 5.63] (g in cgs)
+  - Teff = [66, 4320] K
+  - Chemistry = equilibrium (``eq``) or disequilibrium (``deq``)
+  - Metallicity [M/H] = -1.0, -0.5, 0.0, +0.5, +1.0, +1.5, and +2.0
+  - C/O = 0.5, 1.0, 1.5, and 2.5
+
+Sonora Red Diamondback
+++++++++++++++++++++++
+
+Low-metallicity cloudy evolutionary tables by `Davis et al. (2025) <https://ui.adsabs.harvard.edu/abs/2025ApJ...994..198D/abstract>`_. Three ``RedDiamondback_*_mass`` tables (constant-mass cooling tracks) are bundled with :math:`\texttt{SEDA}` for [M/H] = -0.5, 0.0, and 0.5. The original tables are available from the `Sonora Red Diamondback models <https://doi.org/10.5281/zenodo.17343710>`_ and store mass in M\ :sub:`sun`\ and radius in R\ :sub:`sun`\ on disk; ``plugin.py`` converts them to M\ :sub:`Jup`\ and R\ :sub:`Jup`\ when reading.
 
 Parameter coverage:
 
@@ -315,23 +333,22 @@ Parameter coverage:
 
   - mass = [0.52, 84] Mjup (0.0005 to 0.08 Msun)
   - age = [0.001, 15] Gyr
-  - Lbol = [6.1e-10, 2.2e-3] Lsun (log L/Lsun = [-9.21, -2.66])
-  - R = [0.75, 2.59] Rjup
-  - logg = [2.65, 5.48] (g in cgs)
-  - Teff = [91, 2537] K
+  - Lbol = [1.6e-8, 5.8e-2] Lsun (log L/Lsun = [-7.81, -1.23])
+  - R = [0.74, 8.72] Rjup
+  - logg = [2.20, 5.48] (g in cgs)
+  - Teff = [201, 3199] K
   - Metallicity [M/H] = -0.5, 0.0, and 0.5 dex
-  - C/O = 1.0 (solar)
 
 Bundled tables (pass as ``filename`` basename):
 
 .. code-block:: console
 
-  - ``nc-0.5_co1.0_mass``  ([M/H] = -0.5)
-  - ``nc+0.0_co1.0_mass``  ([M/H] = +0.0)
-  - ``nc+0.5_co1.0_mass``  ([M/H] = +0.5)
+  - ``RedDiamondback_Zm050_mass``  ([M/H] = -0.5)
+  - ``RedDiamondback_Zp000_mass``  ([M/H] = 0.0)
+  - ``RedDiamondback_Zp050_mass``  ([M/H] = +0.5)
 
-Sonora Diamondback Evolutionary Tables
-++++++++++++++++++++++++++++++++++++++
+Sonora Diamondback
+++++++++++++++++++
 
 Evolutionary tables accompanying the cloudy atmospheric models by `Morley et al (2024) <https://ui.adsabs.harvard.edu/abs/2024ApJ...975...59M/abstract>`_. Nine ``*_mass`` tables (constant-mass cooling tracks) are bundled with :math:`\texttt{SEDA}` for three cloud treatments (``nc``, ``hybrid_f2``, and ``hybrid-grav_f2``) at [M/H] = -0.5, 0.0, and 0.5. The original tables are also available from the `Sonora Diamondback models <https://zenodo.org/records/12735103>`_.
 
@@ -358,8 +375,52 @@ Bundled tables (pass as ``filename`` basename):
 
 For more information on these filenames, please refer to the 'Evolution' section at `Sonora Diamondback models <https://zenodo.org/records/12735103>`_.
 
-ATMO 2020 Evolutionary Tables
-+++++++++++++++++++++++++++++
+SANDee
+++++++
+
+Low-mass-star and brown-dwarf evolutionary tables by `Gerasimov et al. (2024) <https://ui.adsabs.harvard.edu/abs/2024ApJ...971...65G/abstract>`_. Twenty-four ``SAND_*_mass.txt`` tables are bundled, one per metallicity and alpha-element combination in the published grid. They are derived from the authors' MESA histories, ages below 1 Gyr are omitted, and the bundled files already use M\ :sub:`Jup`\ , Gyr, and R\ :sub:`Jup`\ . The MESA archive is available from the `SANDee models <https://doi.org/10.5281/zenodo.11582126>`_, and ``build_tables.py`` in the model folder regenerates the bundled tables from that archive. Pass the basename, for example ``SAND_z0.1_a0.0_mass.txt``.
+
+Parameter coverage:
+
+.. code-block:: console
+
+  - mass = [63, 741] Mjup (0.060 to 0.71 Msun)
+  - age = [1, 15.5] Gyr
+  - Lbol = [1.8e-6, 9.5e-2] Lsun (log L/Lsun = [-5.75, -1.02])
+  - R = [0.67, 6.54] Rjup
+  - logg = [4.63, 5.69] (g in cgs)
+  - Teff = [785, 3911] K
+  - Metallicity [M/H] = -2.4 to +0.3
+  - Alpha enhancement = -0.05 to +0.4
+
+Sonora Bobcat
++++++++++++++
+
+Evolutionary tables accompanying the cloudless, chemical-equilibrium atmospheric models by `Marley et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...920...85M/abstract>`_. Three ``*_mass`` tables (constant-mass cooling tracks) at solar C/O are bundled with :math:`\texttt{SEDA}` for [M/H] = -0.5, 0.0, and 0.5. The original tables are also available from the `Sonora Bobcat models <https://zenodo.org/records/5063476>`_ (``evolution_and_photometry`` archive).
+
+Parameter coverage:
+
+.. code-block:: console
+
+  - mass = [0.52, 84] Mjup (0.0005 to 0.08 Msun)
+  - age = [0.001, 15] Gyr
+  - Lbol = [6.1e-10, 2.2e-3] Lsun (log L/Lsun = [-9.21, -2.66])
+  - R = [0.75, 2.59] Rjup
+  - logg = [2.65, 5.48] (g in cgs)
+  - Teff = [91, 2537] K
+  - Metallicity [M/H] = -0.5, 0.0, and 0.5 dex
+  - C/O = 1.0 (solar)
+
+Bundled tables (pass as ``filename`` basename):
+
+.. code-block:: console
+
+  - ``nc-0.5_co1.0_mass``  ([M/H] = -0.5)
+  - ``nc+0.0_co1.0_mass``  ([M/H] = +0.0)
+  - ``nc+0.5_co1.0_mass``  ([M/H] = +0.5)
+
+ATMO 2020
++++++++++
 
 Evolutionary tables accompanying the cloudless atmospheric models by `Phillips et al. (2020) <https://ui.adsabs.harvard.edu/abs/2020A%26A...637A..38P/abstract>`_. Three ``*_mass.txt`` tables (constant-mass cooling tracks) are bundled with :math:`\texttt{SEDA}` for equilibrium chemistry (CEQ) and non-equilibrium chemistry with weak (logKzz = 4) and strong (logKzz = 6) vertical mixing. The original tables are also available from the `ATMO 2020 models <https://noctis.erc-atmo.eu/fsdownload/zyU96xA6o/phillips2020>`_.
 
@@ -383,8 +444,8 @@ Bundled tables (pass as ``filename`` basename):
   - ``ATMO_NEQ_weak_mass.txt``  (non-equilibrium chemistry due to weak vertical mixing; logKzz = 4)
   - ``ATMO_NEQ_strong_mass.txt``  (non-equilibrium chemistry due to strong vertical mixing; logKzz = 6)
 
-BHAC15 Evolutionary Tables
-++++++++++++++++++++++++++
+BHAC15
+++++++
 
 Evolutionary tracks and internal-structure tables for brown dwarfs and low-mass stars by `Baraffe et al. (2015) <https://ui.adsabs.harvard.edu/abs/2015A%26A...577A..42B/abstract>`_. One tracks+structure table is bundled with :math:`\texttt{SEDA}` covering 0.01 to 1.4 M\ :sub:`sun`\ . The original tables are also available from the `BHAC15 models <https://perso.ens-lyon.fr/isabelle.baraffe/BHAC15dir/>`_.
 
@@ -392,8 +453,8 @@ Parameter coverage:
 
 .. code-block:: console
 
-  - mass = [0.01, 1.4] Msun
-  - age = [5.69, 10.0] log10(yr) (~0.0005 to 10 Gyr)
+  - mass = [10.5, 1467] Mjup (0.01 to 1.4 Msun)
+  - age = [0.00049, 10.0] Gyr
   - Lbol = [1.9e-5, 5.5] Lsun (log L/Lsun = [-4.72, 0.74])
   - R = [0.84, 35.2] Rjup (0.086 to 3.62 Rsun)
   - logg = [3.22, 5.39] (g in cgs)
@@ -401,8 +462,8 @@ Parameter coverage:
   - log(Li/Li0) = [-11.2, 0.0] (ratio of surface lithium abundance to initial lithium abundance)
   - log Tc = [5.42, 7.40] (log10 K) (central temperature)
   - log rho_c = [-0.61, 2.88] (log10 g/cm^3) (central density)
-  - Mrad = [0.0, 1.4] Msun (radiative core mass)
-  - Rrad = [0.0, 1.75] Rsun (radiative core radius)
+  - Mrad = [0.0, 1467] Mjup (radiative core mass)
+  - Rrad = [0.0, 17.0] Rjup (radiative core radius)
   - k2conv = [0.0012, 0.49] (convective gyration radius)
   - k2rad = [0.0, 0.31] (radiative gyration radius)
 
@@ -413,7 +474,15 @@ Bundled table (``filename`` may be omitted):
   - ``BHAC15_tracks+structure.txt``
 
 :func:`~seda.phy_params.evol_params` reads a bundled evolutionary table selected by ``filename``.
-If a model folder contains only one table, ``filename`` may be omitted. Inferred parameters
-are returned in the native units defined in each model's ``config.json`` (mass in M\ :sub:`sun`\ ,
-age in Gyr for Sonora/ATMO or log10(yr) for BHAC15, etc.). See :doc:`notebooks/tutorial_ingest_evolutionary_models` to add custom models.
+If a model folder contains only one table, ``filename`` may be omitted. Both functions take
+bolometric luminosity as log\ :sub:`10`\ (L/L\ :sub:`sun`\ ):
+:func:`~seda.phy_params.evol_params` takes radius in R\ :sub:`Jup`\ and returns mass in
+M\ :sub:`Jup`\ and age in Gyr, while :func:`~seda.phy_params.isochrone_params` takes age in Gyr
+and returns mass in M\ :sub:`Jup`\ and radius in R\ :sub:`Jup`\ . ``Teff`` is in Kelvin and
+``logg`` is log\ :sub:`10`\ (g[cm/s\ :sup:`2`\ ]).
+The bundled tables are kept exactly as the modelers published them, whatever units they use
+(for example BHAC15 stores age as log10(yr) and mass in M\ :sub:`sun`\ ). Each model's
+``plugin.py`` converts to the units above as it reads the table, so everything downstream,
+including the coverage listed above, is already in those units.
+Any extra column keeps the unit declared in the model's ``config.json``. See :doc:`notebooks/tutorial_ingest_evolutionary_models` to add custom models.
 
