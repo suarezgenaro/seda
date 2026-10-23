@@ -796,7 +796,7 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 
 ##################################################
 def read_grid_phot(model, model_dir, filters, params_ranges=None, fit_phot_range=None, 
-	               skip_syn_phot=False, model_wl_range=None, path_save_syn_phot=None):
+	               skip_syn_phot=False, model_wl_range=None, svo_data=None, path_save_syn_phot=None):
 	               
 	'''
 	Description:
@@ -824,6 +824,8 @@ def read_grid_phot(model, model_dir, filters, params_ranges=None, fit_phot_range
 	- filters : float array
 		Filters to derive synthetic photometry following SVO filter IDs 
 		http://svo2.cab.inta-csic.es/theory/fps/
+	- svo_data : astropy.table.Table, optional
+		Astropy table retrieved from SVO using :func:`~seda.utils.read_SVO_table`.
 	- path_save_syn_phot: str, optional
 		Directory path to store the synthetic fluxes (in erg/s/cm2/A).
 		If not provided (default), the synthetic photometry will not be saved. 
@@ -916,18 +918,21 @@ def read_grid_phot(model, model_dir, filters, params_ranges=None, fit_phot_range
 			for i,param in enumerate(params.keys()):
 				print(f'	  {param}={params_unique[param][index[i]]}')
 		else: # if there is a spectrum
-			# read the spectrum with the parameter combination in the iteration and cut it to model_wl_range (default value: fit_wl_range plus padding)
+			# read the spectrum with the parameter combination in the iteration and 
+			# cut it to model_wl_range (default value: fit_wl_range plus padding)
 			spectrum_name_full = spectra_name_full[mask][0]
 			spectrum_name = spectra_name[mask][0]
 
 			if not skip_syn_phot: # do not avoid synthetic photometry calculation
 				# read model spectrum with original resolution in the full model_wl_range_each
-				out_read_model_spectrum = models.read_model_spectrum(spectrum_name_full=spectrum_name_full, model=model, model_wl_range=model_wl_range)
+				out_read_model_spectrum = models.read_model_spectrum(spectrum_name_full=spectrum_name_full, 
+				                                                     model=model, model_wl_range=model_wl_range)
 				wl_model = out_read_model_spectrum['wl_model'] # um
 				flux_model = out_read_model_spectrum['flux_model'] # erg/s/cm2/A
 
 				# derive synthetic photometry
-				out_syn_phot = synthetic_photometry(wl=wl_model, flux=flux_model, flux_unit='erg/s/cm2/A', filters=filters)
+				out_syn_phot = synthetic_photometry(wl=wl_model, flux=flux_model, flux_unit='erg/s/cm2/A', 
+				                                    filters=filters, svo_data=svo_data)
 				flux_syn = out_syn_phot['syn_flux(erg/s/cm2/A)'] # erg/s/cm2/A
 
 				# estimate filters' effective wavelengths from the first spectrum to be the wavelength reference
