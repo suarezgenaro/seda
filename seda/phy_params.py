@@ -910,10 +910,7 @@ def isochrone_params(logL, elogL, age, eage, model, filename=None,
 			print('   {} = {:.4g} {}{}'.format(
 				param, out[param], _fmt_err(out[f'e{param}']), unit_str))
 
-	# convert NumPy scalars to native Python types
-	out = _to_python_types(out)
-
-	return out
+	return _to_python_types(out)
 
 ##########################
 def evol_params(logL, elogL, R, eR, model, filename=None,
@@ -924,9 +921,8 @@ def evol_params(logL, elogL, R, eR, model, filename=None,
 	------------
 		Infer fundamental parameters by interpolating evolutionary models given a
 		logarithmic bolometric luminosity and radius. Uncertainties are propagated
-		with a Monte Carlo simulation. This is the complement to
-		:func:`isochrone_params`, which uses ``(logL, age)`` instead of
-		``(logL, R)``.
+		with a Monte Carlo simulation. This is the complement to :func:`isochrone_params`, 
+		which uses ``(logL, age)`` instead of ``(logL, R)``.
 
 		Every evolutionary model reads its tables into the same units, so ``R``
 		is in R_jup, returned ``mass`` is in M_jup, returned ``age`` is in Gyr,
@@ -1078,10 +1074,7 @@ def evol_params(logL, elogL, R, eR, model, filename=None,
 			print('   {} = {:.4g} {}{}'.format(
 				param, out[param], _fmt_err(out[f'e{param}']), unit_str))
 
-	# convert NumPy scalars to native Python types
-	out = _to_python_types(out)
-
-	return out
+	return _to_python_types(out)
 
 ##########################
 def color_anomaly(color, color_name, spt, table, ecolor=None,
