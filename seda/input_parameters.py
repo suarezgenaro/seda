@@ -64,6 +64,8 @@ class InputData:
 		Target distance (in pc) used to derive radii from scaling factors for models.
 	- edistance : float, optional
 		Distance error (in pc).
+	- svo_data : astropy.table.Table, optional
+		Astropy table retrieved from SVO using :func:`utils.read_SVO_table`.
 
 	Attributes:
 	-----------
@@ -208,6 +210,7 @@ class InputData:
 
 		# handle input photometry
 		if fit_photometry:
+			if svo_data is None: svo_data = utils.read_SVO_table()
 			# if input photometry arrays are lists or astropy varaibles, convert them into numpy array
 			phot = utils.var_to_numpy(phot)
 			phot = utils.astropy_to_numpy(phot)
@@ -423,6 +426,8 @@ class Chi2Options:
 	- chi2_table_file : str, optional
 		Filename for an output ascii table (if ``save_results``) with relevant information from the fit.
 		Default name is '``model``\_chi2\_minimization.dat'.
+	- svo_data : astropy.table.Table, optional
+		Astropy table retrieved from SVO using :func:`utils.read_SVO_table`.
 
 	Attributes:
 	-----------
@@ -496,7 +501,7 @@ class Chi2Options:
 		fit_wl_range=None, disp_wl_range=None, model_wl_range=None, fit_phot_range=None, 
 		weight_label='dataset', extinction_free_param=False, scaling_free_param=True, 
 		scaling=None, avoid_IR_excess=False, IR_excess_limit=3, save_results=True,
-		chi2_pickle_file=None, chi2_table_file=None, svo_data = None):
+		chi2_pickle_file=None, chi2_table_file=None, svo_data=None):
 
 		ini_time_mychi2 = utils.time.time() # to estimate the time elapsed running chi2
 
@@ -601,6 +606,7 @@ class Chi2Options:
 
 		# handle input photometry
 		if fit_photometry:
+			if svo_data is None: svo_data = utils.read_SVO_table()
 			# handle fit_phot_range
 			fit_phot_range = utils.set_fit_phot_range(fit_phot_range=fit_phot_range, filters=filters, svo_data=svo_data)
 			self.fit_phot_range = fit_phot_range
