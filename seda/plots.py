@@ -1446,7 +1446,7 @@ def _configure_evolutionary_linear_axis(ax, axis):
 	else:
 		ax.yaxis.set_minor_locator(AutoMinorLocator())
 
-
+##########################
 def plot_evolutionary_coverage(model, filename, xparam='Lbol', yparam='R', zparam='age',
 		cparam=None, xlog=True, ylog=False, out_file=None, save=False):
 	'''
@@ -1495,7 +1495,7 @@ def plot_evolutionary_coverage(model, filename, xparam='Lbol', yparam='R', zpara
 	--------
 	>>> import seda
 	>>>
-	>>> seda.plots.plot_evolutionary_coverage(
+	>>> fig, ax = seda.plots.plot_evolutionary_coverage(
 	...     model='Sonora_Bobcat', filename='nc+0.0_co1.0_mass', zparam='Teff',
 	... )
 
