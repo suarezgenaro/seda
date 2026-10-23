@@ -1423,12 +1423,12 @@ def read_SVO_params(filters, params, svo_data=None):
 	# for clarity add the parameter 'filterID', if not requested
 	params_ori = params.copy() # copy to save input params recognized by SVO
 	if 'filterID' not in params: params.insert(0, 'filterID')
-	SVO_data_sel = svo_data[mask][params]
+	svo_data_sel = svo_data[mask][params]
 
 	# dictionary with the table subset
 	filters_params = {}
 	for param in params:
-		filters_params[param] = SVO_data_sel[param].data.data
+		filters_params[param] = svo_data_sel[param].data.data
 
 	# sort dictionary so filters_params['filterID'] is in the same order as input filters
 	# indices that sort filters_params['filterID']
