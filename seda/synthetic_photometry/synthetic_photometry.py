@@ -14,9 +14,10 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 		Compute synthetic photometry from an input spectrum and a set of
 		photometric filters compiled by SVO.
 
-		Synthetic fluxes are computed using photon-counting weighting by default,
-		which is appropriate for most astronomical detectors. Energy-integrating
-		weighting can be selected with ``detector='energy'``.
+		Synthetic fluxes are computed by integrating the spectrum in F_lambda
+		units using photon-counting weighting by default, which is appropriate
+		for most astronomical detectors. Energy-integrating weighting can be
+		selected with ``detector='energy'``.
 
 	Parameters:
 	-----------
@@ -552,7 +553,7 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, svo_data=None):
 	return out
 
 #+++++++++++++++++
-def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None):
+def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None, svo_data=None):
 	'''
 	Description:
 	------------
@@ -568,8 +569,6 @@ def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None):
 		Wavelength array in microns.
 	- flux : array
 		Flux values in ``flux_unit`` unit corresponding to ``wl``.
-	- eflux : array, optional
-		Uncertainties on the flux in ``flux_unit`` unit. If ``None``, uncertainties are ignored.
 	- flux_unit : str
 		Flux and flux error units: ``'erg/s/cm2/A'``, ``'Jy'``, or ``erg/s/cm2/um``.
 	- mag : array
@@ -578,6 +577,10 @@ def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None):
 		Uncertainties on observed magnitudes in mag.
 	- filters : list, array, or str
 		List of filters (following SVO filter IDs) used for photometry.
+	- eflux : array, optional
+		Uncertainties on the flux in ``flux_unit`` unit. If ``None``, uncertainties are ignored.
+	- svo_data : astropy.table.Table, optional
+		Astropy table retrieved from SVO using :func:`~seda.utils.read_SVO_table`.
 
 	Returns:
 	--------
@@ -622,8 +625,9 @@ def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None):
 	emag = utils.var_to_numpy(emag)
 
 	# synthetic photometry from the spectrum
-	out_syn = synthetic_photometry(wl=wl, flux=flux, eflux=eflux,
-	                               flux_unit=flux_unit,	filters=filters)
+	if svo_data is None: svo_data = utils.read_SVO_table()
+	out_syn = synthetic_photometry(wl=wl, flux=flux, eflux=eflux, flux_unit=flux_unit,	
+	                               filters=filters, svo_data=svo_data)
 
 	syn_mag = out_syn['syn_mag']
 	if eflux is not None: esyn_mag = out_syn['esyn_mag']
@@ -758,7 +762,7 @@ def _compute_synthetic_flux(wl, flux, filter_wl, filter_flux, eflux=None, detect
 	"""
 	Compute synthetic flux, flux error, lambda_eff, and width_eff.
 	
-	This is an internal helper function used by ``synthetic_photometry``.
+	This is an internal helper function used by :func:`~seda.synthetic_photometry.synthetic_photometry`.
 	The input spectrum must be provided as F_lambda. The synthetic flux is
 	computed using photon-counting weighting by default, appropriate for most
 	astronomical detectors. Energy-integrating weighting can be selected with
