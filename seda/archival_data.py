@@ -118,11 +118,11 @@ class IRS:
 
 	Parameters
 	----------
-	calibration : str, default 'pipeline'
+	calibration : str, default 'rescaled'
 		Flux calibration of the spectra. Options are:
-		- 'pipeline' for spectra retaining their original pipeline flux calibration.
 		- 'rescaled' for spectra scaled to correct observed–synthetic IRAC Ch4
 		  and WISE W3 photometric offsets (Suárez & Metchev 2022).
+		- 'pipeline' for spectra retaining their original pipeline flux calibration.
 
 	Attributes
 	----------
@@ -148,9 +148,10 @@ class IRS:
 	(Sections 2.4 and 2.5).
 	
 	These offsets are likely due to background contamination. Therefore,
-	the pipeline-calibrated spectra are used by default. Their flux
-	calibration has been verified for about half of them using SPHEREx,
-	with a suggested absolute flux uncertainty of 0.06 mag.
+	the pipeline-calibrated spectra are recommended, although the rescaled
+	spectra remain the default for consistency with the published dataset.
+	The pipeline flux calibration has been verified for about half of the 
+	spectra using SPHEREx, with a suggested absolute flux uncertainty of 0.06 mag.
 
 	Examples
 	--------
@@ -158,7 +159,7 @@ class IRS:
 	>>> import seda
 	>>> 
 	>>> # create an IRS instance (see Parameters and Notes for calibration options)
-	>>> irs = seda.archival_data.IRS(calibration='rescaled')
+	>>> irs = seda.archival_data.IRS()
 	>>> # example targets
 	>>> target_name = ['0355+1133', '1821+1414']
 	>>> # get spectra and metadata
@@ -178,7 +179,7 @@ class IRS:
 	Date: 2026-02-18
 	"""
 
-	def __init__(self, calibration='pipeline'):
+	def __init__(self, calibration='rescaled'):
 		# Validate the selected flux calibration
 		if calibration not in ('pipeline', 'rescaled'):
 			raise ValueError(
