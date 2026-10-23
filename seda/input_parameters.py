@@ -65,7 +65,7 @@ class InputData:
 	- edistance : float, optional
 		Distance error (in pc).
 	- svo_data : astropy.table.Table, optional
-		Astropy table retrieved from SVO using :func:`utils.read_SVO_table`.
+		Astropy table retrieved from SVO using :func:`seda.utils.read_SVO_table`.
 
 	Attributes:
 	-----------
@@ -427,7 +427,7 @@ class Chi2Options:
 		Filename for an output ascii table (if ``save_results``) with relevant information from the fit.
 		Default name is '``model``\_chi2\_minimization.dat'.
 	- svo_data : astropy.table.Table, optional
-		Astropy table retrieved from SVO using :func:`utils.read_SVO_table`.
+		Astropy table retrieved from SVO using :func:`seda.utils.read_SVO_table`.
 
 	Attributes:
 	-----------
