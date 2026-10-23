@@ -66,6 +66,7 @@ class InputData:
 		Distance error (in pc).
 	- svo_data : astropy.table.Table, optional
 		Astropy table retrieved from SVO using :func:`seda.utils.read_SVO_table`.
+		Astropy table retrieved from SVO using :func:`~seda.utils.read_SVO_table`.
 
 	Attributes:
 	-----------
