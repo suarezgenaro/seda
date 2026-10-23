@@ -1485,12 +1485,6 @@ def set_model_wl_range(model_wl_range, wl_spectra_min, wl_spectra_max):
 		#model_wl_range = np.array([0.9*wl_spectra_min, 1.1*wl_spectra_max]) # add padding to have enough spectral coverage in models
 		model_wl_range = add_pad(wl_spectra_min, wl_spectra_max) # add padding to have enough spectral coverage in models
 
-#	# it may need an update to work with multiple spectra
-#	if (model_wl_range.min()>=fit_wl_range.min()):
-#		model_wl_range[0] = 0.9*fit_wl_range.min() # add padding to shorter wavelengths
-#	if (model_wl_range.max()<=fit_wl_range.max()):
-#		model_wl_range[1] = 1.1*fit_wl_range.max() # add padding to longer wavelengths
-
 	return model_wl_range
 
 ##########################
@@ -1498,8 +1492,7 @@ def set_model_wl_range(model_wl_range, wl_spectra_min, wl_spectra_max):
 def set_fit_phot_range(fit_phot_range, filters, svo_data=None):
 	if fit_phot_range is None: # define fit_phot_range when not provided
 		# get effective wavelengths from SVO for the input filters
-		if svo_data == None:
-			svo_data = read_SVO_table()
+		if svo_data == None: svo_data = read_SVO_table()
 		SVO_filterID = svo_data['filterID'] # SVO ID
 		SVO_WavelengthEff = u.Quantity(svo_data['WavelengthEff'].data, u.nm*0.1).to(u.micron).value # effective wavelength in um
 		matching_indices = []
