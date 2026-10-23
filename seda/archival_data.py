@@ -120,6 +120,7 @@ class IRS:
 	----------
 	calibration : str, default 'rescaled'
 		Flux calibration of the spectra. Options are:
+	
 		- 'rescaled' for spectra scaled to correct observed–synthetic IRAC Ch4
 		  and WISE W3 photometric offsets (Suárez & Metchev 2022).
 		- 'pipeline' for spectra retaining their original pipeline flux calibration.
