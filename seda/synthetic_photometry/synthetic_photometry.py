@@ -7,16 +7,17 @@ from astropy import units as u
 from .. import utils
 from sys import exit
 
-def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='photon', out_file=None): 
+def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='photon', svo_data=None, out_file=None): 
 	'''
 	Description:
 	------------
 		Compute synthetic photometry from an input spectrum and a set of
 		photometric filters compiled by SVO.
 
-		Synthetic fluxes are computed using photon-counting weighting by default,
-		which is appropriate for most astronomical detectors. Energy-integrating
-		weighting can be selected with ``detector='energy'``.
+		Synthetic fluxes are computed by integrating the spectrum in F_lambda
+		units using photon-counting weighting by default, which is appropriate
+		for most astronomical detectors. Energy-integrating weighting can be
+		selected with ``detector='energy'``.
 
 	Parameters:
 	-----------
@@ -30,6 +31,8 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 		Flux and flux error units: ``'erg/s/cm2/A'``, ``'Jy'``, or ``erg/s/cm2/um``.
 	- eflux : array (optional) 
 		Flux uncertainties in units specified by ``flux_unit``.
+	- svo_data : astropy.table.Table, optional
+		Astropy table retrieved from SVO using :func:`~seda.utils.read_SVO_table`.
 	- out_file : str, optional
 		File name to save the synthetic photometry (in erg/s/cm2/A) as prettytable.
 		The file name can include a path e.g. my_path/syn_phot.dat
@@ -105,7 +108,7 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 	if isinstance(filters, str): filters = [filters]
 
 	# read filters' transmission curves and zero points
-	svo_data = utils.read_SVO_table()
+	if svo_data is None: svo_data = utils.read_SVO_table()
 	filterID = svo_data['filterID'] # SVO ID
 	ZeroPoint = svo_data['ZeroPoint'] # in Jy
 	# fill masked values if needed
@@ -187,7 +190,7 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 		mask_filt = filterID == filt
 		if any(mask_filt) is False: raise Exception(f'   \nERROR: No zero point for filter {filt}')
 
-		out_mag = flux_to_mag(flux=syn_flux_Jy[k], eflux=esyn_flux_Jy[k], filters=filt, flux_unit='Jy')
+		out_mag = flux_to_mag(flux=syn_flux_Jy[k], eflux=esyn_flux_Jy[k], filters=filt, flux_unit='Jy', svo_data=svo_data)
 		syn_mag[k] = out_mag['mag'][0] # in mag
 		if eflux is not None: esyn_mag[k] = out_mag['emag'][0] # in mag
 		lambda_eff_SVO[k] = out_mag['lambda_eff_SVO(um)'][0] # um
@@ -318,8 +321,8 @@ def flux_to_mag(flux, filters, flux_unit='Jy', eflux=None, svo_data=None):
 		Units of ``flux``: ``'Jy'`` or ``'erg/s/cm2/A'``.
 	- eflux : array, float, optional
  		Flux uncertainties for ``flux`` in ``flux_unit``.
-	- svo_data : SVO table, optional
-		Astropoy table from SVO.
+	- svo_data : astropy.table.Table, optional
+		Astropy table retrieved from SVO using :func:`~seda.utils.read_SVO_table`.
 
 	Returns:
 	--------
@@ -371,8 +374,7 @@ def flux_to_mag(flux, filters, flux_unit='Jy', eflux=None, svo_data=None):
 	if len(flux)!=len(filters): raise Exception('filters does not have the size as flux')
 
 	# if the SVO is not provided
-	if svo_data is None:
-		svo_data = utils.read_SVO_table()
+	if svo_data is None: svo_data = utils.read_SVO_table()
 
 	filterID = svo_data['filterID'] # SVO ID
 	ZeroPoint = svo_data['ZeroPoint'] # in Jy
@@ -442,8 +444,8 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, svo_data=None):
 		Units to return flux: ``'Jy'`` or ``'erg/s/cm2/A'``.
 	- emag : array, float, optional
  		Magnitude uncertainties for ``mag`` in mag.
-	- svo_data : SVO table, optional
-		Astropoy table from SVO.
+	- svo_data : astropy.table.Table, optional
+		Astropy table retrieved from SVO using :func:`~seda.utils.read_SVO_table`.
 
 	Returns:
 	--------
@@ -496,8 +498,7 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, svo_data=None):
 	if len(mag)!=len(filters): raise Exception('filters does not have the size as mag')
 
 	# if the SVO is not provided
-	if svo_data is None:
-		svo_data = utils.read_SVO_table()
+	if svo_data is None: svo_data = utils.read_SVO_table()
 
 	filterID = svo_data['filterID'] # SVO ID
 	ZeroPoint = svo_data['ZeroPoint'] # zero points in Jy
@@ -552,7 +553,7 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, svo_data=None):
 	return out
 
 #+++++++++++++++++
-def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None):
+def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None, svo_data=None):
 	'''
 	Description:
 	------------
@@ -568,8 +569,6 @@ def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None):
 		Wavelength array in microns.
 	- flux : array
 		Flux values in ``flux_unit`` unit corresponding to ``wl``.
-	- eflux : array, optional
-		Uncertainties on the flux in ``flux_unit`` unit. If ``None``, uncertainties are ignored.
 	- flux_unit : str
 		Flux and flux error units: ``'erg/s/cm2/A'``, ``'Jy'``, or ``erg/s/cm2/um``.
 	- mag : array
@@ -578,6 +577,10 @@ def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None):
 		Uncertainties on observed magnitudes in mag.
 	- filters : list, array, or str
 		List of filters (following SVO filter IDs) used for photometry.
+	- eflux : array, optional
+		Uncertainties on the flux in ``flux_unit`` unit. If ``None``, uncertainties are ignored.
+	- svo_data : astropy.table.Table, optional
+		Astropy table retrieved from SVO using :func:`~seda.utils.read_SVO_table`.
 
 	Returns:
 	--------
@@ -622,8 +625,9 @@ def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None):
 	emag = utils.var_to_numpy(emag)
 
 	# synthetic photometry from the spectrum
-	out_syn = synthetic_photometry(wl=wl, flux=flux, eflux=eflux,
-	                               flux_unit=flux_unit,	filters=filters)
+	if svo_data is None: svo_data = utils.read_SVO_table()
+	out_syn = synthetic_photometry(wl=wl, flux=flux, eflux=eflux, flux_unit=flux_unit,	
+	                               filters=filters, svo_data=svo_data)
 
 	syn_mag = out_syn['syn_mag']
 	if eflux is not None: esyn_mag = out_syn['esyn_mag']
@@ -649,7 +653,8 @@ def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None):
 
 	# calibrate synthetic fluxes
 	out_syn_flux = mag_to_flux(mag=syn_mag_calib, emag=esyn_mag_calib, 
-	                           filters=filters, flux_unit=flux_unit)
+	                           filters=filters, flux_unit=flux_unit, 
+	                           svo_data=svo_data)
 	syn_flux_calib = out_syn_flux['flux']
 	if eflux is not None: esyn_flux_calib = out_syn_flux['eflux']
 	else: esyn_flux_calib = None
@@ -758,7 +763,7 @@ def _compute_synthetic_flux(wl, flux, filter_wl, filter_flux, eflux=None, detect
 	"""
 	Compute synthetic flux, flux error, lambda_eff, and width_eff.
 	
-	This is an internal helper function used by ``synthetic_photometry``.
+	This is an internal helper function used by :func:`~seda.synthetic_photometry.synthetic_photometry`.
 	The input spectrum must be provided as F_lambda. The synthetic flux is
 	computed using photon-counting weighting by default, appropriate for most
 	astronomical detectors. Energy-integrating weighting can be selected with
