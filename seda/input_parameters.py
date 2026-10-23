@@ -65,7 +65,6 @@ class InputData:
 	- edistance : float, optional
 		Distance error (in pc).
 	- svo_data : astropy.table.Table, optional
-		Astropy table retrieved from SVO using :func:`seda.utils.read_SVO_table`.
 		Astropy table retrieved from SVO using :func:`~seda.utils.read_SVO_table`.
 
 	Attributes:
@@ -428,7 +427,7 @@ class Chi2Options:
 		Filename for an output ascii table (if ``save_results``) with relevant information from the fit.
 		Default name is '``model``\_chi2\_minimization.dat'.
 	- svo_data : astropy.table.Table, optional
-		Astropy table retrieved from SVO using :func:`seda.utils.read_SVO_table`.
+		Astropy table retrieved from SVO using :func:`~seda.utils.read_SVO_table`.
 
 	Attributes:
 	-----------
@@ -796,7 +795,7 @@ class Chi2Options:
 						flux_model = out_read_model_spectrum['flux_model'] # erg/s/cm2/A
 
 						# derive synthetic photometry
-						out_syn_phot = synthetic_photometry.synthetic_photometry(wl=wl_model, flux=flux_model, flux_unit='erg/s/cm2/A', filters=filters_fit)
+						out_syn_phot = synthetic_photometry.synthetic_photometry(wl=wl_model, flux=flux_model, flux_unit='erg/s/cm2/A', filters=filters_fit, svo_data=svo_data)
 
 						# store filters' parameters in the lists
 						flux_syn_array_model_fit.append(out_syn_phot['syn_flux(erg/s/cm2/A)']) # erg/s/cm2/A
