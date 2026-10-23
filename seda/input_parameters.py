@@ -1176,8 +1176,9 @@ class BayesOptions:
 
 		# handle input photometry
 		if fit_photometry:
+			if svo_data is None: svo_data = utils.read_SVO_table()
 			# handle fit_phot_range
-			fit_phot_range = utils.set_fit_phot_range(fit_phot_range=fit_phot_range, filters=filters)
+			fit_phot_range = utils.set_fit_phot_range(fit_phot_range=fit_phot_range, filters=filters, svo_data=svo_data)
 
 			self.fit_phot_range = fit_phot_range
 
