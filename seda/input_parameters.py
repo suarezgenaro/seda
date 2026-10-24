@@ -1246,7 +1246,7 @@ class BayesOptions:
 
 				# set filename_pattern to look for model spectra
 				filename_pattern = [models.Models(model).filename_pattern]
-				grid_phot = utils.read_grid_phot(model=model, model_dir=model_dir, params_ranges=params_ranges, filters=filters_fit)
+				grid_phot = utils.read_grid_phot(model=model, model_dir=model_dir, params_ranges=params_ranges, filters=filters_fit, svo_data=svo_data)
 				grid_phot = [grid_phot] # grid as list to follow structure from then fit_spectra
 
 		# define grid depending whether spectra and/or photometry were provided
