@@ -977,7 +977,7 @@ class BayesOptions:
 		This parameter is used if ``fit_spectra`` but ignored if only ``fit_photometry``. 
 		Default values are the minimum and the maximum wavelengths of each input spectrum. E.g., ``fit_wl_range = np.array([bayes_wl_min, bayes_wl_max])``. 
 	- disp_wl_range : float array, optional
-		Minimum and maximum wavelengths (in micron) to compute the median wavelength dispersion of model spectra to convolve them.
+	Minimum and maximum wavelengths (in micron) to compute the median wavelength dispersion of model spectra to convolve them.
 		It can take a set of values for each input spectrum e.g. ``disp_wl_range = np.array([[disp_wl_min1, disp_wl_max1], [disp_wl_min2, disp_wl_max2]])``.
 		Default values are ``fit_wl_range``.
 	- model_wl_range : array or list, optional
@@ -1176,7 +1176,7 @@ class BayesOptions:
 
 		# handle input photometry
 		if fit_photometry:
-			if svo_data is None: svo_data = utils.read_SVO_table()
+			svo_data = utils.read_SVO_table()
 			# handle fit_phot_range
 			fit_phot_range = utils.set_fit_phot_range(fit_phot_range=fit_phot_range, filters=filters, svo_data=svo_data)
 
