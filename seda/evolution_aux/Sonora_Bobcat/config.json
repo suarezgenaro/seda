@@ -15,13 +15,13 @@
     "filename_pattern": "*_mass",
     "_comment_columns": "Columns in each evolutionary table data row (logI is parsed out and ignored)",
     "columns": ["mass", "age", "logL", "Teff", "logg", "radius", "logI"],
-    "_comment_units": "Units of the parsed grid quantities returned by read_evolutionary_model",
+    "_comment_units": "Units of the grid quantities returned by _read_evolutionary_model. mass, age, radius, Teff, and logg must be M_jup, Gyr, R_jup, K, and log(g[cm/s^2]).",
     "units": {
-        "mass": "M_sun",
+        "mass": "M_jup",
         "age": "Gyr",
         "logL": "log10(L/Lsun)",
         "Teff": "K",
-        "logg": "cgs dex",
-        "radius": "R_sun"
+        "logg": "log(g[cm/s^2])",
+        "radius": "R_jup"
     }
 }

@@ -1,16 +1,27 @@
 from pathlib import Path
 
 import numpy as np
-from astropy.constants import R_jup, R_sun
+from astropy import units as u
+from astropy.constants import M_jup, M_sun, R_jup, R_sun
 
 _MODEL_DIR = Path(__file__).parent
+
+# The bundled BHAC15 table stores mass in M_sun, radius in R_sun, and age as
+# log10(yr). The radiative-core columns Mrad and Rrad are also solar.
+_MSUN_TO_MJUP = (1.0 * M_sun / M_jup).decompose().value
+_RSUN_TO_RJUP = (1.0 * R_sun / R_jup).decompose().value
 
 
 def _read_evolutionary_model(filename):
     """
     Read a BHAC15 tracks+structure table and return a dictionary of grid arrays.
 
-    Lines that are not thirteen-field numeric rows (e.g. header comments) are skipped..
+    Returns mass in M_jup, age in Gyr, radius in R_jup, Teff in Kelvin, logL as
+    log10(L/Lsun), and logg as log10(g[cm/s^2]). The radiative-core mass and
+    radius are returned in M_jup and R_jup; the remaining structure columns are
+    logarithmic or dimensionless and are returned as published.
+
+    Lines that are not thirteen-field numeric rows (e.g. header comments) are skipped.
     """
     table_path = _MODEL_DIR / filename
 
@@ -25,35 +36,17 @@ def _read_evolutionary_model(filename):
         )
 
     return {
-        'mass':     data[:, 0],
-        'age':      data[:, 1],
+        'mass':     data[:, 0] * _MSUN_TO_MJUP,
+        'age':      ((10.0 ** data[:, 1]) * u.yr).to(u.Gyr).value,
         'Teff':     data[:, 2],
         'logL':     data[:, 3],
         'logg':     data[:, 4],
-        'radius':   data[:, 5],
-        'logLi':    data[:, 6],
-        'logTc':    data[:, 7],
-        'logRho_c': data[:, 8],
-        'Mrad':     data[:, 9],
-        'Rrad':     data[:, 10],
-        'k2conv':   data[:, 11],
-        'k2rad':    data[:, 12],
-    }
-
-
-def _convert_inputs(Lbol, eLbol, R, eR):
-    """
-    Convert user inputs to grid interpolation-axis units.
-
-    Users pass Lbol in L_sun and R in R_jup. Returns
-    the ``logL`` and ``radius`` axes used by the evolutionary grid.
-    """
-    R_rsun = (R * R_jup).to(R_sun).value
-    eR_rsun = (eR * R_jup).to(R_sun).value
-    logL = np.log10(Lbol)
-    e_logL = eLbol / (Lbol * np.log(10))
-
-    return {
-        'logL': logL, 'e_logL': e_logL,
-        'radius': R_rsun, 'e_radius': eR_rsun,
+        'radius':   data[:, 5] * _RSUN_TO_RJUP,
+#        'logLi':    data[:, 6],
+#        'logTc':    data[:, 7],
+#        'logRho_c': data[:, 8],
+#        'Mrad':     data[:, 9] * _MSUN_TO_MJUP,
+#        'Rrad':     data[:, 10] * _RSUN_TO_RJUP,
+#        'k2conv':   data[:, 11],
+#        'k2rad':    data[:, 12],
     }

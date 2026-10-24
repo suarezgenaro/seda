@@ -11,7 +11,7 @@ from spectres import spectres
 from astropy import units as u
 from astropy.io import ascii
 from astropy.table import Column, MaskedColumn, Table
-from astropy.convolution import Gaussian1DKernel, convolve
+from astropy.convolution import Gaussian1DKernel, convolve, convolve_fft
 from scipy.interpolate import RegularGridInterpolator
 from scipy.interpolate import interp1d
 from tqdm.auto import tqdm
@@ -125,9 +125,17 @@ def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=Non
 
 	mask_conv = (wl>=convolve_wl_range[0]) & (wl<=convolve_wl_range[1]) # range to convolve the spectrum
 
-	flux_conv = convolve(flux[mask_conv], gauss) # convolve only the selected wavelength range 
+    # on large kernels, even 1-D ones, such as this one (in a sample run, 
+    # shape of (5947,)), it's more efficient to use convolve_fft instead
+    # if we need to be even faster, we can directly substitute scipy's fft
+    # implementation, but right now this should be sufficient
+	flux_conv = convolve_fft(flux[mask_conv], gauss) # convolve only the selected wavelength range 
+	# np.testing.assert_allclose(flux_conv, flux_conv_fft)
+
 	wl_conv = wl[mask_conv] # corresponding wavelength data points for convolved fluxes
-	if eflux is not None: eflux_conv = convolve(eflux[mask_conv], gauss)
+
+	if eflux is not None: eflux_conv = convolve_fft(eflux[mask_conv], gauss) 
+		# np.testing.assert_allclose(eflux_conv, eflux_conv_fft)
 
 	out = {'wl_conv': wl_conv, 'flux_conv': flux_conv}
 	if (eflux is not None): out['eflux_conv'] = eflux_conv
@@ -819,7 +827,7 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 
 ##################################################
 def read_grid_phot(model, model_dir, filters, params_ranges=None, fit_phot_range=None, 
-	               skip_syn_phot=False, model_wl_range=None, path_save_syn_phot=None):
+	               skip_syn_phot=False, model_wl_range=None, svo_data=None, path_save_syn_phot=None):
 	               
 	'''
 	Description:
@@ -847,6 +855,8 @@ def read_grid_phot(model, model_dir, filters, params_ranges=None, fit_phot_range
 	- filters : float array
 		Filters to derive synthetic photometry following SVO filter IDs 
 		http://svo2.cab.inta-csic.es/theory/fps/
+	- svo_data : astropy.table.Table, optional
+		Astropy table retrieved from SVO using :func:`~seda.utils.read_SVO_table`.
 	- path_save_syn_phot: str, optional
 		Directory path to store the synthetic fluxes (in erg/s/cm2/A).
 		If not provided (default), the synthetic photometry will not be saved. 
@@ -941,18 +951,21 @@ def read_grid_phot(model, model_dir, filters, params_ranges=None, fit_phot_range
 			for i,param in enumerate(params.keys()):
 				print(f'	  {param}={params_unique[param][index[i]]}')
 		else: # if there is a spectrum
-			# read the spectrum with the parameter combination in the iteration and cut it to model_wl_range (default value: fit_wl_range plus padding)
+			# read the spectrum with the parameter combination in the iteration and 
+			# cut it to model_wl_range (default value: fit_wl_range plus padding)
 			spectrum_name_full = spectra_name_full[mask][0]
 			spectrum_name = spectra_name[mask][0]
 
 			if not skip_syn_phot: # do not avoid synthetic photometry calculation
 				# read model spectrum with original resolution in the full model_wl_range_each
-				out_read_model_spectrum = models.read_model_spectrum(spectrum_name_full=spectrum_name_full, model=model, model_wl_range=model_wl_range)
+				out_read_model_spectrum = models.read_model_spectrum(spectrum_name_full=spectrum_name_full, 
+				                                                     model=model, model_wl_range=model_wl_range)
 				wl_model = out_read_model_spectrum['wl_model'] # um
 				flux_model = out_read_model_spectrum['flux_model'] # erg/s/cm2/A
 
 				# derive synthetic photometry
-				out_syn_phot = synthetic_photometry(wl=wl_model, flux=flux_model, flux_unit='erg/s/cm2/A', filters=filters)
+				out_syn_phot = synthetic_photometry(wl=wl_model, flux=flux_model, flux_unit='erg/s/cm2/A', 
+				                                    filters=filters, svo_data=svo_data)
 				flux_syn = out_syn_phot['syn_flux(erg/s/cm2/A)'] # erg/s/cm2/A
 				lambda_eff = out_syn_phot['lambda_eff(um)'] # um
 				width_eff = out_syn_phot['width_eff(um)'] # um
@@ -1405,7 +1418,7 @@ def select_model_spectra(model, model_dir, params_ranges=None, filename_pattern=
 	params_noranges = {}
 	for key, value in params.items():
 		if key not in params_ranges:
-			params_noranges[key] = [value.min(), value.max()]
+			params_noranges[key] = [float(value.min()), float(value.max())]
 
 	print(f'\n      {len(spectra_name)} model spectra')
 	print(f'         user-constrained parameters:')
@@ -1420,7 +1433,7 @@ def select_model_spectra(model, model_dir, params_ranges=None, filename_pattern=
 	return out
 
 ##########################
-def read_SVO_params(filters, params):
+def read_SVO_params(filters, params, svo_data=None):
 	'''
 	Description:
 	------------
@@ -1458,14 +1471,14 @@ def read_SVO_params(filters, params):
 #	params = var_to_numpy(params)
 
 	# read SVO table
-	SVO_data = read_SVO_table()
-	SVO_filterID = SVO_data['filterID'] # SVO ID
+	if svo_data == None: svo_data = read_SVO_table()
+	SVO_filterID = svo_data['filterID'] # SVO ID
 
 	# verify that all params are in SVO
 	params_good = []
 	params_bad = []
 	for param in params:
-		if param in SVO_data.colnames:
+		if param in svo_data.colnames:
 			params_good.append(param)
 		else:
 			params_bad.append(param)
@@ -1479,12 +1492,12 @@ def read_SVO_params(filters, params):
 	# for clarity add the parameter 'filterID', if not requested
 	params_ori = params.copy() # copy to save input params recognized by SVO
 	if 'filterID' not in params: params.insert(0, 'filterID')
-	SVO_data_sel = SVO_data[mask][params]
+	svo_data_sel = svo_data[mask][params]
 
 	# dictionary with the table subset
 	filters_params = {}
 	for param in params:
-		filters_params[param] = SVO_data_sel[param].data.data
+		filters_params[param] = svo_data_sel[param].data.data
 
 	# sort dictionary so filters_params['filterID'] is in the same order as input filters
 	# indices that sort filters_params['filterID']
@@ -1541,22 +1554,16 @@ def set_model_wl_range(model_wl_range, wl_spectra_min, wl_spectra_max):
 		#model_wl_range = np.array([0.9*wl_spectra_min, 1.1*wl_spectra_max]) # add padding to have enough spectral coverage in models
 		model_wl_range = add_pad(wl_spectra_min, wl_spectra_max) # add padding to have enough spectral coverage in models
 
-#	# it may need an update to work with multiple spectra
-#	if (model_wl_range.min()>=fit_wl_range.min()):
-#		model_wl_range[0] = 0.9*fit_wl_range.min() # add padding to shorter wavelengths
-#	if (model_wl_range.max()<=fit_wl_range.max()):
-#		model_wl_range[1] = 1.1*fit_wl_range.max() # add padding to longer wavelengths
-
 	return model_wl_range
 
 ##########################
 # set wavelength range for photometry to cut models for comparisons via chi-square or Bayes techniques
-def set_fit_phot_range(fit_phot_range, filters):
+def set_fit_phot_range(fit_phot_range, filters, svo_data=None):
 	if fit_phot_range is None: # define fit_phot_range when not provided
 		# get effective wavelengths from SVO for the input filters
-		SVO_data = read_SVO_table()
-		SVO_filterID = SVO_data['filterID'] # SVO ID
-		SVO_WavelengthEff = u.Quantity(SVO_data['WavelengthEff'].data, u.nm*0.1).to(u.micron).value # effective wavelength in um
+		if svo_data == None: svo_data = read_SVO_table()
+		SVO_filterID = svo_data['filterID'] # SVO ID
+		SVO_WavelengthEff = u.Quantity(svo_data['WavelengthEff'].data, u.nm*0.1).to(u.micron).value # effective wavelength in um
 		matching_indices = []
 		for index, element in enumerate(SVO_filterID):
 			if element in filters:
@@ -1569,8 +1576,19 @@ def set_fit_phot_range(fit_phot_range, filters):
 	return fit_phot_range
 
 ##########################
-# read the SVO table with filter properties and save it locally if it doesn't already exist
 def read_SVO_table():
+	"""
+	Read the SVO Filter Profile Service table containing filter properties.
+
+	The table is read from a local file if available. Otherwise, it is
+	downloaded from SVO and saved locally for future use.
+
+	Returns
+	-------
+	svo_data : astropy.table.Table
+		Astropy table containing the SVO filter properties.
+	"""
+
 	dir_sep = os.sep # directory separator for the current operating system
 	path_synthetic_photometry = os.path.dirname(__file__)+dir_sep
 	# read zero points for each filter
