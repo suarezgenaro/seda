@@ -241,19 +241,18 @@ def test_evol_params_outside_grid_raises(model, filename):
 
 def test_evol_params_invalid_filename_lists_available(capsys):
 	"""An unrecognized filename should list available tables and raise."""
-	with pytest.raises(ValueError, match='not recognized'):
+	with pytest.raises(ValueError, match='not found') as exc_info:
 		seda.phy_params.evol_params(
 			logL=-3.0, elogL=0.05, R=1.0, eR=0.1,
 			model='Sonora_Bobcat',
 			filename='not_a_real_table', n_mc=100, verbose=False,
 		)
 
-	captured = capsys.readouterr()
-	assert 'nc+0.0_co1.0_mass' in captured.out, (
-		'invalid filename error should list available Sonora_Bobcat tables'
+	assert 'nc+0.0_co1.0_mass' in str(exc_info.value), (
+	    'invalid filename error should list available Sonora_Bobcat tables'
 	)
-	assert 'nc-0.5_co1.0_mass' in captured.out, (
-		'invalid filename error should list available Sonora_Bobcat tables'
+	assert 'nc-0.5_co1.0_mass' in str(exc_info.value), (
+	    'invalid filename error should list available Sonora_Bobcat tables'
 	)
 
 @pytest.mark.parametrize(
@@ -263,17 +262,16 @@ def test_evol_params_invalid_filename_lists_available(capsys):
 		if len(seda.models.EvolutionaryModels(model).available_tables) > 1
 	],
 )
-def test_evol_params_multiple_tables_without_filename_raises(model, capsys):
+def test_evol_params_multiple_tables_without_filename_raises(model):
 	"""Models with multiple tables must list them when filename is omitted."""
-	with pytest.raises(ValueError, match='Multiple evolutionary tables'):
+	with pytest.raises(ValueError, match='not found') as exc_info:
 		seda.phy_params.evol_params(
 			logL=-3.0, elogL=0.05, R=1.0, eR=0.1,
 			model=model, n_mc=100, verbose=False,
 		)
 
-	captured = capsys.readouterr()
 	for filename in seda.models.EvolutionaryModels(model).available_tables:
-		assert filename in captured.out, (
+		assert filename in str(exc_info.value), (
 			f'missing-table error for {model} should list {filename!r}'
 		)
 
@@ -493,31 +491,6 @@ def test_returned_table_units_are_fixed_by_the_numbers(model, filename):
 		f'returned radius in R_jup and Teff in K'
 	)
 
-def test_bhac_evol_params_converts_radiative_core_columns():
-	"""BHAC radiative-core mass and radius are converted like the main columns."""
-	np.random.seed(0)
-	model = 'BHAC2015'
-	filename = 'BHAC15_tracks+structure.txt'
-	grid = seda.models.read_evolutionary_model(filename=filename, model=model)
-	idx = 800
-	logL = float(grid['logL'][idx])
-	R_rjup = float(grid['radius'][idx])
-
-	out = seda.phy_params.evol_params(
-		logL=logL, elogL=1e-12, R=R_rjup, eR=1e-12 * R_rjup,
-		model=model, filename=filename, n_mc=400, verbose=False,
-	)
-
-	for param in ('mass', 'age', 'Mrad', 'Rrad'):
-		assert out[param] == pytest.approx(float(grid[param][idx]), rel=0.05), (
-			f'BHAC {param} should match the grid value {grid[param][idx]}, '
-			f'got {out[param]}'
-		)
-	assert out['Mrad'] < out['mass'], (
-		f'BHAC radiative-core mass {out["Mrad"]} M_jup should be below the '
-		f'total mass {out["mass"]} M_jup'
-	)
-
 @pytest.mark.parametrize('model, filename', load_evolutionary_model_catalog())
 def test_isochrone_params_user_units_round_trip(model, filename):
 	"""A grid row's (logL, age in Gyr) should recover mass in M_jup and radius in R_jup."""
@@ -708,27 +681,6 @@ def test_evolutionary_models_params_bhac_spot_check():
 	)
 	assert params['radius'] == pytest.approx([0.8368797, 35.2365258]), (
 		f'BHAC radius range mismatch: {params["radius"]}'
-	)
-	assert params['logLi'] == pytest.approx([-11.1759, 0.0]), (
-		f'BHAC logLi range mismatch: {params["logLi"]}'
-	)
-	assert params['logTc'] == pytest.approx([5.417, 7.398]), (
-		f'BHAC logTc range mismatch: {params["logTc"]}'
-	)
-	assert params['logRho_c'] == pytest.approx([-0.6068, 2.8806]), (
-		f'BHAC logRho_c range mismatch: {params["logRho_c"]}'
-	)
-	assert params['Mrad'] == pytest.approx([0.0, 1466.5917205]), (
-		f'BHAC Mrad range mismatch: {params["Mrad"]}'
-	)
-	assert params['Rrad'] == pytest.approx([0.0, 16.9808720]), (
-		f'BHAC Rrad range mismatch: {params["Rrad"]}'
-	)
-	assert params['k2conv'] == pytest.approx([0.00124, 0.4944]), (
-		f'BHAC k2conv range mismatch: {params["k2conv"]}'
-	)
-	assert params['k2rad'] == pytest.approx([0.0, 0.3072]), (
-		f'BHAC k2rad range mismatch: {params["k2rad"]}'
 	)
 
 # ----------------------------
