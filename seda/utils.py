@@ -937,7 +937,6 @@ def read_grid_phot(model, model_dir, filters, params_ranges=None, fit_phot_range
 	wl_grid = None # fixed wavelength reference for the photometric grid
 	first_spec = True # reference to read the fixed wavelength reference from the first spectrum only
 	for index in np.ndindex(arr.shape): # iterate over all possible combinations of the free parameter unique values
-		print(index)
 		# update the progress bar
 		grid_bar.update(1)
 
