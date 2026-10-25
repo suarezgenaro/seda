@@ -14,13 +14,16 @@ keywords = [
 ]
 authors = [{ name = "Genaro Suárez", email = "gsuarez2405@gmail.com" }]
 license = {file = "LICENSE"}
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
+  "arviz",
   "astropy",
   "corner",
   "dynesty",
+  "emcee",
   "lmfit",
   "matplotlib",
+  "netCDF4",
   "numpy",
   "prettytable",
   "scipy",
@@ -58,6 +61,8 @@ seda = [
   "evolution_aux/**/*",
 
   # Observational data
-  "observations_aux/spitzer_irs/*",
-  "observations_aux/Suarez_Metchev_2022_tables.dat"
+  "observations_aux/**/*",
+
+  # Empirical reference tables
+  "empirical_aux/**/*",
 ]

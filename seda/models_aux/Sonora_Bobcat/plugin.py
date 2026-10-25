@@ -1,4 +1,3 @@
-from astropy.io import ascii
 import astropy.units as u
 import numpy as np
 from seda.models_aux._plugin_helpers import _vac_to_air_uv_safe
@@ -9,11 +8,10 @@ def _read_model_spectrum(spectrum_file):
     Read a model spectrum and return wavelength wavelength (micron) and flux (erg/s/cm2/A).
     """
 
-    spec_model = ascii.read(spectrum_file, data_start=2, format='no_header')
-
-    wl_model = spec_model['col1'] * u.micron # um (in vacuum?)
+    spec_model = np.loadtxt(spectrum_file, skiprows=2)
+    wl_model = spec_model[:,0] * u.micron # um (in vacuum?)
     wl_model = _vac_to_air_uv_safe(wl_model).value # um in the air
-    flux_model = spec_model['col2'] * u.erg/u.s/u.cm**2/u.Hz # erg/s/cm2/Hz
+    flux_model = spec_model[:,1] * u.erg/u.s/u.cm**2/u.Hz # erg/s/cm2/Hz
     flux_model = flux_model.to(u.erg/u.s/u.cm**2/(u.nm*0.1), equivalencies=u.spectral_density( wl_model * u.micron)).value # erg/s/cm2/A
 
     out = {'wl_model': wl_model, 'flux_model': flux_model}

@@ -1,14 +1,23 @@
 from pathlib import Path
+
 import numpy as np
-from astropy.constants import R_jup, R_sun
+from astropy.constants import M_jup, M_sun, R_jup, R_sun
+
+_MODEL_DIR = Path(__file__).parent
+
+# The bundled ATMO tables store mass in M_sun and radius in R_sun.
+_MSUN_TO_MJUP = (1.0 * M_sun / M_jup).decompose().value
+_RSUN_TO_RJUP = (1.0 * R_sun / R_jup).decompose().value
 
 def _read_evolutionary_model(filename):
     """
     Read a combined ATMO evolutionary table and return a dictionary of grid arrays.
 
+    Returns mass in M_jup, age in Gyr, radius in R_jup, Teff in Kelvin, logL as
+    log10(L/Lsun), and logg as log10(g[cm/s^2]).
+
     Lines that are not six-field numeric rows (e.g. # headers) are skipped.
     """
-    _MODEL_DIR = Path(__file__).parent
     table_path = _MODEL_DIR / filename
 
     with open(table_path) as evo_file:
@@ -22,36 +31,15 @@ def _read_evolutionary_model(filename):
             f'Expected mass, age, Teff, logL, radius, logg.'
         )
 
-    # map file columns to SEDA grid keys
+    # map file columns to SEDA grid keys, converting to the returned units
+    # (the bundled ATMO tables store mass in M_sun and radius in R_sun)
     out = {
-        'mass':   data[:, 0],
+        'mass':   data[:, 0] * _MSUN_TO_MJUP,
         'age':    data[:, 1],
         'Teff':   data[:, 2],
         'logL':   data[:, 3],
-        'radius': data[:, 4],
+        'radius': data[:, 4] * _RSUN_TO_RJUP,
         'logg':   data[:, 5],
     }
 
     return out
-
-def _convert_inputs(Lbol, eLbol, R, eR):
-    """
-    Convert user inputs to grid interpolation-axis units.
-
-    Users pass Lbol in L_sun and R in R_jup. Returns
-    the ``logL`` and ``radius`` axes used by the evolutionary grid.
-    """
-
-    # convert radius to the native grid unit (R_sun for ATMO2020 example)
-    R_rsun = (R * R_jup).to(R_sun).value
-    eR_rsun = (eR * R_jup).to(R_sun).value
-
-    # evol_params interpolates in logL, not linear L
-    logL = np.log10(Lbol)
-    e_logL = eLbol / (Lbol * np.log(10))  # Gaussian propagation e_L -> e_logL for Monte Carlo sampling
-
-    # keys must match the interpolation axes declared in the grid
-    return {
-        'logL': logL, 'e_logL': e_logL,
-        'radius': R_rsun, 'e_radius': eR_rsun,
-    }

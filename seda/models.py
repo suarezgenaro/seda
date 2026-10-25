@@ -78,7 +78,7 @@ class Models:
 		model_configs = self._load_model_configs()
 
 		# set available atmospheric models
-		self.available_models = list(model_configs.keys())
+		self.available_models = sorted(model_configs.keys())
 
 		# if a specific model is requested
 		if model:
@@ -91,10 +91,13 @@ class Models:
 			for key, value in config.items():
 				if not key.startswith('_comment'):
 					setattr(self, key, value)
-
+                    
 			# set attributes related to coverage of the free parameters
-			self.model_ranges()
+			pickle_file = self.path_models_aux / self.model / 'coverage.pickle'
 
+			if pickle_file.is_file():
+				self.model_ranges()
+            
 	def _load_model_configs(self):
 		"""
 		Scan model folders, ensure config + plugin exist,
@@ -201,7 +204,7 @@ class EvolutionaryModels:
 	>>>
 	>>> # see available evolutionary models
 	>>> seda.models.EvolutionaryModels().available_models
-	    ['ATMO2020', 'BHAC2015', 'Sonora_Bobcat', 'Sonora_Diamondback']
+	    ['ATMO2020', 'BHAC2015', 'SANDee', 'Sonora_Bobcat', ...]
 	>>>
 	>>> # see the reference for a given evolutionary model
 	>>> seda.models.EvolutionaryModels('Sonora_Bobcat').ref
@@ -226,7 +229,7 @@ class EvolutionaryModels:
 		model_configs = self._load_model_configs()
 
 		# set available evolutionary models
-		self.available_models = list(model_configs.keys())
+		self.available_models = sorted(model_configs.keys())
 
 		# if a specific model is requested
 		if model:
@@ -323,7 +326,8 @@ def resolve_evolutionary_table(model, filename=None):
 		Evolutionary models. See available models in
 		``seda.models.EvolutionaryModels().available_models``.
 	- filename : str, optional
-		Basename of a table file inside ``evolution_aux/<model>/``.
+		Basename of a table file inside ``evolution_aux/<model>/`` available using 
+		``seda.models.EvolutionaryModels('model').available_tables``.
 		If omitted and exactly one table exists, it is selected automatically.
 		If omitted and multiple tables exist, available basenames are printed
 		and a ``ValueError`` is raised.
@@ -348,21 +352,13 @@ def resolve_evolutionary_table(model, filename=None):
 	if filename is None:   #automatically return only avaialble table
 		if len(tables) == 1:
 			return tables[0]
-		print(f'Available evolutionary tables for "{model}":')
-		for name in tables:
-			print(f'  - {name}')
 		raise ValueError(
-			f'Multiple evolutionary tables are available for "{model}". '
-			f'Pass filename=<basename> to select one.'
+			f"Table '{filename}' not found. Available tables: {tables}"
 		)
 
 	if filename not in tables:
-		print(f'Available evolutionary tables for "{model}":')
-		for name in tables:
-			print(f'  - {name}')
 		raise ValueError(
-			f'filename={filename!r} is not recognized for "{model}". '
-			f'Choose one of the available table basenames listed above.'
+			f"Table '{filename}' not found. Available tables: {tables}"
 		)
 
 	return filename
@@ -598,7 +594,10 @@ def read_evolutionary_model(filename, model):
 	--------
 	Dictionary with evolutionary grid columns parsed by the model plugin.
 	Each model defines its own columns; all tables must provide ``logL`` and
-	``radius`` for interpolation. See ``config.json`` ``units`` for column units.
+	``radius`` or ``age`` for interpolation. Every model returns ``mass`` in M_jup,
+	``age`` in Gyr, ``radius`` in R_jup, ``Teff`` in Kelvin, ``logL`` as
+	log10(L/Lsun), and ``logg`` as log10(g[cm/s^2]), whatever units the
+	published table uses. See ``config.json`` ``units`` for any extra columns.
 
 	Example:
 	--------
@@ -650,6 +649,124 @@ def _compute_evolutionary_param_ranges(model):
 		grid = read_evolutionary_model(filename=filename, model=model)
 		ranges[filename] = _param_ranges_from_grid(grid)
 	return ranges
+
+##########################
+def _split_evolutionary_tracks(grid):
+	"""Split a bundled evolutionary table into constant-mass cooling tracks."""
+
+	mass = np.asarray(grid['mass'], dtype=float)
+	tracks = []
+	for mass_val in np.unique(mass):
+		mask = mass == mass_val
+		track = {
+			col: np.asarray(grid[col], dtype=float)[mask]
+			for col in grid
+		}
+		order = np.argsort(track['age'])
+		track = {col: track[col][order] for col in track}
+		tracks.append(track)
+	return tracks
+
+
+def _build_isochrone(tracks, age):
+	"""Build a constant-age isochrone by interpolating each mass track to ``age``."""
+
+	age = float(age)
+	isochrone = {col: [] for col in tracks[0]}
+	for track in tracks:
+		ages = track['age']
+		if age < ages[0] or age > ages[-1]:
+			continue
+		for col in track:
+			val = np.interp(age, ages, track[col])
+			isochrone[col].append(val)
+
+	if not isochrone['age']:
+		return {col: np.array([], dtype=float) for col in isochrone}
+
+	isochrone = {col: np.asarray(vals, dtype=float) for col, vals in isochrone.items()}
+	order = np.argsort(isochrone['logL'])
+	return {col: isochrone[col][order] for col in isochrone}
+
+
+def _interp_on_isochrone(isochrone, logL_targets):
+	"""Interpolate isochrone columns at target log10(L/Lsun) values."""
+
+	logL_targets = np.atleast_1d(np.asarray(logL_targets, dtype=float))
+	logL_grid = np.asarray(isochrone['logL'], dtype=float)
+
+	if logL_grid.size < 2:
+		return {
+			col: np.full(logL_targets.shape, np.nan, dtype=float)
+			for col in isochrone if col != 'logL'
+		}
+
+	sort_idx = np.argsort(logL_grid)
+	logL_sorted = logL_grid[sort_idx]
+
+	out = {}
+	for col, values in isochrone.items():
+		if col == 'logL':
+			continue
+		val_sorted = np.asarray(values, dtype=float)[sort_idx]
+		out[col] = np.interp(
+			logL_targets, logL_sorted, val_sorted,
+			left=np.nan, right=np.nan,
+		)
+	return out
+
+
+def _precompute_isochrone_cache(tracks, grid):
+	"""Pre-build isochrones at every tabulated age in an evolutionary grid."""
+
+	tabulated_ages = np.unique(np.asarray(grid['age'], dtype=float))
+	return {
+		float(age): _build_isochrone(tracks, float(age))
+		for age in tabulated_ages
+	}
+
+
+def _nan_on_isochrone(isochrone, logL_targets):
+	"""Return NaN interpolation results for every non-logL isochrone column."""
+
+	logL_targets = np.atleast_1d(np.asarray(logL_targets, dtype=float))
+	return {
+		col: np.full(logL_targets.shape, np.nan, dtype=float)
+		for col in isochrone if col != 'logL'
+	}
+
+
+def _lookup_on_isochrone_grid(isochrone_cache, tabulated_ages, age, logL_targets):
+	"""Look up evolutionary parameters at ``(age, logL)``, interpolating in age."""
+
+	logL_targets = np.atleast_1d(np.asarray(logL_targets, dtype=float))
+	tabulated_ages = np.asarray(tabulated_ages, dtype=float)
+	age = float(age)
+	age_min = float(tabulated_ages[0])
+	age_max = float(tabulated_ages[-1])
+
+	if age < age_min or age > age_max:
+		return _nan_on_isochrone(isochrone_cache[age_min], logL_targets)
+
+	hi = int(np.searchsorted(tabulated_ages, age))
+	if hi >= len(tabulated_ages):
+		return _interp_on_isochrone(isochrone_cache[age_max], logL_targets)
+
+	age_lo = float(tabulated_ages[hi - 1])
+	age_hi = float(tabulated_ages[hi])
+	if age_lo == age_hi or age == age_lo:
+		return _interp_on_isochrone(isochrone_cache[age_lo], logL_targets)
+	if age == age_hi:
+		return _interp_on_isochrone(isochrone_cache[age_hi], logL_targets)
+
+	weight = (age - age_lo) / (age_hi - age_lo)
+	interp_lo = _interp_on_isochrone(isochrone_cache[age_lo], logL_targets)
+	interp_hi = _interp_on_isochrone(isochrone_cache[age_hi], logL_targets)
+
+	out = {}
+	for col in interp_lo:
+		out[col] = (1.0 - weight) * interp_lo[col] + weight * interp_hi[col]
+	return out
 
 ##########################
 # short name for plot legends for model spectra
@@ -756,7 +873,7 @@ def _load_evolutionary_model(model):
 	spec.loader.exec_module(plugin)
 
 	# validate required functions in model folder
-	for func in ['_read_evolutionary_model', '_convert_inputs']:
+	for func in ['_read_evolutionary_model']:
 		if not hasattr(plugin, func):
 			raise AttributeError(
 				f"{model}/plugin.py (evolution_aux) must define '{func}'"

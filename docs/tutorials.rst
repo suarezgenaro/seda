@@ -12,6 +12,7 @@ Empirical Analysis
    notebooks/tutorial_synthetic_photometry.ipynb
    notebooks/tutorial_spectral_indices.ipynb
    notebooks/tutorial_bolometric_luminosity.ipynb
+   notebooks/tutorial_fundamental_parameters.ipynb
    notebooks/tutorial_spitzer_irs_spectra.ipynb
    notebooks/tutorial_variability.ipynb
 

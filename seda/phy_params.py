@@ -1,20 +1,24 @@
 import numpy as np
 import pickle
+import arviz as az
 from astropy import units as u
 from astropy.constants import L_sun, sigma_sb, R_jup, R_sun
 from scipy.interpolate import LinearNDInterpolator
+from scipy.stats import gaussian_kde
 from .synthetic_photometry import synthetic_photometry
 from . import input_parameters
 from . import chi2_fit 
 from . import models
 from . import utils
+from . import inclination_sampler
+from .empirical_aux._loaders import reference_color as _reference_color
 from sys import exit
 
 
 ##########################
 def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=None, distance=None, edistance=None, 
-	        flux_unit=None, wl_model=None, flux_model=None, params=None, scale_model=True, convolve_model=True, 
-	        res=None, lam_res=None, complement_SED=True):
+			flux_unit=None, wl_model=None, flux_model=None, params=None, scale_model=True, convolve_model=True, 
+			res=None, lam_res=None, complement_SED=True):
 	'''
 	Description:
 	------------
@@ -128,7 +132,7 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 				# read the entire best fit model spectrum (the one stored in 
 				# output_fit was trimmed to the wavelength range of the data)
 				output_best_chi2_fits = utils.best_chi2_fits(output_chi2=output_fit, N_best_fits=1, 
-				                                             model_dir_ori=model_dir, ori_res=True)
+															 model_dir_ori=model_dir, ori_res=True)
 				wl_model = output_best_chi2_fits['wl_model_best'][0] # um
 				flux_model = output_best_chi2_fits['flux_model_best'][0] # erg/s/cm2/A scaled to match the input spectra
 				spectra_name_best = output_best_chi2_fits['spectra_name_best'][0]
@@ -166,7 +170,7 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 		else: # no output_fit is provided
 			# handle input data
 			my_data = input_parameters.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, eflux_spectra=eflux_spectra, 
-			                                     flux_unit=flux_unit, res=res, distance=distance, edistance=edistance)
+												 flux_unit=flux_unit, res=res, distance=distance, edistance=edistance)
 			N_spectra = my_data.N_spectra
 			wl_spectra = my_data.wl_spectra # um
 			flux_spectra = my_data.flux_spectra # erg/cm2/s/A
@@ -202,8 +206,8 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 			if scale_model: # scale model fluxes to minimize the chi-square statistics
 				# find scaling factor by running the chi-square minimization
 				my_data = input_parameters.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, 
-				                                     eflux_spectra=eflux_spectra, flux_unit=flux_unit, 
-				                                     res=res, distance=distance, edistance=edistance)
+													 eflux_spectra=eflux_spectra, flux_unit=flux_unit, 
+													 res=res, distance=distance, edistance=edistance)
 				my_model = input_parameters.ModelOptions(wl_model=wl_model, flux_model=flux_model)
 				my_chi2 = input_parameters.Chi2Options(my_data=my_data, my_model=my_model)
 				out_chi2 = chi2_fit.chi2(my_chi2=my_chi2)
@@ -323,22 +327,22 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 
 	# output dictionary
 	out = {'flux_tot': flux_tot, 'eflux_tot': eflux_tot, 'Lbol_tot': Lbol_tot, 'eLbol_tot': eLbol_tot, 
-	       'logLbol_tot': logLbol_tot, 'elogLbol_tot': elogLbol_tot}
+		   'logLbol_tot': logLbol_tot, 'elogLbol_tot': elogLbol_tot}
 
 	if complement_SED: # if the SED will be complemented with a model spectrum
 		out.update({'flux_tot_obs': flux_tot_obs, 'eflux_tot_obs': eflux_tot_obs, 'Lbol_tot_obs': Lbol_tot_obs, 
-		                 'eLbol_tot_obs': eLbol_tot_obs, 'logLbol_tot_obs': logLbol_tot_obs, 'elogLbol_tot_obs': elogLbol_tot_obs, 
-		                 'contribution_percentage': contribution, 'contribution_percentage_obs': contribution_obs,
-		                 'wl_SED': wl_SED, 'flux_SED': flux_SED, 'eflux_SED': eflux_SED, 'params': params, 
-		                 'wl_spectra': wl_spectra, 'flux_spectra': flux_spectra, 'eflux_spectra': eflux_spectra,
-		                 'wl_model': wl_model, 'flux_model': flux_model,
-		                 'N_spectra': N_spectra, 'completeness_obs': completeness})
+						 'eLbol_tot_obs': eLbol_tot_obs, 'logLbol_tot_obs': logLbol_tot_obs, 'elogLbol_tot_obs': elogLbol_tot_obs, 
+						 'contribution_percentage': contribution, 'contribution_percentage_obs': contribution_obs,
+						 'wl_SED': wl_SED, 'flux_SED': flux_SED, 'eflux_SED': eflux_SED, 'params': params, 
+						 'wl_spectra': wl_spectra, 'flux_spectra': flux_spectra, 'eflux_spectra': eflux_spectra,
+						 'wl_model': wl_model, 'flux_model': flux_model,
+						 'N_spectra': N_spectra, 'completeness_obs': completeness})
 
 	return out
 
 ##########################
 def teff(Lbol, eLbol, R, eR, n_mc=10000, central="median", 
-	     error="percentile", percentiles=(16, 84)):
+		 error="percentile", percentiles=(16, 84)):
 	'''
 	Description:
 	------------
@@ -383,7 +387,7 @@ def teff(Lbol, eLbol, R, eR, n_mc=10000, central="median",
 	>>>
 	>>> # derive Teff (in K) from Stefan–Boltzmann law
 	>>> seda.phy_params.teff(Lbol=Lbol, eLbol=eLbol, R=R, eR=eR)
-	    (1592.0020910445828, (57.98628122105015, 65.18365052510921))
+		(1592.0020910445828, (57.98628122105015, 65.18365052510921))
 
 
 	Author: Genaro Suárez
@@ -392,7 +396,7 @@ def teff(Lbol, eLbol, R, eR, n_mc=10000, central="median",
 	'''
    
 	# ensure percentiles is a tuple
-	percentiles = tuple((18, 84))
+	percentiles = tuple(percentiles)
 	
 	# verify "central" and "error" are valid parameters
 	central_valid = ["mean", "median"]
@@ -451,187 +455,485 @@ def teff(Lbol, eLbol, R, eR, n_mc=10000, central="median",
 	return Teff_val, Teff_err
 ##########################
 def inclination(vsini, evsini, P, eP, R, eR, n_mc=10000, central="median",
-                error="percentile", percentiles=(16, 84)):
-    '''
-    Description:
-    ------------
-        Calculate the inclination angle from an objects
-        projected rotation velocity (v sin i), rotation period (P),
-        and radius (R), using:
+				error="percentile", percentiles=(16, 84), mode="cosi"):
+	'''
+	Description:
+	------------
+		Calculate the inclination angle of an object from its
+		projected rotational velocity (v sin i), rotation period (P),
+		and radius (R), using either the 'sini' or 'cosi' method.
+		Inclination and uncertainties are estimated from the
+		resulting probability distribution.
+		
+		See Notes for details on the methods, statistical estimators,
+		and their limitations.
  
-            sin i = (P * vsini) / (2 * pi * R)
+	Parameters:
+	-----------
+	- vsini : float
+		Projected rotation velocity in units of km/s.
+	- evsini : float
+		Uncertainty in vsini (km/s).
+	- P : float
+		Rotation period in hours.
+	- eP : float
+		Uncertainty in the rotation period (hours).
+	- R : float
+		Radius in units of R_jup.
+	- eR : float
+		Uncertainty in radius (R_jup).
+	- n_mc : int, optional (default 10000)
+		Number of Monte Carlo samples for uncertainty propagation.
+	- central : str, optional (default "median")
+		"mean", "median", or "mode" for the central value of the 
+		inclination.
+	- error : str, optional (default "percentile")
+		"std" for symmetric standard deviation, or "percentile" for
+		asymmetric percentile-based errors (recommended, since the
+		posterior for i is generically asymmetric near 90 deg).
+	- percentiles : tuple or list, optional (default (16, 84))
+		Lower and upper percentiles used when error="percentile".
+	- mode : str, optional (default "cosi")
+		"sini" or "cosi" to determine which method is used to
+		calculate the inclination. "cosi" refers to the 
+		Masuda&Winn2020 paper which calculates the posterior
+		PDF for cosi and samples this with MCMC.
  
-        Uncertainty is propagated via Monte Carlo sampling.
+	Returns:
+	--------
+	- inc : float
+		Inclination angle in degrees.
+	- einc : float or tuple
+		Inclination uncertainty in degrees.
+		- If error="std": scalar symmetric uncertainty.
+		- If error="percentile": tuple (lower_err, upper_err).
  
-    Parameters:
-    -----------
-    - vsini : float
-        Projected rotation velocity in units of km/s.
-    - evsini : float
-        Uncertainty in vsini (km/s).
-    - P : float
-        Rotation period in hours.
-    - eP : float
-        Uncertainty in the rotation period (hours).
-    - R : float
-        Radius in units of R_jup.
-    - eR : float
-        Uncertainty in radius (R_jup).
-    - n_mc : int, optional (default 10000)
-        Number of Monte Carlo samples for uncertainty propagation.
-    - central : str, optional (default "median")
-        "mean" or "median" for the central value of the inclination.
-    - error : str, optional (default "percentile")
-        "std" for symmetric standard deviation, or "percentile" for
-        asymmetric percentile-based errors (recommended, since the
-        posterior for i is generically asymmetric near 90 deg).
-    - percentiles : tuple or list, optional (default (16, 84))
-        Lower and upper percentiles used when error="percentile".
- 
-    Returns:
-    --------
-    - inc : float
-        Inclination angle in degrees.
-    - einc : float or tuple
-        Inclination uncertainty in degrees.
-        - If error="std": scalar symmetric uncertainty.
-        - If error="percentile": tuple (lower_err, upper_err).
- 
-    Notes:
-    ------
-    - MC samples with sin i > 1 are unphysical (vsini exceeds v_eq for those
-      draws). Following Vos et al. (2017), these are set to sin i = 1 (i = 90 deg)
-      rather than discarded. The number of clipped samples is reported.
-    - Samples with NaN (e.g. from non-physical period draws) are excluded from
-      the statistics; the number of samples estimated vs used is printed.
-    - The inclination posterior is bounded at 90 deg (sin i <= 1), so
-      error="percentile" is strongly preferred over "std" when vsini is
-      close to 2*pi*R/P.
- 
-    Example:
-    --------
-    >>> import seda
-    >>>
-    >>> # 2MASS J03552337+1133437 (Suárez et al. 2023, Section 2.2)
-    >>> vsini, evsini = 12.31, 0.15  # km/s (Blake et al. 2010)
-    >>> P, eP       =  9.53, 0.19   # hours (Vos et al. 2022)
-    >>> R, eR       =  1.22, 0.02   # R_jup (Vos et al. 2022)
-    >>>
-    >>> seda.phy_params.inclination(vsini=vsini, evsini=evsini,
-    ...                             P=P, eP=eP, R=R, eR=eR)
-        (50.4, (1.9, 2.0))
- 
-    Author: Theo Olsen
- 
-    Date: 2026-06-10
-    '''
- 
-    # ensure percentiles is a tuple
-    percentiles = tuple(percentiles)
- 
-    # validate "central" and "error"
-    central_valid = ["mean", "median"]
-    if central not in central_valid:
-        raise ValueError(
-            f"central={central!r} is not recognized. "
-            f"Valid options: {central_valid}."
-        )
-    error_valid = ["std", "percentile"]
-    if error not in error_valid:
-        raise ValueError(
-            f"error={error!r} is not recognized. "
-            f"Valid options: {error_valid}."
-        )
- 
-    # attach units
-    vsini_u  = vsini  * u.km / u.s
-    evsini_u = evsini * u.km / u.s
- 
-    P_u  = P  * u.hour
-    eP_u = eP * u.hour
- 
-    R_u  = R  * R_jup
-    eR_u = eR * R_jup
- 
-    # deterministic inclination (sanity check, not returned)
-    v_eq_det = (2 * np.pi * R_u / P_u).to(u.km / u.s)
-    sin_i_det = (vsini_u / v_eq_det).value
-    sin_i_det = np.clip(sin_i_det, -1.0, 1.0)
-    inc_det   = np.degrees(np.arcsin(sin_i_det))
- 
-    # Monte Carlo samples — drawn from Gaussian distributions
-    vsini_samples = np.random.normal(vsini_u.value,  evsini_u.value, n_mc) * vsini_u.unit
-    P_samples     = np.random.normal(P_u.value,      eP_u.value,     n_mc) * P_u.unit
-    R_samples     = np.random.normal(R_u.value,      eR_u.value,     n_mc) * R_u.unit
- 
-    # equatorial velocity for each sample
-    v_eq_samples = (2 * np.pi * R_samples / P_samples).to(u.km / u.s)
- 
-    # sin i for each sample
-    sin_i_samples = (vsini_samples / v_eq_samples).value
+	Notes:
+	------
+	- The 'sini' method uses sin i = (P * vsini) / (2 * pi * R),
+	  propagating uncertainties through Monte Carlo sampling.
+	- The 'cosi' method follows the Bayesian approach of
+	  Masuda & Winn (2020), with an implementation based on
+	  Fields et al. (2025).
+	- The inclination can be estimated from the mode of the
+	  posterior distribution using kernel density estimation (KDE),
+	  with uncertainties derived from highest density intervals (HDI)
+	  at the user-specified probability level.
+	- For the 'sini' method, MC samples with sin i > 1 are unphysical
+	  (vsini exceeds v_eq for those draws). Following Vos et al. (2017),
+	  these are set to sin i = 1 (i = 90 deg) rather than discarded.
+	  The number of clipped samples is reported.
+	- Samples with NaN (e.g., from non-physical period draws) are
+	  excluded from the statistics; the number of samples estimated
+	  vs used is printed.
+	- For the 'sini' method, the inclination posterior is bounded at
+	  90 deg (sin i <= 1), so error="percentile" is strongly preferred
+	  over "std" when vsini is close to 2*pi*R/P.
 
-    # Vos et al. (2017): set unphysical sin i > 1 to 1 instead of discarding
-    n_clipped = int(np.sum(sin_i_samples > 1.0))
-    sin_i_used = np.where(sin_i_samples > 1.0, 1.0, sin_i_samples)
-
-    mask_valid = ~np.isnan(sin_i_used)
-    n_nan = int(np.sum(~mask_valid))
-    n_used = int(np.sum(mask_valid))
-
-    if n_clipped > 0:
-        print(
-            f"{n_clipped}/{n_mc} MC samples had sin i > 1 and were set to sin i = 1 "
-            f"(Vos et al. 2017)."
-        )
-    if n_nan > 0:
-        print(f"{n_nan}/{n_mc} MC samples were NaN and excluded from statistics.")
-    print(f"{n_used}/{n_mc} MC samples used for inclination statistics.")
-
-    sin_i_valid = sin_i_used[mask_valid]
-
-    # inclination in degrees
-    inc_samples = np.degrees(np.arcsin(sin_i_valid))
-
-    if inc_samples.size == 0:
-        raise ValueError(
-            'All Monte Carlo samples were NaN. '
-            'Check that vsini, P, and R are mutually consistent.'
-        )
-
-    # central value
-    if central == "mean":
-        inc_val = np.mean(inc_samples)
-    elif central == "median":
-        inc_val = np.median(inc_samples)
+	Example:
+	--------
+	>>> import seda
+	>>>
+	>>> # 2MASS J03552337+1133437 (Suárez et al. 2023, Section 2.2)
+	>>> vsini, evsini = 12.31, 0.15  # km/s (Blake et al. 2010)
+	>>> P, eP       =  9.53, 0.19   # hours (Vos et al. 2022)
+	>>> R, eR       =  1.22, 0.02   # R_jup (Vos et al. 2022)
+	>>>
+	>>> seda.phy_params.inclination(vsini=vsini, evsini=evsini,
+	...                             P=P, eP=eP, R=R, eR=eR)
+		(50.6, (1.9, 2.1))
  
-    # uncertainty
-    if error == "std":
-        inc_err = np.std(inc_samples)
+	Author: Theo Olsen
+	Date: 2026-06-10
+
+	Updated by: Maddie Lam
+	Date: 2026-10-08
+	'''
  
-    elif error == "percentile":
-        p_lo, p_hi = np.percentile(inc_samples, percentiles)
-        inc_err = (inc_val - p_lo, p_hi - inc_val)
+	# ensure percentiles is a tuple
+	percentiles = tuple(percentiles)
  
-    return inc_val, inc_err
+	# validate "central" and "error"
+	central_valid = ["mean", "median", "mode"]
+	if central not in central_valid:
+		raise ValueError(
+			f"central={central!r} is not recognized. "
+			f"Valid options: {central_valid}."
+		)
+	error_valid = ["std", "percentile"]
+	if error not in error_valid:
+		raise ValueError(
+			f"error={error!r} is not recognized. "
+			f"Valid options: {error_valid}."
+		)
+	mode_valid = ["cosi", "sini"]
+	if mode not in mode_valid:
+		raise ValueError(
+			f"mode={mode!r} is not recognized. "
+			f"Valid options: {central_valid}."
+		)
+ 
+	# attach units
+	vsini_u  = vsini  * u.km / u.s
+	evsini_u = evsini * u.km / u.s
+ 
+	P_u  = P  * u.hour
+	eP_u = eP * u.hour
+ 
+	R_u  = R  * R_jup
+	eR_u = eR * R_jup
+
+	if mode=="cosi":
+		c = inclination_sampler.CosI(vsini_u.value, evsini_u.value, R_u.to(R_sun).value, eR_u.to(R_sun).value, P_u.value/24, eP_u.value/24)
+
+		sampler = c.run_mcmc(100, n_mc)
+
+		cosi_samples = c.get_posterior(sampler)
+
+		inc_samples = np.arccos(cosi_samples) * 180 / np.pi
+	elif mode=="sini":
+		# deterministic inclination (sanity check, not returned)
+		v_eq_det = (2 * np.pi * R_u / P_u).to(u.km / u.s)
+		sin_i_det = (vsini_u / v_eq_det).value
+		sin_i_det = np.clip(sin_i_det, -1.0, 1.0)
+		inc_det   = np.degrees(np.arcsin(sin_i_det))
+	
+		# Monte Carlo samples — drawn from Gaussian distributions
+		vsini_samples = np.random.normal(vsini_u.value,  evsini_u.value, n_mc) * vsini_u.unit
+		P_samples     = np.random.normal(P_u.value,      eP_u.value,     n_mc) * P_u.unit
+		R_samples     = np.random.normal(R_u.value,      eR_u.value,     n_mc) * R_u.unit
+	
+		# equatorial velocity for each sample
+		v_eq_samples = (2 * np.pi * R_samples / P_samples).to(u.km / u.s)
+	
+		# sin i for each sample
+		sin_i_samples = (vsini_samples / v_eq_samples).value
+
+		# Vos et al. (2017): set unphysical sin i > 1 to 1 instead of discarding
+		n_clipped = int(np.sum(sin_i_samples > 1.0))
+		sin_i_used = np.where(sin_i_samples > 1.0, 1.0, sin_i_samples)
+
+		mask_valid = ~np.isnan(sin_i_used)
+		n_nan = int(np.sum(~mask_valid))
+		n_used = int(np.sum(mask_valid))
+
+		if n_clipped > 0:
+			print(
+				f"{n_clipped}/{n_mc} MC samples had sin i > 1 and were set to sin i = 1 "
+				f"(Vos et al. 2017)."
+			)
+		if n_nan > 0:
+			print(f"{n_nan}/{n_mc} MC samples were NaN and excluded from statistics.")
+		print(f"{n_used}/{n_mc} MC samples used for inclination statistics.")
+
+		sin_i_valid = sin_i_used[mask_valid]
+
+		# inclination in degrees
+		inc_samples = np.degrees(np.arcsin(sin_i_valid))
+
+		if inc_samples.size == 0:
+			raise ValueError(
+				'All Monte Carlo samples were NaN. '
+				'Check that vsini, P, and R are mutually consistent.'
+			)
+
+	# central value
+	if central == "mean":
+		inc_val = np.mean(inc_samples)
+	elif central == "median":
+		inc_val = np.median(inc_samples)
+	elif central == "mode":
+		kde = gaussian_kde(inc_samples)
+		x_vals = np.linspace(np.min(inc_samples), np.max(inc_samples), n_mc)
+		kde_vals = kde(x_vals)
+		inc_val = x_vals[np.argmax(kde_vals)]
+
+	# uncertainty
+	if error == "std":
+		inc_err = np.std(inc_samples)
+
+	elif error == "percentile":
+		if central == "mode":
+			hdi = az.hdi(inc_samples, hdi_prob=(percentiles[1]-percentiles[0])/100)
+			p_lo = hdi[0]
+			p_hi = hdi[1]
+
+		else:
+			p_lo, p_hi = np.percentile(inc_samples, percentiles)
+
+		inc_err = (inc_val - p_lo, p_hi - inc_val)
+
+	return _to_python_types(inc_val), _to_python_types(inc_err)
 
 ##########################
-def evol_params(Lbol, eLbol, R, eR, model, filename=None,
+def _summarize_mc_samples(samples, central, error, percentiles):
+	"""Summarize Monte Carlo samples into a central value and uncertainty."""
+
+	good = samples[~np.isnan(samples)]
+	if central == "mean":
+		val = np.mean(good)
+	elif central == "median":
+		val = np.median(good)
+	if error == "std":
+		err = np.std(good)
+	elif error == "percentile":
+		p_lo, p_hi = np.percentile(good, percentiles)
+		err = (val - p_lo, p_hi - val)
+	return val, err
+
+##########################
+def _to_python_types(obj):
+    """Convert NumPy scalars to native Python types."""
+
+    # Convert NumPy scalars to their corresponding Python types
+    if isinstance(obj, np.generic):
+        return obj.item()
+
+    # Process each dictionary value while preserving its key
+    if isinstance(obj, dict):
+        new_dict = {}
+
+        for key, value in obj.items():
+            new_dict[key] = _to_python_types(value)
+
+        return new_dict
+
+    # Convert elements of a tuple while preserving its structure
+    if isinstance(obj, tuple):
+        new_tuple = []
+
+        for value in obj:
+            new_tuple.append(_to_python_types(value))
+
+        return tuple(new_tuple)
+
+    # Convert elements of a list
+    if isinstance(obj, list):
+        new_list = []
+
+        for value in obj:
+            new_list.append(_to_python_types(value))
+
+        return new_list
+
+    # Leave other types unchanged (e.g., strings and NumPy arrays)
+    return obj
+
+##########################
+def isochrone_params(logL, elogL, age, eage, model, filename=None,
+                     n_mc=10000, central="median", error="percentile",
+                     percentiles=(16, 84), verbose=True):
+	'''
+	Description:
+	------------
+		Infer fundamental parameters by interpolating evolutionary-model
+		isochrones given a logarithmic bolometric luminosity and an age.
+		Uncertainties are propagated with a Monte Carlo simulation. This is
+		the complement to :func:`evol_params`, which uses ``(logL, R)`` instead
+		of ``(logL, age)``.
+
+		Every evolutionary model reads its tables into the same units, namely
+		``age`` in Gyr, ``mass`` in M_jup, ``radius`` R_jup, and ``Teff`` in Kelvin, 
+		whatever units the published table uses.
+
+	Parameters:
+	-----------
+	- logL : float
+		Bolometric luminosity as log10(L/L_sun).
+	- elogL : float
+		Uncertainty in log10(L/L_sun).
+	- age : float
+		Object age in Gyr.
+	- eage : float
+		Uncertainty in age (Gyr). Use ``0`` for a fixed age.
+	- model : str, required
+		Evolutionary models whose tables are used. See available models using 
+		``seda.models.EvolutionaryModels().available_models``.
+	- filename : str, optional
+		Basename of an evolutionary table inside ``evolution_aux/<model>/``.
+		If only one table is bundled, it is selected automatically.
+		If multiple tables exist, available basenames are printed.
+		See available tables using ``seda.models.EvolutionaryModels('model').available_tables``.
+	- n_mc : int, optional (default 10000)
+		Number of Monte Carlo samples for uncertainties.
+	- central : str, optional (default "median")
+		"mean" or "median" for the central value.
+	- error : str, optional (default "percentile")
+		"std" or "percentile".
+	- percentiles : tuple or list, optional (default (16, 84))
+		Lower and upper percentiles for the uncertainty when ``error="percentile"``.
+	- verbose : {``True``, ``False``}, optional (default ``True``)
+		Print the inferred parameters and the number and fraction of samples
+		outside the grid.
+
+	Returns:
+	--------
+	Dictionary with inferred parameters and uncertainties:
+		- One key per interpolated parameter (e.g. ``'mass'``, ``'radius'``,
+		  ``'logg'``, ``'Teff'``). For every model, ``mass`` is in M_jup,
+		  ``radius`` is in R_jup, ``Teff`` is in Kelvin, and ``logg`` is
+		  log10(g[cm/s^2]). Any extra column keeps the unit declared in the
+		  model ``config.json``.
+		- Matching uncertainty keys prefixed with ``e`` (e.g. ``'emass'``,
+		  ``'eradius'``). Each uncertainty is a scalar if ``error="std"`` or a
+		  ``(lower, upper)`` tuple if ``error="percentile"``.
+		- ``'n_outside_grid'`` : number of Monte Carlo samples outside the grid.
+		- ``'frac_outside_grid'`` : fraction of Monte Carlo samples outside the grid.
+
+	Example:
+	--------
+	>>> import seda
+	>>>
+	>>> logL, elogL = -4.199, 0.048  # log10(L/Lsun)
+	>>>
+	>>> out = seda.phy_params.isochrone_params(
+	...     logL=logL, elogL=elogL, age=0.5, eage=0.0,
+	...     model='Sonora_Bobcat', filename='nc+0.0_co1.0_mass',
+	... )
+	>>> out['mass'], out['radius']  # M_jup, R_jup
+	    (45.02, 0.98)
+
+	Author: Theo Olsen
+
+	Date: 2026-06-29
+	'''
+
+	central_valid = ["mean", "median"]
+	if central not in central_valid:
+		raise ValueError(
+			f"central={central!r} is not recognized. "
+			f"Valid options: {central_valid}."
+		)
+	error_valid = ["std", "percentile"]
+	if error not in error_valid:
+		raise ValueError(
+			f"error={error!r} is not recognized. "
+			f"Valid options: {error_valid}."
+		)
+
+	if not np.isfinite(logL):
+		raise ValueError(f"logL must be finite, got {logL}.")
+	if age <= 0:
+		raise ValueError(f"age must be positive and in Gyr, got {age}.")
+	if eage < 0:
+		raise ValueError(f"eage must be non-negative, got {eage}.")
+
+	available_models = models.EvolutionaryModels().available_models
+	if model not in available_models:
+		raise ValueError(
+			f'Evolutionary model {model!r} is not recognized. '
+			f'Available evolutionary models:\n'
+			f'          {available_models}'
+		)
+
+	basename = models.resolve_evolutionary_table(model, filename)
+	grid = models.read_evolutionary_model(filename=basename, model=model)
+	tracks = models._split_evolutionary_tracks(grid)
+
+	# Monte Carlo on the isochrone axes: logL and age in Gyr
+	logL_samples = np.random.normal(logL, elogL, n_mc)
+	if eage == 0:
+		age_samples = np.full(n_mc, float(age), dtype=float)
+	else:
+		age_samples = np.random.normal(age, eage, n_mc)
+
+	output_cols = [col for col in grid if col not in ('logL', 'age')]
+	param_pools = {col: np.full(n_mc, np.nan) for col in output_cols}
+
+	def _assign_mc_draw(index, interp_row):
+		if 'radius' not in interp_row:
+			return
+		radius = float(np.asarray(interp_row['radius']).ravel()[0])
+		if np.isnan(radius):
+			return
+		for col in output_cols:
+			if col in interp_row:
+				param_pools[col][index] = float(
+					np.asarray(interp_row[col]).ravel()[0]
+				)
+
+	if eage == 0:
+		isochrone = models._build_isochrone(tracks, float(age))
+		interp_batch = models._interp_on_isochrone(isochrone, logL_samples)
+		for i in range(n_mc):
+			interp_row = {col: interp_batch[col][i] for col in interp_batch}
+			_assign_mc_draw(i, interp_row)
+	else:
+		tabulated_ages = np.unique(np.asarray(grid['age'], dtype=float))
+		isochrone_cache = models._precompute_isochrone_cache(tracks, grid)
+		for i in range(n_mc):
+			if not np.isfinite(age_samples[i]):
+				continue
+			interp_batch = models._lookup_on_isochrone_grid(
+				isochrone_cache, tabulated_ages, age_samples[i], logL_samples[i],
+			)
+			interp_row = {col: interp_batch[col][0] for col in interp_batch}
+			_assign_mc_draw(i, interp_row)
+
+	n_outside = int(np.sum(np.isnan(param_pools['radius'])))
+	frac_outside = n_outside / n_mc
+	print(
+		f'{n_outside}/{n_mc} ({100 * frac_outside:.1f}%) Monte Carlo samples fell '
+		'outside the evolutionary grid and were excluded from the statistics.'
+	)
+	if frac_outside > 0.5:
+		print(
+			' More than half of the Monte Carlo samples are outside the '
+			'grid; the inferred values are poorly constrained.'
+		)
+	if n_outside == n_mc:
+		raise ValueError(
+			'All Monte Carlo samples fell outside the evolutionary grid. '
+			'Check that logL and age are within the model coverage.'
+		)
+
+	out = {}
+	for param, samples in param_pools.items():
+		val, err = _summarize_mc_samples(samples, central, error, percentiles)
+		out[param] = val
+		out[f'e{param}'] = err
+
+	out['n_outside_grid'] = n_outside
+	out['frac_outside_grid'] = frac_outside
+
+	if verbose:
+		model_info = models.EvolutionaryModels(model)
+		units = getattr(model_info, 'units', {})
+		def _fmt_err(err):
+			if isinstance(err, tuple):
+				return '(-{:.4g}, +{:.4g})'.format(err[0], err[1])
+			return '{:.4g}'.format(err)
+		print(f'\nInferred fundamental parameters ({model_info.name}, {basename}):')
+		for param in output_cols:
+			unit = units.get(param, '')
+			unit_str = f' {unit}' if unit else ''
+			print('   {} = {:.4g} {}{}'.format(
+				param, out[param], _fmt_err(out[f'e{param}']), unit_str))
+
+	return _to_python_types(out)
+
+##########################
+def evol_params(logL, elogL, R, eR, model, filename=None,
                 n_mc=10000, central="median", error="percentile", 
                 percentiles=(16, 84), verbose=True):
 	'''
 	Description:
 	------------
-		Infer fundamental parameters by interpolating evolutionary models given a 
-		bolometric luminosity and radius. Uncertainties are propagated with a 
-		Monte Carlo simulation.
+		Infer fundamental parameters by interpolating evolutionary models given a
+		logarithmic bolometric luminosity and radius. Uncertainties are propagated
+		with a Monte Carlo simulation. This is the complement to :func:`isochrone_params`, 
+		which uses ``(logL, age)`` instead of ``(logL, R)``.
 
+		Every evolutionary model reads its tables into the same units, so ``R``
+		is in R_jup, returned ``mass`` is in M_jup, returned ``age`` is in Gyr,
+		and ``Teff`` is in Kelvin, whatever units the published table uses.
 
 	Parameters:
 	-----------
-	- Lbol : float
-		Bolometric luminosity in units of L_sun.
-	- eLbol : float
-		Uncertainty in bolometric luminosity (L_sun).
+	- logL : float
+		Bolometric luminosity as log10(L/L_sun).
+	- elogL : float
+		Uncertainty in log10(L/L_sun).
 	- R : float
 		Radius in units of R_jup.
 	- eR : float
@@ -643,6 +945,7 @@ def evol_params(Lbol, eLbol, R, eR, model, filename=None,
 		Basename of an evolutionary table inside ``evolution_aux/<model>/``.
 		If only one table is bundled, it is selected automatically.
 		If multiple tables exist, available basenames are printed.
+		See available tables using ``seda.models.EvolutionaryModels('model').available_tables``.
 	- n_mc : int, optional (default 10000)
 		Number of Monte Carlo samples for uncertainties.
 	- central : str, optional (default "median")
@@ -657,8 +960,10 @@ def evol_params(Lbol, eLbol, R, eR, model, filename=None,
 	Returns:
 	--------
 	Dictionary with inferred grid columns and uncertainties:
-		- One key per interpolated column (e.g. ``'mass'``, ``'age'``, ``'logg'``, ``'Teff'``)
-		  in the native units defined by the model ``config.json``.
+		- One key per interpolated column (e.g. ``'mass'``, ``'age'``, ``'logg'``, ``'Teff'``).
+		  For every model, ``mass`` is in M_jup, ``age`` is in Gyr, ``Teff``
+		  is in Kelvin, and ``logg`` is log10(g[cm/s^2]). Any extra column
+		  keeps the unit declared in the model ``config.json``.
 		- Matching uncertainty keys prefixed with ``e`` (e.g. ``'emass'``, ``'eage'``).
 		  Each uncertainty is a scalar if ``error="std"`` or a ``(lower, upper)`` tuple if 
 		  ``error="percentile"``.
@@ -670,14 +975,14 @@ def evol_params(Lbol, eLbol, R, eR, model, filename=None,
 	>>> import seda
 	>>>
 	>>> # input bolometric luminosity and radius with errors
-	>>> Lbol, eLbol = 6.324e-5, 6.978e-6  # in Lsun
-	>>> R, eR = 1.018, 0.059              # in Rjup
+	>>> logL, elogL = -4.199, 0.048  # log10(L/Lsun)
+	>>> R, eR = 1.018, 0.059         # in Rjup
 	>>>
 	>>> # infer parameters using the bundled solar-metallicity Bobcat table
-	>>> out = seda.phy_params.evol_params(Lbol=Lbol, eLbol=eLbol, R=R, eR=eR,
+	>>> out = seda.phy_params.evol_params(logL=logL, elogL=elogL, R=R, eR=eR,
 	>>>                                   model='Sonora_Bobcat', filename='nc+0.0_co1.0_mass')
-	>>> out['mass'], out['age']
-	    (0.0133, 0.51)  
+	>>> out['mass'], out['age']  # M_jup, Gyr
+	    (39.24, 0.366)  
 
 	Author: Theo Olsen
 
@@ -698,8 +1003,8 @@ def evol_params(Lbol, eLbol, R, eR, model, filename=None,
 			f"Valid options: {error_valid}."
 		)
 
-	if Lbol <= 0:
-		raise ValueError(f"Lbol must be positive, got {Lbol}.")
+	if not np.isfinite(logL):
+		raise ValueError(f"logL must be finite, got {logL}.")
 
 	available_models = models.EvolutionaryModels().available_models
 	if model not in available_models:
@@ -712,46 +1017,15 @@ def evol_params(Lbol, eLbol, R, eR, model, filename=None,
 	basename = models.resolve_evolutionary_table(model, filename) #find basename for called model (or only model if left blank)
 	grid = models.read_evolutionary_model(filename=basename, model=model)
 
-	_, plugin = models._load_evolutionary_model(model)
-	if not hasattr(plugin, '_convert_inputs'):
-		raise NotImplementedError(
-			f'Evolutionary model "{model}" has no _convert_inputs in plugin.py. '
-			f'See the tutorial on ingesting evolutionary models.'
-		)
-	converted = plugin._convert_inputs(Lbol, eLbol, R, eR)
-
-	interp_axes = ('logL', 'radius')
-	for axis in interp_axes:
-		e_axis = f'e_{axis}'
-		if axis not in converted or e_axis not in converted:
-			raise ValueError(
-				f'{model}/plugin.py _convert_inputs must return {axis!r} and {e_axis!r} '
-				f'for Monte Carlo sampling on the grid interpolation axes.'
-			)
-
 	grid_logL = np.asarray(grid['logL'], dtype=float)
 	grid_R    = np.asarray(grid['radius'], dtype=float)
 	points = np.column_stack((grid_logL, grid_R))
 
-	# Monte Carlo simulation on grid interpolation axes (units set by plugin)
-	logL_samples = np.random.normal(converted['logL'], converted['e_logL'], n_mc)
-	R_samples    = np.random.normal(converted['radius'], converted['e_radius'], n_mc)
+	# Monte Carlo simulation on the grid interpolation axes: logL and R in R_jup
+	logL_samples = np.random.normal(logL, elogL, n_mc)
+	R_samples    = np.random.normal(R, eR, n_mc)
 
 	xi = np.column_stack((logL_samples, R_samples))
-
-	# helper function to summarize a set of MC samples into a central value and an uncertainty
-	def _summarize(samples):
-		good = samples[~np.isnan(samples)]
-		if central == "mean":
-			val = np.mean(good)
-		else: # median
-			val = np.median(good)
-		if error == "std":
-			err = np.std(good)
-		else: # percentile
-			p_lo, p_hi = np.percentile(good, percentiles)
-			err = (val - p_lo, p_hi - val)
-		return val, err
 
 	out = {}  # final inferred parameters and uncertainties
 	first_samples = None  # MC samples from first column, used to count out-of-grid points
@@ -768,17 +1042,17 @@ def evol_params(Lbol, eLbol, R, eR, model, filename=None,
 	n_outside = int(np.sum(np.isnan(first_samples)))
 	frac_outside = n_outside / n_mc
 	print(f'{n_outside}/{n_mc} ({100*frac_outside:.1f}%) Monte Carlo samples fell '
-	             'outside the evolutionary grid and were excluded from the statistics.')
+				 'outside the evolutionary grid and were excluded from the statistics.')
 	if frac_outside > 0.5:
 		print(' More than half of the Monte Carlo samples are outside the '
-		             'grid; the inferred values are poorly constrained.')
+					 'grid; the inferred values are poorly constrained.')
 	if n_outside == n_mc:
 		raise ValueError('All Monte Carlo samples fell outside the evolutionary grid. '
-		                 'Check that Lbol and R are within the model coverage '
+		                 'Check that logL and R are within the model coverage '
 		                 'and that the table units/column order are correct.')
 
 	for param, samples in param_samples.items():
-		val, err = _summarize(samples)
+		val, err = _summarize_mc_samples(samples, central, error, percentiles)
 		out[param] = val
 		out[f'e{param}'] = err
 
@@ -801,7 +1075,121 @@ def evol_params(Lbol, eLbol, R, eR, model, filename=None,
 			print('   {} = {:.4g} {}{}'.format(
 				param, out[param], _fmt_err(out[f'e{param}']), unit_str))
 
-	return out
+	return _to_python_types(out)
+
+##########################
+def color_anomaly(color, color_name, spt, table, ecolor=None,
+		age_group=None, reference_stat='mean'):
+	'''
+	Description:
+	------------
+		Compute a photometric color anomaly relative to a reference sequence
+		for a given spectral type. The anomaly is the magnitude difference
+
+			anomaly = color - reference_color
+
+		where a positive value indicates the object is redder than the
+		reference sequence at that spectral type.
+
+	Parameters:
+	-----------
+	- color : float
+		Observed color in magnitudes.
+	- color_name : str
+		Photometric color identifier. Supported options match Faherty et al.
+		(2016) Tables 15-16: ``J-H``, ``J-K``, ``J-W1``, ``J-W2``, ``H-K``,
+		``H-W1``, ``H-W2``, ``K-W1``, ``K-W2``, and ``W1-W2``.
+		Underscores and case are accepted (e.g. ``J_H``, ``j-h``).
+	- spt : str or float
+		Spectral type (e.g. ``'L5'``, ``'T4'``, ``'M7'``, or numeric subtype
+		such as ``15.0`` for ``'L5'``). Integer SpT values use that subtype bin directly.
+		Fractional SpT values (e.g. ``'L3.7'``) linearly interpolate the
+		reference color between the floor and ceil integer bins.
+	- table : str
+		Reference table (required): ``'faherty16'`` (bundled Faherty et al. 2016
+		Tables 15-16 field/normal means, or the full Table 1 sample,
+		M7-L8 only) or ``'ultracool'`` (mean or median colors recomputed
+		from the bundled Ultracool Sheet).
+	- ecolor : float, optional
+		Uncertainty in the observed color (mag). If provided, the same value
+		is returned as the anomaly uncertainty.
+	- age_group : str, optional (default None)
+		For ``table='ultracool'``: ``None`` (all objects), ``'young'``
+		(``youth_evidence`` contains YMG, lowg, SFR, or HYA), or ``'old'``
+		(``youth_evidence`` is ``N`` or ``Field``). Entries with ``?`` in
+		``youth_evidence`` are excluded from both subgroups.
+		For ``table='faherty16'``: required. Use ``'old'`` for the published
+		Tables 15-16 field means, or ``'young'`` to recompute from Table 1.
+		A combined young/old sample is not available from the source.
+	- reference_stat : str, optional (default ``'mean'``)
+		``'mean'`` or ``'median'``. For ``table='faherty16'``,
+		``age_group='old'`` always uses the published Table 15-16 means;
+		``age_group='young'`` also accepts ``'median'`` since that
+		sequence is recomputed from Table 1 photometry.
+
+	Returns:
+	--------
+	- anomaly : float
+		Color anomaly in magnitudes.
+	- eanomaly : float, optional
+		Returned only when ``ecolor`` is provided.
+
+	Notes:
+	------
+	- Faherty et al. (2016, ApJS, 225, 10) Tables 15-16 list mean infrared
+	  colors for field/normal M7-L8 dwarfs using 2MASS J, H, Ks and WISE
+	  W1/W2 photometry with per-band uncertainties < 0.1 mag.
+	- For ``table='faherty16'``, set ``age_group='old'`` (Tables 15-16) or
+	  ``age_group='young'`` (Table 1).
+	- ``table='faherty16', age_group='young'`` recomputes a reference
+	  sequence from all objects in the bundled Table 1 sample using the
+	  same 2MASS/WISE bands and a minimum-3-objects-per-bin rule. Integer bins with too few
+	  objects but with valid bracketing bins (L6) are
+	  linearly interpolated and a :class:`UserWarning` is issued. Edge bins
+	  with only one or two objects (e.g. L8) use those objects directly,
+	  also with a warning.
+	- Ultracool Sheet references are recomputed from bundled photometry
+	  (2MASS J/H/Ks and WISE W1/W2). Objects missing either band,
+	  or with per-band errors > 0.1 mag, are excluded. Integer bins
+	  require at least three objects.
+	- For a fractional SpT input (e.g. ``L3.7``), the reference is
+	  ``(1-f)*ref(floor) + f*ref(ceil)``. Both neighboring bins must exist.
+	- When reference colors are built from catalog photometry, adopted SpT
+	  follows each source: Faherty+16 ``spt_flt_assumed`` (optical when
+	  available, otherwise infrared; Faherty et al. 2016, Sec. VII) and
+	  Ultracool Sheet ``spt_adop_flt`` (optical for M/L, infrared for T).
+
+	Example:
+	--------
+	>>> import seda
+	>>>
+	>>> # 2MASS J03552337+1133437 (L5; Suárez et al. 2023)
+	>>> color = 14.05 - 11.526  # J-K from 2MASS photometry
+	>>> ecolor = np.sqrt(0.024**2 + 0.031**2)
+	>>> seda.phy_params.color_anomaly(
+	...     color=color, color_name='J-K', spt='L5',
+	...     table='faherty16', age_group='young', ecolor=color)
+	    (0.37071428571428644, 0.03920459156782532)
+
+	Author: Theo Olsen
+
+	Date: 2026-07-09
+	'''
+	if not table:
+		raise ValueError(
+			"table must be specified. Valid options: 'faherty16', 'ultracool'."
+		)
+	ref = _reference_color(
+		color_name=color_name,
+		spt=spt,
+		table=table,
+		age_group=age_group,
+		reference_stat=reference_stat,
+	)
+	anomaly = float(color) - ref
+	if ecolor is None:
+		return anomaly
+	return anomaly, float(ecolor)
 
 ##################
 # function to sort input spectra as nested lists according to their minimum wavelength values
@@ -810,7 +1198,7 @@ def sort_nested_list(wl_spectra, flux_spectra, eflux_spectra):
 	# minimum wavelength of each input spectrum
 	min_vals = np.zeros(len(wl_spectra))
 	for i in range(len(wl_spectra)):
-	    min_vals[i] = min(wl_spectra[i])
+		min_vals[i] = min(wl_spectra[i])
 
 	wl_spectra = [wl_spectra[i] for i in np.argsort(min_vals)]
 	flux_spectra = [flux_spectra[i] for i in np.argsort(min_vals)]

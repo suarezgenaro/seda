@@ -1,8 +1,7 @@
 from importlib import resources
 from astropy.io import ascii
-import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.ticker import MultipleLocator, FormatStrFormatter, AutoMinorLocator, StrMethodFormatter
+from matplotlib.ticker import AutoMinorLocator
 from sys import exit
 
 class Spectrum:
@@ -113,14 +112,27 @@ class IRS:
 	Interface to access Spitzer IRS archival spectra.
 
 	Use this class to retrieve spectra for one or multiple targets
-	from the Spitzer IRS archival dataset.
+	from the Spitzer IRS archival dataset. Spectra are available with 
+	their original pipeline flux calibration or rescaled to match 
+	IRAC Channel 4 and WISE W3 photometry.
+
+	Parameters
+	----------
+	calibration : str, default 'rescaled'
+		Flux calibration of the spectra. Options are:
+	
+		- 'rescaled' for spectra scaled to correct observed–synthetic IRAC Ch4
+		  and WISE W3 photometric offsets (Suárez & Metchev 2022).
+		- 'pipeline' for spectra retaining their original pipeline flux calibration.
 
 	Attributes
 	----------
 	data_path : pathlib.Path
 		Path to the observations_aux folder.
+	calibration : str
+		Selected flux calibration ('pipeline' or 'rescaled').
 	spectra_folder : pathlib.Path
-		Path to the spitzer_irs_spectra folder containing spectrum files.
+		Path to the folder containing spectra with the selected flux calibration.
 	table : astropy.table.Table
 		Metadata table loaded from Suarez_Metchev_2022_tables.dat.
 
@@ -129,16 +141,29 @@ class IRS:
 	get_spectra(targets)
 		Retrieve spectra for one or multiple targets.
 
+	Notes
+	-----
+	The rescaled spectra from Suárez & Metchev (2022) include a global
+	scaling factor of 1.06 and additional corrections for objects with
+	observed-synthetic IRAC Ch4 and WISE W3 magnitude differences >3 sigma
+	(Sections 2.4 and 2.5).
+	
+	These offsets are likely due to background contamination. Therefore,
+	the pipeline-calibrated spectra are recommended, although the rescaled
+	spectra remain the default for consistency with the published dataset.
+	The pipeline flux calibration has been verified for about half of the 
+	spectra using SPHEREx, with a suggested absolute flux uncertainty of 0.06 mag.
+
 	Examples
 	--------
 	>>> 
 	>>> import seda
 	>>> 
-	>>> # create an instance of the IRS class
+	>>> # create an IRS instance (see Parameters and Notes for calibration options)
 	>>> irs = seda.archival_data.IRS()
 	>>> # example targets
 	>>> target_name = ['0355+1133', '1821+1414']
-	>>> # get spectrum and metadata
+	>>> # get spectra and metadata
 	>>> spectra = irs.get_spectra(target_name)
 	>>> 
 	>>> # extract a few attributes for the first spectrum
@@ -155,10 +180,20 @@ class IRS:
 	Date: 2026-02-18
 	"""
 
-	def __init__(self):
+	def __init__(self, calibration='rescaled'):
+		# Validate the selected flux calibration
+		if calibration not in ('pipeline', 'rescaled'):
+			raise ValueError(
+				f"Invalid calibration '{calibration}'. "
+				"Choose 'pipeline' or 'rescaled'."
+			)
+	
+		self.calibration = calibration
+
 		# Base path to observations_aux
 		self.data_path = resources.files('seda.observations_aux')
-		self.spectra_folder = self.data_path / 'spitzer_irs_spectra'
+		# Select the folder according to the flux calibration
+		self.spectra_folder = self.data_path / f'spitzer_irs_spectra_{calibration}'
 		self.table = self._load_table()
 
 	def _load_table(self):
@@ -194,7 +229,6 @@ class IRS:
 		if isinstance(targets, str):
 			targets = [targets]
 
-		# 
 		spectra_list = []
 		for target in targets:
 			# table row for each target
