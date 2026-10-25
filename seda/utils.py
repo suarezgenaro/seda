@@ -930,13 +930,14 @@ def read_grid_phot(model, model_dir, filters, params_ranges=None, fit_phot_range
 	desc = 'Deriving synthetic photometry from model spectra'
 	grid_bar = tqdm(total=len(spectra_name), desc=desc)
 
-	# to save relevant parameters for for each combination of free parameter values
+	# to save relevant parameters for each combination of free parameter values
 	flux_grid = np.repeat(np.expand_dims(arr, -1), len(filters), axis=-1) # for synthetic fluxes
 	lambda_eff_grid = np.repeat(np.expand_dims(arr, -1), len(filters), axis=-1) # for effective wavelength
 	width_eff_grid = np.repeat(np.expand_dims(arr, -1), len(filters), axis=-1) # for effective width
 	wl_grid = None # fixed wavelength reference for the photometric grid
 	first_spec = True # reference to read the fixed wavelength reference from the first spectrum only
 	for index in np.ndindex(arr.shape): # iterate over all possible combinations of the free parameter unique values
+		print(index)
 		# update the progress bar
 		grid_bar.update(1)
 
@@ -1146,6 +1147,7 @@ def best_bayesian_fit(output_bayes, grid_spec=None, grid_phot=None, model_dir_or
 		filters_fit = output_bayes['my_bayes'].filters_fit
 		lambda_eff_SVO_fit = output_bayes['my_bayes'].lambda_eff_SVO_fit
 		width_eff_SVO_fit = output_bayes['my_bayes'].width_eff_SVO_fit
+
 	fit_phot_range = output_bayes['my_bayes'].fit_phot_range
 	fit_wl_range = output_bayes['my_bayes'].fit_wl_range
 	params_priors = output_bayes['my_bayes'].params_priors
@@ -1223,6 +1225,7 @@ def best_bayesian_fit(output_bayes, grid_spec=None, grid_phot=None, model_dir_or
 			grid_spec = [grid_spec]
 
 	if grid_phot is None and fit_photometry: # no grid_phot is provided but photometry is used in the fit
+		svo_data = read_SVO_table()
 		# grid values around the desired parameter values
 		params_ranges = {}
 		for param in params_models: # for each free parameter in the grid
@@ -1230,7 +1233,8 @@ def best_bayesian_fit(output_bayes, grid_spec=None, grid_phot=None, model_dir_or
 
 		# set filename_pattern to look for model spectra
 		filename_pattern = [models.Models(model).filename_pattern]
-		grid_phot = read_grid_phot(model=model, model_dir=model_dir, params_ranges=params_ranges, filters=filters_fit)
+		grid_phot = read_grid_phot(model=model, model_dir=model_dir, params_ranges=params_ranges, 
+		                           filters=filters_fit, svo_data=svo_data)
 		grid_phot = [grid_phot] # grid as list to follow structure from then fit_spectra
 
 	elif grid_phot is not None and fit_photometry: # grid_phot is provided but photometry is used in the fit
