@@ -78,7 +78,7 @@ class Models:
 		model_configs = self._load_model_configs()
 
 		# set available atmospheric models
-		self.available_models = list(model_configs.keys())
+		self.available_models = sorted(model_configs.keys())
 
 		# if a specific model is requested
 		if model:
@@ -229,7 +229,7 @@ class EvolutionaryModels:
 		model_configs = self._load_model_configs()
 
 		# set available evolutionary models
-		self.available_models = list(model_configs.keys())
+		self.available_models = sorted(model_configs.keys())
 
 		# if a specific model is requested
 		if model:
