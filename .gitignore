@@ -63,3 +63,5 @@ docs/notebooks/*.dat
 docs/notebooks/*.pickle
 docs/notebooks/*.pdf
 docs/aux_plots/*.ipynb
+tests/*.ipynb
+tests/*.py
