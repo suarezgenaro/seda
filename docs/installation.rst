@@ -22,6 +22,28 @@ Installation of :math:`\texttt{SEDA}` via GitHub:
 All required dependencies are installed automatically.
 
 
+Updating SEDA
+-------------
+
+To update an existing installation of :math:`\texttt{SEDA}` to the latest stable version, navigate to the previously cloned repository and run:
+
+.. code-block:: console
+
+    $ cd seda
+    $ git switch main
+    $ git pull origin main
+    $ python -m pip install --upgrade .
+
+This downloads the latest changes from the ``main`` branch and updates the installed package and its dependencies. There is no need to delete or clone the repository again.
+
+To verify the installed version:
+
+.. code-block:: python
+
+    import seda
+    print(seda.__version__)
+
+
 Uninstallation
 --------------
 
@@ -50,7 +72,7 @@ Dependencies
 * `tqdm <https://pypi.org/project/tqdm/>`_
 * `xarray <https://docs.xarray.dev/en/stable/>`_
 
-:math:`\texttt{SEDA}` has been tested in Python versions 3.9--3.14 and on Linux, Windows, and macOS.
+:math:`\texttt{SEDA}` has been tested in Python versions 3.10--3.14 and on Linux, Windows, and macOS.
 
 
 Developer Installation
