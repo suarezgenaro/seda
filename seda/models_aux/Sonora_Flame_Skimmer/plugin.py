@@ -61,6 +61,6 @@ def _separate_params(filenames):
         "Teff": Teff,
         "logg": logg,
         "[M/H]": logZ,
-        "C/O": CtoO,
+        "CtoO": CtoO,
         "logKzz": logKzz
     }

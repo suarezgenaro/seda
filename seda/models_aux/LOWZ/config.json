@@ -23,7 +23,7 @@
         "Teff",
         "logg",
         "[M/H]",
-        "C/O",
+        "CtoO",
         "logKzz"
     ]
 }
