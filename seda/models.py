@@ -69,6 +69,17 @@ class Models:
 	Author: Genaro Suárez
 	'''
 
+	# Attributes populated from config.json
+	model = None
+	ref = None
+	name = None
+	bibcode = None
+	ADS = None
+	download = None
+	filename_pattern = None
+	filename_trim = None
+	free_params = None
+
 	def __init__(self, model=None):
 
 		# path to model folders
@@ -219,7 +230,19 @@ class EvolutionaryModels:
 
 	Date: 2026-06-04
 	'''
-#basically the same as Models class, but for evolutionary models
+
+	# Attributes populated from config.json
+	model = None
+	ref = None
+	name = None
+	bibcode = None
+	ADS = None
+	download = None
+	filename_pattern = None
+	columns = None
+	units = None
+
+	#basically the same as Models class, but for evolutionary models
 	def __init__(self, model=None):
 
 		# path to evolutionary model folders
