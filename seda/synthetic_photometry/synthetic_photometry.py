@@ -761,7 +761,7 @@ def filter_coverage_fraction(wl, filter_wl, filter_flux):
 #+++++++++++++++++
 def _compute_synthetic_flux(wl, flux, filter_wl, filter_flux, eflux=None, detector='photon'):
 	"""
-	Compute synthetic flux density, flux density uncertaintyr, lambda_eff, and width_eff.
+	Compute synthetic flux density, flux density uncertainty, lambda_eff, and width_eff.
 	
 	This is an internal helper function used by :func:`~seda.synthetic_photometry.synthetic_photometry`.
 	The input spectrum must be provided as F_lambda. The synthetic flux density is computed using 
