@@ -3,7 +3,7 @@ About SEDA
 
 Attribution
 -----------
-**The SEDA release paper is** `Suárez et al. (2026, submmited to AJ) <https:xxx>`__, while the foundation was introduced in `Suárez et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...920...99S/abstract>`__. Please cite these references if :math:`\texttt{SEDA}` has contributed to your research. Additionally, ensure to give appropriate credit to the models (see :ref:`models`) and other relevant Python packages (e.g., see :ref:`seda_overview`) used via :math:`\texttt{SEDA}`.
+**The SEDA release paper is** `Suárez et al. (2026, submitted to AJ) <https:xxx>`__, while the foundation was introduced in `Suárez et al. (2021) <https://ui.adsabs.harvard.edu/abs/2021ApJ...920...99S/abstract>`__. Please cite these references if :math:`\texttt{SEDA}` has contributed to your research. Additionally, ensure to give appropriate credit to the models (see :ref:`models`) and other relevant Python packages (e.g., see :ref:`seda_overview`) used via :math:`\texttt{SEDA}`.
 
 Contributing
 ------------
@@ -147,7 +147,7 @@ To obtain residuals that scatter more symmetrically around zero, identify magnit
 How should I interpret the output parameters from Dynesty?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A detailed explanation of each output parameter from Dynesety stored in ``out_bayes['out_dynesty']`` can be found in the official `Dynesty Results documentation <https://dynesty.readthedocs.io/en/stable/api.html#dynesty.results.Results>`__.
+A detailed explanation of each output parameter from Dynesty stored in ``out_bayes['out_dynesty']`` can be found in the official `Dynesty Results documentation <https://dynesty.readthedocs.io/en/stable/api.html#dynesty.results.Results>`__.
 
 
 Model spectra in the plots appear binned
@@ -157,7 +157,7 @@ This effect may be caused by resampling model spectra to **finer wavelength inte
 
 In such cases, the ``spectres`` package used for resampling returns:
 
-- Flux values equal to the nearest original values closest in wavelength (when the number of new wavelengths within two original wavelengths is even) or these values together with the mean flux of two consecutive original wavelengths (when the number of new wavelengths within two original wavelengths is odd).
+- Flux density values equal to the nearest original values closest in wavelength (when the number of new wavelengths within two original wavelengths is even) or these values together with the mean flux density of two consecutive original wavelengths (when the number of new wavelengths within two original wavelengths is odd).
 
 This behavior produces a **histogram-like appearance** in the resampled spectra.
 
@@ -168,24 +168,24 @@ It has been observed only for the **low-resolution ATMO 2020 models** when fitti
    :align: center
 
 
-There is a flux offset between the best-fit model and the input data
+There is a flux density offset between the best-fit model and the input data
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This issue may arise from:
 
-- Incorrect input flux units specified via ``flux_unit`` in ``seda.input_parameters.InputData``
+- Incorrect input flux density units specified via ``flux_unit`` in ``seda.input_parameters.InputData``
 - Flux calibration issues in the input spectra
 
 How to diagnose the issue
 ^^^^^^^^^^^^^^^^^^^^^^^^^
-Run a chi-square minimization (e.g., look at `this tutorial <https://seda.readthedocs.io/en/latest/notebooks/tutorial_chi2_fit_single_spectrum.html>`__) while providing a distance in ``seda.input_parameters.InputData``. In this case, the code estimates a radius from the scaling factor applied to the model spectra and the input distance. If the estimated radius (stored in the ASCII output table) deviates significantly from **1 Rjup**, this may indicate incorrect flux units or calibration issues.
+Run a chi-square minimization (e.g., look at `this tutorial <https://seda.readthedocs.io/en/latest/notebooks/tutorial_chi2_fit_single_spectrum.html>`__) while providing a distance in ``seda.input_parameters.InputData``. In this case, the code estimates a radius from the scaling factor applied to the model spectra and the input distance. If the estimated radius (stored in the ASCII output table) deviates significantly from **1 Rjup**, this may indicate incorrect flux density units or calibration issues.
 
 Additional checks
 ^^^^^^^^^^^^^^^^^
 - Compare observed photometry with synthetic photometry derived from the input spectra  
   (see `this tutorial <https://seda.readthedocs.io/en/latest/notebooks/tutorial_synthetic_photometry.html>`__)
 - Run ``seda.bayes_fit.bayes`` **without providing a distance**, so the radius is not sampled and the
-  models are scaled to minimize chi-square residuals, compensating for potential flux issues
+  models are scaled to minimize chi-square residuals, compensating for potential flux density issues
 
 
 Error opening generated pickle files

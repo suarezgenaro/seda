@@ -25,7 +25,7 @@ For Forward Modeling
 For Empirical Analysis
 ++++++++++++++++++++++
   - :mod:`~seda.spectral_indices.spectral_indices`: Measures spectral indices to quantify the depth of key spectral features in the data.
-  - :mod:`~seda.synthetic_photometry.synthetic_photometry`: Derive synthetic phothometry from spectra for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_.
+  - :mod:`~seda.synthetic_photometry.synthetic_photometry`: Derive synthetic photometry from spectra for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_.
   - :mod:`~seda.utils`: Provides additional useful functions (see :ref:`seda_tools` for details).
 
 Code Workflow of Forward Modeling
@@ -56,19 +56,19 @@ Useful Tools
 Empirical Analysis
 ++++++++++++++++++
 
-  - :func:`~seda.synthetic_photometry.synthetic_photometry.synthetic_photometry`: Calculates synthetic phothometry from spectra for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_ (see `tutorial_synthetic_photometry <https://seda.readthedocs.io/en/latest/notebooks/tutorial_synthetic_photometry.html>`_).
+  - :func:`~seda.synthetic_photometry.synthetic_photometry.synthetic_photometry`: Calculates synthetic photometry from spectra for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_ (see `tutorial_synthetic_photometry <https://seda.readthedocs.io/en/latest/notebooks/tutorial_synthetic_photometry.html>`_).
   - :mod:`~seda.spectral_indices.spectral_indices`: Measures the depth of absorption features using literature-defined or user-defined spectral indices. It includes:
 
     - :func:`~seda.spectral_indices.spectral_indices.silicate_index` to assess cloudiness via the 9 microns silicate absorption (`Suárez & Metchev 2022 <https://ui.adsabs.harvard.edu/abs/2022MNRAS.513.5701S/abstract>`_, `Suárez & Metchev 2023 <https://ui.adsabs.harvard.edu/abs/2023MNRAS.523.4739S/abstract>`_).
     - :func:`~seda.spectral_indices.spectral_indices.water_index` for the 6.25 microns water absorption, :func:`~seda.spectral_indices.spectral_indices.methane_index` for the 7.65 microns methane feature, and :func:`~seda.spectral_indices.spectral_indices.ammonia_index` for the 10.5 microns ammonia feature (`Cushing et al. 2006 <https://ui.adsabs.harvard.edu/abs/2006ApJ...648..614C/abstract>`_, `Suárez & Metchev 2022 <https://ui.adsabs.harvard.edu/abs/2022MNRAS.513.5701S/abstract>`_, `Suárez & Metchev 2023 <https://ui.adsabs.harvard.edu/abs/2023MNRAS.523.4739S/abstract>`_) (see `tutorial_spectral_indices <https://seda.readthedocs.io/en/latest/notebooks/tutorial_spectral_indices.html>`_  and `spectral_indices <https://github.com/suarezgenaro/spectral_indices>`_).
     - Near-infrared indices designed to identify potential variable objects (`Ashraf et al. 2022 <https://ui.adsabs.harvard.edu/abs/2022ApJ...934..178A>`_, `Oliveros-Gomez et al. 2022 <https://ui.adsabs.harvard.edu/abs/2022ApJ...939...72O>`_, `Oliveros-Gomez et al. 2024 <https://ui.adsabs.harvard.edu/abs/2024ApJ...967..149O>`_).
     - :func:`~seda.spectral_indices.spectral_indices.user_index` for a user-defined spectral index, using the same approaches as the literature-defined indices described above.
-  - :func:`~seda.synthetic_photometry.synthetic_photometry.flux_to_mag`: Converts fluxes into magnitudes for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_.
-  - :func:`~seda.synthetic_photometry.synthetic_photometry.mag_to_flux`: Converts magnitudes into fluxes for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_.
-  - :func:`~seda.synthetic_photometry.synthetic_photometry.convert_flux`: Converts fluxes from wavelength units (erg/s/cm2/s) to frequency units (Jy) or vice versa.
+  - :func:`~seda.synthetic_photometry.synthetic_photometry.flux_to_mag`: Converts flux densities into magnitudes for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_.
+  - :func:`~seda.synthetic_photometry.synthetic_photometry.mag_to_flux`: Converts magnitudes into flux densities for any `SVO filter IDs <http://svo2.cab.inta-csic.es/theory/fps/>`_.
+  - :func:`~seda.synthetic_photometry.synthetic_photometry.convert_flux`: Converts flux densities from wavelength units (erg/s/cm2/s) to frequency units (Jy) or vice versa.
   - :func:`~seda.utils.spt_to_teff`: Estimates effective temperatures from spectral types using relationships in the literature.
   - :func:`~seda.utils.teff_to_spt`: Estimates spectral type from effective temperature, using numerical inversion of :func:`~seda.utils.spt_to_teff`.
-  - :func:`~seda.utils.app_to_abs_flux`: Converts apparent fluxes into absolute fluxes considering a distance.
+  - :func:`~seda.utils.app_to_abs_flux`: Converts apparent flux densities into absolute fluxes considering a distance.
   - :func:`~seda.utils.read_SVO_params`: Reads parameters of interest (e.g., effective wavelength, effective width, and zero point) from SVO for a list of filters.
   - :func:`~seda.utils.convolve_spectrum`: Convolves spectra to a desired resolution at a given wavelength.
 
