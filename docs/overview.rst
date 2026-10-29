@@ -75,11 +75,11 @@ Empirical Analysis
 Physical and Basic Parameters
 +++++++++++++++++++++++++++++
 
-  - :func:`~seda.phy_params.bol_lum`: Calculates bolometric luminosity by integrating an observed SED, optionally complemented with a model spectrum (see `tutorial_bolometric_luminosity <https://seda.readthedocs.io/en/latest/notebooks/tutorial_bolometric_luminosity.html>`_).
-  - :func:`~seda.phy_params.teff`: Derives effective temperature from bolometric luminosity and radius using the Stefan–Boltzmann law, with Monte Carlo uncertainty propagation.
-  - :func:`~seda.phy_params.inclination`: Derives the rotation-axis inclination from projected rotation velocity (:math:`v\sin i`), rotation period, and radius, with Monte Carlo uncertainty propagation (`Vos et al. 2017 <https://ui.adsabs.harvard.edu/abs/2017ApJ...842...78V/abstract>`_).
-  - :func:`~seda.phy_params.evol_params`: Infers fundamental parameters (e.g., mass, age, surface gravity, temperature) by interpolating :ref:`evolutionary_models` given a logarithmic bolometric luminosity (log\ :sub:`10`\ (L/L\ :sub:`sun`\ )) and radius (see `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_).
-  - :func:`~seda.phy_params.isochrone_params`: Infers fundamental parameters (e.g., mass, radius, surface gravity, temperature) by interpolating :ref:`evolutionary_models` given a logarithmic bolometric luminosity and age.
+  - :func:`~seda.fund_params.bol_lum`: Calculates bolometric luminosity by integrating an observed SED, optionally complemented with a model spectrum (see `tutorial_bolometric_luminosity <https://seda.readthedocs.io/en/latest/notebooks/tutorial_bolometric_luminosity.html>`_).
+  - :func:`~seda.fund_params.teff`: Derives effective temperature from bolometric luminosity and radius using the Stefan–Boltzmann law, with Monte Carlo uncertainty propagation.
+  - :func:`~seda.fund_params.inclination`: Derives the rotation-axis inclination from projected rotation velocity (:math:`v\sin i`), rotation period, and radius, with Monte Carlo uncertainty propagation (`Vos et al. 2017 <https://ui.adsabs.harvard.edu/abs/2017ApJ...842...78V/abstract>`_).
+  - :func:`~seda.fund_params.evol_params`: Infers fundamental parameters (e.g., mass, age, surface gravity, temperature) by interpolating :ref:`evolutionary_models` given a logarithmic bolometric luminosity (log\ :sub:`10`\ (L/L\ :sub:`sun`\ )) and radius (see `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_).
+  - :func:`~seda.fund_params.isochrone_params`: Infers fundamental parameters (e.g., mass, radius, surface gravity, temperature) by interpolating :ref:`evolutionary_models` given a logarithmic bolometric luminosity and age.
 
 
 Atmospheric and Evolutionary Models
@@ -301,7 +301,7 @@ Parameter coverage:
 Available Evolutionary Models
 -----------------------------
 
-:math:`\texttt{SEDA}` can interpolate evolutionary models to infer fundamental parameters (mass, surface gravity, effective temperature, and age or radius) from a logarithmic bolometric luminosity and radius using :func:`~seda.phy_params.evol_params`, or from a logarithmic bolometric luminosity and age using :func:`~seda.phy_params.isochrone_params`. Check out `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_ to see the parameter coverage of the bundled evolutionary tables.
+:math:`\texttt{SEDA}` can interpolate evolutionary models to infer fundamental parameters (mass, surface gravity, effective temperature, and age or radius) from a logarithmic bolometric luminosity and radius using :func:`~seda.fund_params.evol_params`, or from a logarithmic bolometric luminosity and age using :func:`~seda.fund_params.isochrone_params`. Check out `tutorial_evolutionary_models_examination <https://seda.readthedocs.io/en/latest/notebooks/tutorial_evolutionary_models_examination.html>`_ to see the parameter coverage of the bundled evolutionary tables.
 
 Sonora Flame Skimmer
 ++++++++++++++++++++
@@ -473,11 +473,11 @@ Bundled table (``filename`` may be omitted):
 
   - ``BHAC15_tracks+structure.txt``
 
-:func:`~seda.phy_params.evol_params` reads a bundled evolutionary table selected by ``filename``.
+:func:`~seda.fund_params.evol_params` reads a bundled evolutionary table selected by ``filename``.
 If a model folder contains only one table, ``filename`` may be omitted. Both functions take
 bolometric luminosity as log\ :sub:`10`\ (L/L\ :sub:`sun`\ ):
-:func:`~seda.phy_params.evol_params` takes radius in R\ :sub:`Jup`\ and returns mass in
-M\ :sub:`Jup`\ and age in Gyr, while :func:`~seda.phy_params.isochrone_params` takes age in Gyr
+:func:`~seda.fund_params.evol_params` takes radius in R\ :sub:`Jup`\ and returns mass in
+M\ :sub:`Jup`\ and age in Gyr, while :func:`~seda.fund_params.isochrone_params` takes age in Gyr
 and returns mass in M\ :sub:`Jup`\ and radius in R\ :sub:`Jup`\ . ``Teff`` is in Kelvin and
 ``logg`` is log\ :sub:`10`\ (g[cm/s\ :sup:`2`\ ]).
 The bundled tables are kept exactly as the modelers published them, whatever units they use
