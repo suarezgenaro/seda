@@ -1365,8 +1365,8 @@ def plot_evolutionary_coverage(model, filename, xparam='Lbol', yparam='R',
 	------------
 		Plot evolutionary-grid coverage for three parameters: two axes and a
 		color scale. Defaults to bolometric luminosity versus radius (the
-		observables used by :func:`~seda.phy_params.evol_params`), with a
-		third column as color (e.g. ``age`` for :func:`~seda.phy_params.isochrone_params`).
+		observables used by :func:`~seda.fund_params.evol_params`), with a
+		third column as color (e.g. ``age`` for :func:`~seda.fund_params.isochrone_params`).
 
 	Parameters:
 	-----------

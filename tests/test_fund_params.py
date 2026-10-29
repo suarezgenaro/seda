@@ -179,18 +179,18 @@ def _evol_sb_teff_cases():
 # ----------------------------
 @pytest.mark.parametrize('model, filename, idx', _evol_sb_teff_cases())
 def test_evol_teff_matches_stefan_boltzmann(model, filename, idx):
-	"""Teff from evol_params should match phy_params.teff (SB law) for the same (logL, R)."""
+	"""Teff from evol_params should match fund_params.teff (SB law) for the same (logL, R)."""
 	np.random.seed(0)
 	logL, R_rjup, _, _, _, _ = _bundled_grid_inputs(model, filename, idx=idx)
 	Lbol = 10.0 ** logL
 	eR = 1e-12 * R_rjup
 
-	teff_evol = seda.phy_params.evol_params(
+	teff_evol = seda.fund_params.evol_params(
 		logL=logL, elogL=1e-12, R=R_rjup, eR=eR,
 		model=model, filename=filename, n_mc=1000, verbose=False,
 	)['Teff']
 
-	teff_sb, _ = seda.phy_params.teff(
+	teff_sb, _ = seda.fund_params.teff(
 		Lbol=Lbol, eLbol=1e-12 * Lbol, R=R_rjup, eR=eR, n_mc=1000,
 	)
 
@@ -207,7 +207,7 @@ def test_evol_params_round_trip(model, filename):
 		model, filename,
 	)
 
-	out = seda.phy_params.evol_params(
+	out = seda.fund_params.evol_params(
 		logL=logL, elogL=1e-10, R=R_rjup, eR=1e-10 * R_rjup,
 		model=model, filename=filename, n_mc=2000, verbose=False,
 	)
@@ -234,7 +234,7 @@ def test_evol_params_outside_grid_raises(model, filename):
 	np.random.seed(0)
 
 	with pytest.raises(ValueError):
-		seda.phy_params.evol_params(
+		seda.fund_params.evol_params(
 			logL=10.0, elogL=0.01, R=1.0, eR=1e-4,
 			model=model, filename=filename, n_mc=500, verbose=False,
 		)
@@ -242,7 +242,7 @@ def test_evol_params_outside_grid_raises(model, filename):
 def test_evol_params_invalid_filename_lists_available(capsys):
 	"""An unrecognized filename should list available tables and raise."""
 	with pytest.raises(ValueError, match='not found') as exc_info:
-		seda.phy_params.evol_params(
+		seda.fund_params.evol_params(
 			logL=-3.0, elogL=0.05, R=1.0, eR=0.1,
 			model='Sonora_Bobcat',
 			filename='not_a_real_table', n_mc=100, verbose=False,
@@ -265,7 +265,7 @@ def test_evol_params_invalid_filename_lists_available(capsys):
 def test_evol_params_multiple_tables_without_filename_raises(model):
 	"""Models with multiple tables must list them when filename is omitted."""
 	with pytest.raises(ValueError, match='not found') as exc_info:
-		seda.phy_params.evol_params(
+		seda.fund_params.evol_params(
 			logL=-3.0, elogL=0.05, R=1.0, eR=0.1,
 			model=model, n_mc=100, verbose=False,
 		)
@@ -280,7 +280,7 @@ def test_evol_params_dynamic_output_keys(model, filename):
 	"""Returned keys should match grid columns with e-prefix uncertainties."""
 	logL, R_rjup, _, _, _, _ = _bundled_grid_inputs(model, filename)
 
-	out = seda.phy_params.evol_params(
+	out = seda.fund_params.evol_params(
 		logL=logL, elogL=1e-10, R=R_rjup, eR=1e-10 * R_rjup,
 		model=model, filename=filename, n_mc=500, verbose=False,
 	)
@@ -298,7 +298,7 @@ def test_evol_params_std_error_mode(model, filename):
 	"""With error='std' the uncertainties should be returned as scalars."""
 	logL, R_rjup, _, _, _, _ = _bundled_grid_inputs(model, filename)
 
-	out = seda.phy_params.evol_params(
+	out = seda.fund_params.evol_params(
 		logL=logL, elogL=1e-10, R=R_rjup, eR=1e-10 * R_rjup,
 		model=model, filename=filename, error="std", n_mc=1000, verbose=False,
 	)
@@ -312,7 +312,7 @@ def test_evol_params_std_error_mode(model, filename):
 def test_evol_params_nonfinite_logl_raises(model, filename):
 	"""A non-finite log bolometric luminosity should raise an error."""
 	with pytest.raises(ValueError, match='logL'):
-		seda.phy_params.evol_params(
+		seda.fund_params.evol_params(
 			logL=np.nan, elogL=0.05, R=1.0, eR=0.1,
 			model=model, filename=filename, n_mc=500, verbose=False,
 		)
@@ -325,13 +325,13 @@ def test_evol_params_reproducible_with_seed(model, filename):
 	interp_params = [p for p in grid if p not in ('logL', 'radius')]
 
 	np.random.seed(0)
-	out1 = seda.phy_params.evol_params(
+	out1 = seda.fund_params.evol_params(
 		logL=logL, elogL=1e-4, R=R_rjup, eR=1e-4 * R_rjup,
 		model=model, filename=filename, n_mc=5000, verbose=False,
 	)
 
 	np.random.seed(0)
-	out2 = seda.phy_params.evol_params(
+	out2 = seda.fund_params.evol_params(
 		logL=logL, elogL=1e-4, R=R_rjup, eR=1e-4 * R_rjup,
 		model=model, filename=filename, n_mc=5000, verbose=False,
 	)
@@ -352,7 +352,7 @@ def test_evol_params_bundled_filenames(model, filename):
 		model, filename, idx=500,
 	)
 
-	out = seda.phy_params.evol_params(
+	out = seda.fund_params.evol_params(
 		logL=logL, elogL=1e-10, R=R_rjup, eR=1e-10 * R_rjup,
 		model=model, filename=filename, n_mc=500, verbose=False,
 	)
@@ -377,7 +377,7 @@ def test_evol_params_bobcat_file():
 	logL, elogL = -4.199, 0.048  # log10(L/Lsun)
 	R, eR = 1.018, 0.059         # Rjup
 
-	out = seda.phy_params.evol_params(
+	out = seda.fund_params.evol_params(
 		logL=logL, elogL=elogL, R=R, eR=eR,
 		model='Sonora_Bobcat', filename=BOBCAT_FILENAME, verbose=True,
 	)
@@ -413,7 +413,7 @@ def test_evol_params_diamondback():
 		model, DIAMONDBACK_FILENAME, idx=500,
 	)
 
-	out = seda.phy_params.evol_params(
+	out = seda.fund_params.evol_params(
 		logL=logL, elogL=1e-10, R=R_rjup, eR=1e-10 * R_rjup,
 		model=model, filename=DIAMONDBACK_FILENAME, n_mc=1000, verbose=False,
 	)
@@ -438,7 +438,7 @@ def test_evol_params_regular_user_output():
 	"""Show what a regular user sees when calling evol_params(verbose=True)."""
 	np.random.seed(0)
 
-	seda.phy_params.evol_params(
+	seda.fund_params.evol_params(
 		logL=-4.199, elogL=0.048, R=1.018, eR=0.059,
 		model='Sonora_Bobcat', filename=BOBCAT_FILENAME, error="percentile", verbose=True,
 	)
@@ -502,7 +502,7 @@ def test_isochrone_params_user_units_round_trip(model, filename):
 	mass_exp = float(grid['mass'][idx])
 	radius_exp = float(grid['radius'][idx])
 
-	out = seda.phy_params.isochrone_params(
+	out = seda.fund_params.isochrone_params(
 		logL=logL, elogL=1e-12, age=age_gyr, eage=0.0,
 		model=model, filename=filename, n_mc=300, verbose=False,
 	)
@@ -519,7 +519,7 @@ def test_isochrone_params_user_units_round_trip(model, filename):
 
 def test_isochrone_params_rejects_nonpositive_age():
 	with pytest.raises(ValueError, match='Gyr'):
-		seda.phy_params.isochrone_params(
+		seda.fund_params.isochrone_params(
 			logL=-4.0, elogL=0.01, age=0.0, eage=0.0,
 			model='Sonora_Bobcat', filename=BOBCAT_FILENAME, n_mc=50, verbose=False,
 		)
@@ -726,7 +726,7 @@ _SUAREZ22_0415_JK = _SUAREZ22_0415_J - _SUAREZ22_0415_KS  # 0.266 mag
 
 def test_color_anomaly_faherty16_table17_00040288_jh():
 	"""Faherty et al. (2016) Table 17 vs Table 15 field L1 mean."""
-	anomaly = seda.phy_params.color_anomaly(
+	anomaly = seda.fund_params.color_anomaly(
 		color=_FAHERTY16_00040288_JH,
 		color_name='J-H',
 		spt='L1',
@@ -741,7 +741,7 @@ def test_color_anomaly_faherty16_table17_00040288_jh():
 
 def test_color_anomaly_suarez23_j0355_jk_vs_faherty_field():
 	"""Suárez et al. (2023) photometry vs Faherty field L5 (Tables 15–16)."""
-	anomaly = seda.phy_params.color_anomaly(
+	anomaly = seda.fund_params.color_anomaly(
 		color=_SUAREZ23_0355_JK,
 		color_name='J-K',
 		spt='L5',
@@ -756,7 +756,7 @@ def test_color_anomaly_suarez23_j0355_jk_vs_faherty_field():
 
 def test_color_anomaly_suarez23_j0355_jh_vs_faherty_field():
 	"""Suárez et al. (2023) J−H for J0355+1133 vs Faherty field L5 mean."""
-	anomaly = seda.phy_params.color_anomaly(
+	anomaly = seda.fund_params.color_anomaly(
 		color=_SUAREZ23_0355_JH,
 		color_name='J-H',
 		spt='L5',
@@ -771,7 +771,7 @@ def test_color_anomaly_suarez23_j0355_jh_vs_faherty_field():
 
 def test_color_anomaly_suarez23_j0355_jk_young_lowg_reference():
 	"""Suárez et al. (2023) low-gravity reference for J0355+1133 (Table 2)."""
-	anomaly = seda.phy_params.color_anomaly(
+	anomaly = seda.fund_params.color_anomaly(
 		color=_SUAREZ23_0355_JK,
 		color_name='J-K',
 		spt='L5',
@@ -786,7 +786,7 @@ def test_color_anomaly_suarez23_j0355_jk_young_lowg_reference():
 
 def test_color_anomaly_suarez23_vos17_0036_jk_vs_faherty_field():
 	"""Suárez et al. (2023) photometry for Vos et al. (2017) 0036+1821."""
-	anomaly = seda.phy_params.color_anomaly(
+	anomaly = seda.fund_params.color_anomaly(
 		color=_SUAREZ23_0036_JK,
 		color_name='J-K',
 		spt='L4',
@@ -803,7 +803,7 @@ def test_color_anomaly_faherty16_table15_spt_interpolation():
 	# L3.7 → 0.3*L3 + 0.7*L4 (Table 15: L3=0.96, L4=1.07 mag)
 	ref_l37 = 0.3 * _FAHERTY16_L3_JH + 0.7 * _FAHERTY16_L4_JH
 	observed = 1.10
-	anomaly = seda.phy_params.color_anomaly(
+	anomaly = seda.fund_params.color_anomaly(
 		color=observed,
 		color_name='J-H',
 		spt='L3.7',
@@ -817,7 +817,7 @@ def test_color_anomaly_faherty16_table15_spt_interpolation():
 
 def test_color_anomaly_suarez22_0415_t8_ultracool():
 	"""Suárez & Metchev (2022) T8 photometry with Ultracool Sheet backend."""
-	anomaly = seda.phy_params.color_anomaly(
+	anomaly = seda.fund_params.color_anomaly(
 		color=_SUAREZ22_0415_JK,
 		color_name='J-K',
 		spt='T8',
@@ -833,7 +833,7 @@ def test_color_anomaly_suarez22_0415_t8_ultracool():
 def test_color_anomaly_with_uncertainty():
 	"""Suárez et al. (2023) Table 2 J and Ks uncertainties for J0355+1133."""
 	ecolor = float(np.hypot(0.024, 0.021))
-	out = seda.phy_params.color_anomaly(
+	out = seda.fund_params.color_anomaly(
 		color=_SUAREZ23_0355_JK,
 		color_name='J-K',
 		spt='L5',
@@ -848,7 +848,7 @@ def test_color_anomaly_with_uncertainty():
 		'color_anomaly with ecolor did not return a tuple'
 	)
 	with pytest.raises(ValueError, match="table='faherty16' covers"):
-		seda.phy_params.color_anomaly(
+		seda.fund_params.color_anomaly(
 			color=1.0, color_name='J-H', spt='T5',
 			table='faherty16', age_group='old',
 		)
@@ -858,7 +858,7 @@ def test_color_anomaly_ultracool_t_type_succeeds():
 	ref = seda.empirical_aux._loaders.reference_color(
 		'J-H', 'T5', table='ultracool',
 	)
-	anomaly = seda.phy_params.color_anomaly(
+	anomaly = seda.fund_params.color_anomaly(
 		color=ref + 0.1, color_name='J-H', spt='T5', table='ultracool',
 	)
 	assert anomaly == pytest.approx(0.1, abs=0.01), (
@@ -868,7 +868,7 @@ def test_color_anomaly_ultracool_t_type_succeeds():
 
 def test_color_anomaly_faherty_rejects_invalid_age_group():
 	with pytest.raises(ValueError, match='age_group'):
-		seda.phy_params.color_anomaly(
+		seda.fund_params.color_anomaly(
 			color=1.0, color_name='J-H', spt='L5',
 			table='faherty16', age_group='not-a-group',
 		)
@@ -881,7 +881,7 @@ def test_color_anomaly_faherty_requires_age_group():
 			'J-H', 'L5', table='faherty16',
 		)
 	with pytest.raises(ValueError, match='combined young/old sample'):
-		seda.phy_params.color_anomaly(
+		seda.fund_params.color_anomaly(
 			color=1.0, color_name='J-H', spt='L5', table='faherty16',
 		)
 	ref_old = seda.empirical_aux._loaders.reference_color(
@@ -894,14 +894,14 @@ def test_color_anomaly_faherty_requires_age_group():
 
 def test_color_anomaly_faherty_young_redder_than_field():
 	"""Suárez et al. (2023) J0355+1133 is redder vs field than vs young sequence."""
-	anomaly_field = seda.phy_params.color_anomaly(
+	anomaly_field = seda.fund_params.color_anomaly(
 		color=_SUAREZ23_0355_JK,
 		color_name='J-K',
 		spt='L5',
 		table='faherty16',
 		age_group='old',
 	)
-	anomaly_young = seda.phy_params.color_anomaly(
+	anomaly_young = seda.fund_params.color_anomaly(
 		color=_SUAREZ23_0355_JK,
 		color_name='J-K',
 		spt='L5',
@@ -919,7 +919,7 @@ def test_color_anomaly_faherty_young_redder_than_field():
 def test_color_anomaly_faherty_young_rejects_field_only_reference_stat():
 	# 'old' must use the published mean only.
 	with pytest.raises(ValueError, match='reference_stat'):
-		seda.phy_params.color_anomaly(
+		seda.fund_params.color_anomaly(
 			color=1.0, color_name='J-H', spt='L5',
 			table='faherty16', age_group='old', reference_stat='median',
 		)
@@ -931,7 +931,7 @@ def test_color_anomaly_faherty_young_accepts_median():
 		'J-H', 'L5', table='faherty16', age_group='young',
 		reference_stat='median',
 	)
-	anomaly = seda.phy_params.color_anomaly(
+	anomaly = seda.fund_params.color_anomaly(
 		color=_SUAREZ23_0355_JH,
 		color_name='J-H',
 		spt='L5',
@@ -956,7 +956,7 @@ def test_color_anomaly_faherty_young_l6_interpolates_l5_l7():
 		'L6 young J-K reference not interpolated from L5 and L7'
 	)
 	with pytest.warns(UserWarning, match='L6 has insufficient objects.*L5.*L7'):
-		anomaly = seda.phy_params.color_anomaly(
+		anomaly = seda.fund_params.color_anomaly(
 			color=_SUAREZ23_0355_JK,
 			color_name='J-K',
 			spt='L6',
@@ -1019,18 +1019,18 @@ def test_faherty_low_gravity_label_excludes_ambiguous():
 
 def test_color_anomaly_requires_table():
 	with pytest.raises(ValueError, match='table must be specified'):
-		seda.phy_params.color_anomaly(
+		seda.fund_params.color_anomaly(
 			color=1.0, color_name='J-H', spt='L5', table=None,
 		)
 	with pytest.raises(ValueError, match='table must be specified'):
-		seda.phy_params.color_anomaly(
+		seda.fund_params.color_anomaly(
 			color=1.0, color_name='J-H', spt='L5', table='',
 		)
 
 
 def test_color_anomaly_invalid_color_raises():
 	with pytest.raises(ValueError, match='color_name'):
-		seda.phy_params.color_anomaly(
+		seda.fund_params.color_anomaly(
 			color=1.0, color_name='Y-J', spt='L5',
 			table='faherty16', age_group='old',
 		)
@@ -1089,7 +1089,7 @@ def test_inclination_recovers_known_angle(inc_deg, P, R):
 	vsini = _vsini_for_inclination(P, R, inc_deg)
 	np.random.seed(0)
 
-	inc, einc = seda.phy_params.inclination(
+	inc, einc = seda.fund_params.inclination(
 		vsini=vsini, evsini=1e-10 * vsini,
 		P=P, eP=1e-10 * P,
 		R=R, eR=1e-10 * R,
@@ -1112,7 +1112,7 @@ def test_inclination_matches_deterministic_formula():
 	expected = _expected_inclination_deg(vsini, P, R)
 
 	np.random.seed(0)
-	inc, einc = seda.phy_params.inclination(
+	inc, einc = seda.fund_params.inclination(
 		vsini=vsini, evsini=evsini,
 		P=P, eP=eP, R=R, eR=eR,
 		n_mc=10000,
@@ -1129,7 +1129,7 @@ def test_inclination_matches_deterministic_formula():
 def test_inclination_std_error_mode():
 	"""With error='std', the uncertainty should be a scalar."""
 	np.random.seed(0)
-	inc, einc = seda.phy_params.inclination(
+	inc, einc = seda.fund_params.inclination(
 		vsini=20.0, evsini=1.0,
 		P=4.0, eP=0.1,
 		R=1.1, eR=0.05,
@@ -1147,7 +1147,7 @@ def test_inclination_std_error_mode():
 
 def test_inclination_invalid_central_raises():
 	with pytest.raises(ValueError, match='central'):
-		seda.phy_params.inclination(
+		seda.fund_params.inclination(
 			vsini=20.0, evsini=1.0,
 			P=4.0, eP=0.1,
 			R=1.1, eR=0.05,
@@ -1163,9 +1163,9 @@ def test_inclination_reproducible_with_seed():
 		n_mc=5000,
 	)
 	np.random.seed(42)
-	inc1, einc1 = seda.phy_params.inclination(**kwargs)
+	inc1, einc1 = seda.fund_params.inclination(**kwargs)
 	np.random.seed(42)
-	inc2, einc2 = seda.phy_params.inclination(**kwargs)
+	inc2, einc2 = seda.fund_params.inclination(**kwargs)
 
 	assert inc1 == pytest.approx(inc2), (
 		f'fixed seed gave inconsistent inclination: {inc1} vs {inc2}'
@@ -1177,7 +1177,7 @@ def test_inclination_reproducible_with_seed():
 def test_inclination_face_on():
 	"""vsini = 0 should give i = 0 deg."""
 	np.random.seed(0)
-	inc, _ = seda.phy_params.inclination(
+	inc, _ = seda.fund_params.inclination(
 		vsini=0.0, evsini=0.1,
 		P=5.0, eP=0.1,
 		R=1.0, eR=0.05,
@@ -1195,7 +1195,7 @@ def test_inclination_reports_clipped_samples(capsys):
 	evsini = 0.1 * v_eq
 
 	np.random.seed(0)
-	inc, einc = seda.phy_params.inclination(
+	inc, einc = seda.fund_params.inclination(
 		vsini=vsini, evsini=evsini,
 		P=P, eP=0.5,
 		R=R, eR=0.05,
@@ -1222,7 +1222,7 @@ def test_inclination_reports_clipped_samples(capsys):
 def test_inclination_all_clipped_returns_edge_on(capsys):
 	"""When every draw has sin i > 1, clipped samples give i = 90 deg."""
 	np.random.seed(0)
-	inc, einc = seda.phy_params.inclination(
+	inc, einc = seda.fund_params.inclination(
 		vsini=100.0, evsini=5.0,
 		P=10.0, eP=0.5,
 		R=0.5, eR=0.05,
