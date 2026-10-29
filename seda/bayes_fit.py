@@ -105,7 +105,7 @@ def bayes(my_bayes):
 		eflux_obs_phot = [my_bayes.ephot_fit]
 		weight_phot_fit = my_bayes.weight_phot_fit 
 
-	# set input flux depending whether spectra and/or photometry were provided
+	# set input flux densities depending whether spectra and/or photometry were provided
 	if fit_spectra and not fit_photometry:
 		wl_obs = wl_obs_spec
 		flux_obs = flux_obs_spec

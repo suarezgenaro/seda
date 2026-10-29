@@ -35,11 +35,11 @@ def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=Non
 	- wl : float array
 		Wavelength (any length units) for the spectrum.
 	- flux : float array
-		Fluxes (any flux units) for the spectrum.
+		Flux densities (any flux units) for the spectrum.
 	- res : float
 		Spectral resolution (at ``lam_res``) desired to smooth the input spectrum.
 	- eflux : float array, optional
-		Flux uncertainties (any flux units) for the spectrum.
+		Flux density uncertainties (any flux units) for the spectrum.
 	- lam_res : float, optional
 		Wavelength of reference at which ``res`` is given.
 		Default is the integer closest to the median wavelength of the spectrum.
@@ -59,11 +59,11 @@ def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=Non
 	- Dictionary
 		Dictionary with the convolved spectrum: 
 			- ``'wl_conv'`` : wavelengths for the convolved spectrum (equal to input ``wl`` within ``convolve_wl_range``). 
-			- ``'flux_conv'`` : convolved fluxes.
-			- ``'eflux_conv'`` : convolved flux errors (if ``eflux`` is provided).
+			- ``'flux_conv'`` : convolved flux densities.
+			- ``'eflux_conv'`` : convolved flux density uncertainties (if ``eflux`` is provided).
 	- ``out_file`` file
 		netCDF file with the convolved spectrum, if ``out_file`` is provided. 
-		Wavelengths and fluxes for the convolved spectrum have the same units as the input spectrum.
+		Wavelengths and flux densities for the convolved spectrum have the same units as the input spectrum.
 		Note: the wavelength data points are the same as in the input spectrum, so wavelength steps do not reflect the resolution of the convolved spectrum.
 
 	Example:
@@ -132,7 +132,7 @@ def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=Non
 	flux_conv = convolve_fft(flux[mask_conv], gauss) # convolve only the selected wavelength range 
 	# np.testing.assert_allclose(flux_conv, flux_conv_fft)
 
-	wl_conv = wl[mask_conv] # corresponding wavelength data points for convolved fluxes
+	wl_conv = wl[mask_conv] # corresponding wavelength data points for convolved flux densities
 
 	if eflux is not None: eflux_conv = convolve_fft(eflux[mask_conv], gauss) 
 		# np.testing.assert_allclose(eflux_conv, eflux_conv_fft)
@@ -162,7 +162,7 @@ def scale_synthetic_spectrum(wl, flux, distance, radius):
 	- wl : float array
 		Wavelength (any length units) for the spectrum.
 	- flux : float array
-		Fluxes (any flux units) for the spectrum.
+		Flux densities (any flux units) for the spectrum.
 	- radius: float
 		Radius in Rjup.
 	- distance: float
@@ -170,7 +170,7 @@ def scale_synthetic_spectrum(wl, flux, distance, radius):
 
 	Returns:
 	--------
-	Scaled fluxes.
+	Scaled flux densities.
 
 	'''
 
@@ -235,18 +235,18 @@ def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False
 		- ``'chi2_red_fit_best'`` : reduced chi-square.
 		- ``'chi2_red_wl_fit_best'`` : reduced chi-square as a function of wavelength.
 		- ``'wl_model_best'`` : (if ``ori_res``) wavelength (in um) of original model spectra.
-		- ``'flux_model_best'`` : (if ``ori_res``) fluxes (in erg/s/cm2/A) of original model spectra.
+		- ``'flux_model_best'`` : (if ``ori_res``) flux densities (in erg/s/cm2/A) of original model spectra.
 		- ``'wl_array_model_conv_resam_best'`` : (if ``fit_spectra``) wavelength (in um) of resampled, convolved model spectra in the input spectra ranges.
-		- ``'flux_array_model_conv_resam_best'`` : (if ``fit_spectra``) fluxes (in erg/s/cm2/A) of resampled, convolved model spectra in the input spectra ranges.
+		- ``'flux_array_model_conv_resam_best'`` : (if ``fit_spectra``) flux densities (in erg/s/cm2/A) of resampled, convolved model spectra in the input spectra ranges.
 		- ``'wl_array_model_conv_resam_fit_best'`` : (if ``fit_spectra``) wavelength (in um) of resampled, convolved model spectra within the fit range.
-		- ``'flux_array_model_conv_resam_fit_best'`` : (if ``fit_spectra``) fluxes (in erg/s/cm2/A) of resampled, convolved model spectra within the fit range.
-		- ``'flux_residuals_spec_best'`` : (if ``fit_spectra``) flux residuals in linear scale between model and input spectra.
-		- ``'logflux_residuals_spec_best'`` : (if ``fit_spectra``) flux residuals in log scale between model and input spectra.
+		- ``'flux_array_model_conv_resam_fit_best'`` : (if ``fit_spectra``) flux densities (in erg/s/cm2/A) of resampled, convolved model spectra within the fit range.
+		- ``'flux_residuals_spec_best'`` : (if ``fit_spectra``) flux density residuals in linear scale between model and input spectra.
+		- ``'logflux_residuals_spec_best'`` : (if ``fit_spectra``) flux density residuals in log scale between model and input spectra.
 		- ``'flux_syn_array_model_fit_best'`` : (if ``fit_photometry``) synthetic photometry (in erg/s/cm2/A) for the filters within the fit range.
 		- ``'lambda_eff_array_model_fit_best'`` : (if ``fit_photometry``) effective wavelength (in um) from model spectra for filters within the fit range.
 		- ``'width_eff_array_model_fit_best'`` : (if ``fit_photometry``) effective width (in um) from model spectra for filters within the fit range.
-		- ``'flux_residuals_phot_best'`` : (if ``fit_photometry``) flux residuals in linear scale between model and input spectra.
-		- ``'logflux_residuals_phot_best'`` : (if ``fit_photometry``) flux residuals in log scale between model and input spectra.
+		- ``'flux_residuals_phot_best'`` : (if ``fit_photometry``) flux density residuals in linear scale between model and input spectra.
+		- ``'logflux_residuals_phot_best'`` : (if ``fit_photometry``) flux density residuals in log scale between model and input spectra.
 		- ``'params'`` : model free parameters
 
 	Author: Genaro Suárez
@@ -271,11 +271,11 @@ def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False
 	skip_convolution = output_chi2['my_chi2'].skip_convolution
 	if fit_spectra:
 		wl_array_model_conv_resam = output_chi2['my_chi2'].wl_array_model_conv_resam # wavelengths of resampled, convolved model spectra in the input spectra wavelength ranges
-		#flux_array_model_conv_resam = output_chi2['my_chi2'].flux_array_model_conv_resam # fluxes of resampled, convolved model spectra in the input spectra wavelength ranges
-		flux_array_model_conv_resam_scaled	= output_chi2['flux_array_model_conv_resam_scaled'] # fluxes of resampled, convolved, scaled model spectra in the input spectra wavelength ranges
+		#flux_array_model_conv_resam = output_chi2['my_chi2'].flux_array_model_conv_resam # flux densities of resampled, convolved model spectra in the input spectra wavelength ranges
+		flux_array_model_conv_resam_scaled	= output_chi2['flux_array_model_conv_resam_scaled'] # flux densities of resampled, convolved, scaled model spectra in the input spectra wavelength ranges
 		wl_array_model_conv_resam_fit = output_chi2['my_chi2'].wl_array_model_conv_resam_fit # wavelengths of resampled, convolved model spectra within the fit ranges
-		#flux_array_model_conv_resam_fit = output_chi2['my_chi2'].flux_array_model_conv_resam_fit # fluxes of resampled, convolved model spectra within the fit ranges
-		flux_array_model_conv_resam_scaled_fit = output_chi2['flux_array_model_conv_resam_scaled_fit'] # fluxes of resampled, convolved, scaled model spectra within the fit ranges
+		#flux_array_model_conv_resam_fit = output_chi2['my_chi2'].flux_array_model_conv_resam_fit # flux densities of resampled, convolved model spectra within the fit ranges
+		flux_array_model_conv_resam_scaled_fit = output_chi2['flux_array_model_conv_resam_scaled_fit'] # flux densities of resampled, convolved, scaled model spectra within the fit ranges
 		flux_residuals_spec = output_chi2['flux_residuals_spec']
 		logflux_residuals_spec = output_chi2['logflux_residuals_spec']
 	if fit_photometry:
@@ -324,7 +324,7 @@ def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False
 			for i in range(N_best_fits):
 				out_read_model_spectrum = models.read_model_spectrum(spectrum_name_full=spectra_name_full_best[i], model=model)
 				wl_model_best_lst.append(out_read_model_spectrum['wl_model'])
-				flux_model_best_lst.append(scaling_fit_best[i] * out_read_model_spectrum['flux_model']) # scaled fluxes
+				flux_model_best_lst.append(scaling_fit_best[i] * out_read_model_spectrum['flux_model']) # scaled flux densities
 		else: # when the convolution was skipped
 			if model_dir_ori is None: raise Exception(f'parameter "model_dir_ori" is needed to read model spectra with the original resolution')
 			else:
@@ -335,7 +335,7 @@ def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False
 						spectrum_name_full = out_select_model_spectra['spectra_name_full'][out_select_model_spectra['spectra_name']==spectrum_name][0]
 						out_read_model_spectrum = models.read_model_spectrum(spectrum_name_full=spectrum_name_full, model=model)
 						wl_model_best_lst.append(out_read_model_spectrum['wl_model'])
-						flux_model_best_lst.append(scaling_fit_best[i] * out_read_model_spectrum['flux_model']) # scaled fluxes
+						flux_model_best_lst.append(scaling_fit_best[i] * out_read_model_spectrum['flux_model']) # scaled flux densities
 					else: raise Exception(f'{spectrum_name} is not in {model_dir_ori}')
 
 		# convert list with models to a numpy array
@@ -439,7 +439,7 @@ def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spect
 	--------
 	Dictionary with generated model spectrum:
 		- ``'wavelength'``: wavelengths in microns for the generated spectrum.
-		- ``'flux'``: fluxes in erg/s/cm2/A for the generated spectrum.
+		- ``'flux'``: flux density in erg/s/cm2/A for the generated spectrum.
 		- ``'params'``: input parameters for the generated synthetic spectrum.
 
 	Example:
@@ -630,7 +630,7 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 	--------
 	Dictionary with the model grid either convolved and resampled (if requested):
 		- ``'wavelength'`` : wavelengths in microns for the model spectra in the grid.
-		- ``'flux'`` : fluxes in erg/s/cm2/A for the model spectra in the grid.
+		- ``'flux'`` : flux densities in erg/s/cm2/A for the model spectra in the grid.
 		- ``'params_unique'`` : dictionary with unique (non-repetitive) values for each model free parameter.
 		- ``'N_model_spectra'`` : number of model spectra in the grid.
 
@@ -858,7 +858,7 @@ def read_grid_phot(model, model_dir, filters, params_ranges=None, fit_phot_range
 	- svo_data : astropy.table.Table, optional
 		Astropy table retrieved from SVO using :func:`~seda.utils.read_SVO_table`.
 	- path_save_syn_phot: str, optional
-		Directory path to store the synthetic fluxes (in erg/s/cm2/A).
+		Directory path to store the synthetic flux densities (in erg/s/cm2/A).
 		If not provided (default), the synthetic photometry will not be saved. 
 		If the directory does not exist, it will be created. Otherwise, the photometry will be added to the existing folder.
 		The synthetic photometry for different filters derived from the same model spectrum will be saved in a single ASCII table, named after the model with the suffix "_syn_phot.dat".
@@ -871,7 +871,7 @@ def read_grid_phot(model, model_dir, filters, params_ranges=None, fit_phot_range
 	--------
 	Dictionary with the model grid of synthetic photometry:
 		- ``'wavelength'`` : fixed SVO effective wavelengths in microns for the filters.
-		- ``'flux'`` : synthetic fluxes in erg/s/cm2/A for each combination of model parameters and filters.
+		- ``'flux'`` : synthetic flux densities in erg/s/cm2/A for each combination of model parameters and filters.
 		- ``'lambda_eff'`` : model-dependent effective wavelengths in microns for each combination of model parameters and filters.
 		- ``'width_eff'`` : model-dependent effective filter widths in microns for each combination of model parameters and filters.
 		- ``'params_unique'`` : dictionary with unique (non-repetitive) values for each model free parameter.
@@ -925,13 +925,13 @@ def read_grid_phot(model, model_dir, filters, params_ranges=None, fit_phot_range
 		new_dim = np.expand_dims(arr, -1) # add a dimension (at the end)
 		arr = np.repeat(new_dim, dim_size, axis=-1) # change size of new dimension
 
-	# load model grid with the selected synthetic fluxes
+	# load model grid with the selected synthetic flux densities 
 	# create a tqdm progress bar
 	desc = 'Deriving synthetic photometry from model spectra'
 	grid_bar = tqdm(total=len(spectra_name), desc=desc)
 
 	# to save relevant parameters for each combination of free parameter values
-	flux_grid = np.repeat(np.expand_dims(arr, -1), len(filters), axis=-1) # for synthetic fluxes
+	flux_grid = np.repeat(np.expand_dims(arr, -1), len(filters), axis=-1) # for synthetic flux densities
 	lambda_eff_grid = np.repeat(np.expand_dims(arr, -1), len(filters), axis=-1) # for effective wavelength
 	width_eff_grid = np.repeat(np.expand_dims(arr, -1), len(filters), axis=-1) # for effective width
 	wl_grid = None # fixed wavelength reference for the photometric grid
@@ -1002,7 +1002,7 @@ def read_grid_phot(model, model_dir, filters, params_ranges=None, fit_phot_range
 						save_prettytable(my_dict=dict_syn_phot, table_name=file_name)
 
 					else: # file already exist
-						# open file to see whether the flux for a given filter is already stored
+						# open file to see whether the flux density for a given filter is already stored
 						dict_syn_phot = read_prettytable(file_name)
 
 						for j, filt in enumerate(filters_fit): # for each filter used to derived synthetic photometry
@@ -1102,18 +1102,18 @@ def best_bayesian_fit(output_bayes, grid_spec=None, grid_phot=None, model_dir_or
 	- dictionary
 		Dictionary with the best model fit from the nested sampling:
 			- ``'wl_spectra_fit'`` : (if ``fit_spectra``) wavelength in um of the input spectra within ``fit_wl_range``.
-			- ``'flux_spectra_fit'`` : (if ``fit_spectra``) fluxes in erg/cm2/s/A of the input spectra within ``fit_wl_range``.
-			- ``'eflux_spectra_fit'`` : (if ``fit_spectra``) flux uncertainties in erg/cm2/s/A of the input spectra within ``fit_wl_range``.
-			- ``'phot_fit'`` : (if ``fit_photometry``) flux in erg/cm2/s/A of the input photometry within ``fit_wl_range``.
-			- ``'ephot_fit'`` : (if ``fit_photometry``) flux uncertainties in erg/cm2/s/A of the input photometry within ``fit_wl_range``.
+			- ``'flux_spectra_fit'`` : (if ``fit_spectra``) flux densities in erg/cm2/s/A of the input spectra within ``fit_wl_range``.
+			- ``'eflux_spectra_fit'`` : (if ``fit_spectra``) flux density uncertainties in erg/cm2/s/A of the input spectra within ``fit_wl_range``.
+			- ``'phot_fit'`` : (if ``fit_photometry``) flux densities in erg/cm2/s/A of the input photometry within ``fit_wl_range``.
+			- ``'ephot_fit'`` : (if ``fit_photometry``) flux density uncertainties in erg/cm2/s/A of the input photometry within ``fit_wl_range``.
 			- ``'params_med'`` : median values for sampled parameters.
 			- ``'params_errors'`` : lower and upper parameter errors considering the confidence interval ``params_confidence_interval``.
 			- ``'params_confidence_interval'`` : confidence interval for sampled parameters.
 			- ``'confidence_interval(%)'`` : central percentage considered to calculate the confidence interval.
-			- ``'wl_model'`` : wavelength in um of the best scaled model fit (convolved, and resampled when fit_spectra or synthetic fluxes when fit_spectra) within ``fit_wl_range``.
-			- ``'flux_model'`` : fluxes in erg/cm2/s/A of the best scaled, convolved, and resampled model fit
+			- ``'wl_model'`` : wavelength in um of the best scaled model fit (convolved, and resampled when fit_spectra or synthetic flux densities when fit_spectra) within ``fit_wl_range``.
+			- ``'flux_model'`` : flux densities in erg/cm2/s/A of the best scaled, convolved, and resampled model fit
 			- ``'wl_model_best'`` : (if ``ori_res`` is ``True``) wavelength in um of the best scaled model fit with its original resolution
-			- ``'flux_model_best'`` : (if ``ori_res`` is ``True``) fluxes in erg/cm2/s/A of the best scaled model fit with its original resolution
+			- ``'flux_model_best'`` : (if ``ori_res`` is ``True``) flux densities in erg/cm2/s/A of the best scaled model fit with its original resolution
 
 	Author: Genaro Suárez
 
@@ -1624,28 +1624,28 @@ def app_to_abs_flux(flux, distance, eflux=None, edistance=None, reverse=False):
 	'''
 	Description:
 	------------
-		Convert apparent fluxes into absolute fluxes considering a distance.
+		Convert apparent flux densities into absolute flux densities considering a distance.
 
 	Parameters:
 	-----------
 	- flux : float array or float
-		Fluxes (in any flux units).
+		Flux densities (in any flux units).
 	- distance : float
 		Target distance (in pc).
 	- eflux : float array or float, optional
-		Flux uncertainties (in any flux units).
+		Flux density uncertainties (in any flux units).
 	- edistance : float, optional
 		Distance error (in pc).
 	- reverse : {``True``, ``False``}, optional (default ``False``)
-		Label to indicate if apparent fluxes are converted into absolute fluxes (``False``) or vice versa (``True``).
+		Label to indicate if apparent flux densities are converted into absolute flux densities (``False``) or vice versa (``True``).
 
 	Returns:
 	--------
-	- Dictionary with absolute fluxes and input parameters:
-		- ``'flux_abs'`` : absolute fluxes in the same units as the input fluxes.
-		- ``'eflux_abs'`` : (if ``eflux`` or ``edistance`` is provided) absolute flux uncertainties.
-		- ``'flux_app'`` : input apparent fluxes.
-		- ``'eflux_app'`` : (if provided) input apparent flux errors.
+	- Dictionary with absolute flux densities and input parameters:
+		- ``'flux_abs'`` : absolute flux densities in the same units as the input flux densities.
+		- ``'eflux_abs'`` : (if ``eflux`` or ``edistance`` is provided) absolute flux density uncertainties.
+		- ``'flux_app'`` : input apparent flux densities.
+		- ``'eflux_app'`` : (if provided) input apparent flux density uncertainties.
 		- ``'distance'`` : input distance.
 		- ``'edistance'`` : (if provided) input distance error.
 
@@ -1681,10 +1681,10 @@ def app_to_abs_flux(flux, distance, eflux=None, edistance=None, reverse=False):
 	flux = astropy_to_numpy(flux)
 	eflux = astropy_to_numpy(eflux)
 
-	if not reverse: # apparent fluxes to absolute fluxes
-		# absolute fluxes
+	if not reverse: # apparent flux densities to absolute flux densities
+		# absolute flux densities
 		flux_abs = flux * (distance/10.)**2
-		# absolute flux errors
+		# absolute flux density uncertainties
 		eflux_abs = flux_abs*np.sqrt((2.*edistance/distance)**2 + (eflux/flux)**2)
 
 		# output dictionary
@@ -1693,7 +1693,7 @@ def app_to_abs_flux(flux, distance, eflux=None, edistance=None, reverse=False):
 		if isinstance(eflux, np.ndarray): # if eflux is an array
 			out['eflux_app'] = eflux
 			out['eflux_abs'] = eflux_abs
-		elif eflux!=0: # if flux is a float non-equal to zero
+		elif eflux!=0: # if flux density is a float non-equal to zero
 			out['eflux_app'] = eflux
 			out['eflux_abs'] = eflux_abs
 		out['distance'] = distance
@@ -1701,10 +1701,10 @@ def app_to_abs_flux(flux, distance, eflux=None, edistance=None, reverse=False):
 			out['edistance'] = edistance
 			out['eflux_abs'] = eflux_abs # if eflux_abs was stored above it would replace it without issues
 
-	else: # absolute fluxes to apparent fluxes
-		# apparent fluxes
+	else: # absolute flux densities to apparent flux densities
+		# apparent flux densities
 		flux_app = flux / (distance/10.)**2 
-		# absolute flux errors
+		# absolute flux density uncertainties
 		eflux_app = flux_app*np.sqrt((2.*edistance/distance)**2 + (eflux/flux)**2)
 
 		# output dictionary
@@ -1713,7 +1713,7 @@ def app_to_abs_flux(flux, distance, eflux=None, edistance=None, reverse=False):
 		if isinstance(eflux, np.ndarray): # if eflux is an array
 			out['eflux_app'] = eflux_app
 			out['eflux_abs'] = eflux
-		elif eflux!=0: # if flux is a float non-equal to zero
+		elif eflux!=0: # if flux density is a float non-equal to zero
 			out['eflux_app'] = eflux_app
 			out['eflux_abs'] = eflux
 		out['distance'] = distance
@@ -2045,14 +2045,15 @@ def convert_photometric_table(table, save_table=False, table_name=None):
 	'''
 	Description:
 	------------
-		Convert a table with photometry in separate columns to a table with all magnitudes or fluxes in a column and all errors in another column. 
+		Convert a table with photometry in separate columns to a table with all magnitudes 
+		or flux densities in a column and all errors in another column. 
 
 	Parameters:
 	-----------
 	- table : astropy table
 		Table with photometric measurements and their corresponding errors listed in separate columns. 
-		The magnitude or flux columns must be labeled with the corresponding SVO filter names. 
-		The table must include only photometry, structured such that each magnitude or flux column is 
+		The magnitude or flux density columns must be labeled with the corresponding SVO filter names. 
+		The table must include only photometry, structured such that each magnitude or flux density column is 
 		immediately followed by its associated error column i.e. magnitude1, error1, magnitude2, error2, etc.
 		Note: names of columns with photometric errors are irrelevant.
 	- save_table : {``True``, ``False``}, optional (default ``False``)
@@ -2063,7 +2064,7 @@ def convert_photometric_table(table, save_table=False, table_name=None):
 
 	Returns:
 	--------
-	Dictionary with three keys: SVO filter names, magnitudes or fluxes, and corresponding errors. 
+	Dictionary with three keys: SVO filter names, magnitudes or flux densities, and corresponding errors. 
 
 	Example:
 	--------
@@ -2134,10 +2135,10 @@ def merge_MRS(fits_files):
 		- ``'channel_grating_range'``: wavelength range used for each channel-grating setting
 		- ``'wl_merge'``: wavelength value at which two consecutive overlapping spectra where merged
 		- ``'wl'``: wavelength in micron of the merged spectrum
-		- ``'flux_Jy'``: flux in Jy of the merged spectrum
-		- ``'eflux_Jy'``: flux uncertainties in Jy of the merged spectrum
-		- ``'flux_erg/s/cm2/A'``: flux in erg/s/cm2/A of the merged spectrum
-		- ``'eflux_erg/s/cm2/A'``: flux uncertainties in erg/s/cm2/A of the merged spectrum
+		- ``'flux_Jy'``: flux density in Jy of the merged spectrum
+		- ``'eflux_Jy'``: flux density uncertainties in Jy of the merged spectrum
+		- ``'flux_erg/s/cm2/A'``: flux density in erg/s/cm2/A of the merged spectrum
+		- ``'eflux_erg/s/cm2/A'``: flux density uncertainties in erg/s/cm2/A of the merged spectrum
 
 	Example:
 	--------
@@ -2224,7 +2225,7 @@ def merge_MRS(fits_files):
 	flux_Jy_MRS = flux_MRS[sort_ind]
 	eflux_Jy_MRS = eflux_MRS[sort_ind]
 
-	# convert fluxes from Jy to erg/s/cm2/A
+	# convert flux densities from Jy to erg/s/cm2/A
 	flux_MRS = (flux_Jy_MRS*u.Jy).to(u.erg/u.s/u.cm**2/(u.nm*0.1), equivalencies=u.spectral_density(wl_MRS*u.micron)).value
 	eflux_MRS = (eflux_Jy_MRS*u.Jy).to(u.erg/u.s/u.cm**2/(u.nm*0.1), equivalencies=u.spectral_density(wl_MRS*u.micron)).value
 
@@ -2241,16 +2242,17 @@ def fill_gap_spectrum(wl, flux, eflux, disp_threshold=None):
 	Description:
 	------------
 		Function to identify and fill a gap in a spectrum.
-		It does a linear interpolation between the median flux before and after the gap and fill the gap with data points with the median wavelength step.
+		It does a linear interpolation between the median flux density before and 
+		after the gap and fill the gap with data points with the median wavelength step.
 
 	Parameters:
 	-----------
 	- wl : array
 		Wavelength (any units) of input spectrum.
 	- flux : array
-		Fluxes (any units) of input spectrum.
+		Flux densities (any units) of input spectrum.
 	- eflux : array
-		Flux uncertainties (any units) of input spectrum.
+		Flux density uncertainties (any units) of input spectrum.
 	- disp_threshold : float, optional
 		Wavelength dispersion threshold used to identify gaps. 
 		Data points with a dispersion above this limit are classified as gaps.
@@ -2261,8 +2263,8 @@ def fill_gap_spectrum(wl, flux, eflux, disp_threshold=None):
 	Dictionary with:
 		- ``'gap_region'``: minimum and maximum wavelengths of the gap
 		- ``'wl_nogap'``: wavelengths after filling the gap
-		- ``'flux_nogap'``: fluxes after filling the gap
-		- ``'eflux_nogap'``: flux errors after filling the gap
+		- ``'flux_nogap'``: flux densities after filling the gap
+		- ``'eflux_nogap'``: flux density uncertainties after filling the gap
 
 	Author: Genaro Suárez
 
@@ -2304,9 +2306,9 @@ def fill_gap_spectrum(wl, flux, eflux, disp_threshold=None):
 	# data to fill the gap
 	wl_gap = np.arange(wl_gap_before, wl_gap_after, np.median(wl_disp)) # wavelengths with the median wavelength step
 	flux_gap = ((flux_gap_after_median-flux_gap_before_median)/(wl_gap_after-wl_gap_before)) * (wl_gap-wl_gap_after) + flux_gap_after_median # fluxes from a line fit
-	# flux errors in a window before and after the gap
+	# flux density uncertainties in a window before and after the gap
 	eflux_window = eflux[wl_gap_before_ind-pad_gap:wl_gap_after_ind+pad_gap]
-	if isinstance(eflux_window, astropy.table.column.MaskedColumn): # in case there are masked values in flux error window
+	if isinstance(eflux_window, astropy.table.column.MaskedColumn): # in case there are masked values in flux density error window
 		unmasked = np.logical_not(eflux_window.mask).nonzero()
 		eflux_gap_median = np.median(eflux_window[unmasked])
 	else: eflux_gap_median = np.median(eflux_window)
@@ -2519,7 +2521,7 @@ def normalize_flux(flx: ArrayLike) -> np.ndarray:
     """
     Description:
     ------------
-    Median-normalize a flux array while ignoring non-finite values.
+    Median-normalize a flux density array while ignoring non-finite values.
 
     The function divides the input flux by the median of the finite
     (non-NaN, non-infinite) values. This is commonly used to place
@@ -2528,13 +2530,13 @@ def normalize_flux(flx: ArrayLike) -> np.ndarray:
     Parameters:
     -----------
     flx : array-like
-        Input flux array. Can contain NaNs or infinite values, which
+        Input flux density array. Can contain NaNs or infinite values, which
         are ignored when computing the median.
 
     Returns
     -------
     normalized_flux : ndarray
-        Flux array divided by the median of its finite values.
+        Flux density array divided by the median of its finite values.
         If the median is zero, the original array is returned unchanged.
 
     Raises:

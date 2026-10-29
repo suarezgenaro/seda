@@ -35,17 +35,18 @@ class InputData:
 		Wavelength in micron of the spectra for model comparisons.
 		For multiple spectra, provide them as a list (e.g., ``wl_spectra = [wl_spectrum1, wl_spectrum2]``).
 	- flux_spectra : float array or list, optional (required if ``fit_spectra``)
-		Fluxes for the input spectra in units indicated by ``flux_unit``.
+		Flux densities for the input spectra in units indicated by ``flux_unit``.
 		Use a list for multiple spectra (similar to ``wl_spectra``).
 	- eflux_spectra : float array or list, optional (required if ``fit_spectra``)
-		Fluxes uncertainties in units indicated by ``flux_unit``.
+		Flux density uncertainties in units indicated by ``flux_unit``.
 		Use a list for multiple spectra (similar to ``wl_spectra``).
 	- flux_unit : str, optional (default ``'erg/s/cm2/A'``)
 		Units of ``flux_spectra`` and ``eflux_spectra``: ``'Jy'``, ``'erg/s/cm2/A'``, or ``erg/s/cm2/um``.
 	- phot : float array, optional (required if ``fit_photometry``)
-		Magnitudes or photometric fluxes for the fit
+		Magnitudes or photometric flux densities for the fit
 	- ephot : float array, optional (required if ``fit_photometry``)
-		Magnitude or photometric flux uncertainties for the fit. Magnitudes or fluxes with uncertainties equal to zero are excluded from the fit.
+		Magnitude or photometric flux density uncertainties for the fit. 
+		Magnitudes or flux densities with uncertainties equal to zero are excluded from the fit.
 	- filters : float array, optional (required if ``fit_photometry``)
 		Filters associated to the input photometry following SVO filter IDs 
 		http://svo2.cab.inta-csic.es/theory/fps/
@@ -285,7 +286,7 @@ class ModelOptions:
 	- wl_model : array, optional (required if `model_dir` is not provided)
 		Wavelengths in micron of model spectrum.
 	- flux_model : array, optional (required if `model_dir` is not provided)
-		Fluxes in erg/s/cm2/A of model spectrum.
+		Flux densities in erg/s/cm2/A of model spectrum.
 	- path_save_spectra_conv: str, optional
 		Directory path to store convolved model spectra. 
 		If not provided (default), the convolved spectra will not be saved. 
@@ -297,7 +298,7 @@ class ModelOptions:
 		Once the code has be run and the convolved spectra were stored in ``path_save_spectra_conv``, the convolved grid can be reused for other input data with the same resolution as the convolved spectra.
 		If 'True', ``model_dir`` should include the previously convolved spectra for ``res`` at ``lam_res`` in ``input_parameters.InputData``. 
 	- path_save_syn_phot: str, optional
-		Directory path to store the synthetic fluxes (in erg/s/cm2/A).
+		Directory path to store the synthetic flux densities (in erg/s/cm2/A).
 		If not provided (default), the synthetic photometry will not be saved. 
 		If the directory does not exist, it will be created. Otherwise, the photometry will be added to the existing folder.
 		The synthetic photometry for different filters derived from the same model spectrum will be saved in a single ASCII table, named after the model with the suffix "_syn_phot.dat".
@@ -395,7 +396,7 @@ class Chi2Options:
 		Default values are the minimum and the maximum of the filter effective wavelengths from SVO.
 	- weight_label : str, optional (default ``dataset``)
 		Weight applied to each input data point (photometric and spectroscopic) during data fitting.
-		This parameter is different from the weighting derived from the observed flux uncertainties, which typically appears as the denominator in the fit statistic.
+		This parameter is different from the weighting derived from the observed flux density uncertainties, which typically appears as the denominator in the fit statistic.
 		``weight_label`` allows assigning different relative weights to photometry and spectra (when ``fit_spectra`` and ``fit_photometry`` are enabled), 
 		ensuring that photometric measurements do not have a negligible contribution to the fit, considering that photometric SEDs typically contain far fewer data points than spectroscopic SEDs.
 
@@ -451,13 +452,13 @@ class Chi2Options:
 				Nested list input spectra wavelengths within ``fit_wl_range`` for each selected model spectrum.
 				This is convenient because model spectra do not necessary all have the same wavelength coverage.
 			flux_array_obs_fit : list
-				Nested list with input spectra fluxes (in erg/s/cm2/A) within ``fit_wl_range`` for each selected model spectrum.
+				Nested list with input spectra flux densities (in erg/s/cm2/A) within ``fit_wl_range`` for each selected model spectrum.
 			eflux_array_obs_fit  : list
-				Nested list with input spectra flux uncertainties (in erg/s/cm2/A) within ``fit_wl_range`` for each selected model spectrum.
+				Nested list with input spectra flux density uncertainties (in erg/s/cm2/A) within ``fit_wl_range`` for each selected model spectrum.
 			wl_array_model_conv_resam : list
 				Nested list with wavelengths for the selected model spectra convolved using ``res`` and ``lam_res`` and resampled (based on the input wavelengths) within ``model_wl_range``.
 			flux_array_model_conv_resam : list
-				Nested list with fluxes (in erg/s/cm2/A) for the selected model spectra convolved using ``res`` and ``lam_res`` and resampled (based on the input wavelengths) within ``model_wl_range``.
+				Nested list with flux densities (in erg/s/cm2/A) for the selected model spectra convolved using ``res`` and ``lam_res`` and resampled (based on the input wavelengths) within ``model_wl_range``.
 			wl_array_model_conv_resam_fit : list
 				Same as ``wl_array_model_conv_resam`` but within ``fit_wl_range``.
 			flux_array_model_conv_resam_fit :
@@ -476,7 +477,7 @@ class Chi2Options:
 			width_eff_SVO_fit : numpy array
 				Effective widths from SVO for ``filters_fit``.
 			flux_syn_array_model_fit : list
-				Nested list with synthetic fluxes (in erg/s/cm2/A) for ``filters_fit`` for each selected model spectrum.
+				Nested list with synthetic flux densities (in erg/s/cm2/A) for ``filters_fit`` for each selected model spectrum.
 			lambda_eff_array_model_fit : numpy array
 				Effective wavelengths (in micron) from the spectrum for ``filters_fit`` for each selected model spectrum.
 			width_eff_array_model_fit : numpy array
@@ -990,7 +991,7 @@ class BayesOptions:
 		Default values are the minimum and the maximum of the filter effective wavelengths from SVO.
 	- weight_label : str, optional (default ``dataset``)
 		Weight applied to each input data point (photometric and spectroscopic) during data fitting.
-		This parameter is different from the weighting derived from the observed flux uncertainties, which typically appears as the denominator in the fit statistic.
+		This parameter is different from the weighting derived from the observed flux density uncertainties, which typically appears as the denominator in the fit statistic.
 		``weight_label`` allows assigning different relative weights to photometry and spectra (when ``fit_spectra`` and ``fit_photometry`` are enabled), 
 		ensuring that photometric measurements do not have a negligible contribution to the fit, considering that photometric SEDs typically contain far fewer data points than spectroscopic SEDs.
 
@@ -1028,7 +1029,7 @@ class BayesOptions:
 		grid : list
 			Nested list of dictionaries containing the selected model spectra grid and their associated unique free-parameter values.
 			If ``fit_spectra``, a dictionary including the selected model spectra convolved using ``res`` and ``lam_res`` and resampled (based on the input wavelengths) within ``fit_wl_range``.
-			If ``fit_photometry``, a dictionary containing synthetic model fluxes (in erg/s/cm2/A) for ``filters_fit`` computed from the selected model spectra.
+			If ``fit_photometry``, a dictionary containing synthetic model flux densities (in erg/s/cm2/A) for ``filters_fit`` computed from the selected model spectra.
 		ndim : int
 			Number of free parameters in the model fit equal to the number of free parameters plus radius (if a ``distance`` is provided).
 		filename_pattern : list
@@ -1048,9 +1049,9 @@ class BayesOptions:
 				Nested list input spectra wavelengths within ``fit_wl_range`` for each selected model spectrum.
 				This is convenient because model spectra do not necessary all have the same wavelength coverage.
 			flux_spectra_fit : list
-				Nested list with input spectra fluxes (in erg/s/cm2/A) within ``fit_wl_range`` for each selected model spectrum.
+				Nested list with input spectra flux densities (in erg/s/cm2/A) within ``fit_wl_range`` for each selected model spectrum.
 			eflux_spectra_fit : list
-				Nested list with input spectra flux uncertainties (in erg/s/cm2/A) within ``fit_wl_range`` for each selected model spectrum.
+				Nested list with input spectra flux density uncertainties (in erg/s/cm2/A) within ``fit_wl_range`` for each selected model spectrum.
 			weight_spec_fit : list
 				Nested list with the weights assigned to each spectroscopic data point within the fit range considering the equation chi2 = weight * (data-model)^2 / edata^2.
 		if ``fit_photometry``:

@@ -482,8 +482,8 @@ def read_model_spectrum(spectrum_name_full, model, model_wl_range=None):
 	--------
 	Dictionary with model spectrum:
 		- ``'wl_model'`` : wavelengths in microns
-		- ``'flux_model'`` : fluxes in erg/s/cm2/A
-		- ``'flux_model_Jy'`` : fluxes in Jy
+		- ``'flux_model'`` : flux densities in erg/s/cm2/A
+		- ``'flux_model_Jy'`` : flux densities in Jy
 
 	Author: 
 		Genaro Suárez
@@ -517,7 +517,7 @@ def read_model_spectrum(spectrum_name_full, model, model_wl_range=None):
 		wl_model = wl_model[mask]
 		flux_model = flux_model[mask]
 
-	# obtain fluxes in Jy
+	# obtain flux densities in Jy
 	flux_model_Jy = (flux_model*u.erg/u.s/u.cm**2/(u.nm*0.1)).to(u.Jy, equivalencies=u.spectral_density(wl_model*u.micron)).value
 
 	out = {'wl_model': wl_model, 'flux_model': flux_model, 'flux_model_Jy': flux_model_Jy}
@@ -540,7 +540,7 @@ def read_model_spectrum_conv(spectrum_name_full, model_wl_range=None):
 		wl_model = wl_model[mask]
 		flux_model = flux_model[mask]
 
-	# obtain fluxes in Jy
+	# obtain flux densites in Jy
 	flux_model_Jy = (flux_model*u.erg/u.s/u.cm**2/(u.nm*0.1)).to(u.Jy, equivalencies=u.spectral_density(wl_model*u.micron)).value
 
 	out = {'wl_model': wl_model, 'flux_model': flux_model, 'flux_model_Jy': flux_model_Jy}

@@ -154,7 +154,7 @@ def _plot_user_index_integral_windows(
         ax.set_title(f"{name} index")
         ax.set_xlabel("Wavelength [µm]")
         if i % ncols == 0:
-            ax.set_ylabel("Normalized Flux")
+            ax.set_ylabel("Normalized flux density")
 
         ax.set_xlim(wave.min(), wave.max())
 
@@ -877,11 +877,11 @@ def classify_variability(
     - wavelength : array-like
         Wavelength array (microns).
     - flux : array-like
-        Flux array corresponding to `wavelength`.
+        Flux density array corresponding to `wavelength`.
     - spectral_type : {"L", "T"}
         Spectral type scheme to use for the classification.
     - normalize : bool, default True
-        If True, the flux is median-normalized before computing indices.
+        If True, the flux density is median-normalized before computing indices.
     - scheme : str or None, optional
         Name or reference of the variability scheme. If None, the default
         scheme for the selected spectral type is used.
@@ -918,7 +918,7 @@ def classify_variability(
            - regions_triggered : list[str]
              List of region identifiers (or names) for which the target falls inside the corresponding variability polygon.
            - normalize : bool
-             Whether a median flux normalization was applied to the input spectrum prior to computing the indices.
+             Whether a median flux density normalization was applied to the input spectrum prior to computing the indices.
            - summary() : str
              Returns a human-readable, multi-line summary of the classification outcome. The result object also provides a convenience method:
 

@@ -17,20 +17,21 @@ def silicate_index(wl, flux, eflux, silicate_wl=None, silicate_window=None,
 	'''
 	Description:
 	------------
-		Measure the strength of the mid-infrared silicate absorption feature considering the silicate index defined in Suárez & Metchev (2022,2023).
+		Measure the strength of the mid-infrared silicate absorption feature 
+		considering the silicate index defined in Suárez & Metchev (2022,2023).
 
 	Parameters:
 	-----------
 	- wl : array
 		Spectrum wavelengths in microns.
 	- flux : array
-		Spectrum fluxes in Jy.
+		Spectrum flux densities in Jy.
 	- eflux : array
-		Spectrum flux errors in Jy.
+		Spectrum flux density uncertainties in Jy.
 	- silicate_wl : float, optional (default 9.3 um)
 		Wavelength reference to indicate the center of silicate absorption. 
 	- silicate_window : float, optional (default 0.6 um)
-		Wavelength window around ``silicate_wl`` used to calculate the average flux at the absorption.
+		Wavelength window around ``silicate_wl`` used to calculate the average flux density at the absorption.
 	- continuum_wl1 : float, optional (default 7.45 um)
 		Wavelength reference to indicate the short-wavelength continuum of silicate absorption. 
 	- continuum_window1 : float, optional (default 0.5 um))
@@ -70,10 +71,10 @@ def silicate_index(wl, flux, eflux, silicate_wl=None, silicate_window=None,
 		Dictionary with silicate index parameters:
 			- ``'silicate_index'`` : silicate index
 			- ``'esilicate_index'`` : silicate index uncertainty
-			- ``'silicate_flux'`` : flux at the absorption feature
-			- ``'esilicate_flux'`` : flux error at the absorption feature
-			- ``'continuum_flux'`` : flux at the continuum of the absorption
-			- ``'econtinuum_flux'`` : flux uncertainty at the continuum of the absorption
+			- ``'silicate_flux'`` : flux density at the absorption feature
+			- ``'esilicate_flux'`` : flux density uncertainty at the absorption feature
+			- ``'continuum_flux'`` : flux density at the continuum of the absorption
+			- ``'econtinuum_flux'`` : flux density uncertainty at the continuum of the absorption
 			- ``'slope'`` : slope of the fit to the continuum regions
 			- ``'eslope'`` : slope uncertainty
 			- ``'constant'`` : constant or intercept of the linear fit
@@ -126,15 +127,15 @@ def silicate_index(wl, flux, eflux, silicate_wl=None, silicate_window=None,
 	# measure silicate index
 	mask_silicate_wl = (wl>=(silicate_wl-silicate_window/2)) & (wl<=(silicate_wl+silicate_window/2))
 	# using the mean
-	silicate_flux = np.mean(flux[mask_silicate_wl]) # average flux at the bottom of the feature
-	esilicate_flux = np.std(flux[mask_silicate_wl]) / np.sqrt(flux[mask_silicate_wl].size) # flux error as the standard error of the mean
+	silicate_flux = np.mean(flux[mask_silicate_wl]) # average flux density at the bottom of the feature
+	esilicate_flux = np.std(flux[mask_silicate_wl]) / np.sqrt(flux[mask_silicate_wl].size) # flux density uncertainty as the standard error of the mean
 	## using the median
-	#silicate_flux = np.median(flux[mask_silicate_wl]) # average flux at the bottom of the feature
+	#silicate_flux = np.median(flux[mask_silicate_wl]) # average flux density at the bottom of the feature
 	#esilicate_flux = 1.2533 * np.std(flux[mask_silicate_wl]) / np.sqrt(flux[mask_silicate_wl].size) # standard error of the median = 1.2533 times the standard error of the mean
 	##esilicate_flux = (np.percentile(flux[mask_silicate_wl], 84, interpolation = 'linear') - np.percentile(flux[mask_silicate_wl], 16, interpolation = 'linear')) / np.sqrt(flux[mask_silicate_wl].size) # 68% confidence interval
 	##esilicate_flux = silicate_flux * np.median(eflux[mask_silicate_wl]/flux[mask_silicate_wl]) # error to keep the fractional uncertainties
 
-	# continuum flux
+	# continuum flux density
 	output = fit_continuum(wl=wl, flux=flux, eflux=eflux, wl_con1=continuum_wl1, wl_con2=continuum_wl2, 
 	                       window_con1=continuum_window1, window_con2=continuum_window2, 
 	                       continuum_fit=continuum_fit, continuum_error=continuum_error, ref_min=silicate_wl)
@@ -197,13 +198,13 @@ def sio_index(wl, flux, eflux, sio_wl=None, sio_window=None,
 	- wl : array
 		Spectrum wavelengths in microns.
 	- flux : array
-		Spectrum fluxes in Jy.
+		Spectrum flux densities in Jy.
 	- eflux : array
-		Spectrum flux errors in Jy.
+		Spectrum flux density uncertainties in Jy.
 	- sio_wl : float, optional (default 7.9 um)
 		Wavelength reference to indicate the center of SiO absorption. 
 	- sio_window : float, optional (default 0.3 um)
-		Wavelength window around ``sio_wl`` used to calculate the average flux at the absorption.
+		Wavelength window around ``sio_wl`` used to calculate the average flux density at the absorption.
 	- continuum_wl1 : float, optional (default 7.3 um)
 		Wavelength reference to indicate the short-wavelength continuum of SiO absorption. 
 	- continuum_window1 : float, optional (default 0.3 um))
@@ -215,13 +216,13 @@ def sio_index(wl, flux, eflux, sio_wl=None, sio_window=None,
 	- reference : {``B26``}, optional (default ``B26``)
 		Reference to set default parameters to measure the SiO index.
 	- continuum_error : string, optional (default ``fit``)
-		Label indicating the approach used to estimate the continuum flux uncertainty. Available options are: 
+		Label indicating the approach used to estimate the continuum flux density uncertainty. Available options are: 
 			- ``'fit'`` (default) : from the error of the curve fit.
-			- ``'empirical'`` : from the scatter of the data points and the typical flux errors in the continuum regions.
+			- ``'empirical'`` : from the scatter of the data points and the typical flux density uncertainties in the continuum regions.
 	- continuum_fit : string, optional (default ``linear``)
 		Label indicating the curve fit to the continuum regions.
-			- ``'line'`` : fit a line to continuum fluxes in both regions.
-			- ``'exponential'`` (default) : fit an exponential (or a line in log-log space) to continuum fluxes in both regions.
+			- ``'line'`` : fit a line to continuum flux densities in both regions.
+			- ``'exponential'`` (default) : fit an exponential (or a line in log-log space) to continuum flux densities in both regions.
 	- plot : {``True``, ``False``}, optional (default ``False``)
 		Plot (``True``) or do not plot (``False``) the SiO index measurement.
 	- plot_title : str, optional
@@ -229,7 +230,7 @@ def sio_index(wl, flux, eflux, sio_wl=None, sio_window=None,
 	- plot_xrange : list or array, optional
 		Wavelength range (in microns) of the plot (default [5.2, 14] um).
 	- plot_yrange : list or array, optional
-		Flux range (in Jy) of the plot (default is the flux range in ``plot_xrange``).
+		Flux range (in Jy) of the plot (default is the flux density range in ``plot_xrange``).
 	- plot_save : {``True``, ``False``}, optional (default ``False``)
 		Save (``'True'``) or do not save (``'False'``) the resulting plot.
 	- plot_name : str, optional
@@ -242,10 +243,10 @@ def sio_index(wl, flux, eflux, sio_wl=None, sio_window=None,
 		Dictionary with SiO index parameters:
 			- ``'sio_index'`` : SiO index
 			- ``'esio_index'`` : SiO index uncertainty
-			- ``'sio_flux'`` : flux at the absorption feature
-			- ``'esio_flux'`` : flux error at the absorption feature
-			- ``'continuum_flux'`` : flux at the continuum of the absorption
-			- ``'econtinuum_flux'`` : flux uncertainty at the continuum of the absorption
+			- ``'sio_flux'`` : flux density at the absorption feature
+			- ``'esio_flux'`` : flux density uncertainty at the absorption feature
+			- ``'continuum_flux'`` : flux density at the continuum of the absorption
+			- ``'econtinuum_flux'`` : flux density uncertainty at the continuum of the absorption
 			- ``'slope'`` : slope of the fit to the continuum regions
 			- ``'eslope'`` : slope uncertainty
 			- ``'constant'`` : constant or intercept of the linear fit
@@ -289,9 +290,9 @@ def sio_index(wl, flux, eflux, sio_wl=None, sio_window=None,
 	mask_sio_wl = (wl>=(sio_wl-sio_window/2)) & (wl<=(sio_wl+sio_window/2))
 	# using the mean
 	sio_flux = np.mean(flux[mask_sio_wl]) # average flux at the bottom of the feature
-	esio_flux = np.std(flux[mask_sio_wl]) / np.sqrt(flux[mask_sio_wl].size) # flux error as the standard error of the mean
+	esio_flux = np.std(flux[mask_sio_wl]) / np.sqrt(flux[mask_sio_wl].size) # flux density uncertainty as the standard error of the mean
 
-	# continuum flux
+	# continuum flux density
 	output = fit_continuum(wl=wl, flux=flux, eflux=eflux, wl_con1=continuum_wl1, wl_con2=continuum_wl2, 
 	                       window_con1=continuum_window1, window_con2=continuum_window2, 
 	                       continuum_fit=continuum_fit, continuum_error=continuum_error, ref_min=sio_wl)
@@ -355,24 +356,24 @@ def water_index(wl, flux, eflux, reference='SM22',
 	- wl : array
 		Spectrum wavelengths in microns.
 	- flux : array
-		Spectrum fluxes in Jy.
+		Spectrum flux densities in Jy.
 	- eflux : array
-		Spectrum flux errors in Jy.
+		Spectrum flux density uncertainties in Jy.
 	- reference : {``SM22``, ``C06``}, optional (default ``SM22``)
 		Reference to set default parameters to measure the water index.
 		``SM22`` (default) for Suárez & Metchev (2022) or ``C08`` for Cushing et al (2006).
 	- water_wl1 : float, optional (default 5.80 um)
-		Wavelength reference to measure the flux in the first absorption dip.
+		Wavelength reference to measure the flux density in the first absorption dip.
 	- water_window1 : float, optional (default 0.3 um)
-		Wavelength window around ``water_wl1`` used to calculate the average flux.
+		Wavelength window around ``water_wl1`` used to calculate the average flux density.
 	- water_wl2 : float, optional (default 6.75 um)
-		Wavelength reference to measure the flux in the second absorption dip.
+		Wavelength reference to measure the flux density in the second absorption dip.
 	- water_window2 : float, optional (default 0.3 um)
-		Wavelength window around ``water_wl2`` used to calculate the average flux.
+		Wavelength window around ``water_wl2`` used to calculate the average flux density .
 	- continuum_wl : float, optional (default 6.25 um)
-		Wavelength reference to measure the flux in the feature pseudo-continuum.
+		Wavelength reference to measure the flux density in the feature pseudo-continuum.
 	- continuum_window : float, optional (default 0.3 um)
-		Wavelength window around ``continuum_wl`` used to calculate the average flux.
+		Wavelength window around ``continuum_wl`` used to calculate the average flux density.
 	- plot : {``True``, ``False``}, optional (default ``False``)
 		Plot (``True``) or do not plot (``False``) the water index measurement.
 	- plot_title : str, optional
@@ -380,7 +381,7 @@ def water_index(wl, flux, eflux, reference='SM22',
 	- plot_xrange : list or array, optional
 		Wavelength range (in microns) of the plot (default [5.2, 14] um).
 	- plot_yrange : list or array, optional
-		Flux range (in Jy) of the plot (default is the flux range in ``plot_xrange``).
+		Flux range (in Jy) of the plot (default is the flux density range in ``plot_xrange``).
 	- plot_save : {``True``, ``False``}, optional (default ``False``)
 		Save (``'True'``) or do not save (``'False'``) the resulting plot.
 	- plot_name : str, optional
@@ -393,12 +394,12 @@ def water_index(wl, flux, eflux, reference='SM22',
 		Dictionary with water index parameters:
 			- ``'water_index'`` : water index
 			- ``'ewater_index'`` : water index uncertainty
-			- ``'water_flux1'`` : flux at the short-wavelength part of the absorption
-			- ``'ewater_flux1'`` : flux uncertainty at the short-wavelength part of the absorption
-			- ``'water_flux2'`` : flux at the long-wavelength part of the absorption
-			- ``'ewater_flux2'`` : flux uncertainty at the long-wavelength part of the absorption
-			- ``'continuum_flux'`` : flux at the absorption continuum
-			- ``'econtinuum_flux'`` : flux uncertainty at the absorption continuum
+			- ``'water_flux1'`` : flux density at the short-wavelength part of the absorption
+			- ``'ewater_flux1'`` : flux density uncertainty at the short-wavelength part of the absorption
+			- ``'water_flux2'`` : flux density at the long-wavelength part of the absorption
+			- ``'ewater_flux2'`` : flux density uncertainty at the long-wavelength part of the absorption
+			- ``'continuum_flux'`` : flux density at the absorption continuum
+			- ``'econtinuum_flux'`` : flux density uncertainty at the absorption continuum
 			- ``'water_wl1'`` : input ``water_wl1``
 			- ``'continuum_wl1'`` : input ``continuum_wl1``
 			- ``'water_wl2'`` : input ``water_wl2``
@@ -432,12 +433,12 @@ def water_index(wl, flux, eflux, reference='SM22',
 		if continuum_window is None: continuum_window = 0.30 # um
 	else: raise Exception(f'"{reference}" is not a recognized reference to set default parameters to measure the water index. \nTry "SM22" or "C06".')
 	
-	# mean flux at the pseudo-continuum
+	# mean flux density at the pseudo-continuum
 	mask_continuum_wl = (wl>=(continuum_wl-continuum_window/2)) & (wl<=(continuum_wl+continuum_window/2))
 	continuum_flux = np.mean(flux[mask_continuum_wl])
 	#econtinuum_flux = np.std(flux[mask_continuum_wl]) / np.sqrt(flux[mask_continuum_wl].size) # in Suarez & Metchev (2022)
 	econtinuum_flux_1 = np.std(flux[mask_continuum_wl]) / np.sqrt(flux[mask_continuum_wl].size) # due to the scatter of the data in the window
-	econtinuum_flux_2 = continuum_flux * np.median(eflux[mask_continuum_wl]/flux[mask_continuum_wl]) # due to flux uncertainties
+	econtinuum_flux_2 = continuum_flux * np.median(eflux[mask_continuum_wl]/flux[mask_continuum_wl]) # due to flux density uncertainties
 	econtinuum_flux = np.sqrt(econtinuum_flux_1**2 + econtinuum_flux_2**2) # addition in quadrature
 
 	# mean flux at the short-wavelength dip
@@ -445,15 +446,15 @@ def water_index(wl, flux, eflux, reference='SM22',
 	water_flux1 = np.mean(flux[mask_water_wl1])
 	#ewater_flux1 = np.std(flux[mask_water_wl1]) / np.sqrt(flux[mask_water_wl1].size) # in Suarez & Metchev (2022)
 	ewater_flux1_1 = np.std(flux[mask_water_wl1]) / np.sqrt(flux[mask_water_wl1].size) # due to the scatter of the data in the window
-	ewater_flux1_2 = water_flux1 * np.median(eflux[mask_water_wl1]/flux[mask_water_wl1]) # due to flux uncertainties
+	ewater_flux1_2 = water_flux1 * np.median(eflux[mask_water_wl1]/flux[mask_water_wl1]) # due to flux density uncertainties
 	ewater_flux1 = np.sqrt(ewater_flux1_1**2 + ewater_flux1_2**2) # addition in quadrature
 
-	# mean flux at the long-wavelength dip
+	# mean flux density at the long-wavelength dip
 	mask_water_wl2 = (wl>=(water_wl2-water_window2/2)) & (wl<=(water_wl2+water_window2/2))
 	water_flux2 = np.mean(flux[mask_water_wl2])
 	#ewater_flux2 = np.std(flux[mask_water_wl2]) / np.sqrt(flux[mask_water_wl2].size) # in Suarez & Metchev (2022)
 	ewater_flux2_1 = np.std(flux[mask_water_wl2]) / np.sqrt(flux[mask_water_wl2].size) # due to the scatter of the data in the window
-	ewater_flux2_2 = water_flux2 * np.median(eflux[mask_water_wl2]/flux[mask_water_wl2]) # due to flux uncertainties
+	ewater_flux2_2 = water_flux2 * np.median(eflux[mask_water_wl2]/flux[mask_water_wl2]) # due to flux density uncertainties
 	ewater_flux2 = np.sqrt(ewater_flux2_1**2 + ewater_flux2_2**2) # addition in quadrature
 	
 	# water index
@@ -505,21 +506,21 @@ def methane_index(wl, flux, eflux, reference='SM22',
 	- wl : array
 		Spectrum wavelengths in microns.
 	- flux : array
-		Spectrum fluxes in Jy.
+		Spectrum flux uncertainties in Jy.
 	- eflux : array
-		Spectrum flux errors in Jy.
+		Spectrum flux density uncertainties in Jy.
 	- reference : {``SM22``, ``C06``}, optional (default ``SM22``)
 		Reference to set default parameters to measure the methane index.
 		``SM22`` (default) for Suárez & Metchev (2022) or ``C08`` for Cushing et al (2006).
 	- methane_wl : float, optional (default 7.65 um)
 		Wavelength reference of the feature.
 	- methane_window : float, optional (default 0.6 um)
-		Wavelength window around ``methane_wl`` used to calculate average fluxes.
+		Wavelength window around ``methane_wl`` used to calculate average flux densities.
 	- continuum_wl : float, optional (default 9.9 um)
 		Wavelength reference of the feature continuum.
-		Note: the default value is slightly smaller than the 10 um value in Suárez & Metchev (2022) to avoid including fluxes at the beginning of the ammonia feature.
+		Note: the default value is slightly smaller than the 10 um value in Suárez & Metchev (2022) to avoid including flux densities at the beginning of the ammonia feature.
 	- continuum_window : float, optional (default 0.6 um)
-		Wavelength window around ``continuum_wl`` used to calculate the average continuum flux.
+		Wavelength window around ``continuum_wl`` used to calculate the average continuum flux density.
 	- plot : {``True``, ``False``}, optional (default ``False``)
 		Plot (``True``) or do not plot (``False``) the methane index measurement.
 	- plot_title : str, optional
@@ -527,7 +528,7 @@ def methane_index(wl, flux, eflux, reference='SM22',
 	- plot_xrange : list or array, optional
 		Wavelength range (in microns) of the plot (default [5.2, 14] um).
 	- plot_yrange : list or array, optional
-		Flux range (in Jy) of the plot (default is the flux range in ``plot_xrange``).
+		Flux range (in Jy) of the plot (default is the flux density range in ``plot_xrange``).
 	- plot_save : {``True``, ``False``}, optional (default ``False``)
 		Save (``'True'``) or do not save (``'False'``) the resulting plot.
 	- plot_name : str, optional
@@ -540,10 +541,10 @@ def methane_index(wl, flux, eflux, reference='SM22',
 		Dictionary with methane index parameters:
 			- ``'methane_index'`` : methane index
 			- ``'emethane_index'`` : methane index uncertainty
-			- ``'methane_flux'`` : flux at the absorption
-			- ``'emethane_flux'`` : flux uncertainty at the absorption
-			- ``'continuum_flux'`` : flux at the absorption continuum
-			- ``'econtinuum_flux'`` : flux uncertainty at the absorption continuum
+			- ``'methane_flux'`` : flux density at the absorption
+			- ``'emethane_flux'`` : flux density uncertainty at the absorption
+			- ``'continuum_flux'`` : flux density at the absorption continuum
+			- ``'econtinuum_flux'`` : flux density uncertainty at the absorption continuum
 			- ``'methane_wl'`` : input ``methane_wl``
 			- ``'continuum_wl'`` : input ``continuum_wl``
 			- ``'methane_window'`` : input ``methane_window``
@@ -571,23 +572,23 @@ def methane_index(wl, flux, eflux, reference='SM22',
 		if methane_window is None: methane_window = 0.3 # (um) wavelength window
 		if continuum_window is None: continuum_window = 0.3 # (um) wavelength window
 
-	# mean flux in the feature
+	# mean flux density in the feature
 	mask_methane_wl = (wl>=(methane_wl-methane_window/2)) & (wl<=(methane_wl+methane_window/2))
 	methane_flux = np.mean(flux[mask_methane_wl])
 	#emethane_flux = np.std(flux[mask_methane_wl]) / np.sqrt(flux[mask_methane_wl].size) # in Suarez & Metchev (2022)
 	emethane_flux_1 = np.std(flux[mask_methane_wl]) / np.sqrt(flux[mask_methane_wl].size) # due to the scatter of the data in the window
-	emethane_flux_2 = methane_flux * np.median(eflux[mask_methane_wl]/flux[mask_methane_wl]) # due to flux uncertainties
+	emethane_flux_2 = methane_flux * np.median(eflux[mask_methane_wl]/flux[mask_methane_wl]) # due to flux density uncertainties
 	emethane_flux = np.sqrt(emethane_flux_1**2 + emethane_flux_2**2) # addition in quadrature
 	
-	# mean flux out of the feature
+	# mean flux density out of the feature
 	mask_continuum_wl = (wl>=(continuum_wl-continuum_window/2)) & (wl<=(continuum_wl+continuum_window/2))
 	continuum_flux = np.mean(flux[mask_continuum_wl])
 	#econtinuum_flux = np.std(flux[mask_continuum_wl]) / np.sqrt(flux[mask_continuum_wl].size) # in Suarez & Metchev (2022)
 	econtinuum_flux_1 = np.std(flux[mask_continuum_wl]) / np.sqrt(flux[mask_continuum_wl].size) # due to the scatter of the data in the window
-	econtinuum_flux_2 = continuum_flux * np.median(eflux[mask_continuum_wl]/flux[mask_continuum_wl]) # due to flux uncertainties
+	econtinuum_flux_2 = continuum_flux * np.median(eflux[mask_continuum_wl]/flux[mask_continuum_wl]) # due to flux density uncertainties
 	econtinuum_flux = np.sqrt(econtinuum_flux_1**2 + econtinuum_flux_2**2) # addition in quadrature
 
-	# methane index
+	# methane index density
 	methane_index = continuum_flux / methane_flux
 	emethane_index = methane_index * np.sqrt((emethane_flux/methane_flux)**2 + (econtinuum_flux/continuum_flux)**2)
 
@@ -628,9 +629,9 @@ def ammonia_index(wl, flux, eflux, reference='SM22',
 	- wl : array
 		Spectrum wavelengths in microns.
 	- flux : array
-		Spectrum fluxes in Jy.
+		Spectrum flux densities in Jy.
 	- eflux : array
-		Spectrum flux errors in Jy.
+		Spectrum flux density uncertainties in Jy.
 	- reference : {``SM22``, ``C06``}, optional (default ``SM22``)
 		Reference to set default parameters to measure the ammonia index.
 		``SM22`` (default) for Suárez & Metchev (2022) or ``C08`` for Cushing et al (2006).
@@ -638,12 +639,12 @@ def ammonia_index(wl, flux, eflux, reference='SM22',
 		Wavelength reference of the feature.
 		Note: the default value is slightly smaller than the 10.8 um value in Suárez & Metchev (2022) to be centered better within the feature.
 	- ammonia_window : float, optional (default 0.6 um)
-		Wavelength window around ``ammonia_wl`` and ``continuum_wl`` used to calculate average fluxes.
+		Wavelength window around ``ammonia_wl`` and ``continuum_wl`` used to calculate average flux densities.
 	- continuum_wl : float, optional (default 9.9 um)
 		Wavelength reference of the feature continuum.
-		Note: the default value is slightly smaller than the 10 um value in Suárez & Metchev (2022) to avoid including fluxes at the beginning of the ammonia feature.
+		Note: the default value is slightly smaller than the 10 um value in Suárez & Metchev (2022) to avoid including flux densities at the beginning of the ammonia feature.
 	- continuum_window : float, optional (default 0.6 um)
-		Wavelength window around ``continuum_wl`` used to calculate the average continuum flux.
+		Wavelength window around ``continuum_wl`` used to calculate the average continuum flux density.
 	- plot : {``True``, ``False``}, optional (default ``False``)
 		Plot (``True``) or do not plot (``False``) the ammonia index measurement.
 	- plot_title : str, optional
@@ -651,7 +652,7 @@ def ammonia_index(wl, flux, eflux, reference='SM22',
 	- plot_xrange : list or array, optional
 		Wavelength range (in microns) of the plot (default [5.2, 14] um).
 	- plot_yrange : list or array, optional
-		Flux range (in Jy) of the plot (default is the flux range in ``plot_xrange``).
+		Flux range (in Jy) of the plot (default is the flux density range in ``plot_xrange``).
 	- plot_save : {``True``, ``False``}, optional (default ``False``)
 		Save (``'True'``) or do not save (``'False'``) the resulting plot.
 	- plot_name : str, optional
@@ -664,10 +665,10 @@ def ammonia_index(wl, flux, eflux, reference='SM22',
 		Dictionary with ammonia index parameters:
 			- ``'ammonia_index'`` : ammonia index
 			- ``'eammonia_index'`` : ammonia index uncertainty
-			- ``'ammonia_flux'`` : flux at the absorption
-			- ``'eammonia_flux'`` : flux uncertainty at the absorption
-			- ``'continuum_flux'`` : flux at the absorption continuum
-			- ``'econtinuum_flux'`` : flux uncertainty at the absorption continuum
+			- ``'ammonia_flux'`` : flux density at the absorption
+			- ``'eammonia_flux'`` : flux density uncertainty at the absorption
+			- ``'continuum_flux'`` : flux density at the absorption continuum
+			- ``'econtinuum_flux'`` : flux density uncertainty at the absorption continuum
 			- ``'ammonia_wl'`` : input ``ammonia_wl``
 			- ``'continuum_wl'`` : input ``continuum_wl``
 			- ``'ammonia_window'`` : input ``ammonia_window``
@@ -699,23 +700,23 @@ def ammonia_index(wl, flux, eflux, reference='SM22',
 		if ammonia_window is None: ammonia_window = 0.3 # (um) wavelength window
 		if continuum_window is None: continuum_window = 0.3 # (um) wavelength window
 
-	# mean flux in the feature
+	# mean flux density in the feature
 	mask_ammonia_wl = (wl>=(ammonia_wl-ammonia_window/2)) & (wl<=(ammonia_wl+ammonia_window/2))
 	ammonia_flux = np.mean(flux[mask_ammonia_wl])
 	#eammonia_flux = np.std(flux[mask_ammonia_wl]) / np.sqrt(flux[mask_ammonia_wl].size) # in Suarez & Metchev (2022)
 	eammonia_flux_1 = np.std(flux[mask_ammonia_wl]) / np.sqrt(flux[mask_ammonia_wl].size) # due to the scatter of the data in the window
-	eammonia_flux_2 = ammonia_flux * np.median(eflux[mask_ammonia_wl]/flux[mask_ammonia_wl]) # due to flux uncertainties
+	eammonia_flux_2 = ammonia_flux * np.median(eflux[mask_ammonia_wl]/flux[mask_ammonia_wl]) # due to flux density uncertainties
 	eammonia_flux = np.sqrt(eammonia_flux_1**2 + eammonia_flux_2**2) # addition in quadrature
 	
-	# mean flux out of the feature
+	# mean flux density out of the feature
 	mask_continuum_wl = (wl>=(continuum_wl-continuum_window/2)) & (wl<=(continuum_wl+continuum_window/2))
 	continuum_flux = np.mean(flux[mask_continuum_wl])
 	#econtinuum_flux = np.std(flux[mask_continuum_wl]) / np.sqrt(flux[mask_continuum_wl].size) # in Suarez & Metchev (2022)
 	econtinuum_flux_1 = np.std(flux[mask_continuum_wl]) / np.sqrt(flux[mask_continuum_wl].size) # due to the scatter of the data in the window
-	econtinuum_flux_2 = continuum_flux * np.median(eflux[mask_continuum_wl]/flux[mask_continuum_wl]) # due to flux uncertainties
+	econtinuum_flux_2 = continuum_flux * np.median(eflux[mask_continuum_wl]/flux[mask_continuum_wl]) # due to flux density uncertainties
 	econtinuum_flux = np.sqrt(econtinuum_flux_1**2 + econtinuum_flux_2**2) # addition in quadrature
 
-	# ammonia index
+	# ammonia index density
 	ammonia_index = continuum_flux / ammonia_flux
 	eammonia_index = ammonia_index * np.sqrt((eammonia_flux/ammonia_flux)**2 + (econtinuum_flux/continuum_flux)**2)
 
@@ -751,24 +752,25 @@ def user_index(wl, flux, eflux, feature_wl, feature_window,
 	'''
 	Description:
 	------------
-		Spectral index defined by the user as the ratio between the feature continuum and the feature flux.
+		Spectral index defined by the user as the ratio between the 
+		continuum flux density and the flux density at the feature.
 
 	Parameters:
 	-----------
 	- wl : array
 		Spectrum wavelengths in microns.
 	- flux : array
-		Spectrum fluxes in any flux units.
+		Spectrum flux densities in any flux density units.
 	- eflux : array
-		Spectrum flux errors in the same units as ``flux``.
+		Spectrum flux density uncertainties in the same units as ``flux``.
 	- feature_wl : float
 		Wavelength reference to indicate the center of feature absorption. 
 	- feature_window : float
-		Wavelength window around ``feature_wl`` used to calculate the average flux at the absorption.
+		Wavelength window around ``feature_wl`` used to calculate the average flux density at the absorption.
 	- continuum_wl : float, optional (required if ``continuum_fit=None``)
 		Wavelength reference to indicate the continuum of feature absorption. 
 	- continuum_window : float, optional (required if ``continuum_fit=None``)
-		Wavelength window around ``continuum_wl`` used to calculate the average continuum flux.
+		Wavelength window around ``continuum_wl`` used to calculate the average continuum flux density.
 	- continuum_wl1 : float, optional (required if ``continuum_fit!=None``)
 		Wavelength reference to indicate the short-wavelength continuum of the feature absorption. 
 	- continuum_window1 : float, optional (required if ``continuum_fit!=None``)
@@ -781,13 +783,13 @@ def user_index(wl, flux, eflux, feature_wl, feature_window,
 		Name the user wants to give to the index to be included in the plot label and title (if not ``plot_title``). 
 		If not provided, the string ``User-defined`` will be used.
 	- continuum_error : string, optional (required if ``continuum_fit!=None``; default ``fit``)
-		Label indicating the approach used to estimate the continuum flux uncertainty. Available options are: 
+		Label indicating the approach used to estimate the continuum flux density uncertainty. Available options are: 
 			- ``'fit'`` (default): from the error of the curve fit.
-			- ``'empirical'``: from the scatter of the data points and the typical flux errors in the continuum regions.
+			- ``'empirical'``: from the scatter of the data points and the typical flux density uncertainties in the continuum regions.
 	- continuum_fit : string, optional (required if ``continuum_fit!=None``)
 		Label indicating the curve fit to the continuum regions.
-			- ``'line'``: fit a line to continuum fluxes in both regions.
-			- ``'exponential'``: fit an exponential (or a line in log-log space) to continuum fluxes in both regions.
+			- ``'line'``: fit a line to continuum flux densities in both regions.
+			- ``'exponential'``: fit an exponential (or a line in log-log space) to continuum flux densities in both regions.
 	- plot : {``True``, ``False``}, optional (default ``False``)
 		Plot (``True``) or do not plot (``False``) the feature index measurement.
 	- plot_title : str, optional
@@ -795,7 +797,7 @@ def user_index(wl, flux, eflux, feature_wl, feature_window,
 	- plot_xrange : list or array, optional
 		Wavelength range (in same units as ``wl``) of the plot (default is min and max values of ``wl``).
 	- plot_yrange : list or array, optional
-		Flux range (in same units as ``flux``) of the plot (default is the flux range in ``plot_xrange``).
+		Flux range (in same units as ``flux``) of the plot (default is the flux density range in ``plot_xrange``).
 	- plot_save : {``True``, ``False``}, optional (default ``False``)
 		Save (``'True'``) or do not save (``'False'``) the resulting plot.
 	- plot_name : str, optional
@@ -808,10 +810,10 @@ def user_index(wl, flux, eflux, feature_wl, feature_window,
 		Dictionary with user-defined index parameters:
 			- ``'feature_index'`` : feature index
 			- ``'efeature_index'`` : feature index uncertainty
-			- ``'feature_flux'`` : flux at the absorption feature
-			- ``'efeature_flux'`` : flux error at the absorption feature
-			- ``'continuum_flux'`` : flux at the continuum of the absorption
-			- ``'econtinuum_flux'`` : flux uncertainty at the continuum of the absorption
+			- ``'feature_flux'`` : flux density at the absorption feature
+			- ``'efeature_flux'`` : flux density uncertainty at the absorption feature
+			- ``'continuum_flux'`` : flux density at the continuum of the absorption
+			- ``'econtinuum_flux'`` : flux density uncertainty at the continuum of the absorption
 			- ``'slope'`` : (if continuum_fit!=None) slope of the fit to the continuum regions
 			- ``'eslope'`` : (if continuum_fit!=None) slope uncertainty
 			- ``'constant'`` : (if continuum_fit!=None) constant or intercept of the linear fit
@@ -843,20 +845,20 @@ def user_index(wl, flux, eflux, feature_wl, feature_window,
 		if continuum_wl2 is None: raise Exception(f'"continuum_wl2" must be provided if "continuum_fit" is provided.')
 		if continuum_window2 is None: raise Exception(f'"continuum_window2" must be provided if "continuum_fit" is provided.')
 
-	# mean flux in the feature
+	# mean flux density in the feature
 	mask_feature_wl = (wl>=(feature_wl-feature_window/2)) & (wl<=(feature_wl+feature_window/2))
 	feature_flux = np.mean(flux[mask_feature_wl])
 	efeature_flux_1 = np.std(flux[mask_feature_wl]) / np.sqrt(flux[mask_feature_wl].size) # due to the scatter of the data in the window
-	efeature_flux_2 = feature_flux * np.median(eflux[mask_feature_wl]/flux[mask_feature_wl]) # due to flux uncertainties
+	efeature_flux_2 = feature_flux * np.median(eflux[mask_feature_wl]/flux[mask_feature_wl]) # due to flux density uncertainties
 	efeature_flux = np.sqrt(efeature_flux_1**2 + efeature_flux_2**2) # addition in quadrature
 
-	# continuum flux
+	# continuum flux density
 	if continuum_fit is None: # do not fit a curve to the continuum
 		# mean flux in the feature continuum region
 		mask_continuum_wl = (wl>=(continuum_wl-continuum_window/2)) & (wl<=(continuum_wl+continuum_window/2))
 		continuum_flux = np.mean(flux[mask_continuum_wl])
 		econtinuum_flux_1 = np.std(flux[mask_continuum_wl]) / np.sqrt(flux[mask_continuum_wl].size) # due to the scatter of the data in the window
-		econtinuum_flux_2 = continuum_flux * np.median(eflux[mask_continuum_wl]/flux[mask_continuum_wl]) # due to flux uncertainties
+		econtinuum_flux_2 = continuum_flux * np.median(eflux[mask_continuum_wl]/flux[mask_continuum_wl]) # due to flux density uncertainties
 		econtinuum_flux = np.sqrt(econtinuum_flux_1**2 + econtinuum_flux_2**2) # addition in quadrature
 	else: # fit a curve to the continuum
 		output = fit_continuum(wl=wl, flux=flux, eflux=eflux, wl_con1=continuum_wl1, wl_con2=continuum_wl2,
@@ -1165,7 +1167,7 @@ def plot_spectral_index_one_continuum_region(out_feature_index, index_name=None,
 	        continuum_wl+continuum_window/2, continuum_wl+continuum_window/2], 
 	        [ymin, ymax, ymax, ymin], facecolor='gainsboro', linewidth=1, zorder=2)
 
-	# plot flux uncertainty region
+	# plot flux density uncertainty region
 	default_blue = plt.rcParams['axes.prop_cycle'].by_key()['color'][0] # default blue color
 	wl_region = np.append(wl, np.flip(wl))
 	flux_region = np.append(flux-eflux, np.flip(flux+eflux))
@@ -1174,11 +1176,11 @@ def plot_spectral_index_one_continuum_region(out_feature_index, index_name=None,
 	mask = wl>0
 	plt.plot(wl[mask], flux[mask])
 
-	# fluxes in the continuum region
+	# flux densities in the continuum region
 	mask_continuum_wl = (wl>=(continuum_wl-continuum_window/2)) & (wl<=(continuum_wl+continuum_window/2))
 	ax.errorbar(wl[mask_continuum_wl], flux[mask_continuum_wl], yerr=eflux[mask_continuum_wl], 
 	            fmt='o', c='gray', markersize=3.0, linewidth=1.0, capsize=3, capthick=1)
-	# fluxes in the absorption region
+	# flux densities in the absorption region
 	mask_feature_wl = (wl>=(feature_wl-feature_window/2)) & (wl<=(feature_wl+feature_window/2))
 	ax.errorbar(wl[mask_feature_wl], flux[mask_feature_wl], yerr=eflux[mask_feature_wl],  
 	            fmt='o', c='gray', markersize=3.0, linewidth=1.0, capsize=3, capthick=1)
@@ -1187,10 +1189,10 @@ def plot_spectral_index_one_continuum_region(out_feature_index, index_name=None,
 		ax.errorbar(wl[mask_feature_wl2], flux[mask_feature_wl2], yerr=eflux[mask_feature_wl2],  
 		            fmt='o', c='gray', markersize=3.0, linewidth=1.0, capsize=3, capthick=1)
 
-	# mean flux out of the absorption
+	# mean flux density out of the absorption
 	ax.errorbar(continuum_wl, continuum_flux, yerr=econtinuum_flux, fmt='o', c='black', 
 	            markersize=3.0, linewidth=1.0, capsize=3, capthick=1, zorder=3)
-	# mean flux in the absorption
+	# mean flux density in the absorption
 	ax.errorbar(feature_wl, feature_flux, yerr=efeature_flux, fmt='o', c='red', 
 	            markersize=3.0, linewidth=1.0, capsize=3, capthick=1, zorder=3)
 	if index_name=='Water': # for the second part of the feature
@@ -1315,7 +1317,7 @@ def plot_spectral_index_two_continuum_regions(out_feature_index, index_name=None
 	        continuum_wl2+continuum_window2/2, continuum_wl2+continuum_window2/2], 
 	        [ymin, ymax, ymax, ymin], facecolor='gainsboro', linewidth=1, zorder=2)
 	
-	# plot flux uncertainty region
+	# plot flux density uncertainty region
 	default_blue = plt.rcParams['axes.prop_cycle'].by_key()['color'][0] # default blue color
 	wl_region = np.append(wl, np.flip(wl))
 	flux_region = np.append(flux-eflux, np.flip(flux+eflux))
@@ -1342,7 +1344,7 @@ def plot_spectral_index_two_continuum_regions(out_feature_index, index_name=None
 	        facecolor='gray', edgecolor='gray', linewidth=0, alpha=0.20)
 	ax.plot(xc_feature, yc_feature, '--', color='gray', linewidth=0.5)
 	
-	# fluxes in the continuum regions
+	# flux densities in the continuum regions
 	mask_continuum_wl1 = (wl>=(continuum_wl1-continuum_window1/2)) & (wl<=(continuum_wl1+continuum_window1/2))
 	mask_continuum_wl2 = (wl>=(continuum_wl2-continuum_window2/2)) & (wl<=(continuum_wl2+continuum_window2/2))
 	ax.errorbar(wl[mask_continuum_wl1], flux[mask_continuum_wl1], yerr=eflux[mask_continuum_wl1], 
@@ -1353,11 +1355,11 @@ def plot_spectral_index_two_continuum_regions(out_feature_index, index_name=None
 	ax.errorbar(feature_wl, continuum_flux, yerr=econtinuum_flux, fmt='o', c='black', 
 	            markersize=3.0, linewidth=1.0, capsize=3, capthick=1)
 	
-	# fluxes in the absorption
+	# flux densities in the absorption
 	mask_feature_wl = (wl>=(feature_wl-feature_window/2)) & (wl<=(feature_wl+feature_window/2))
 	ax.errorbar(wl[mask_feature_wl], flux[mask_feature_wl], yerr=eflux[mask_feature_wl],  
 	            fmt='o', c='gray', markersize=3.0, linewidth=1.0, capsize=3, capthick=1)
-	# mean flux of the absorption 
+	# mean flux density of the absorption 
 	ax.errorbar(feature_wl, feature_flux, yerr=efeature_flux, 
 	            fmt='o', c='red', markersize=3.0, linewidth=1.0, capsize=3, capthick=1, zorder=3)
 	
@@ -1438,7 +1440,7 @@ def fit_continuum(wl, flux, eflux, wl_con1, wl_con2, window_con1, window_con2, c
 		                                                                                                      # (used in Suarez & Metchev 2022,2023 for silicate index)
 		if continuum_error=='empirical':
 			econtinuum_flux_1 = np.mean([np.std(flux[mask_wl_con1]), np.std(flux[mask_wl_con2])]) / np.sqrt(linear_flux.size) # due to the scatter of the data in both continuum windows
-			econtinuum_flux_2 = continuum_flux * np.median(linear_eflux/linear_flux) # due to flux uncertainties
+			econtinuum_flux_2 = continuum_flux * np.median(linear_eflux/linear_flux) # due to flux density uncertainties
 			econtinuum_flux = np.sqrt(econtinuum_flux_1**2 + econtinuum_flux_2**2) # addition in quadrature
 
 	# fit an exponential to the points in linear space, which is equivalent to:
@@ -1447,11 +1449,11 @@ def fit_continuum(wl, flux, eflux, wl_con1, wl_con2, window_con1, window_con2, c
 		if (flux[mask_wl_con1_con2].min()<=0): 
 			print('Warning: Logarithm of negative and/or zero fluxes in the continuum windows')
 			print('   Only positive fluxes will be used')
-			mask_wl_con1 = (wl>=(wl_con1-window_con1/2)) & (wl<=(wl_con1+window_con1/2)) & (flux>0) # positive fluxes in the continuum window 1
-			mask_wl_con2 = (wl>=(wl_con2-window_con2/2)) & (wl<=(wl_con2+window_con2/2)) & (flux>0) # positive fluxes in the continuum window 2
+			mask_wl_con1 = (wl>=(wl_con1-window_con1/2)) & (wl<=(wl_con1+window_con1/2)) & (flux>0) # positive flux densities in the continuum window 1
+			mask_wl_con2 = (wl>=(wl_con2-window_con2/2)) & (wl<=(wl_con2+window_con2/2)) & (flux>0) # positive flux densities in the continuum window 2
 			mask_wl_con1_con2 = (((wl>=(wl_con1-window_con1/2)) & (wl<=(wl_con1+window_con1/2))) | \
 			                          ((wl>=(wl_con2-window_con2/2)) & (wl<=(wl_con2+window_con2/2)))) & \
-			                          (flux>0) # positive fluxes in both continuum regions
+			                          (flux>0) # positive flux densities in both continuum regions
 		logwl = np.log10(wl[mask_wl_con1_con2])
 		logflux = np.log10(flux[mask_wl_con1_con2])
 		#elogflux = (1/np.log(10)) * eflux[mask_wl_con1_con2]/flux[mask_wl_con1_con2]
@@ -1479,7 +1481,7 @@ def fit_continuum(wl, flux, eflux, wl_con1, wl_con2, window_con1, window_con2, c
 		if continuum_error=='empirical':
 			econtinuum_flux_1 = np.mean([np.std(flux[mask_wl_con1]), np.std(flux[mask_wl_con2])]) / np.sqrt(logflux.size) # due to the scatter of the data in both continuum windows
 			#econtinuum_flux_2 = continuum_flux * np.median(elogflux/logflux) # due to flux uncertainties (used in Suarez & Metchev 2022,2023 for silicate index)
-			econtinuum_flux_2 = continuum_flux * np.median(eflux[mask_wl_con1_con2]/flux[mask_wl_con1_con2]) # due to flux uncertainties
+			econtinuum_flux_2 = continuum_flux * np.median(eflux[mask_wl_con1_con2]/flux[mask_wl_con1_con2]) # due to flux density uncertainties
 			econtinuum_flux = np.sqrt(econtinuum_flux_1**2 + econtinuum_flux_2**2) # addition in quadrature
 	
 	## fit an exponential curve to the continuum points in the flux vs. lambda plot (this should be equivalent to a linear fit in the log(flux)-log(lambda) space)

@@ -14,7 +14,7 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 		Compute synthetic photometry from an input spectrum and a set of
 		photometric filters compiled by SVO.
 
-		Synthetic fluxes are computed by integrating the spectrum in F_lambda
+		Synthetic flux densities are computed by integrating the spectrum in F_lambda
 		units using photon-counting weighting by default, which is appropriate
 		for most astronomical detectors. Energy-integrating weighting can be
 		selected with ``detector='energy'``.
@@ -24,13 +24,13 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 	- wl : array
 		Wavelength in micron.
 	- flux : array
-		Fluxes in units specified by ``flux_unit``.
+		Flux density in units specified by ``flux_unit``.
 	- filters : list, array, or str
 		Filters (following SVO filter IDs) to derive synthetic photometry.
 	- flux_unit : str
-		Flux and flux error units: ``'erg/s/cm2/A'``, ``'Jy'``, or ``erg/s/cm2/um``.
+		Flux density and flux density uncertainty units: ``'erg/s/cm2/A'``, ``'Jy'``, or ``erg/s/cm2/um``.
 	- eflux : array (optional) 
-		Flux uncertainties in units specified by ``flux_unit``.
+		Flux density uncertainties in units specified by ``flux_unit``.
 	- svo_data : astropy.table.Table, optional
 		Astropy table retrieved from SVO using :func:`~seda.utils.read_SVO_table`.
 	- out_file : str, optional
@@ -45,10 +45,10 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 	Returns:
 	--------
 	Python dictionary with the following parameters for each filter:
-		- ``'syn_flux(erg/s/cm2/A)'`` : synthetic fluxes in erg/s/cm2/A.
-		- ``'esyn_flux(erg/s/cm2/A)'`` : synthetic flux errors in erg/s/cm2/A (if input ``eflux`` is provided).
-		- ``'syn_flux(Jy)'`` : synthetic fluxes in Jy.
-		- ``'esyn_flux(Jy)'`` : synthetic flux errors in Jy (if input ``eflux`` is provided).
+		- ``'syn_flux(erg/s/cm2/A)'`` : synthetic flux densities in erg/s/cm2/A.
+		- ``'esyn_flux(erg/s/cm2/A)'`` : synthetic flux density uncertainties in erg/s/cm2/A (if input ``eflux`` is provided).
+		- ``'syn_flux(Jy)'`` : synthetic flux density in Jy.
+		- ``'esyn_flux(Jy)'`` : synthetic flux density uncertainties in Jy (if input ``eflux`` is provided).
 		- ``'syn_mag'`` : synthetic magnitudes.
 		- ``'esyn_mag'`` : synthetic magnitude errors (if input ``eflux`` is provided).
 		- ``'filters'`` : filters used to derive synthetic photometry.
@@ -62,17 +62,17 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 		- ``'transmission'`` : dictionary with 2D arrays for the filter transmissions, where the first first entry is wavelength in microns and the second one is the transmission.
 		- ``'detector'`` : detector response assumed when computing synthetic photometry
 		- ``'wl'`` : input spectrum wavelengths in micron.
-		- ``'flux'`` : input spectrum fluxes in erg/s/cm2/A (the spectrum is internally converted to erg/s/cm2/A, if necessary, before computing the synthetic photometry).
-		- ``'eflux'`` : input spectrum flux uncertainties in erg/s/cm2/A (if input ``eflux`` is provided)..
-		- ``'flux_unit'`` : units of the internally stored spectrum fluxes (``'erg/s/cm2/A'``).
+		- ``'flux'`` : input spectrum flux densities in erg/s/cm2/A (the spectrum is internally converted to erg/s/cm2/A, if necessary, before computing the synthetic photometry).
+		- ``'eflux'`` : input spectrum flux density uncertainties in erg/s/cm2/A (if input ``eflux`` is provided)..
+		- ``'flux_unit'`` : units of the internally stored spectrum flux densities (``'erg/s/cm2/A'``).
 
 	Example:
 	--------
 	>>> # obtain synthetic photometry and plot the results
 	>>> import seda
 	>>> 
-	>>> # assume we have read a wavelengths (wl in um), fluxes (in erg/s/cm2/A), 
-	>>> # and flux errors (eflux) for an input spectrum,
+	>>> # assume we have read wavelengths (wl in um), flux densities (in erg/s/cm2/A), 
+	>>> # and flux density uncertainties (eflux) for an input spectrum,
 	>>>	# and we would like synthetic photometry for several filters
 	>>> filters = (['2MASS/2MASS.J', 'Spitzer/IRAC.I1', 'WISE/WISE.W1']) # filters of interest
 	>>> 
@@ -81,7 +81,7 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 	>>>                                                      flux_unit='erg/s/cm2/A',
 	>>>                                                      filters=filters)
 	>>> 
-	>>> # visualize the derived synthetic fluxes
+	>>> # visualize the derived synthetic flux densities
 	>>> seda.plots.plot_synthetic_photometry(out)
 
 	Author: Genaro Suárez
@@ -173,7 +173,7 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 			print(f'      approx. {round(coverage_perc[k],2)}% of the filter transmission is covered by the data')
 			label[k] = 'incomplete'
 
-		# compute synthetic flux
+		# compute synthetic flux density
 		out_synt_flux = _compute_synthetic_flux(wl=wl, flux=flux, eflux=eflux, filter_wl=filter_wl, filter_flux=filter_flux, detector=detector)
 		syn_flux_erg[k] = out_synt_flux['syn_flux'] # in erg/s/cm2/A
 		esyn_flux_erg[k] = out_synt_flux['esyn_flux'] # in erg/s/cm2/A
@@ -181,7 +181,7 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 		width_eff[k] = out_synt_flux['width_eff'] # in um
 
 		# derive synthetic magnitudes
-		# convert first synthetic fluxes from erg/s/cm2/A into Jy		
+		# convert first synthetic flux densities from erg/s/cm2/A into Jy		
 		out = convert_flux(flux=syn_flux_erg[k], eflux=esyn_flux_erg[k], wl=lambda_eff[k], unit_in='erg/s/cm2/A', unit_out='Jy')
 		syn_flux_Jy[k] = out['flux_out'] # in Jy
 		if eflux is not None: esyn_flux_Jy[k] = out['eflux_out'] # in Jy
@@ -234,35 +234,35 @@ def convert_flux(flux, wl, unit_in, unit_out, eflux=None):
 	'''
 	Description:
 	------------
-		Convert fluxes from Jy to erg/s/cm2/A or vice versa.
+		Convert flux densities from Jy to erg/s/cm2/A or vice versa.
 
 	Parameters:
 	-----------
 	- flux : array, list, or float
- 		Input fluxes in units specified by ``unit_in``.
+ 		Input flux densities in units specified by ``unit_in``.
 	- wl : array, float
 		Wavelengths (in microns) associated to ``flux``.
 	- unit_in : str
 		Units of ``flux``: ``'Jy'`` or ``'erg/s/cm2/A'``.
 	- unit_out : str
-		Units of output fluxes: ``'Jy'`` or ``'erg/s/cm2/A'``.
+		Units of output flux densities: ``'Jy'`` or ``'erg/s/cm2/A'``.
 	- eflux : array, float, optional
- 		Flux uncertainties for ``flux`` in ``unit_in``.
+ 		Flux density uncertainties for ``flux`` in ``unit_in``.
 
 	Returns:
 	--------
-	Dictionary with converted fluxes:
-		- ``'flux_in'`` : input fluxes
-		- ``'flux_out'`` : output fluxes
-		- ``'wl_in'`` : input wavelengths
-		- ``'eflux_in'`` : (if ``eflux``) input flux uncertainties
-		- ``'eflux_out'`` : (if ``eflux``) output flux uncertainties
-		- ``'unit_in'`` : ``unit_in``
-		- ``'unit_out'`` : ``unit_out``
+	Dictionary with converted flux densities:
+		- ``'flux_in'`` : input flux densities.
+		- ``'flux_out'`` : output flux densities.
+		- ``'wl_in'`` : input wavelengths.
+		- ``'eflux_in'`` : (if ``eflux``) input flux density uncertainties.
+		- ``'eflux_out'`` : (if ``eflux``) output flux density uncertainties.
+		- ``'unit_in'`` : ``unit_in``.
+		- ``'unit_out'`` : ``unit_out``.
 
 	Example:
 	--------
-	>>> # convert fluxes from Jy to erg/s/cm2/A
+	>>> # convert flux densities from Jy to erg/s/cm2/A
 	>>> import seda
 	>>> import numpy as np
 	>>>
@@ -308,29 +308,29 @@ def flux_to_mag(flux, filters, flux_unit='Jy', eflux=None, svo_data=None):
 	'''
 	Description:
 	------------
-		Convert fluxes into magnitudes.
+		Convert flux densities into magnitudes.
 
 	Parameters:
 	-----------
 	- flux : array, list, or float
- 		Input fluxes in units specified by ``flux_unit``.
+ 		Input flux densities in units specified by ``flux_unit``.
 	- filters : array, list, or str
 		Filters (following SVO filter IDs) used to obtain ``flux``.
 		It must have the same size as ``flux``.
 	- flux_unit : str, optional (default ``'Jy'``)
 		Units of ``flux``: ``'Jy'`` or ``'erg/s/cm2/A'``.
 	- eflux : array, float, optional
- 		Flux uncertainties for ``flux`` in ``flux_unit``.
+ 		Flux density uncertainties for ``flux`` in ``flux_unit``.
 	- svo_data : astropy.table.Table, optional
 		Astropy table retrieved from SVO using :func:`~seda.utils.read_SVO_table`.
 
 	Returns:
 	--------
-	Dictionary with converted fluxes:
+	Dictionary with converted magnitudes and input flux densities:
 		- ``'mag'`` : resulting magnitudes
 		- ``'emag'`` : (if ``eflux``) uncertainty of resulting magnitudes
-		- ``'flux'`` : input flux
-		- ``'eflux'`` : (if ``eflux``) input flux uncertainties
+		- ``'flux'`` : input flux density
+		- ``'eflux'`` : (if ``eflux``) input flux density uncertainties
 		- ``'filters'`` : input filter IDs
 		- ``'zero_point(Jy)'`` : filters' zero points in Jy 
 		- ``'lambda_eff_SVO(um)'`` : effective wavelengths in microns from SVO
@@ -431,7 +431,7 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, svo_data=None):
 	'''
 	Description:
 	------------
-		Convert magnitudes into fluxes.
+		Convert magnitudes into flux densities.
 
 	Parameters:
 	-----------
@@ -441,7 +441,7 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, svo_data=None):
 		Filters (following SVO filter IDs) used to obtain ``mag``.
 		It must have the same size as ``mag``.
 	- flux_unit : str, optional (default ``'Jy'``)
-		Units to return flux: ``'Jy'`` or ``'erg/s/cm2/A'``.
+		Units to return flux densities: ``'Jy'`` or ``'erg/s/cm2/A'``.
 	- emag : array, float, optional
  		Magnitude uncertainties for ``mag`` in mag.
 	- svo_data : astropy.table.Table, optional
@@ -449,15 +449,15 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, svo_data=None):
 
 	Returns:
 	--------
-	Dictionary with converted fluxes:
-		- ``'flux'`` : resulting fluxes
-		- ``'eflux'`` : (if ``emag``) resulting flux uncertainties
-		- ``'mag'`` : input magnitudes
-		- ``'emag'`` : (if ``emag``) uncertainty of input magnitudes
-		- ``'filters'`` : input filter IDs
-		- ``'zero_point(Jy)'`` : filters' zero points in Jy 
-		- ``'lambda_eff_SVO(um)'`` : effective wavelengths in microns from SVO
-		- ``'width_eff_SVO(um)'`` : effective width in microns from SVO
+	Dictionary with converted flux densities:
+		- ``'flux'`` : resulting flux densities.
+		- ``'eflux'`` : (if ``emag``) resulting flux density uncertainties.
+		- ``'mag'`` : input magnitudes.
+		- ``'emag'`` : (if ``emag``) uncertainty of input magnitudes.
+		- ``'filters'`` : input filter IDs.
+		- ``'zero_point(Jy)'`` : filters' zero points in Jy.
+		- ``'lambda_eff_SVO(um)'`` : effective wavelengths in microns from SVO.
+		- ``'width_eff_SVO(um)'`` : effective width in microns from SVO.
 
 	Example:
 	--------
@@ -568,9 +568,9 @@ def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None, svo_
 	- wl : array
 		Wavelength array in microns.
 	- flux : array
-		Flux values in ``flux_unit`` unit corresponding to ``wl``.
+		Flux density values in ``flux_unit`` unit corresponding to ``wl``.
 	- flux_unit : str
-		Flux and flux error units: ``'erg/s/cm2/A'``, ``'Jy'``, or ``erg/s/cm2/um``.
+		Flux density and flux density uncertainty units: ``'erg/s/cm2/A'``, ``'Jy'``, or ``erg/s/cm2/um``.
 	- mag : array
 		Observed magnitudes in mag.
 	- emag : array
@@ -578,7 +578,7 @@ def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None, svo_
 	- filters : list, array, or str
 		List of filters (following SVO filter IDs) used for photometry.
 	- eflux : array, optional
-		Uncertainties on the flux in ``flux_unit`` unit. If ``None``, uncertainties are ignored.
+		Flux density uncertainties in ``flux_unit`` unit. If ``None``, uncertainties are ignored.
 	- svo_data : astropy.table.Table, optional
 		Astropy table retrieved from SVO using :func:`~seda.utils.read_SVO_table`.
 
@@ -586,19 +586,19 @@ def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None, svo_
 	--------
 	Python dictionary with the following parameters:
 		- ``'wl``': wavelength in microns of calibrated spectrum.
-		- ``'flux``': flux in ``flux_unit`` of calibrated spectrum.
-		- ``'eflux``': flux uncertainties in ``flux_unit`` of calibrated spectrum.
+		- ``'flux``': flux density in ``flux_unit`` of calibrated spectrum.
+		- ``'eflux``': flux density uncertainties in ``flux_unit`` of calibrated spectrum.
 		- ``'syn_mag``': synthetic magnitudes in mag for ``filters`` from the calibrated spectrum.
 		- ``'esyn_mag``': synthetic magnitude errors in mag for ``filters`` from the calibrated spectrum.
-		- ``'syn_flux``': synthetic fluxes in ``flux_unit`` for ``filters`` from the calibrated spectrum.
-		- ``'esyn_flux``': synthetic flux errors in ``flux_unit`` for ``filters`` from the calibrated spectrum.
+		- ``'syn_flux``': synthetic flux density in ``flux_unit`` for ``filters`` from the calibrated spectrum.
+		- ``'esyn_flux``': synthetic flux density uncertainties in ``flux_unit`` for ``filters`` from the calibrated spectrum.
 		- ``'scaling``': scaling factor applied to the input spectrum to calibrate it.
-		- ``'flux_unit``': units of input spectrum fluxes and errors.
+		- ``'flux_unit``': units of input spectrum flux density and their uncertainties.
 
 	Example:
 	--------
 	>>> # Flux-calibrate a near-infrared spectrum using 2MASS photometry.
-	>>> # Assume the spectrum wavelength, flux and flux errors are loaded in the variable wl, flux, and eflux,
+	>>> # Assume the spectrum wavelength, flux density and flux density uncertainties are loaded in the variable wl, flux, and eflux,
 	>>> # and the units of fluxes are 'erg/s/cm2/um'.
 	>>> flux_unit='erg/s/cm2/um'
 	>>> 
@@ -651,7 +651,7 @@ def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None, svo_
 	if eflux is not None: esyn_mag_calib = esyn_mag
 	else: esyn_mag_calib = None
 
-	# calibrate synthetic fluxes
+	# calibrate synthetic flux densities
 	out_syn_flux = mag_to_flux(mag=syn_mag_calib, emag=esyn_mag_calib, 
 	                           filters=filters, flux_unit=flux_unit, 
 	                           svo_data=svo_data)
@@ -761,13 +761,12 @@ def filter_coverage_fraction(wl, filter_wl, filter_flux):
 #+++++++++++++++++
 def _compute_synthetic_flux(wl, flux, filter_wl, filter_flux, eflux=None, detector='photon'):
 	"""
-	Compute synthetic flux, flux error, lambda_eff, and width_eff.
+	Compute synthetic flux density, flux density uncertaintyr, lambda_eff, and width_eff.
 	
 	This is an internal helper function used by :func:`~seda.synthetic_photometry.synthetic_photometry`.
-	The input spectrum must be provided as F_lambda. The synthetic flux is
-	computed using photon-counting weighting by default, appropriate for most
-	astronomical detectors. Energy-integrating weighting can be selected with
-	``detector='energy'``.
+	The input spectrum must be provided as F_lambda. The synthetic flux density is computed using 
+	photon-counting weighting by default, appropriate for most astronomical detectors. Energy-integrating 
+	weighting can be selected with ``detector='energy'``.
 	"""
 
 	# spectrum wavelengths within the filter wavelength range

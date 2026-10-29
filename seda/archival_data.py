@@ -6,8 +6,8 @@ from sys import exit
 
 class Spectrum:
 	"""
-	Represents a single spectrum with wavelength, flux, flux error,
-	and all metadata columns from the table as direct attributes.
+	Represents a single spectrum with wavelength, flux density, flux density 
+	uncertainties, and all metadata columns from the table as direct attributes.
 
 	Provides both attribute-style access (e.g., `spectrum.SName`) 
 	and dict-style access (e.g., `spectrum['SName']`).
@@ -19,9 +19,9 @@ class Spectrum:
 	wavelength : array-like
 		Wavelength numpy array in microns.
 	flux : array-like
-		Flux numpy array in Jy.
+		Flux density numpy array in Jy.
 	eflux : array-like
-		Flux uncertainty numpy array in Jy.
+		Flux density uncertainty numpy array in Jy.
 	meta_row : astropy.table.Row
 		Metadata row from the table; all columns are promoted as attributes.
 
@@ -42,7 +42,7 @@ class Spectrum:
 	>>> 
 	>>> # extract a few attributes 
 	>>> spectrum.wavelength # wavelengths in microns
-	>>> spectrum.flux       # fluxes in Jy
+	>>> spectrum.flux       # flux densities in Jy
 	>>> spectrum.Name       # Object name via attribute
 	>>> spectrum['Name']    # Object name via dictionary-style
 	>>> spectrum.plot()     # plot spectrum
@@ -102,7 +102,7 @@ class Spectrum:
 		ax.grid(True, which='both', color='gainsboro', linewidth=0.5, alpha=0.5)
 
 		ax.set_xlabel('Wavelength ($\mu$m)')
-		ax.set_ylabel('Flux (Jy)')
+		ax.set_ylabel('Flux density (Jy)')
 		ax.set_title(f'{self.Name} ({self.SName}; {self.SpTypeopt}/{self.SpTypeir})')
 
 		return fig, ax
@@ -168,7 +168,7 @@ class IRS:
 	>>> 
 	>>> # extract a few attributes for the first spectrum
 	>>> spectra[0].wavelength # wavelengths in microns
-	>>> spectra[0].flux       # fluxes in Jy
+	>>> spectra[0].flux       # flux density in Jy
 	>>> spectra[0].Name       # Object name via attribute
 	>>> spectra[0]['Name']    # Object name via dictionary-style
 	>>> spectra[0].plot()     # plot spectrum

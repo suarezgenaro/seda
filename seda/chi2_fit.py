@@ -46,13 +46,13 @@ def chi2(my_chi2):
 			- ``radius``: (if ``distance`` is provided) radius (in Rjup) considering the ``scaling_fit`` and input ``distance``.
 			- ``eradius``: (if ``edistance`` is provided) radius uncertainty (in Rjup).
 			- ``params``: model free parameters for each model spectrum.
-			- ``flux_array_model_conv_resam_scaled``: (if ``fit spectra``) input ``flux_array_model_conv_resam`` fluxes multiplied by the scaling factor ``scaling_fit``.
-			- ``flux_array_model_conv_resam_scaled_fit``: (if ``fit spectra``) input ``flux_array_model_conv_resam_fit`` fluxes multiplied by the scaling factor ``scaling_fit``.
-			- ``flux_residuals_spec``: (if ``fit spectra``) linear flux residual (in erg/cm2/s/A) between observed spectra and model spectra in ``fit_wl_range``.
-			- ``logflux_residuals_spec``: (if ``fit spectra``) logarithm flux residual (in erg/cm2/s/A) between observed spectra and model spectra in ``fit_wl_range``.
-			- ``flux_syn_array_model_scaled_fit``: (if ``fit photometry``) input ``flux_syn_array_model_fit`` fluxes multiplied by the scaling factor ``scaling_fit``.
-			- ``flux_residuals_phot``: (if ``fit photometry``) linear flux residual (in erg/cm2/s/A) between observed photometry and model spectra in ``fit_phot_range``.
-			- ``logflux_residuals_phot``: (if ``fit photometry``) logarithm flux residual (in erg/cm2/s/A) between observed photometry and model spectra in ``fit_phot_range``.
+			- ``flux_array_model_conv_resam_scaled``: (if ``fit spectra``) input ``flux_array_model_conv_resam`` flux densities multiplied by the scaling factor ``scaling_fit``.
+			- ``flux_array_model_conv_resam_scaled_fit``: (if ``fit spectra``) input ``flux_array_model_conv_resam_fit`` flux densities multiplied by the scaling factor ``scaling_fit``.
+			- ``flux_residuals_spec``: (if ``fit spectra``) linear flux density residuals (in erg/cm2/s/A) between observed spectra and model spectra in ``fit_wl_range``.
+			- ``logflux_residuals_spec``: (if ``fit spectra``) logarithm flux density residuals between observed spectra and model spectra in ``fit_wl_range``.
+			- ``flux_syn_array_model_scaled_fit``: (if ``fit photometry``) input ``flux_syn_array_model_fit`` flux densities multiplied by the scaling factor ``scaling_fit``.
+			- ``flux_residuals_phot``: (if ``fit photometry``) linear flux density residuals (in erg/cm2/s/A) between observed photometry and model spectra in ``fit_phot_range``.
+			- ``logflux_residuals_phot``: (if ``fit photometry``) logarithm flux density residuals between observed photometry and model spectra in ``fit_phot_range``.
 
 	Example:
 	--------
@@ -134,7 +134,7 @@ def chi2(my_chi2):
 		flux_array_obs_fit = my_chi2.flux_array_obs_fit
 		eflux_array_obs_fit = my_chi2.eflux_array_obs_fit
 		# make deepcopy of the following attributes to avoid modifying the original ones (stores in my_chi2) 
-		# when updating the fluxing after applying the scaling factor
+		# when updating the flux densities after applying the scaling factor
 		wl_array_model_conv_resam = copy.deepcopy(my_chi2.wl_array_model_conv_resam)
 		flux_array_model_conv_resam = copy.deepcopy(my_chi2.flux_array_model_conv_resam)
 		wl_array_model_conv_resam_fit = copy.deepcopy(my_chi2.wl_array_model_conv_resam_fit)
@@ -179,9 +179,9 @@ def chi2(my_chi2):
 
 		# minimize chi square
 		if fit_spectra and not fit_photometry:
-			data_fit = flux_array_obs_fit[i] # all input fluxes
-			edata_fit = eflux_array_obs_fit[i] # all input flux uncertainties
-			model_fit = flux_array_model_conv_resam_fit[i] # model fluxes from each resampled and convolved model spectrum
+			data_fit = flux_array_obs_fit[i] # all input flux densities
+			edata_fit = eflux_array_obs_fit[i] # all input flux density uncertainties
+			model_fit = flux_array_model_conv_resam_fit[i] # model flux densities from each resampled and convolved model spectrum
 			weight_fit = weight_spec_fit
 		if not fit_spectra and fit_photometry:
 			data_fit = [phot_fit]
@@ -208,7 +208,7 @@ def chi2(my_chi2):
 		chi2_wl_fit.append(out_lmfit.residual**2) # chi square for each data point from lmfit
 		chi2_red_wl_fit.append(out_lmfit.residual**2 / out_lmfit.nfree) # reduced chi square for each data point from lmfit
 
-		# scale model fluxes by the value that minimizes chi2
+		# scale model flux densities by the value that minimizes chi2
 		if fit_spectra:
 			for k in range(N_spectra): # for each input observed spectrum
 				flux_array_model_conv_resam[i][k] = flux_array_model_conv_resam[i][k] * scaling_fit[i]
@@ -248,7 +248,7 @@ def chi2(my_chi2):
 		# resampled and convolved model spectra within the fit ranges
 #		out_chi2['wl_array_model_conv_resam_fit'] = wl_array_model_conv_resam_fit
 		out_chi2['flux_array_model_conv_resam_scaled_fit'] = flux_array_model_conv_resam_fit
-#		# observed fluxes within the fit ranges
+#		# observed flux densities within the fit ranges
 #		out_chi2['wl_array_obs_fit'] = wl_array_obs_fit
 #		out_chi2['flux_array_obs_fit'] = flux_array_obs_fit
 #		out_chi2['eflux_array_obs_fit'] = eflux_array_obs_fit
@@ -270,7 +270,7 @@ def chi2(my_chi2):
 		if edistance!=None:
 			out_chi2['eradius'] = eradius
 
-	# obtain residuals in linear and logarithmic-scale for fluxes in the fit range
+	# obtain residuals in linear and logarithmic-scale for flux densities in the fit range
 	flux_residuals_spec = []
 	logflux_residuals_spec = []
 	flux_residuals_phot = []
@@ -284,7 +284,7 @@ def chi2(my_chi2):
 				res_lin = flux_array_model_conv_resam_fit[i][k] - flux_array_obs_fit[i][k]
 				flux_residuals_each.append(res_lin)
 				# log scale
-				mask_pos = flux_array_obs_fit[i][k]>0 # mask to avoid negative input fluxes to obtain the logarithm
+				mask_pos = flux_array_obs_fit[i][k]>0 # mask to avoid negative input flux densities to obtain the logarithm
 				res_log = np.log10(flux_array_model_conv_resam_fit[i][k][mask_pos]) - np.log10(flux_array_obs_fit[i][k][mask_pos])
 				logflux_residuals_each.append(res_log)
 			# nested list with all resampled and convolved model spectra in the fit range
@@ -294,7 +294,7 @@ def chi2(my_chi2):
 			# linear scale
 			res_lin = flux_syn_array_model_fit[i] - phot_fit
 			# log scale
-			mask_pos = phot_fit>0 # mask to avoid negative input fluxes to obtain the logarithm
+			mask_pos = phot_fit>0 # mask to avoid negative input flux densities to obtain the logarithm
 			res_log = np.log10(flux_syn_array_model_fit[i][mask_pos]) - np.log10(phot_fit[mask_pos])
 			# nested list with residuals for filters within the fit range for each model spectrum
 			flux_residuals_phot.append(res_lin)

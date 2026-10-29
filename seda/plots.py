@@ -156,7 +156,7 @@ def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None
 	# plot data
 	if fit_spectra: 
 		for k in range(N_spectra): # for each input observed spectrum
-			# plot flux uncertainty region
+			# plot flux density uncertainty region
 			mask = (wl_spectra[k]>=xrange[0]) & (wl_spectra[k]<=xrange[1])
 			wl_region = np.append(wl_spectra[k][mask], np.flip(wl_spectra[k][mask]))
 			flux_region = np.append(flux_spectra[k][mask]-eflux_spectra[k][mask], 
@@ -534,7 +534,7 @@ def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None
 		wl_model_best = output_best_bayesian_fit['wl_model_best']
 		flux_model_best = output_best_bayesian_fit['flux_model_best']
 
-	# obtain residuals in linear and logarithmic-scale for fluxes in the fit range
+	# obtain residuals in linear and logarithmic-scale for flux densities in the fit range
 	if fit_spectra:
 		flux_residuals_spec = []
 		logflux_residuals_spec = []
@@ -543,7 +543,7 @@ def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None
 			res_lin = flux_model[k] - flux_spectra_fit[k]
 			flux_residuals_spec.append(res_lin)
 			# log scale
-			mask_pos = flux_spectra_fit[k]>0 # mask to avoid negative input fluxes to obtain the logarithm
+			mask_pos = flux_spectra_fit[k]>0 # mask to avoid negative input flux densities when taking logarithm
 			res_log = np.log10(flux_model[k]) - np.log10(flux_spectra_fit[k][mask_pos])
 			logflux_residuals_spec.append(res_log)
 	if fit_photometry:
@@ -586,7 +586,7 @@ def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None
 	# plot input data
 	if fit_spectra:
 		for k in range(N_spectra): # for each input observed spectrum
-			# plot flux uncertainty region
+			# plot flux density uncertainty region
 			mask = (wl_spectra[k]>=xrange[0]) & (wl_spectra[k]<=xrange[1])
 			wl_region = np.append(wl_spectra[k][mask], np.flip(wl_spectra[k][mask]))
 			flux_region = np.append(flux_spectra[k][mask]-eflux_spectra[k][mask], 
@@ -960,7 +960,7 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False, 
 	'''
 	Description:
 	------------
-		Plot synthetic fluxes and input SED.
+		Plot synthetic flux densities and input SED.
 
 	Parameters:
 	-----------
@@ -969,9 +969,9 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False, 
 	- xlog : {``True``, ``False``}, optional (default ``False``)
 		Use logarithmic (``True``) or linear (``False``) scale to plot wavelengths.
 	- ylog : {``True``, ``False``}, optional (default ``False``)
-		Use logarithmic (``True``) or linear (``False``) scale to plot fluxes.
+		Use logarithmic (``True``) or linear (``False``) scale to plot flux densities.
 	- flux_unit : str, optional (default 'erg/s/cm2/A')
-		Unit to plot the spectrum fluxes and synthetic fluxes: ``'erg/s/cm2/A'`` (default), ``'Jy'``, or ``erg/s/cm2/um``.
+		Units used to plot the spectrum and synthetic flux densities: ``'erg/s/cm2/A'`` (default), ``'Jy'``, or ``erg/s/cm2/um``.
 	- out_file : str, optional
 		File name to save the figure (it can include a path e.g. my_path/figure.pdf). 
 		Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
@@ -985,13 +985,13 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False, 
 
 	Returns:
 	--------
-	Plot of the synthetic fluxes over the SED used to calculate the fluxes that will be stored if ``save`` with the name ``out_file``.
+	Plot of the synthetic flux densities over the SED used to calculate them, which will be stored if ``save`` with the name ``out_file``.
 
 	Example:
 	--------
 	>>> import seda
 	>>> 
-	>>> # plot and save the data with derived synthetic fluxes
+	>>> # plot and save the data with derived synthetic flux densities
 	>>> # 'out_synthetic_photometry' is the output of ``synthetic_photometry.synthetic_photometry``
 	>>> seda.plot_synthetic_photometry(out_synthetic_photometry=out_synthetic_photometry, save=True)
 
@@ -1000,12 +1000,12 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False, 
 
 	# extract parameters from the output dictionary by synthetic_photometry
 	wl = out_synthetic_photometry['wl'] # input spectrum wavelength
-	flux = out_synthetic_photometry['flux'] # input spectrum fluxes in erg/s/cm2/A
+	flux = out_synthetic_photometry['flux'] # input spectrum flux densities in erg/s/cm2/A
 #	flux_unit = out_synthetic_photometry['flux_unit'] # units of input spectrum fluxes
 	filters = out_synthetic_photometry['filters'] # filters used to calculate synthetic photometry
 	eff_wl = out_synthetic_photometry['lambda_eff(um)'] # effective wavelength (um) for all filters
 	eff_width = out_synthetic_photometry['width_eff(um)'] # effective width (um) for all filters
-	# read synthetic fluxes in the units corresponding to the input spectrum
+	# read synthetic flux densities in the units corresponding to the input spectrum
 	if flux_unit=='erg/s/cm2/A':
 		flux_syn = out_synthetic_photometry['syn_flux(erg/s/cm2/A)']
 		try: eflux_syn = out_synthetic_photometry['esyn_flux(erg/s/cm2/A)']
@@ -1013,7 +1013,7 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False, 
 	elif flux_unit=='Jy':
 		flux = synthetic_photometry.convert_flux(flux=flux, wl=wl, unit_in='erg/s/cm2/A', unit_out='Jy')['flux_out'] # in Jy
 		flux_syn = out_synthetic_photometry['syn_flux(Jy)']
-		try: eflux_syn = out_synthetic_photometry['esyn_flux(Jy)'] # synthetic flux errors (Jy) for all filters
+		try: eflux_syn = out_synthetic_photometry['esyn_flux(Jy)'] # synthetic flux density uncertainties (Jy) for all filters
 		except: eflux_syn = np.repeat(0, len(flux_syn))
 	elif flux_unit=='erg/s/cm2/um':
 		flux = (flux*u.erg/u.s/u.cm**2/(u.nm*0.1)).to(u.erg/u.s/u.cm**2/u.micron).value # in erg/s/cm2/um
@@ -1151,9 +1151,9 @@ def plot_calibrate_spectrum(dic, xrange=None, yrange=None):
 	else: ymin, ymax = yrange
 
 	# calibrated spectrum
-	ax.plot(wl, flux, label='Calibrated fluxes')
+	ax.plot(wl, flux, label='Calibrated flux densities')
 	if eflux is not None:
-		ax.plot(wl, eflux, label='Calibrated flux errors')
+		ax.plot(wl, eflux, label='Calibrated flux density uncertainties')
 
 	# synthetic photometry
 	ax.errorbar(
@@ -1178,7 +1178,7 @@ def plot_calibrate_spectrum(dic, xrange=None, yrange=None):
 	ax.grid(True, which='both', color='gainsboro', alpha=0.5)
 
 	ax.set_xlabel(r'Wavelength ($\mu$m)')
-	ax.set_ylabel(f'Flux ({flux_unit})')
+	ax.set_ylabel(f'Flux density ({flux_unit})')
 
 	return fig, ax
 

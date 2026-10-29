@@ -33,13 +33,13 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 		Wavelength in micron of the spectra to construct an SED.
 		For multiple spectra, provide them as a list (e.g., ``wl_spectra = [wl_spectrum1, wl_spectrum2]``).
 	- flux_spectra : float array or list, optional (require if `output_chi2` is not provided)
-		Fluxes for the input spectra in units indicated by ``flux_unit``.
+		Flux densities for the input spectra in units indicated by ``flux_unit``.
 		Use a list for multiple spectra (similar to ``wl_spectra``).
 	- eflux_spectra : float array or list, optional (require if `output_chi2` is not provided)
-		Fluxes uncertainties in units indicated by ``flux_unit``.
+		Flux density uncertainties in units indicated by ``flux_unit``.
 		Use a list for multiple spectra (similar to ``wl_spectra``).
 	- flux_unit : str, optional (default ``'erg/s/cm2/A'``)
-		Units of ``flux``: ``'Jy'``, ``'erg/s/cm2/A'``, or ``erg/s/cm2/um``.
+		Units of the input flux densities: ``'Jy'``, ``'erg/s/cm2/A'``, or ``erg/s/cm2/um``.
 	- distance : float, optional (require if `output_chi2` is not provided)
 		Target distance (in pc) used to obtain luminosity from total flux.
 	- edistance : float, optional (require if `output_chi2` is not provided)
@@ -47,7 +47,7 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 	- wl_model : array, optional (required if `model_dir` is not provided)
 		Wavelengths in micron of model spectrum to complement the input observed SED.
 	- flux_model : array, optional (required if `model_dir` is not provided)
-		Fluxes in erg/s/cm2/A of model spectrum to complement the input observed SED.
+		Flux densities in erg/s/cm2/A of model spectrum to complement the input observed SED.
 	- params : dictionary, optional (require if `output_chi2` is not provided)
 		Value for each free parameter for the model spectrum used in the hybrid SED.
 	- scale_model : {``True``, ``False``}, optional (default ``True``)
@@ -69,14 +69,14 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 	Returns:
 	--------
 	Dictionary with derived parameters:
-		- ``'flux_tot'`` : total flux (in erg/s/cm2/A) by integrating the hybrid SED.
-		- ``'eflux_tot'`` : uncertainty (in erg/s/cm2/A) associated to total flux.
+		- ``'flux_tot'`` : total integrated flux (in erg/s/cm2) by integrating the hybrid SED.
+		- ``'eflux_tot'`` : uncertainty (in erg/s/cm2) associated to total flux.
 		- ``'Lbol_tot'`` : bolometric luminosity (in Lsun) from the total flux.
 		- ``'eLbol_tot'`` : bolometric luminosity uncertainty (in Lsun).
 		- ``'logLbol_tot'`` : logarithmic bolometric luminosity.
 		- ``'elogLbol_tot'`` : logarithmic bolometric luminosity uncertainty.
-		- ``'flux_tot_obs'`` : total flux (in erg/s/cm2/A) by integrating the observed SED (if complement_SED).
-		- ``'eflux_tot_obs'`` : uncertainty (in erg/s/cm2/A) associated to the observed flux (if complement_SED).
+		- ``'flux_tot_obs'`` : total integrated flux (in erg/s/cm2) by integrating the observed SED (if complement_SED).
+		- ``'eflux_tot_obs'`` : uncertainty (in erg/s/cm2) associated to the observed flux (if complement_SED).
 		- ``'Lbol_tot_obs'`` : bolometric luminosity (in Lsun) from the observed flux (if complement_SED).
 		- ``'eLbol_tot_obs'`` : bolometric luminosity uncertainty (in Lsun) from the observed flux (if complement_SED).
 		- ``'logLbol_tot_obs'`` : logarithmic bolometric luminosity from the observed flux (if complement_SED).
@@ -86,8 +86,8 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 		- ``'N_spectra'`` : number of input spectra (if complement_SED).
 		- ``'completeness_obs'`` : completeness of the observed SED with respect to the hybrid SED (if complement_SED).
 		- ``'wl_SED'`` : wavelengths in micron of the hybrid SED (if complement_SED).
-		- ``'flux_SED'`` : fluxes in erg/s/cm2/A the hybrid SED (if complement_SED).
-		- ``'eflux_SED'`` : fluxes uncertainties in erg/s/cm2/A the hybrid SED (if complement_SED).
+		- ``'flux_SED'`` : flux densities in erg/s/cm2/A the hybrid SED (if complement_SED).
+		- ``'eflux_SED'`` : flux density uncertainties in erg/s/cm2/A the hybrid SED (if complement_SED).
 		- ``'params'`` : dictionary with free parameter values for the model spectrum used in the hybrid SED (if complement_SED).
 		- ``'wl_spectra'`` : input `wl_spectra` (if complement_SED).
 		- ``'flux_spectra'`` : input `flux_spectra` (if complement_SED).
@@ -203,7 +203,7 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 	
 		# complement SED with the input model spectrum
 		if (wl_model is not None) & (flux_model is not None):
-			if scale_model: # scale model fluxes to minimize the chi-square statistics
+			if scale_model: # scale model flux densities to minimize the chi-square statistics
 				# find scaling factor by running the chi-square minimization
 				my_data = input_parameters.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, 
 													 eflux_spectra=eflux_spectra, flux_unit=flux_unit, 
@@ -212,7 +212,7 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 				my_chi2 = input_parameters.Chi2Options(my_data=my_data, my_model=my_model)
 				out_chi2 = chi2_fit.chi2(my_chi2=my_chi2)
 	
-				# scale model fluxes
+				# scale model flux densities
 				flux_model = out_chi2['scaling_fit']*flux_model
 	
 				# convolve scaled model, if requested
