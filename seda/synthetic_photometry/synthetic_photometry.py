@@ -7,7 +7,7 @@ from astropy import units as u
 from .. import utils
 from sys import exit
 
-def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='photon', svo_data=None, out_file=None): 
+def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='auto', svo_data=None, out_file=None):
 	'''
 	Description:
 	------------
@@ -15,9 +15,9 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 		photometric filters compiled by SVO.
 
 		Synthetic flux densities are computed by integrating the spectrum in F_lambda
-		units using photon-counting weighting by default, which is appropriate
-		for most astronomical detectors. Energy-integrating weighting can be
-		selected with ``detector='energy'``.
+		units using the detector weighting convention specified by SVO for each filter.
+		Photon-counting and energy-integrating weighting can also be selected
+		explicitly with ``detector='photon'`` and ``detector='energy'``, respectively.
 
 	Parameters:
 	-----------
@@ -38,9 +38,10 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 		The file name can include a path e.g. my_path/syn_phot.dat
 		If not provided, the synthetic photometry will not be saved.
 	- detector : str, optional
-		Detector response assumed when computing synthetic photometry:
-			- ``'photon'`` (default): photon-counting detectors. The synthetic flux is computed as a photon-weighted integral, appropriate for most astronomical detectors (CCDs, IR arrays).
-			- ``'energy'``: energy-integrating detectors.
+		Detector weighting used to compute synthetic photometry:
+			- ``'auto'`` (default): automatically selects the weighting convention from each filter's SVO DetectorType.
+			- ``'photon'``: applies photon-counting weighting to all filters.
+			- ``'energy'``: applies energy-integrating weighting to all filters.
 
 	Returns:
 	--------
@@ -60,7 +61,7 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 		- ``'label'`` : label indicating if the filters are fully ('complete'), partially ('incomplete'), or no ('none') covered by the input spectrum or no recognized by SVO ('unrecognizable').
 		- ``'coverage_perc'`` : percentage of the filter transmission covered by the spectrum.
 		- ``'transmission'`` : dictionary with 2D arrays for the filter transmissions, where the first first entry is wavelength in microns and the second one is the transmission.
-		- ``'detector'`` : detector response assumed when computing synthetic photometry
+		- ``'detector'`` : detector weighting used for each filter when computing synthetic photometry.
 		- ``'wl'`` : input spectrum wavelengths in micron.
 		- ``'flux'`` : input spectrum flux densities in erg/s/cm2/A (the spectrum is internally converted to erg/s/cm2/A, if necessary, before computing the synthetic photometry).
 		- ``'eflux'`` : input spectrum flux density uncertainties in erg/s/cm2/A (if input ``eflux`` is provided)..
@@ -93,6 +94,10 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 	dir_sep = os.sep # directory separator for the current operating system
 	path_synthetic_photometry = os.path.dirname(__file__)+dir_sep
 
+	# validate detector
+	if detector not in ('auto', 'photon', 'energy'):
+		raise ValueError("detector must be 'auto', 'photon', or 'energy'")
+
 	# input spectrum to numpy
 	wl = utils.astropy_to_numpy(wl)
 	flux = utils.astropy_to_numpy(flux)
@@ -111,9 +116,11 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 	if svo_data is None: svo_data = utils.read_SVO_table()
 	filterID = svo_data['filterID'] # SVO ID
 	ZeroPoint = svo_data['ZeroPoint'] # in Jy
+	DetectorType = svo_data['DetectorType'] # SVO detector type
 	# fill masked values if needed
 	filterID = maskedcolumn_to_numpy(filterID)
 	ZeroPoint = maskedcolumn_to_numpy(ZeroPoint)
+	DetectorType = maskedcolumn_to_numpy(DetectorType)
 
 	# convert input spectrum to F_lambda (erg/s/cm2/A), if needed
 	if flux_unit == 'Jy':
@@ -148,6 +155,7 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 	label = np.full(n_filters, 'complete', dtype=object) # to assign a label to each filter based on its spectral coverage
 	label[:] = 'complete'
 	transmission = {} # dictionary to save the filter transmissions
+	detector_used = np.full(n_filters, None, dtype=object)
 
 	# main loop over filters
 	for k, filt in enumerate(filters): # iterate on each filter
@@ -173,8 +181,28 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 			print(f'      approx. {round(coverage_perc[k],2)}% of the filter transmission is covered by the data')
 			label[k] = 'incomplete'
 
+		# determine detector weighting for the current filter
+		if detector == 'auto':
+			mask_filt = filterID == filt
+			detector_type = DetectorType[mask_filt][0]
+
+			try:
+				detector_type = int(detector_type)
+			except (ValueError, TypeError):
+				raise ValueError(f'Invalid SVO DetectorType for {filt}: {detector_type}')
+			
+			if detector_type not in (0, 1):
+				raise ValueError(f'Unknown SVO DetectorType for {filt}: {detector_type}')
+			
+			detector_filt = {0: 'energy', 1: 'photon'}[detector_type]		
+
+		else:
+			detector_filt = detector
+		detector_used[k] = detector_filt
+
 		# compute synthetic flux density
-		out_synt_flux = _compute_synthetic_flux(wl=wl, flux=flux, eflux=eflux, filter_wl=filter_wl, filter_flux=filter_flux, detector=detector)
+		out_synt_flux = _compute_synthetic_flux(wl=wl, flux=flux, eflux=eflux, filter_wl=filter_wl, 
+		                                        filter_flux=filter_flux, detector=detector_filt)
 		syn_flux_erg[k] = out_synt_flux['syn_flux'] # in erg/s/cm2/A
 		esyn_flux_erg[k] = out_synt_flux['esyn_flux'] # in erg/s/cm2/A
 		lambda_eff[k] = out_synt_flux['lambda_eff'] # in um
@@ -200,7 +228,7 @@ def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='pho
 	# output dictionary
 	out = {'syn_flux(Jy)': syn_flux_Jy, 'syn_flux(erg/s/cm2/A)': syn_flux_erg, 'syn_mag': syn_mag, 'lambda_eff(um)': lambda_eff, 
 	       'width_eff(um)': width_eff, 'lambda_eff_SVO(um)': lambda_eff_SVO, 'width_eff_SVO(um)': width_eff_SVO, 
-	       'zero_point(Jy)': zero_point, 'label': label, 'coverage_perc': coverage_perc, 'detector': detector, 'transmission': transmission, 
+	       'zero_point(Jy)': zero_point, 'label': label, 'coverage_perc': coverage_perc, 'detector': detector_used, 'transmission': transmission, 
 	       'wl': wl, 'flux': flux, 'flux_unit': flux_unit, 'filters': filters}
 	if eflux is not None: 
 		out['esyn_flux(Jy)'] = esyn_flux_Jy
@@ -790,7 +818,8 @@ def _compute_synthetic_flux(wl, flux, filter_wl, filter_flux, eflux=None, detect
 	syn_flux = utils.np_trapz(flux[mask_wl] * weight_norm, wl[mask_wl]) # in input F_lambda units
 	esyn_flux = None
 	if eflux is not None:
-		esyn_flux = np.median(eflux[mask_wl] / flux[mask_wl]) * syn_flux # synthetic flux error as the median fractional flux uncertainties in the filter passband
+		# synthetic flux uncertainty as the median fractional flux uncertainties in the filter passband
+		esyn_flux = np.median(eflux[mask_wl] / flux[mask_wl]) * syn_flux
 
 	# compute the filter's effective wavelength and effective width
 	# effective wavelength
