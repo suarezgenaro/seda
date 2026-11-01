@@ -112,6 +112,7 @@ def synthetic_photometry(wl, flux, filters=None, flux_unit=None, eflux=None, det
 	>>> seda.plots.plot_synthetic_photometry(out)
 
 	>>> # obtain synthetic photometry using two user-defined filters
+	>>> import seda
 	>>> import numpy as np
 	>>>
 	>>> # define wavelength arrays and transmission curves
