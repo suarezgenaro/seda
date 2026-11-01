@@ -40,4 +40,4 @@ def _separate_params(filenames):
         logKzz[i] = float(parts[9])
 
 
-    return {'Teff': Teff, 'logg': logg, '[M/H]': logZ, 'C/O': CtoO, 'logKzz': logKzz}
+    return {'Teff': Teff, 'logg': logg, '[M/H]': logZ, 'CtoO': CtoO, 'logKzz': logKzz}

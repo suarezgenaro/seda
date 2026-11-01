@@ -302,14 +302,14 @@ class EvolutionaryModels:
 	@property
 	def available_tables(self):
 		"""Basenames of evolutionary table files bundled for this model."""
-		if not hasattr(self, 'model'):
+		if self.model is None:
 			raise Exception('Pass a model name to EvolutionaryModels to list available tables.')
 		return _list_evolutionary_tables(self.model)
 
 	@property
 	def params(self):
 		"""Per-table min/max for each grid column in native units (see ``config.json`` ``units``)."""
-		if not hasattr(self, 'model'):
+		if self.model is None:
 			raise Exception('Pass a model name to EvolutionaryModels to read parameter ranges.')
 		if not hasattr(self, '_params_cache'):
 			self._params_cache = _compute_evolutionary_param_ranges(self.model)
