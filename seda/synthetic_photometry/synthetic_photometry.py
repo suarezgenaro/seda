@@ -57,8 +57,8 @@ def synthetic_photometry(wl, flux, filters=None, flux_unit=None, eflux=None, det
 		- ``'detector'`` : detector weighting convention, either
 		  ``'photon'`` or ``'energy'``.
 		- ``'zero_point'`` : optional, photometric zero point in Jy, used to
-
 			  calculate synthetic magnitudes and their uncertainties.
+
 		If ``'zero_point'`` is not provided, synthetic magnitudes, magnitude
 		uncertainties, and zero points are returned as NaN for that filter.
 		Multiple custom filters can be provided, each with its own wavelength
