@@ -38,10 +38,12 @@ def synthetic_photometry(wl, flux, filters=None, flux_unit=None, eflux=None, det
 		Flux density uncertainties in units specified by ``flux_unit``.
 	- detector : str, optional
 		Detector weighting used for SVO filters:
-			- ``'auto'`` (default): automatically selects the weighting convention
-			  from each filter's SVO DetectorType.
-			- ``'photon'``: applies photon-counting weighting to all SVO filters.
-			- ``'energy'``: applies energy-integrating weighting to all SVO filters.
+
+		- ``'auto'`` (default): automatically selects the weighting convention
+		  from each filter's SVO DetectorType.
+		- ``'photon'``: applies photon-counting weighting to all SVO filters.
+		- ``'energy'``: applies energy-integrating weighting to all SVO filters.
+
 		This argument does not affect user-defined filters, which specify their
 		detector conventions individually.
 	- svo_data : astropy.table.Table, optional
@@ -49,11 +51,13 @@ def synthetic_photometry(wl, flux, filters=None, flux_unit=None, eflux=None, det
 	- custom_filters : dict, optional
 		Dictionary containing user-defined photometric filters. Each filter is
 		identified by a unique name and must contain the following entries:
-			- ``'wl'`` : array of filter wavelengths in microns.
-			- ``'transmission'`` : array of filter transmission values.
-			- ``'detector'`` : detector weighting convention, either
-			  ``'photon'`` or ``'energy'``.
-			- ``'zero_point'`` : optional, photometric zero point in Jy, used to
+
+		- ``'wl'`` : array of filter wavelengths in microns.
+		- ``'transmission'`` : array of filter transmission values.
+		- ``'detector'`` : detector weighting convention, either
+		  ``'photon'`` or ``'energy'``.
+		- ``'zero_point'`` : optional, photometric zero point in Jy, used to
+
 			  calculate synthetic magnitudes and their uncertainties.
 		If ``'zero_point'`` is not provided, synthetic magnitudes, magnitude
 		uncertainties, and zero points are returned as NaN for that filter.
@@ -67,7 +71,7 @@ def synthetic_photometry(wl, flux, filters=None, flux_unit=None, eflux=None, det
 		If not provided, the synthetic photometry will not be saved.
 
 	Returns:
-		--------
+	--------
 		Python dictionary with the following parameters for each filter:
 			- ``'syn_flux(erg/s/cm2/A)'`` : synthetic flux densities in erg/s/cm2/A.
 			- ``'esyn_flux(erg/s/cm2/A)'`` : synthetic flux density uncertainties in erg/s/cm2/A (if input ``eflux`` is provided).
