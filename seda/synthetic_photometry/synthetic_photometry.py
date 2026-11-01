@@ -105,8 +105,8 @@ def synthetic_photometry(wl, flux, filters=None, flux_unit=None, eflux=None, det
 	>>>
 	>>> # calculate synthetic photometry
 	>>> out = seda.synthetic_photometry.synthetic_photometry(wl=wl, flux=flux, eflux=eflux,
-	>>>	                                                     flux_unit='erg/s/cm2/A',
-	>>>	                                                     filters=filters)
+	>>>	                                                 flux_unit='erg/s/cm2/A',
+	>>>	                                                 filters=filters)
 	>>>
 	>>> # visualize the derived synthetic flux densities
 	>>> seda.plots.plot_synthetic_photometry(out)
@@ -135,8 +135,8 @@ def synthetic_photometry(wl, flux, filters=None, flux_unit=None, eflux=None, det
 	>>>
 	>>> # calculate synthetic photometry using custom filters
 	>>> out = seda.synthetic_photometry.synthetic_photometry(wl=wl, flux=flux, eflux=eflux,
-	>>>	                                                     flux_unit='erg/s/cm2/A',
-	>>>	                                                     custom_filters=custom_filters)
+	>>>	                                                 flux_unit='erg/s/cm2/A',
+	>>>	                                                 custom_filters=custom_filters)
 	>>>
 	>>> # visualize the derived synthetic flux densities
 	>>> seda.plots.plot_synthetic_photometry(out)
