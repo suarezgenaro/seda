@@ -14,13 +14,21 @@ def synthetic_photometry(wl, flux, filters=None, flux_unit=None, eflux=None, det
 	------------
 		Compute synthetic photometry from an input spectrum using photometric
 		filters compiled by SVO and/or user-defined filter transmission curves.
-
+		
 		Synthetic flux densities are computed by integrating the spectrum in F_lambda
 		units using the appropriate detector weighting convention. For SVO filters,
 		the weighting is automatically selected from the SVO DetectorType metadata,
-		unless explicitly specified with ``detector='photon'`` or
-		``detector='energy'``. For user-defined filters, the detector convention
-		must be specified individually for each filter.
+		unless explicitly specified with ``detector='photon'`` o ``detector='energy'``. 
+		For user-defined filters, the detector convention must be specified individually 
+		for each filter.
+		
+		For ground-based filters, the SVO transmission curves may already include
+		atmospheric transmission. Users can check the ``Comments`` and
+		``ProfileReference`` fields in the SVO metadata, accessible through
+		:func:`~seda.utils.read_SVO_table`, to determine whether atmospheric
+		transmission is included and under which conditions. SEDA does not apply
+		additional atmospheric corrections, but users can provide custom
+		transmission curves incorporating their desired atmospheric conditions.
 
 	Parameters:
 	-----------
