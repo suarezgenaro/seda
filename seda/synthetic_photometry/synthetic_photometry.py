@@ -385,7 +385,6 @@ def synthetic_photometry(wl, flux, filters=None, flux_unit=None, eflux=None, det
 		syn_flux_Jy[k] = out['flux_out'] # in Jy
 		if eflux is not None: esyn_flux_Jy[k] = out['eflux_out'] # in Jy
 
-
 		# calculate synthetic magnitudes
 		if is_custom:
 			# calculate magnitudes only if a zero point is provided
@@ -990,6 +989,94 @@ def filter_coverage_fraction(wl, filter_wl, filter_flux):
 		label = 'complete'
 
 	return label, fraction
+
+#+++++++++++++++++
+def _compute_synthetic_flux(wl, flux, filter_wl, filter_flux, eflux=None, detector='photon'):
+    """
+    Compute synthetic flux densities in F_lambda and F_nu, their uncertainties,
+    lambda_eff, and width_eff.
+
+    This is an internal helper function used by :func:`~seda.synthetic_photometry.synthetic_photometry`.
+    The input spectrum must be provided as F_lambda in erg/s/cm2/A, with wavelengths in micron. 
+	The synthetic flux densities are computed using photon-counting weighting by default, 
+	appropriate for most astronomical detectors. Energy-integrating weighting can be selected 
+	with ``detector='energy'``.
+
+    The synthetic F_nu is returned in Jy.
+    """
+
+    # spectrum wavelengths within the filter wavelength range
+    mask_wl = (wl >= filter_wl.min()) & (wl <= filter_wl.max())
+
+	# ensure at least two spectral points are available for numerical integration
+	if np.count_nonzero(mask_wl) < 2:
+		raise ValueError('Insufficient spectral sampling within the filter wavelength range')
+
+	# ensure spectrum wavelengths are positive and strictly increasing
+	if np.any(wl <= 0) or np.any(np.diff(wl) <= 0):
+		raise ValueError('Spectrum wavelengths must be positive and strictly increasing')
+
+    # resample filter transmission to the spectrum wavelength
+    filter_flux_resam = np.interp(wl[mask_wl], filter_wl, filter_flux) # dimensionless
+
+    # detector weighting
+    if detector == 'photon':
+        weight = wl[mask_wl] * filter_flux_resam # photon-counting detector
+        weight_nu = filter_flux_resam / wl[mask_wl]
+    elif detector == 'energy':
+        weight = filter_flux_resam # energy-integrating detector
+        weight_nu = filter_flux_resam / wl[mask_wl]**2
+    else:
+        raise ValueError("detector must be either 'photon' or 'energy'")
+
+    # normalize the transmission curve for F_lambda
+    weight_integral = utils.np_trapz(weight, wl[mask_wl])
+    if not np.isfinite(weight_integral) or weight_integral <= 0:
+        raise ValueError('Filter has no positive integrated transmission over the input spectrum')
+    weight_norm = weight / weight_integral
+
+    # normalize the transmission curve for F_nu
+    weight_nu_integral = utils.np_trapz(weight_nu, wl[mask_wl])
+    if not np.isfinite(weight_nu_integral) or weight_nu_integral <= 0:
+        raise ValueError('Filter has no positive integrated F_nu normalization')
+    weight_nu_norm = weight_nu / weight_nu_integral
+
+    # synthetic flux density in F_lambda
+    syn_flux = utils.np_trapz(flux[mask_wl] * weight_norm, wl[mask_wl]) # erg/s/cm2/A
+
+    esyn_flux = None
+    if eflux is not None:
+        # synthetic flux uncertainty as the median fractional flux uncertainties in the filter passband
+        esyn_flux = np.median(eflux[mask_wl] / flux[mask_wl]) * syn_flux
+
+	# convert F_lambda to F_nu (Jy)
+	flux_nu = (flux[mask_wl] * u.erg / u.s / u.cm**2 / u.AA).to(
+		u.Jy, equivalencies=u.spectral_density(wl[mask_wl] * u.um)
+	).value
+	
+	# synthetic flux density in F_nu (Jy)
+	syn_flux_Jy = utils.np_trapz(flux_nu * weight_nu_norm, wl[mask_wl]) # Jy
+
+    esyn_flux_Jy = None
+    if eflux is not None:
+        # same fractional uncertainty prescription as for F_lambda
+        esyn_flux_Jy = np.median(eflux[mask_wl] / flux[mask_wl]) * syn_flux_Jy
+
+    # compute the filter's effective wavelength and effective width
+    # effective wavelength
+    lambda_eff = utils.np_trapz(wl[mask_wl] * flux[mask_wl] * weight, wl[mask_wl]) / \
+                 utils.np_trapz(flux[mask_wl] * weight, wl[mask_wl])
+
+    # SVO effective width (always energy-counter definition)
+    width_eff = utils.np_trapz(wl[mask_wl] * filter_flux_resam, wl[mask_wl]) / \
+                (wl[mask_wl] * filter_flux_resam).max()
+
+    # output dictionary
+    out = {'syn_flux': syn_flux, 'esyn_flux': esyn_flux,
+           'syn_flux_Jy': syn_flux_Jy, 'esyn_flux_Jy': esyn_flux_Jy,
+           'lambda_eff': lambda_eff, 'width_eff': width_eff}
+
+    return out
 
 #+++++++++++++++++
 def _compute_synthetic_flux(wl, flux, filter_wl, filter_flux, eflux=None, detector='photon'):
