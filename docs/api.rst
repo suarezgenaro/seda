@@ -66,7 +66,7 @@ Models
 
 Physical and Basic Parameters
 -----------------------------
-.. automodule:: seda.phy_params
+.. automodule:: seda.fund_params
     :members:
 
 Plots

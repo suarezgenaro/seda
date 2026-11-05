@@ -386,7 +386,7 @@ def teff(Lbol, eLbol, R, eR, n_mc=10000, central="median",
 	>>> R, eR = 1.018, 0.059 # in Rjup
 	>>>
 	>>> # derive Teff (in K) from Stefan–Boltzmann law
-	>>> seda.phy_params.teff(Lbol=Lbol, eLbol=eLbol, R=R, eR=eR)
+	>>> seda.fund_params.teff(Lbol=Lbol, eLbol=eLbol, R=R, eR=eR)
 		(1592.0020910445828, (57.98628122105015, 65.18365052510921))
 
 
@@ -539,7 +539,7 @@ def inclination(vsini, evsini, P, eP, R, eR, n_mc=10000, central="median",
 	>>> P, eP       =  9.53, 0.19   # hours (Vos et al. 2022)
 	>>> R, eR       =  1.22, 0.02   # R_jup (Vos et al. 2022)
 	>>>
-	>>> seda.phy_params.inclination(vsini=vsini, evsini=evsini,
+	>>> seda.fund_params.inclination(vsini=vsini, evsini=evsini,
 	...                             P=P, eP=eP, R=R, eR=eR)
 		(50.6, (1.9, 2.1))
  
@@ -786,7 +786,7 @@ def isochrone_params(logL, elogL, age, eage, model, filename=None,
 	>>>
 	>>> logL, elogL = -4.199, 0.048  # log10(L/Lsun)
 	>>>
-	>>> out = seda.phy_params.isochrone_params(
+	>>> out = seda.fund_params.isochrone_params(
 	...     logL=logL, elogL=elogL, age=0.5, eage=0.0,
 	...     model='Sonora_Bobcat', filename='nc+0.0_co1.0_mass',
 	... )
@@ -979,7 +979,7 @@ def evol_params(logL, elogL, R, eR, model, filename=None,
 	>>> R, eR = 1.018, 0.059         # in Rjup
 	>>>
 	>>> # infer parameters using the bundled solar-metallicity Bobcat table
-	>>> out = seda.phy_params.evol_params(logL=logL, elogL=elogL, R=R, eR=eR,
+	>>> out = seda.fund_params.evol_params(logL=logL, elogL=elogL, R=R, eR=eR,
 	>>>                                   model='Sonora_Bobcat', filename='nc+0.0_co1.0_mass')
 	>>> out['mass'], out['age']  # M_jup, Gyr
 	    (39.24, 0.366)  
@@ -1166,7 +1166,7 @@ def color_anomaly(color, color_name, spt, table, ecolor=None,
 	>>> # 2MASS J03552337+1133437 (L5; Suárez et al. 2023)
 	>>> color = 14.05 - 11.526  # J-K from 2MASS photometry
 	>>> ecolor = np.sqrt(0.024**2 + 0.031**2)
-	>>> seda.phy_params.color_anomaly(
+	>>> seda.fund_params.color_anomaly(
 	...     color=color, color_name='J-K', spt='L5',
 	...     table='faherty16', age_group='young', ecolor=color)
 	    (0.37071428571428644, 0.03920459156782532)
