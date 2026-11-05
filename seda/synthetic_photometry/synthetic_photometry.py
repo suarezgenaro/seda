@@ -708,9 +708,12 @@ def load_filter_transmission(filt):
 		ascii.write(filter_trans, fullpath, format='no_header',
 					formats={'Wavelength': '%.1f', 'Transmission': '%.10f'})
 	# read locally stored filter transmission
-	filter_trans = ascii.read(fullpath)
-	filter_wl = (filter_trans['col1'].data*(0.1*u.nm)).to(u.micron).value # in um
-	filter_flux = filter_trans['col2'] # filter transmission
+	# filter_trans = ascii.read(fullpath)
+	filter_trans = np.loadtxt(fullpath)
+	# filter_wl = (filter_trans['col1'].data*(0.1*u.nm)).to(u.micron).value # in um
+	# filter_flux = filter_trans['col2'] # filter transmission
+	filter_wl = (filter_trans[:,0].data*(0.1*u.nm)).to(u.micron).value # in um
+	filter_flux = filter_trans[:,1] # filter transmission
 
 	return filter_wl, filter_flux
 
