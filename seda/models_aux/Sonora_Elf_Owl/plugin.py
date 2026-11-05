@@ -3,13 +3,19 @@ import astropy.units as u
 import numpy as np
 import xarray
 from seda.models_aux._plugin_helpers import _round_logg_point25
+import netCDF4
+
+def read_cols(path, names=("wavelength", "flux")):
+    with netCDF4.Dataset(path, "r") as nc:
+        return {n: nc.variables[n][:] for n in names}
 
 def _read_model_spectrum(spectrum_file):
     """ 
     Read a model spectrum and return wavelength wavelength (micron) and flux (erg/s/cm2/A).
     """
 
-    spec_model = xarray.open_dataset(spectrum_file) # Sonora Elf Owl model spectra have NetCDF Data Format data
+    # spec_model = xarray.open_dataset(spectrum_file) # Sonora Elf Owl model spectra have NetCDF Data Format data
+    spec_model = read_cols(spectrum_file) # Sonora Elf Owl model spectra have NetCDF Data Format data
     
     wl_model = spec_model['wavelength'].data * u.micron # um
     wl_model = wl_model.value
