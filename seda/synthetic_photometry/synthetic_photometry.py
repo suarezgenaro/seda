@@ -288,13 +288,16 @@ def convert_flux(flux, wl, unit_in, unit_out, eflux=None):
 	if eflux is not None: eflux = utils.astropy_to_numpy(eflux)
 
 	if unit_in=='erg/s/cm2/A':
-		flux_out = (flux*u.erg/u.s/u.cm**2/(u.nm*0.1)).to(u.Jy, equivalencies=u.spectral_density(wl*u.micron)).value
+        # call spectral density fewer times when the inner branch runs
+		equivalencies = u.spectral_density(wl*u.micron)
+		flux_out = (flux*u.erg/u.s/u.cm**2/(u.nm*0.1)).to(u.Jy, equivalencies=equivalencies).value
 		if eflux is not None:
-			eflux_out = (eflux*u.erg/u.s/u.cm**2/(u.nm*0.1)).to(u.Jy, equivalencies=u.spectral_density(wl*u.micron)).value
+			eflux_out = (eflux*u.erg/u.s/u.cm**2/(u.nm*0.1)).to(u.Jy, equivalencies=equivalencies).value
 	elif unit_in=='Jy':
-		flux_out = (flux*u.Jy).to(u.erg/u.s/u.cm**2/(u.nm*0.1), equivalencies=u.spectral_density(wl*u.micron)).value
+		equivalencies = u.spectral_density(wl*u.micron)
+		flux_out = (flux*u.Jy).to(u.erg/u.s/u.cm**2/(u.nm*0.1), equivalencies=equivalencies).value
 		if eflux is not None:
-			eflux_out = (eflux*u.Jy).to(u.erg/u.s/u.cm**2/(u.nm*0.1), equivalencies=u.spectral_density(wl*u.micron)).value
+			eflux_out = (eflux*u.Jy).to(u.erg/u.s/u.cm**2/(u.nm*0.1), equivalencies=equivalencies).value
 
 	out = {'flux_in': flux, 'flux_out': flux_out, 'wl_in': wl, 'unit_in': unit_in, 'unit_out': unit_out}
 	if eflux is not None: 
