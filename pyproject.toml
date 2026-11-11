@@ -30,6 +30,7 @@ dependencies = [
   "specutils",
   "spectres",
   "tqdm",
+  "numba",
   "xarray",
 ]
 

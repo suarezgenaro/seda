@@ -89,6 +89,7 @@ def bayes(my_bayes):
 	grid = my_bayes.grid
 	params_unique = my_bayes.params_unique
 	params_priors = my_bayes.params_priors
+	free_params = models.Models(model).free_params
 	dynamic_sampling = my_bayes.dynamic_sampling
 	ndim = my_bayes.ndim
 	nlive = my_bayes.nlive
@@ -150,7 +151,8 @@ def bayes(my_bayes):
 		for i in range(len(flux_obs)): # for each input spectrum and/or photometric set
 			# generate a model with the sampled parameters 
 			# (the model will have the resolution and be resampled to the fit region for each input spectrum)
-			out_generate_model_spectrum = generate_model_spectrum(params=params, model=model, grid=grid[i])#, model_dir=model_dir)
+			# out_generate_model_spectrum = generate_model_spectrum(params=params, model=model, grid=grid[i], free_params=['Teff', 'logg', 'logKzz', 'Z', 'CtoO'])#, model_dir=model_dir)
+			out_generate_model_spectrum = generate_model_spectrum(params=params, model=model, grid=grid[i], free_params=free_params)#, model_dir=model_dir)
 			flux_model = out_generate_model_spectrum['flux']
 
 			# scaled model spectrum
