@@ -18,7 +18,7 @@ def synthetic_photometry(wl, flux, filters=None, flux_unit=None, eflux=None, det
 		Synthetic flux densities are computed by integrating the spectrum in F_lambda
 		units using the appropriate detector weighting convention. For SVO filters,
 		the weighting is automatically selected from the SVO DetectorType metadata,
-		unless explicitly specified with ``detector='photon'`` o ``detector='energy'``. 
+		unless explicitly specified with ``detector='photon'`` or ``detector='energy'``. 
 		For user-defined filters, the detector convention must be specified individually 
 		for each filter.
 		
@@ -108,6 +108,14 @@ def synthetic_photometry(wl, flux, filters=None, flux_unit=None, eflux=None, det
 			- ``'flux'`` : input spectrum flux densities in erg/s/cm2/A (the spectrum is internally converted to erg/s/cm2/A, if necessary, before computing the synthetic photometry).
 			- ``'eflux'`` : input spectrum flux density uncertainties in erg/s/cm2/A (if input ``eflux`` is provided).
 			- ``'flux_unit'`` : units of the internally stored spectrum flux densities (``'erg/s/cm2/A'``).
+
+	Notes
+	-----
+		The returned synthetic flux densities are bandpass-averaged
+		quantities, which may not directly correspond to monochromatic
+		flux densities reported by some instruments. Users are encouraged
+		to consult the SVO documentation and references for their selected
+		filters for details on the adopted photometric calibration.
 
 	Examples:
 	---------
