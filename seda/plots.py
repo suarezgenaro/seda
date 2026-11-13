@@ -832,7 +832,8 @@ def plot_model_coverage(model, xparam, yparam, model_dir=None, params_ranges=Non
 	plt.title(f'{models.Models(model).name} Atmospheric Models')
 
 	if save:
-		if out_file is None: plt.savefig(f'{model}_{xparam}_{yparam}.pdf', bbox_inches='tight')
+		if out_file is None:
+			plt.savefig(f'{model}_{xparam}_{yparam.replace("/", "to")}.pdf', bbox_inches='tight')
 		else: plt.savefig(out_file, bbox_inches='tight')
 
 	return fig, ax 
@@ -1444,7 +1445,7 @@ def plot_evolutionary_coverage(model, filename, xparam='Lbol', yparam='R',
 
 	if save:
 		if out_file is None:
-			out_file = f'{model}_{filename}_{xparam}_{yparam}_{zparam}_coverage.pdf'
+			out_file = f'{model}_{filename}_{xparam}_{yparam}_{zparam}_coverage.pdf'.replace('/', 'to')
 		plt.savefig(out_file, bbox_inches='tight')
 
 	return fig, ax
