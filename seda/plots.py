@@ -833,7 +833,7 @@ def plot_model_coverage(model, xparam, yparam, model_dir=None, params_ranges=Non
 
 	if save:
 		if out_file is None:
-			plt.savefig(f'{model}_{xparam}_{yparam.replace("/", "to")}.pdf', bbox_inches='tight')
+			plt.savefig(f'{model}_{xparam}_{yparam}.pdf'.replace('/', 'to'), bbox_inches='tight')
 		else: plt.savefig(out_file, bbox_inches='tight')
 
 	return fig, ax 
