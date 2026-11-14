@@ -23,129 +23,254 @@ from specutils import Spectrum1D
 
 from numpy.typing import ArrayLike
 
-##########################
-def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=None, convolve_wl_range=None, out_file=None):
+
+def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=None,
+	                  convolve_wl_range=None, out_file=None, resolution_mode='constant_fwhm',
+	                  verbose=False):
 	'''
-	Description:
-	------------
-		Convolve a spectrum to a desired resolution at a given wavelength.
+	Convolve a spectrum with a Gaussian kernel.
 
 	Parameters:
 	-----------
-	- wl : float array
-		Wavelength (any length units) for the spectrum.
-	- flux : float array
-		Flux densities (any flux units) for the spectrum.
-	- res : float
-		Spectral resolution (at ``lam_res``) desired to smooth the input spectrum.
-	- eflux : float array, optional
-		Flux density uncertainties (any flux units) for the spectrum.
-	- lam_res : float, optional
-		Wavelength of reference at which ``res`` is given.
+	wl : array
+		Wavelengths (any length units).
+	flux : array
+		Flux densities (any flux density units).
+	res : float
+		Resolving power desired for convolution.
+	eflux : array, optional
+		Flux density uncertainties (any flux density units).
+	lam_res : float, optional
+		Reference wavelength at which ``res`` is given.
 		Default is the integer closest to the median wavelength of the spectrum.
-	- disp_wl_range : float array, optional
+	disp_wl_range : array, optional
 		Minimum and maximum wavelengths (same units as ``wl``) to compute the median wavelength dispersion of the input spectrum.
 		Default values are the minimum and maximum wavelengths in ``wl``.
-	- convolve_wl_range : float array, optional
+	convolve_wl_range : array, optional
 		Minimum and maximum wavelengths (same units as ``wl``) to convolve the input spectrum.
 		Default values are the minimum and maximum wavelengths in ``wl``.
-	- out_file : str, optional
+	out_file : str, optional
 		File name to save the convolved spectrum as netCDF with xarray (it produces lighter files compared to normal ASCII files).
 		The file name can include a path e.g. my_path/convolved_spectrum.nc
 		If not provided, the convolved spectrum will not be saved.
+	resolution_mode : {'constant_fwhm', 'constant_R'}, optional, default='constant_fwhm'
+		Method used to define the Gaussian convolution kernel.
+		'constant_fwhm': Uses a fixed Gaussian width in pixels, defined by
+			the resolving power at ``lam_res``. 
+		'constant_R': Maintains approximately constant resolving power across
+			the wavelength range. Uses FFT convolution for uniformly spaced
+			log-wavelength grids and a wavelength-dependent Gaussian kernel otherwise.
+	verbose : bool, optional, default=False
+		If True, print information about the convolution method used.
 
 	Returns:
 	--------
 	- Dictionary
-		Dictionary with the convolved spectrum: 
-			- ``'wl_conv'`` : wavelengths for the convolved spectrum (equal to input ``wl`` within ``convolve_wl_range``). 
+		Dictionary with the convolved spectrum:
+			- ``'wl_conv'`` : wavelengths for the convolved spectrum (equal to input ``wl`` within ``convolve_wl_range``).
 			- ``'flux_conv'`` : convolved flux densities.
 			- ``'eflux_conv'`` : convolved flux density uncertainties (if ``eflux`` is provided).
 	- ``out_file`` file
-		netCDF file with the convolved spectrum, if ``out_file`` is provided. 
+		netCDF file with the convolved spectrum, if ``out_file`` is provided.
 		Wavelengths and flux densities for the convolved spectrum have the same units as the input spectrum.
-		Note: the wavelength data points are the same as in the input spectrum, so wavelength steps do not reflect the resolution of the convolved spectrum.
+		Note: the wavelength data points are the same as in the input spectrum,
+		so wavelength steps do not reflect the resolution of the convolved spectrum.
 
 	Example:
 	--------
 	>>> import seda
+	>>> from pathlib import Path
 	>>> from astropy.io import ascii
-	>>> 
+	>>>
 	>>> # read sample spectrum
-	>>> file = '../docs/notebooks/data/IRTF_SpeX_0415-0935.dat'
+	>>> file = Path(seda.__file__).resolve().parent.parent / 'docs/notebooks/data/0415-0935_IRTF_SpeX.dat'
 	>>> spectrum = ascii.read(file)
-	>>> wl = spectrum['wl(um)'] # um 
+	>>> wl = spectrum['wl(um)'] # um
 	>>> flux = spectrum['flux(erg/s/cm2/A)'] # erg/s/cm2/A
 	>>> eflux = spectrum['eflux(erg/s/cm2/A)'] # erg/s/cm2/A
 	>>> # desired resolution
 	>>> res = 50 # resolution of 50
 	>>>
-	>>> out_convolve_spectrum = seda.utils.convolve_spectrum(wl=wl, flux=flux, 
+	>>> out_convolve_spectrum = seda.utils.convolve_spectrum(wl=wl, flux=flux,
 	>>>                                                      eflux=eflux, res=res)
+	>>>
+	>>> # convolve at constant resolving power
+	>>> out_convolve_spectrum = seda.utils.convolve_spectrum(wl=wl, flux=flux,
+	>>>                                                      eflux=eflux, res=res,
+	>>>                                                      resolution_mode='constant_R')
 
 	Author: Genaro Suárez
 
-	Date: 2020-03
+	Created: 2020-03
+	Updated: 2026-11
 	'''
 
 	# convert input spectrum into numpy arrays if astropy
-	wl = astropy_to_numpy(wl)
-	flux = astropy_to_numpy(flux)
-	eflux = astropy_to_numpy(eflux)
+	wl = np.asarray(astropy_to_numpy(wl), dtype=float)
+	flux = np.asarray(astropy_to_numpy(flux), dtype=float)
+	if eflux is not None:
+		eflux = np.asarray(astropy_to_numpy(eflux), dtype=float)
 
-	# remove NaN values
-	if eflux is None: mask_nonan = (~np.isnan(wl)) & (~np.isnan(flux))
-	else: mask_nonan = (~np.isnan(wl)) & (~np.isnan(flux)) & (~np.isnan(eflux))
+	# check the convolution mode
+	valid_modes = ('constant_fwhm', 'constant_R', 'auto')
+	if resolution_mode not in valid_modes:
+		raise ValueError(f'Invalid resolution_mode: {resolution_mode}. Allowed values are {valid_modes}.')
+
+	# remove NaN and infinite values
+	mask_nonan = np.isfinite(wl) & np.isfinite(flux)
+	if eflux is not None:
+		mask_nonan &= np.isfinite(eflux) & (eflux >= 0)
+
 	wl = wl[mask_nonan]
 	flux = flux[mask_nonan]
-	if eflux is not None: eflux = eflux[mask_nonan]
+	if eflux is not None:
+		eflux = eflux[mask_nonan]
 
-	# stop if res=None (it can occur when other functions use this function)
-	if res is None: raise Exception(f'"res=None" is not allowed. It must take a value.')
+	# check the resolving power and wavelength array
+	if res is None or not np.isfinite(res) or res <= 0:
+		raise ValueError('res must be a positive finite number.')
 
-	# set lam_res if not provided
-	if lam_res is None: lam_res = set_lam_res(wl)
+	if len(wl) < 2 or np.any(np.diff(wl) <= 0):
+		raise ValueError('wl must contain at least two increasing values.')
 
-	# set disp_wl_range and convolve_wl_range if not provided
-	if (disp_wl_range is None): disp_wl_range = np.array((wl.min(), wl.max())) # define disp_wl_range if not provided
-	if (convolve_wl_range is None): convolve_wl_range = np.array((wl.min(), wl.max())) # define convolve_wl_range if not provided
+	# set the wavelength ranges
+	if disp_wl_range is None:
+		disp_wl_range = np.array((wl.min(), wl.max()))
+	if convolve_wl_range is None:
+		convolve_wl_range = np.array((wl.min(), wl.max()))
 
-	wl_bin = abs(wl[1:] - wl[:-1]) # wavelength dispersion of the spectrum
-	wl_bin = np.append(wl_bin, wl_bin[-1]) # add an element equal to the last row to have same data points
+	mask_fit = (wl >= disp_wl_range[0]) & (wl <= disp_wl_range[1])
+	mask_conv = (wl >= convolve_wl_range[0]) & (wl <= convolve_wl_range[1])
 
-	# define a Gaussian for convolution
-	mask_fit = (wl>=disp_wl_range[0]) & (wl<=disp_wl_range[1]) # mask to obtain the median wavelength dispersion
-	stddev = (lam_res/res)*(1./np.median(wl_bin[mask_fit])) / (2.*np.sqrt(2*np.log(2))) # stddev is given in pixels
-	#if stddev<1: 
-	if (lam_res/res)*(1./np.median(wl_bin[mask_fit]))<1:
-		print('   Warning: the input spectrum may have a resolution smaller than the desired one.')
-		print('            the spectrum will be convolved but will be essentially the same.')
+	if np.sum(mask_fit) < 2 or not np.any(mask_conv):
+		raise ValueError('Invalid wavelength range.')
 
-	gauss = Gaussian1DKernel(stddev=stddev)
+	# select the wavelength range to convolve
+	wl_conv = wl[mask_conv]
+	flux_input = flux[mask_conv]
+	if eflux is not None: eflux_input = eflux[mask_conv]
 
-	mask_conv = (wl>=convolve_wl_range[0]) & (wl<=convolve_wl_range[1]) # range to convolve the spectrum
+	if resolution_mode == 'constant_fwhm':
+		# convolution with fixed Gaussian kernel width
+		convolution_method = 'constant_fwhm_fft'
+		if verbose:
+			print('   Using constant-FWHM FFT convolution.')
 
-    # on large kernels, even 1-D ones, such as this one (in a sample run, 
-    # shape of (5947,)), it's more efficient to use convolve_fft instead
-    # if we need to be even faster, we can directly substitute scipy's fft
-    # implementation, but right now this should be sufficient
-	flux_conv = convolve_fft(flux[mask_conv], gauss) # convolve only the selected wavelength range 
-	# np.testing.assert_allclose(flux_conv, flux_conv_fft)
+		# set the reference wavelength if not provided
+		if lam_res is None: lam_res = set_lam_res(wl)
 
-	wl_conv = wl[mask_conv] # corresponding wavelength data points for convolved flux densities
+		# compute the wavelength dispersion
+		wl_bin = abs(wl[1:] - wl[:-1])
+		wl_bin = np.append(wl_bin, wl_bin[-1])
 
-	if eflux is not None: eflux_conv = convolve_fft(eflux[mask_conv], gauss) 
-		# np.testing.assert_allclose(eflux_conv, eflux_conv_fft)
+		# compute the Gaussian width in wavelength and pixel units
+		fwhm = lam_res / res # FWHM in wavelength units
+		sigma_wl = fwhm / (2 * np.sqrt(2 * np.log(2))) # Gaussian sigma in wavelength units
+		stddev = sigma_wl / np.median(wl_bin[mask_fit]) # Gaussian sigma in pixels
 
+		if fwhm / np.median(wl_bin[mask_fit]) < 1:
+			print('   Warning: the input spectrum may have a resolution smaller than the desired one.')
+			print('            the spectrum will be convolved but will be essentially the same.')
+
+		# create the Gaussian kernel
+		gauss = Gaussian1DKernel(stddev=stddev)
+
+		# convolve only the selected wavelength range using FFT
+		flux_conv = convolve_fft(flux_input, gauss)
+
+		if eflux_input is not None:
+			# propagate independent uncertainties using squared kernel weights
+			variance_conv = convolve_fft(
+				eflux_input**2, gauss.array**2, normalize_kernel=False
+			)
+			eflux_conv = np.sqrt(np.maximum(variance_conv, 0))
+
+	elif resolution_mode == 'constant_R':
+		# convolution at constant resolving power
+		# select the numerical method based on wavelength sampling
+
+		if np.any(wl <= 0):
+			raise ValueError('Positive wavelengths are required for constant R.')
+
+		# check whether the input spectrum is uniformly sampled in log wavelength
+		dlogwl = np.diff(np.log(wl))
+		log_uniform = np.allclose(
+			dlogwl, np.median(dlogwl), rtol=1e-3, atol=0
+		)
+
+		if log_uniform: # wavelengths are uniformly spaced in log wavelength
+			convolution_method = 'log_uniform_fft'
+			if verbose:
+				print('   Using FFT convolution (uniform log-wavelength sampling).')
+
+			# compute the Gaussian width in log wavelength and pixel units
+			fwhm_logwl = 1 / res # FWHM in log wavelength units
+			sigma_logwl = fwhm_logwl / (2 * np.sqrt(2 * np.log(2))) # Gaussian sigma in log wavelength units
+			stddev = sigma_logwl / np.median(dlogwl) # Gaussian sigma in pixels
+
+			# create the Gaussian kernel
+			gauss = Gaussian1DKernel(stddev=stddev)
+
+			# convolve the flux densities using FFT
+			flux_conv = convolve_fft(flux_input, gauss)
+
+			if eflux_input is not None:
+				# propagate independent uncertainties using squared kernel weights
+				variance_conv = convolve_fft(
+					eflux_input**2, gauss.array**2, normalize_kernel=False
+				)
+				eflux_conv = np.sqrt(np.maximum(variance_conv, 0))
+
+		else: # wavelengths are not uniformly spaced in log wavelength
+			convolution_method = 'wavelength_dependent'
+			if verbose:
+				print('   Using wavelength-dependent Gaussian convolution.')
+
+			# use a wavelength-dependent Gaussian kernel
+			flux_conv = np.empty_like(flux_input)
+			if eflux_input is not None:
+				eflux_conv = np.empty_like(eflux_input)
+
+			factor = 2 * np.sqrt(2 * np.log(2))
+
+			for i, center in enumerate(wl_conv):
+				# compute the Gaussian width at each wavelength
+				fwhm = center / res # FWHM in wavelength units
+				sigma_wl = fwhm / factor # Gaussian sigma in wavelength units
+
+				# select wavelengths within five standard deviations
+				# use searchsorted instead of a mask for faster selection on sorted wavelengths
+				left = np.searchsorted(wl_conv, center - 5 * sigma_wl)
+				right = np.searchsorted(
+					wl_conv, center + 5 * sigma_wl, side='right'
+				)
+
+				# compute and normalize the Gaussian weights
+				distances = (wl_conv[left:right] - center) / sigma_wl
+				weights = np.exp(-0.5 * distances**2)
+				weights /= np.sum(weights)
+
+				# convolve the flux densities
+				flux_conv[i] = np.sum(weights * flux_input[left:right])
+
+				if eflux_input is not None:
+					# propagate independent uncertainties using squared weights
+					eflux_conv[i] = np.sqrt(np.sum(
+						weights**2 * eflux_input[left:right]**2
+					))
+
+	# prepare the output dictionary
 	out = {'wl_conv': wl_conv, 'flux_conv': flux_conv}
-	if (eflux is not None): out['eflux_conv'] = eflux_conv
+	if eflux_input is not None: out['eflux_conv'] = eflux_conv
+	out['convolution_method'] = convolution_method
 
-	# save convolved spectrum as netCDF
+	# save the convolved spectrum if requested
 	if out_file is not None:
-		# make xarray
-		if eflux is None: ds = xarray.Dataset({'wl': wl_conv}, coords={'flux': flux_conv})
-		else: ds = xarray.Dataset({'wl': wl_conv}, coords={'flux': flux_conv, 'eflux': eflux_conv})
-		# store xarray as netCDF
+		data_vars = {'flux': ('wl', flux_conv)}
+		if eflux_input is not None:
+			data_vars['eflux'] = ('wl', eflux_conv)
+
+		ds = xarray.Dataset(data_vars, coords={'wl': wl_conv})
 		ds.to_netcdf(out_file)
 
 	return out
