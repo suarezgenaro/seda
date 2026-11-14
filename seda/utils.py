@@ -59,11 +59,17 @@ def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=Non
 		If not provided, the convolved spectrum will not be saved.
 	resolution_mode : {'constant_fwhm', 'constant_R'}, optional, default='constant_fwhm'
 		Method used to define the Gaussian convolution kernel.
-		'constant_fwhm': Uses a fixed Gaussian width in pixels, defined by
-			the resolving power at ``lam_res``. 
-		'constant_R': Maintains approximately constant resolving power across
-			the wavelength range. Uses FFT convolution for uniformly spaced
-			log-wavelength grids and a wavelength-dependent Gaussian kernel otherwise.
+
+		'constant_fwhm'
+			Uses a fixed Gaussian width in pixels, defined by
+			the resolving power at ``lam_res``.
+
+		'constant_R'
+			Maintains approximately constant resolving power across
+			the wavelength range. Uses FFT convolution for uniformly
+			spaced log-wavelength grids and a wavelength-dependent
+			Gaussian kernel otherwise.
+
 	verbose : bool, optional, default=False
 		If True, print information about the convolution method used.
 
