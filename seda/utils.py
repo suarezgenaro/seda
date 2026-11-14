@@ -28,7 +28,11 @@ def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=Non
 	                  convolve_wl_range=None, out_file=None, resolution_mode='constant_fwhm',
 	                  verbose=False):
 	'''
-	Convolve a spectrum with a Gaussian kernel.
+	Description:
+	------------
+		Convolve a spectrum with a Gaussian kernel to a desired resolving power.
+		Supports constant Gaussian FWHM at a reference wavelength or constant
+		resolving power across the wavelength range (see Notes for details).
 
 	Parameters:
 	-----------
@@ -75,6 +79,26 @@ def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=Non
 		Wavelengths and flux densities for the convolved spectrum have the same units as the input spectrum.
 		Note: the wavelength data points are the same as in the input spectrum,
 		so wavelength steps do not reflect the resolution of the convolved spectrum.
+
+	Notes:
+	------
+		The 'constant_fwhm' mode uses a fixed Gaussian width in pixels,
+		defined by the resolving power at a reference wavelength.
+
+		The 'constant_R' mode maintains approximately constant resolving
+		power across the wavelength range. FFT convolution is used for
+		uniformly spaced log-wavelength grids, while a wavelength-dependent
+		Gaussian kernel is used otherwise.
+
+		The convolved spectrum retains the wavelength sampling of the
+		input spectrum. No interpolation is performed.
+
+		The Gaussian kernel width is calculated from the desired
+		resolving power and converted into pixels using the wavelength
+		sampling of the input spectrum. The convolution assumes that
+		the initial resolving power is substantially higher than the
+		desired resolving power, so the existing spectral broadening
+		can be neglected.
 
 	Example:
 	--------
