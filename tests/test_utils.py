@@ -25,6 +25,8 @@ def test_convolve_spectrum_identity():
 		"High-resolution convolution should preserve flux"
 	)
 
+	assert result['convolution_method'] == 'constant_fwhm_fft'
+
 def test_convolve_spectrum_flux_conservation():
 	"""
 	Verify that the spectrum convolution 
@@ -103,6 +105,84 @@ def test_convolve_spectrum_real_data(model, spectrum_file):
 	
 	# flux is finite
 	assert np.all(np.isfinite(result['flux_conv']))
+
+
+@pytest.mark.parametrize('sampling, expected_method', [
+	('log', 'log_uniform_fft'),
+	('linear', 'wavelength_dependent')
+])
+def test_convolve_spectrum_constant_R(sampling, expected_method):
+	"""
+	Verify both constant-R convolution methods.
+	"""
+	if sampling == 'log':
+		wl = np.geomspace(1.0, 2.0, 1000)
+	else:
+		wl = np.linspace(1.0, 2.0, 1000)
+
+	flux = np.ones_like(wl)
+	eflux = np.full_like(wl, 0.1)
+
+	result = seda.utils.convolve_spectrum(
+		wl=wl,
+		flux=flux,
+		eflux=eflux,
+		res=100,
+		resolution_mode='constant_R'
+	)
+
+	assert result['convolution_method'] == expected_method
+	assert np.allclose(result['wl_conv'], wl)
+	assert np.all(np.isfinite(result['flux_conv']))
+	assert np.all(np.isfinite(result['eflux_conv']))
+
+	# constant input flux should remain constant away from FFT boundaries
+	assert np.allclose(result['flux_conv'][50:-50], 1.0, rtol=1e-3)
+	assert np.all(result['eflux_conv'] >= 0)
+
+
+def test_convolve_spectrum_invalid_resolution_mode():
+	"""
+	Verify that invalid resolution modes raise an error.
+	"""
+	wl = np.linspace(1.0, 2.0, 100)
+	flux = np.ones_like(wl)
+
+	with pytest.raises(ValueError):
+		seda.utils.convolve_spectrum(
+			wl=wl,
+			flux=flux,
+			res=100,
+			resolution_mode='invalid'
+	)
+
+
+def test_convolve_spectrum_save(tmp_path):
+	"""
+	Verify that the convolved spectrum is correctly saved to NetCDF.
+	"""
+	import xarray as xr
+
+	wl = np.linspace(1.0, 2.0, 1000)
+	flux = np.sin(wl)
+	eflux = np.full_like(wl, 0.1)
+	out_file = tmp_path / 'convolved_spectrum.nc'
+
+	result = seda.utils.convolve_spectrum(
+		wl=wl,
+		flux=flux,
+		eflux=eflux,
+		res=100,
+		out_file=out_file
+	)
+
+	with xr.open_dataset(out_file) as ds:
+		assert 'wl' in ds.coords
+		assert 'flux' in ds.data_vars
+		assert 'eflux' in ds.data_vars
+		assert np.allclose(ds['wl'].values, result['wl_conv'])
+		assert np.allclose(ds['flux'].values, result['flux_conv'])
+		assert np.allclose(ds['eflux'].values, result['eflux_conv'])
 
 def test_read_SVO_params():
 	"""Verify that reading parameters from the SVO table return the expected values"""
