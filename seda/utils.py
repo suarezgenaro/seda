@@ -178,7 +178,7 @@ def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=Non
 		# convolve only the selected wavelength range using FFT
 		flux_conv = convolve_fft(flux_input, gauss)
 
-		if eflux_input is not None:
+		if eflux is not None:
 			# propagate independent uncertainties using squared kernel weights
 			variance_conv = convolve_fft(
 				eflux_input**2, gauss.array**2, normalize_kernel=False
@@ -228,7 +228,7 @@ def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=Non
 
 			# use a wavelength-dependent Gaussian kernel
 			flux_conv = np.empty_like(flux_input)
-			if eflux_input is not None:
+			if eflux is not None:
 				eflux_conv = np.empty_like(eflux_input)
 
 			factor = 2 * np.sqrt(2 * np.log(2))
@@ -253,7 +253,7 @@ def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=Non
 				# convolve the flux densities
 				flux_conv[i] = np.sum(weights * flux_input[left:right])
 
-				if eflux_input is not None:
+				if eflux is not None:
 					# propagate independent uncertainties using squared weights
 					eflux_conv[i] = np.sqrt(np.sum(
 						weights**2 * eflux_input[left:right]**2
@@ -261,7 +261,7 @@ def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=Non
 
 	# prepare the output dictionary
 	out = {'wl_conv': wl_conv, 'flux_conv': flux_conv}
-	if eflux_input is not None: out['eflux_conv'] = eflux_conv
+	if eflux is not None: out['eflux_conv'] = eflux_conv
 	out['convolution_method'] = convolution_method
 
 	# save the convolved spectrum if requested
