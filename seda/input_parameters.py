@@ -463,8 +463,8 @@ class Chi2Options:
 	-----------
 	Input parameters either from this class or attributes from the ``InputData``
 	and ``ModelOptions`` classes.
-		All input parameters are stored as attributes with their default
-		values if not specified.
+	All input parameters are stored as attributes with their default values if not specified.
+
 	Other parameters
 		spectra_name : numpy array
 			File names of selected model spectra.
