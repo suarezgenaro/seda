@@ -1398,16 +1398,23 @@ class BayesOptions:
 
 		# set weights for the fit
 		if fit_spectra and fit_photometry: # when both spectra and photometry are provided
-			out_compute_weights = compute_weights(fit_spectra=fit_spectra, fit_photometry=fit_photometry, weight_label=weight_label, 
-			                                      wl_spectra_fit=wl_spectra_fit, width_eff_SVO_fit=width_eff_SVO_fit)
+			out_compute_weights = compute_weights(fit_spectra=fit_spectra, 
+			                                      fit_photometry=fit_photometry, 
+			                                      weight_label=weight_label, 
+			                                      wl_spectra_fit=wl_spectra_fit, 
+			                                      width_eff_SVO_fit=width_eff_SVO_fit)
 			weight_spec_fit = out_compute_weights['weight_spec_fit']
 			weight_phot_fit = out_compute_weights['weight_phot_fit']
 		if fit_spectra and not fit_photometry: # only when both spectra and photometry are provided
-			out_compute_weights = compute_weights(fit_spectra=fit_spectra, fit_photometry=fit_photometry, weight_label=weight_label, 
+			out_compute_weights = compute_weights(fit_spectra=fit_spectra, 
+			                                      fit_photometry=fit_photometry, 
+			                                      weight_label=weight_label, 
 			                                      wl_spectra_fit=wl_spectra_fit)
 			weight_spec_fit = out_compute_weights['weight_spec_fit']
 		if not fit_spectra and fit_photometry: # only when both spectra and photometry are provided
-			out_compute_weights = compute_weights(fit_spectra=fit_spectra, fit_photometry=fit_photometry, weight_label=weight_label, 
+			out_compute_weights = compute_weights(fit_spectra=fit_spectra, 
+			                                      fit_photometry=fit_photometry, 
+			                                      weight_label=weight_label, 
 			                                      width_eff_SVO_fit=width_eff_SVO_fit)
 			weight_phot_fit = out_compute_weights['weight_phot_fit']
 
