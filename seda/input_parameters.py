@@ -1034,49 +1034,76 @@ class BayesOptions:
 	- my_model : dictionary
 		Output dictionary by ``input_parameters.ModelOptions`` with model options.
 	- fit_wl_range : float array, optional
-		Minimum and maximum wavelengths (in microns) where model spectra will be compared to the data. 
-		This parameter is used if ``fit_spectra`` but ignored if only ``fit_photometry``. 
-		Default values are the minimum and the maximum wavelengths of each input spectrum. E.g., ``fit_wl_range = np.array([bayes_wl_min, bayes_wl_max])``. 
+		Minimum and maximum wavelengths (in microns) where model spectra will be compared to the data.
+		This parameter is used if ``fit_spectra`` but ignored if only ``fit_photometry``.
+		Default values are the minimum and the maximum wavelengths of each input spectrum.
+		E.g., ``fit_wl_range = np.array([bayes_wl_min, bayes_wl_max])``.
 	- disp_wl_range : float array, optional
-		Minimum and maximum wavelengths (in micron) to compute the median wavelength dispersion of model spectra to convolve them.
-		It can take a set of values for each input spectrum e.g. ``disp_wl_range = np.array([[disp_wl_min1, disp_wl_max1], [disp_wl_min2, disp_wl_max2]])``.
+		Minimum and maximum wavelengths (in micron) to compute the median wavelength dispersion
+		of model spectra to convolve them.
+		It can take a set of values for each input spectrum, e.g.,
+		``disp_wl_range = np.array([[disp_wl_min1, disp_wl_max1], [disp_wl_min2, disp_wl_max2]])``.
 		Default values are ``fit_wl_range``.
 	- model_wl_range : array or list, optional
-		Minimum and maximum wavelength (in microns) to cut model spectra (to make the code faster). 
+		Minimum and maximum wavelength (in microns) to cut model spectra (to make the code faster).
 		Default values are the same as ``fit_wl_range`` with a padding to avoid the point below.
-		CAVEAT: the selected wavelength range of model spectra must cover the spectrophotometry used in the fit and a bit more (to avoid errors when resampling synthetic spectra using spectres)
+		CAVEAT: the selected wavelength range of model spectra must cover the spectrophotometry
+		used in the fit and a bit more (to avoid errors when resampling synthetic spectra using spectres).
 	- fit_phot_range : float array or list, optional
-		Minimum and maximum wavelengths (in micron) where photometry will be compared to the models. E.g., ``fit_phot_range = np.array([fit_phot_min1, fit_phot_max1])``. 
-		This parameter is used if ``fit_photometry`` but ignored if only ``fit_spectra``. 
+		Minimum and maximum wavelengths (in micron) where photometry will be compared to the models.
+		E.g., ``fit_phot_range = np.array([fit_phot_min1, fit_phot_max1])``.
+		This parameter is used if ``fit_photometry`` but ignored if only ``fit_spectra``.
 		Default values are the minimum and the maximum of the filter effective wavelengths from SVO.
 	- weight_label : str, optional (default ``dataset``)
-		Weight applied to each input data point (photometric and spectroscopic) during data fitting.
-		This parameter is different from the weighting derived from the observed flux density uncertainties, which typically appears as the denominator in the fit statistic.
-		``weight_label`` allows assigning different relative weights to photometry and spectra (when ``fit_spectra`` and ``fit_photometry`` are enabled), 
-		ensuring that photometric measurements do not have a negligible contribution to the fit, considering that photometric SEDs typically contain far fewer data points than spectroscopic SEDs.
+		Weight applied to each input data point (photometric and spectroscopic) during Bayesian inference.
+		This parameter is different from the weighting derived from the observed flux density
+		uncertainties, which appears in the Gaussian likelihood.
+		The additional weights modify the effective flux density uncertainties as sigma/sqrt(weight).
+		``weight_label`` allows assigning different relative weights to multiple spectra or a
+		combination of photometry and spectra, avoiding that datasets with fewer measurements
+		have a negligible contribution to the fit.
+
 
 		Available options are:
 
-		- ``'dataset'`` (default): each dataset, whether photometric or spectroscopic, is assigned a weight equal to the inverse of its total number of data points. All data contribute the same, even if they have very different numbers of points.
-		- ``'width'``: each spectroscopic data point is weighted by its wavelength resolution (wavelength step), and each photometric data point is weighted by the filter effective width. Broader filters receive larger weights, but the overall contribution of photometry may still differ from that of spectra.
-		- ``'none'``: apply the same weight to all input data points, which is equivalent to using no weighting at all (beyond the uncertainty-based weighting). Large datasets such as high-resolution spectra will dominate.
-	- R_range: float array, optional (used in ``bayes_fit``)
-		Minimum and maximum radius values to sample the posterior for radius. It requires the parameter ``distance`` in `input_parameters.InputData`.
-	- 'chi2_pickle_file' : dictionary, optional
-		Pickle file with a dictionary with the results from the chi-square minimization by ``chi2_fit.chi2``.
-		If given, the grid nodes around the best fit will be used as ``params_ranges`` to select a grid subset and as sampling priors.
+		- ``'dataset'`` (default): each spectrum and the photometric dataset
+		  are assigned weights equal to the inverse of their respective numbers
+		  of data points. Each dataset therefore has the same total weight,
+		  regardless of its number of measurements.
+		- ``'width'``: each spectroscopic data point is weighted by its wavelength
+		  step, and each photometric data point by the filter effective width.
+		  Broader filters and more widely sampled spectral regions receive
+		  larger weights.
+		- ``'none'``: all data points receive a weight of 1, equivalent to
+		  applying no additional weighting beyond that based on the observed
+		  uncertainties. Datasets with more measurements can have a larger
+		  influence on the fit.
+
+		The additional weighting schemes can be applied when fitting multiple datasets, including
+		multiple spectra or a combination of spectra and photometry.
+		For a single spectrum or photometry alone, option ``'none'`` is applied.
+	- R_range : float array, optional (used in ``bayes_fit``)
+		Minimum and maximum radius values to sample the posterior for radius.
+		It requires the parameter ``distance`` in ``input_parameters.InputData``.
+	- chi2_pickle_file : dictionary, optional
+		Pickle file with a dictionary with the results from the chi-square minimization
+		by ``chi2_fit.chi2``.
+		If given, the grid nodes around the best fit will be used as ``params_ranges``
+		to select a grid subset and as sampling priors.
 		Otherwise, ``params_ranges`` provided in ``ModelOptions`` will be considered.
-	- grid: dictionary, optional
-		Model grid (``'wavelength'`` and ``'flux'``) generated by ``seda.utils.read_grid`` to interpolate model spectra. 
-		If not provided (default), then the grid is read (``model`` and ``model_dir`` must be provided). 
+	- grid : dictionary, optional
+		Model grid (``'wavelength'`` and ``'flux'``) generated by ``seda.utils.read_grid``
+		to interpolate model spectra.
+		If not provided (default), then the grid is read (``model`` and ``model_dir`` must be provided).
 		If provided, the code will skip reading the grid, which will save some time (a few minutes).
-	- dynamic_sampling: {``True``, ``False``}, optional (default ``True``). 
-		Consider dynamic (``True``) or static (``False``) nested sampling. Read ``dynesty`` documentation for more info. 
-		Dynamic nested sampling is slower (~20-30%) than static nested sampling. 
-	- nlive: float, optional (default 500). 
-		Number of nested sampling live points. 
+	- dynamic_sampling : {``True``, ``False``}, optional (default ``True``)
+		Consider dynamic (``True``) or static (``False``) nested sampling.
+		Read ``dynesty`` documentation for more info.
+		Dynamic nested sampling is slower (~20-30%) than static nested sampling.
+	- nlive : float, optional (default 500)
+		Number of nested sampling live points.
 	- save_results : {``True``, ``False``}, optional (default ``True``)
-		Save (``True``) or do not save (``False``) ``seda.bayes_fit`` results
+		Save (``True``) or do not save (``False``) ``seda.bayes_fit`` results.
 	- bayes_pickle_file : str, optional
 		Filename for the output dictionary stored as a pickle file, if ``save_results``.
 		Default name is '``model``\_bayesian\_sampling.pickle'.
@@ -1087,15 +1114,20 @@ class BayesOptions:
 		All input parameters are stored as attributes with their default values if not specified.
 	Other parameters
 		grid : list
-			Nested list of dictionaries containing the selected model spectra grid and their associated unique free-parameter values.
-			If ``fit_spectra``, a dictionary including the selected model spectra convolved using ``res`` and ``lam_res`` and resampled (based on the input wavelengths) within ``fit_wl_range``.
-			If ``fit_photometry``, a dictionary containing synthetic model flux densities (in erg/s/cm2/A) for ``filters_fit`` computed from the selected model spectra.
+			Nested list of dictionaries containing the selected model spectra grid and their
+			associated unique free-parameter values.
+			If ``fit_spectra``, a dictionary including the selected model spectra convolved
+			using ``res`` and ``lam_res`` and resampled (based on the input wavelengths)
+			within ``fit_wl_range``.
+			If ``fit_photometry``, a dictionary containing synthetic model flux densities
+			(in erg/s/cm2/A) for ``filters_fit`` computed from the selected model spectra.
 		ndim : int
-			Number of free parameters in the model fit equal to the number of free parameters plus radius (if a ``distance`` is provided).
+			Number of free parameters in the model fit equal to the number of free parameters
+			plus radius (if a ``distance`` is provided).
 		filename_pattern : list
 			String as a list with a common pattern in model spectra filenames.
 		params_unique : dictionary
-			Dictionary with unique values for each free parameters in the selected models.
+			Dictionary with unique values for each free parameter in the selected models.
 		params_priors : dictionary
 			Dictionary with the prior ranges for each model free parameter.
 		if ``fit_spectra``:
@@ -1106,36 +1138,49 @@ class BayesOptions:
 			N_datapoints : int
 				Total number of data points in all input spectra.
 			wl_spectra_fit : list
-				Nested list input spectra wavelengths within ``fit_wl_range`` for each selected model spectrum.
-				This is convenient because model spectra do not necessary all have the same wavelength coverage.
+				Nested list input spectra wavelengths within ``fit_wl_range`` for each
+				selected model spectrum.
+				This is convenient because model spectra do not necessarily all have
+				the same wavelength coverage.
 			flux_spectra_fit : list
-				Nested list with input spectra flux densities (in erg/s/cm2/A) within ``fit_wl_range`` for each selected model spectrum.
+				Nested list with input spectra flux densities (in erg/s/cm2/A)
+				within ``fit_wl_range`` for each selected model spectrum.
 			eflux_spectra_fit : list
-				Nested list with input spectra flux density uncertainties (in erg/s/cm2/A) within ``fit_wl_range`` for each selected model spectrum.
+				Nested list with input spectra flux density uncertainties (in erg/s/cm2/A)
+				within ``fit_wl_range`` for each selected model spectrum.
 			weight_spec_fit : list
-				Nested list with the weights assigned to each spectroscopic data point within the fit range considering the equation chi2 = weight * (data-model)^2 / edata^2.
+				Nested list with the additional weights assigned to each spectroscopic
+				data point within the fit range.
+				The weights modify the effective flux density uncertainties used in
+				the Gaussian likelihood as sigma/sqrt(weight).
 		if ``fit_photometry``:
 			phot_fit : numpy array
-				Input photometry ``phot`` (in erg/s/cm2/A) within ``fit_phot_range`` and the model wavelength coverage.
+				Input photometry ``phot`` (in erg/s/cm2/A) within ``fit_phot_range``
+				and the model wavelength coverage.
 			ephot_fit : numpy array
-				Input photometry errors ``ephot`` (in erg/s/cm2/A) within ``fit_phot_range`` and the model wavelength coverage.
+				Input photometry errors ``ephot`` (in erg/s/cm2/A) within
+				``fit_phot_range`` and the model wavelength coverage.
 			filters_fit : numpy array
-				Input filters ``filters`` within ``fit_phot_range`` and the model wavelength coverage.
+				Input filters ``filters`` within ``fit_phot_range`` and the model
+				wavelength coverage.
 			lambda_eff_SVO_fit : numpy array
 				Effective wavelengths from SVO for ``filters_fit``.
 			width_eff_SVO_fit : numpy array
 				Effective widths from SVO for ``filters_fit``.
 			weight_phot_fit : list
-				Nested list with the weights assigned to each photometric data point within the fit range considering the equation chi2 = weight * (data-model)^2 / edata^2.
+				Nested list with the additional weights assigned to each photometric
+				data point within the fit range.
+				The weights modify the effective flux density uncertainties used in
+				the Gaussian likelihood as sigma/sqrt(weight).
 
 	Example:
 	--------
 	>>> import seda
-	>>> 
+	>>>
 	>>> fit_wl_range = np.array([value1, value2]) # to make the fit between value1 and value2
-	>>> my_bayes = seda.Chi2FitOptions(my_data=my_data, my_model=my_model, 
-	>>>                               fit_wl_range=fit_wl_range)
-	    Bayes fit options loaded successfully
+	>>> my_bayes = seda.BayesOptions(my_data=my_data, my_model=my_model,
+	>>>                              fit_wl_range=fit_wl_range)
+		Bayes fit options loaded successfully
 
 	Author: Genaro Suárez
 	'''
