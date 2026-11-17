@@ -4,7 +4,7 @@ Installation and Dependencies
 Installation
 ------------
 
-We recommend to make a conda environment to install :math:`\texttt{SEDA}`:
+We recommend to make a conda environment to install :math:`\texttt{SEDA}` and keep dependencies clean:
 
 .. code-block:: console
 

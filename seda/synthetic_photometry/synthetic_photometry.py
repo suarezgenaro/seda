@@ -8,7 +8,7 @@ from .. import utils
 from sys import exit
 
 def synthetic_photometry(wl, flux, filters=None, flux_unit=None, eflux=None, detector='auto',
-	                     svo_data=None, custom_filters=None, out_file=None):
+	                     mag_system='Vega', svo_data=None, custom_filters=None, out_file=None):
 	'''
 	Description:
 	------------
@@ -18,7 +18,7 @@ def synthetic_photometry(wl, flux, filters=None, flux_unit=None, eflux=None, det
 		Synthetic flux densities are computed by integrating the spectrum in F_lambda
 		units using the appropriate detector weighting convention. For SVO filters,
 		the weighting is automatically selected from the SVO DetectorType metadata,
-		unless explicitly specified with ``detector='photon'`` o ``detector='energy'``. 
+		unless explicitly specified with ``detector='photon'`` or ``detector='energy'``. 
 		For user-defined filters, the detector convention must be specified individually 
 		for each filter.
 		
@@ -54,6 +54,13 @@ def synthetic_photometry(wl, flux, filters=None, flux_unit=None, eflux=None, det
 
 		This argument does not affect user-defined filters, which specify their
 		detector conventions individually.
+	- mag_system : str, optional
+		Magnitude system used to calculate synthetic magnitudes:
+		``'Vega'`` (default) or ``'AB'``.
+		For Vega, filter-dependent zero points are retrieved from SVO.
+		For AB, a zero point of 3631 Jy is used for all filters.
+		User-defined filters with an explicitly specified ``'zero_point'``
+		use that value regardless of the selected magnitude system.
 	- svo_data : astropy.table.Table, optional
 		Astropy table retrieved from SVO using :func:`~seda.utils.read_SVO_table`.
 	- custom_filters : dict, optional
@@ -101,6 +108,14 @@ def synthetic_photometry(wl, flux, filters=None, flux_unit=None, eflux=None, det
 			- ``'flux'`` : input spectrum flux densities in erg/s/cm2/A (the spectrum is internally converted to erg/s/cm2/A, if necessary, before computing the synthetic photometry).
 			- ``'eflux'`` : input spectrum flux density uncertainties in erg/s/cm2/A (if input ``eflux`` is provided).
 			- ``'flux_unit'`` : units of the internally stored spectrum flux densities (``'erg/s/cm2/A'``).
+
+	Notes
+	-----
+		The returned synthetic flux densities are bandpass-averaged
+		quantities, which may not directly correspond to monochromatic
+		flux densities reported by some instruments. Users are encouraged
+		to consult the SVO documentation and references for their selected
+		filters for details on the adopted photometric calibration.
 
 	Examples:
 	---------
@@ -163,6 +178,10 @@ def synthetic_photometry(wl, flux, filters=None, flux_unit=None, eflux=None, det
 	# validate detector
 	if detector not in ('auto', 'photon', 'energy'):
 		raise ValueError("detector must be 'auto', 'photon', or 'energy'")
+
+	# validate magnitude system
+	if mag_system not in ('Vega', 'AB'):
+		raise ValueError("mag_system must be 'Vega' or 'AB'")
 
 	# input spectrum to numpy
 	wl = utils.astropy_to_numpy(wl)
@@ -278,6 +297,10 @@ def synthetic_photometry(wl, flux, filters=None, flux_unit=None, eflux=None, det
 		ZeroPoint = maskedcolumn_to_numpy(ZeroPoint)
 		DetectorType = maskedcolumn_to_numpy(DetectorType)
 
+	# validate flux density units
+	if flux_unit not in ('Jy', 'erg/s/cm2/A', 'erg/s/cm2/um'):
+		raise ValueError("Invalid flux_unit")
+
 	# convert input spectrum to F_lambda (erg/s/cm2/A), if needed
 	if flux_unit == 'Jy':
 		out = convert_flux(flux=flux, eflux=eflux, wl=wl,
@@ -374,17 +397,13 @@ def synthetic_photometry(wl, flux, filters=None, flux_unit=None, eflux=None, det
 		# compute synthetic flux density
 		out_synt_flux = _compute_synthetic_flux(wl=wl, flux=flux, eflux=eflux, filter_wl=filter_wl,
 		                                        filter_flux=filter_flux, detector=detector_filt)
-		syn_flux_erg[k] = out_synt_flux['syn_flux'] # in erg/s/cm2/A
-		esyn_flux_erg[k] = out_synt_flux['esyn_flux'] # in erg/s/cm2/A
-		lambda_eff[k] = out_synt_flux['lambda_eff'] # in um
-		width_eff[k] = out_synt_flux['width_eff'] # in um
-
-		# derive synthetic magnitudes
-		# convert first synthetic flux densities from erg/s/cm2/A into Jy
-		out = convert_flux(flux=syn_flux_erg[k], eflux=esyn_flux_erg[k], wl=lambda_eff[k], unit_in='erg/s/cm2/A', unit_out='Jy')
-		syn_flux_Jy[k] = out['flux_out'] # in Jy
-		if eflux is not None: esyn_flux_Jy[k] = out['eflux_out'] # in Jy
-
+		syn_flux_erg[k] = out_synt_flux['syn_flux'] # erg/s/cm2/A
+		syn_flux_Jy[k] = out_synt_flux['syn_flux_Jy'] # Jy
+		lambda_eff[k] = out_synt_flux['lambda_eff'] # um
+		width_eff[k] = out_synt_flux['width_eff'] # um
+		if eflux is not None:
+			esyn_flux_erg[k] = out_synt_flux['esyn_flux'] # erg/s/cm2/A
+			esyn_flux_Jy[k] = out_synt_flux['esyn_flux_Jy'] # Jy
 
 		# calculate synthetic magnitudes
 		if is_custom:
@@ -402,18 +421,21 @@ def synthetic_photometry(wl, flux, filters=None, flux_unit=None, eflux=None, det
 				raise Exception(f'\nERROR: No zero point for filter {filt}')
 
 			# convert synthetic flux density from Jy to magnitude
-			out_mag = flux_to_mag(flux=syn_flux_Jy[k], eflux=esyn_flux_Jy[k],
-			                      filters=filt,	flux_unit='Jy', svo_data=svo_data)
+			out_mag = flux_to_mag(flux=syn_flux_Jy[k],
+			                      eflux=esyn_flux_Jy[k] if eflux is not None else None,
+			                      filters=filt, flux_unit='Jy',
+			                      mag_system=mag_system, svo_data=svo_data)
 			syn_mag[k] = out_mag['mag'][0] # mag
 			if eflux is not None: esyn_mag[k] = out_mag['emag'][0] # mag
 			lambda_eff_SVO[k] = out_mag['lambda_eff_SVO(um)'][0] # um
 			width_eff_SVO[k] = out_mag['width_eff_SVO(um)'][0] # um
-			zero_point[k] = ZeroPoint[mask_filt][0] # Jy
+			zero_point[k] = out_mag['zero_point(Jy)'][0] # Jy
 
 	# output dictionary
 	out = {'syn_flux(Jy)': syn_flux_Jy, 'syn_flux(erg/s/cm2/A)': syn_flux_erg, 'syn_mag': syn_mag, 'lambda_eff(um)': lambda_eff,
 	       'width_eff(um)': width_eff, 'lambda_eff_SVO(um)': lambda_eff_SVO, 'width_eff_SVO(um)': width_eff_SVO,
-	       'zero_point(Jy)': zero_point, 'label': label, 'coverage_perc': coverage_perc, 'detector': detector_used, 'transmission': transmission,
+	       'zero_point(Jy)': zero_point, 'label': label, 'coverage_perc': coverage_perc, 'detector': detector_used, 
+	       'mag_system': mag_system, 'transmission': transmission,
 	       'wl': wl, 'flux': flux, 'flux_unit': flux_unit, 'filters': filters}
 	if eflux is not None:
 		out['esyn_flux(Jy)'] = esyn_flux_Jy
@@ -517,7 +539,8 @@ def convert_flux(flux, wl, unit_in, unit_out, eflux=None):
 	return out
 
 #+++++++++++++++++
-def flux_to_mag(flux, filters, flux_unit='Jy', eflux=None, svo_data=None):
+def flux_to_mag(flux, filters, flux_unit='Jy', eflux=None, svo_data=None, 
+	            mag_system='Vega', zero_point=None):
 	'''
 	Description:
 	------------
@@ -536,6 +559,13 @@ def flux_to_mag(flux, filters, flux_unit='Jy', eflux=None, svo_data=None):
  		Flux density uncertainties for ``flux`` in ``flux_unit``.
 	- svo_data : astropy.table.Table, optional
 		Astropy table retrieved from SVO using :func:`~seda.utils.read_SVO_table`.
+	- mag_system : str, optional
+		Magnitude system: ``'Vega'`` (default) or ``'AB'``.
+		For Vega, filter-dependent zero points are retrieved from SVO.
+		For AB, a zero point of 3631 Jy is used for all filters.
+	- zero_point : array, optional
+		Custom photometric zero point(s) in Jy. If provided, overrides
+		the zero points determined by ``mag_system``.
 
 	Returns:
 	--------
@@ -573,12 +603,31 @@ def flux_to_mag(flux, filters, flux_unit='Jy', eflux=None, svo_data=None):
 	Author: Genaro Suárez
 	'''
 
+	# validate flux density units
+	if flux_unit not in ('Jy', 'erg/s/cm2/A'):
+		raise ValueError("flux_unit must be 'Jy' or 'erg/s/cm2/A'")
+
+	# validate magnitude system
+	if mag_system not in ('Vega', 'AB'):
+		raise ValueError("mag_system must be 'Vega' or 'AB'")
+
 	# convert floats (if any) into arrays
 	if isinstance(flux, float): flux = np.array([flux])
 	if eflux is not None:
 		if isinstance(eflux, float): eflux = np.array([eflux])
+
 	# convert str (if any) into list
 	filters = utils.var_to_list(filters)
+
+	# validate user-defined zero points
+	if zero_point is not None:
+		zero_point = np.asarray(zero_point, dtype=float)
+		# require one positive, finite zero point per filter
+		if zero_point.shape != (len(filters),):
+			raise ValueError('zero_point must have one value per filter')
+		if np.any(~np.isfinite(zero_point)) or np.any(zero_point <= 0):
+			raise ValueError('zero_point must contain positive finite values')
+
 	# convert input variables into numpy arrays if astropy
 	flux = utils.astropy_to_numpy(flux)
 	if eflux is not None: eflux = utils.astropy_to_numpy(eflux)
@@ -600,51 +649,60 @@ def flux_to_mag(flux, filters, flux_unit='Jy', eflux=None, svo_data=None):
 	WavelengthEff = maskedcolumn_to_numpy(WavelengthEff)
 	WidthEff = maskedcolumn_to_numpy(WidthEff)
 
-	# save the input fluxes and errors because they are replaced by Jy units when given in erg/s/cm2/A
-	flux_ori = flux.copy()
-	if eflux is not None: eflux_ori = eflux.copy()
-
 	# initialize arrays to store relevant information
 	# assign NaN values to be the output for unrecognized filters by SVO
-	mag = np.zeros(len(filters)) * np.nan
-	if eflux is not None: emag = np.zeros(len(filters)) * np.nan
-	zero_point = np.zeros(len(filters)) * np.nan
-	wl_eff = np.zeros(len(filters)) * np.nan
-	width_eff = np.zeros(len(filters)) * np.nan
+	zero_point_input = zero_point # just to save input zero_point
+
+	mag = np.full(len(filters), np.nan)
+	if eflux is not None: emag = np.full(len(filters), np.nan)
+	zero_point = np.full(len(filters), np.nan)
+	wl_eff = np.full(len(filters), np.nan)
+	width_eff = np.full(len(filters), np.nan)
 	for k, filt in enumerate(filters): # iterate on each filter
 		# check first if the filter name is on SVO
 		if not filt in filterID: # if filter ID is not recognized
 			print(f'   Caveat: {filt} ID not recognized by SVO, so will be ignored')
 		else: # if filter ID is a valid one
 			mask = filterID==filt
-			zero_point[k] = ZeroPoint[mask][0] # in Jy
-			wl_eff[k] = (WavelengthEff[mask][0]*(u.nm*0.1)).to(u.micron).value # in um
-			width_eff[k] = (WidthEff[mask][0]*(u.nm*0.1)).to(u.micron).value # in um
+			# determine photometric zero point
+			if zero_point_input is not None:
+				zero_point[k] = zero_point_input[k] # user-defined
+			elif mag_system == 'Vega':
+				zero_point[k] = ZeroPoint[mask][0] # SVO Vega zero point (Jy)
+			else:
+				zero_point[k] = 3631.0 # AB zero point (Jy)
+			wl_eff[k] = (WavelengthEff[mask][0]*(u.nm*0.1)).to(u.micron).value # um
+			width_eff[k] = (WidthEff[mask][0]*(u.nm*0.1)).to(u.micron).value # um
 
 			# convert erg/s/cm2/A to Jy if needed
-			if (flux_unit=='erg/s/cm2/A'):
-				flux[k] = convert_flux(flux=flux[k], wl=wl_eff[k], unit_in='erg/s/cm2/A',
-				                       unit_out='Jy')['flux_out'] # in Jy
-				if eflux is not None:
-					eflux[k] = convert_flux(flux=flux[k], eflux=eflux[k], wl=wl_eff[k],
-					                         unit_in='erg/s/cm2/A', unit_out='Jy')['eflux_out'] # in Jy
+			if flux_unit == 'erg/s/cm2/A':
+				out = convert_flux(flux=flux[k], wl=wl_eff[k],
+				                   eflux=eflux[k] if eflux is not None else None,
+				                   unit_in='erg/s/cm2/A', unit_out='Jy')
+				flux_Jy = out['flux_out'] # Jy
+				if eflux is not None: eflux_Jy = out['eflux_out'] # Jy
+			elif flux_unit == 'Jy':
+				flux_Jy = flux[k]
+				if eflux is not None: eflux_Jy = eflux[k]
+
 
 			# Jy to mag
-			mag[k] = -2.5 * np.log10(flux[k] / zero_point[k]) # in mag
+			mag[k] = -2.5 * np.log10(flux_Jy / zero_point[k]) # mag
 			if eflux is not None:
-				emag[k] = (2.5 / np.log(10)) * np.sqrt((eflux[k] / flux[k])**2)#+(ephot_F0/phot_F0)**2) # in mag
+				emag[k] = (2.5 / np.log(10)) * np.abs(eflux_Jy / flux_Jy) # mag
 
 	# output dictionary
-	out = {'flux': flux_ori, 'mag': mag, 'filters': filters, 'zero_point(Jy)': zero_point,
+	out = {'flux': flux, 'mag': mag, 'filters': filters, 'zero_point(Jy)': zero_point,
 	       'flux_unit': flux_unit, 'lambda_eff_SVO(um)': wl_eff, 'width_eff_SVO(um)': width_eff}
 	if eflux is not None:
-		out['eflux'] = eflux_ori
+		out['eflux'] = eflux
 		out['emag'] = emag
 
 	return out
 
 #+++++++++++++++++
-def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, svo_data=None):
+def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, svo_data=None,
+                mag_system='Vega', zero_point=None):
 	'''
 	Description:
 	------------
@@ -653,16 +711,24 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, svo_data=None):
 	Parameters:
 	-----------
 	- mag : array, list, or float
- 		Input magnitudes in mag.
+		Input magnitudes in mag.
 	- filters : array, list, or str
 		Filters (following SVO filter IDs) used to obtain ``mag``.
 		It must have the same size as ``mag``.
 	- flux_unit : str, optional (default ``'Jy'``)
-		Units to return flux densities: ``'Jy'`` or ``'erg/s/cm2/A'``.
+		Units to return flux densities: ``'Jy'``, ``'erg/s/cm2/A'``,
+		or ``'erg/s/cm2/um'``.
 	- emag : array, float, optional
- 		Magnitude uncertainties for ``mag`` in mag.
+		Magnitude uncertainties for ``mag`` in mag.
 	- svo_data : astropy.table.Table, optional
 		Astropy table retrieved from SVO using :func:`~seda.utils.read_SVO_table`.
+	- mag_system : str, optional
+		Magnitude system: ``'Vega'`` (default) or ``'AB'``.
+		For Vega, filter-dependent zero points are retrieved from SVO.
+		For AB, a zero point of 3631 Jy is used for all filters.
+	- zero_point : array, optional
+		Custom photometric zero points in Jy, one per filter.
+		If provided, overrides the zero points determined by ``mag_system``.
 
 	Returns:
 	--------
@@ -673,18 +739,19 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, svo_data=None):
 		- ``'emag'`` : (if ``emag``) uncertainty of input magnitudes.
 		- ``'filters'`` : input filter IDs.
 		- ``'zero_point(Jy)'`` : filters' zero points in Jy.
+		- ``'flux_unit'`` : units of resulting flux densities.
 		- ``'lambda_eff_SVO(um)'`` : effective wavelengths in microns from SVO.
-		- ``'width_eff_SVO(um)'`` : effective width in microns from SVO.
+		- ``'width_eff_SVO(um)'`` : effective widths in microns from SVO.
 
 	Example:
 	--------
-	>>> # convert magnitudes into fluxes in Jy
+	>>> # convert Vega magnitudes into fluxes in Jy
 	>>> import seda
 	>>> import numpy as np
 	>>>
-	>>> mag = np.array([15.0, 15.5]) # test magnitudes in mag
-	>>> emag = mag/10. # test magnitude errors in mag
-	>>> filters=['2MASS/2MASS.J', '2MASS/2MASS.Ks'] # test filter IDs
+	>>> mag = np.array([15.0, 15.5])
+	>>> emag = mag/10.
+	>>> filters = ['2MASS/2MASS.J', '2MASS/2MASS.Ks']
 	>>>
 	>>> seda.synthetic_photometry.mag_to_flux(mag=mag, emag=emag, filters=filters)
 	    {'mag': array([15. , 15.5]),
@@ -700,19 +767,38 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, svo_data=None):
 	Author: Genaro Suárez
 	'''
 
-	# convert floats or integer (if any) into arrays
+	# validate magnitude system
+	if mag_system not in ('Vega', 'AB'):
+		raise ValueError("mag_system must be 'Vega' or 'AB'")
+
+	# convert floats or integers (if any) into arrays
 	if isinstance(mag, (float, int)): mag = np.array([mag])
 	if emag is not None:
 		if isinstance(emag, (float, int)): emag = np.array([emag])
 
 	# convert str (if any) into list
 	filters = utils.var_to_list(filters)
+
+	# validate user-defined zero points
+	if zero_point is not None:
+		zero_point = np.asarray(zero_point, dtype=float)
+		# require one positive, finite zero point per filter
+		if zero_point.shape != (len(filters),):
+			raise ValueError('zero_point must have one value per filter')
+		if np.any(~np.isfinite(zero_point)) or np.any(zero_point <= 0):
+			raise ValueError('zero_point must contain positive finite values')
+
 	# convert input variables into numpy arrays if astropy
 	mag = utils.astropy_to_numpy(mag)
 	if emag is not None: emag = utils.astropy_to_numpy(emag)
 
 	# verify that mag and filters variables have the same size
-	if len(mag)!=len(filters): raise Exception('filters does not have the size as mag')
+	if len(mag)!=len(filters):
+		raise Exception('filters does not have the size as mag')
+
+	# validate output flux units
+	if flux_unit not in ('Jy', 'erg/s/cm2/A', 'erg/s/cm2/um'):
+		raise ValueError("flux_unit must be 'Jy', 'erg/s/cm2/A', or 'erg/s/cm2/um'")
 
 	# if the SVO is not provided
 	if svo_data is None: svo_data = utils.read_SVO_table()
@@ -730,47 +816,69 @@ def mag_to_flux(mag, filters, flux_unit='Jy', emag=None, svo_data=None):
 
 	# initialize arrays to store relevant information
 	# assign NaN values to be the output for unrecognized filters by SVO
-	flux = np.zeros(len(filters)) * np.nan
-	if emag is not None: eflux = np.zeros(len(filters)) * np.nan
-	zero_point = np.zeros(len(filters)) * np.nan
-	wl_eff = np.zeros(len(filters)) * np.nan
-	width_eff = np.zeros(len(filters)) * np.nan
+	zero_point_input = zero_point # save input zero points
+
+	flux = np.full(len(filters), np.nan)
+	if emag is not None: eflux = np.full(len(filters), np.nan)
+	zero_point = np.full(len(filters), np.nan)
+	wl_eff = np.full(len(filters), np.nan)
+	width_eff = np.full(len(filters), np.nan)
 	for k, filt in enumerate(filters): # iterate on each filter
 		# check first if the filter name is on SVO
 		if not filt in filterID: # if filter ID is not recognized
 			print(f'   Caveat: {filt} ID is not recognized by SVO, so will be ignored')
 		else: # if filter ID is a valid one
 			mask = filterID==filt
-			zero_point[k] = ZeroPoint[mask][0] # in Jy
-			wl_eff[k] = (WavelengthEff[mask][0]*(u.nm*0.1)).to(u.micron).value # in um
-			width_eff[k] = (WidthEff[mask][0]*(u.nm*0.1)).to(u.micron).value # in um
+
+			# determine photometric zero point
+			if zero_point_input is not None:
+				zero_point[k] = zero_point_input[k] # user-defined
+			elif mag_system == 'Vega':
+				zero_point[k] = ZeroPoint[mask][0] # SVO Vega zero point (Jy)
+			else:
+				zero_point[k] = 3631.0 # AB zero point (Jy)
+
+			wl_eff[k] = (WavelengthEff[mask][0]*(u.nm*0.1)).to(u.micron).value # um
+			width_eff[k] = (WidthEff[mask][0]*(u.nm*0.1)).to(u.micron).value # um
 
 			# mag to Jy
-			flux[k] = zero_point[k] * 10**(-mag[k]/2.5) # in Jy
-			if emag is not None: eflux[k] = 10**(-mag[k]/2.5)*((1.*np.log(10.)/2.5)*zero_point[k]*emag[k]) # in Jy
+			flux_Jy = zero_point[k] * 10**(-mag[k]/2.5) # Jy
+			if emag is not None:
+				eflux_Jy = (np.log(10)/2.5) * flux_Jy * np.abs(emag[k]) # Jy
 
-			# convert flux from Jy to erg/s/cm2/A, if requested
-			if flux_unit=='erg/s/cm2/A':
-				flux[k] = convert_flux(flux=flux[k], wl=wl_eff[k], unit_in='Jy', unit_out='erg/s/cm2/A')['flux_out'] # in erg/s/cm2/A
-				if emag is not None: eflux[k] = convert_flux(flux=flux[k], eflux=eflux[k], wl=wl_eff[k], unit_in='Jy', unit_out='erg/s/cm2/A')['eflux_out'] # in erg/s/cm2/A
-			elif flux_unit=='erg/s/cm2/um':
-				flux[k] = convert_flux(flux=flux[k], wl=wl_eff[k], unit_in='Jy', unit_out='erg/s/cm2/A')['flux_out'] # in erg/s/cm2/A
-				flux[k] = (flux[k]*u.erg/u.s/u.cm**2/(u.nm*0.1)).to(u.erg/u.s/u.cm**2/u.micron).value # erg/s/cm2/um
-				if emag is not None:
-					eflux[k] = convert_flux(flux=flux[k], eflux=eflux[k], wl=wl_eff[k], unit_in='Jy', unit_out='erg/s/cm2/A')['eflux_out'] # in erg/s/cm2/A
-					eflux[k] = (eflux[k]*u.erg/u.s/u.cm**2/(u.nm*0.1)).to(u.erg/u.s/u.cm**2/u.micron).value # erg/s/cm2/um
+			# convert flux and uncertainty to requested units
+			if flux_unit in ('erg/s/cm2/A', 'erg/s/cm2/um'):
+				out_conv = convert_flux(flux=flux_Jy, wl=wl_eff[k],
+				                        eflux=eflux_Jy if emag is not None else None,
+				                        unit_in='Jy', unit_out='erg/s/cm2/A')
+
+				flux[k] = out_conv['flux_out'] # erg/s/cm2/A
+				if emag is not None: eflux[k] = out_conv['eflux_out'] # erg/s/cm2/A
+
+				if flux_unit == 'erg/s/cm2/um':
+					flux[k] = (flux[k]*u.erg/u.s/u.cm**2/(u.nm*0.1)).to(
+					    u.erg/u.s/u.cm**2/u.micron).value # erg/s/cm2/um
+					if emag is not None:
+						eflux[k] = (eflux[k]*u.erg/u.s/u.cm**2/(u.nm*0.1)).to(
+						    u.erg/u.s/u.cm**2/u.micron).value # erg/s/cm2/um
+			elif flux_unit=='Jy':
+				flux[k] = flux_Jy
+				if emag is not None: eflux[k] = eflux_Jy
 
 	# output dictionary
-	out = {'mag': mag, 'flux': flux, 'filters': filters, 'zero_point(Jy)': zero_point, 'flux_unit': flux_unit,
-	       'lambda_eff_SVO(um)': wl_eff, 'width_eff_SVO(um)': width_eff}
+	out = {'mag': mag, 'flux': flux, 'filters': filters, 'zero_point(Jy)': zero_point,
+	       'flux_unit': flux_unit, 'lambda_eff_SVO(um)': wl_eff,
+	       'width_eff_SVO(um)': width_eff}
 	if emag is not None:
 		out['emag'] = emag
 		out['eflux'] = eflux
 
 	return out
 
+
 #+++++++++++++++++
-def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None, svo_data=None):
+def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, 
+                       eflux=None, svo_data=None, mag_system='Vega'):
 	'''
 	Description:
 	------------
@@ -798,19 +906,24 @@ def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None, svo_
 		Flux density uncertainties in ``flux_unit`` unit. If ``None``, uncertainties are ignored.
 	- svo_data : astropy.table.Table, optional
 		Astropy table retrieved from SVO using :func:`~seda.utils.read_SVO_table`.
+	- mag_system : str, optional
+		Magnitude system of the observed photometry: ``'Vega'`` (default)
+		or ``'AB'``. The same system is used for synthetic magnitudes
+		and magnitude-to-flux conversions.
 
 	Returns:
 	--------
 	Python dictionary with the following parameters:
-		- ``'wl``': wavelength in microns of calibrated spectrum.
-		- ``'flux``': flux density in ``flux_unit`` of calibrated spectrum.
-		- ``'eflux``': flux density uncertainties in ``flux_unit`` of calibrated spectrum.
-		- ``'syn_mag``': synthetic magnitudes in mag for ``filters`` from the calibrated spectrum.
-		- ``'esyn_mag``': synthetic magnitude errors in mag for ``filters`` from the calibrated spectrum.
-		- ``'syn_flux``': synthetic flux density in ``flux_unit`` for ``filters`` from the calibrated spectrum.
-		- ``'esyn_flux``': synthetic flux density uncertainties in ``flux_unit`` for ``filters`` from the calibrated spectrum.
-		- ``'scaling``': scaling factor applied to the input spectrum to calibrate it.
-		- ``'flux_unit``': units of input spectrum flux density and their uncertainties.
+		- ``'wl'``: wavelength in microns of calibrated spectrum.
+		- ``'flux'``: flux density in ``flux_unit`` of calibrated spectrum.
+		- ``'eflux'``: flux density uncertainties in ``flux_unit`` of calibrated spectrum.
+		- ``'syn_mag'``: synthetic magnitudes in mag for ``filters`` from the calibrated spectrum.
+		- ``'esyn_mag'``: synthetic magnitude errors in mag for ``filters`` from the calibrated spectrum.
+		- ``'syn_flux'``: synthetic flux density in ``flux_unit`` for ``filters`` from the calibrated spectrum.
+		- ``'esyn_flux'``: synthetic flux density uncertainties in ``flux_unit`` for ``filters`` from the calibrated spectrum.
+		- ``'scaling'``: scaling factor applied to the input spectrum to calibrate it.
+		- ``'flux_unit'``: units of input spectrum flux density and their uncertainties.
+		- ``'mag_system'``: magnitude system used for the calibration.
 
 	Example:
 	--------
@@ -824,10 +937,11 @@ def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None, svo_
 	>>> mag = [13.997, 13.284, 12.829]
 	>>> emag = [0.032, 0.036, 0.029]
 	>>>
-	>>>	# calibrate spectrum
+	>>> # calibrate spectrum
 	>>> out = seda.synthetic_photometry.calibrate_spectrum(wl=wl, flux=flux, eflux=eflux,
 	                                                       flux_unit=flux_unit,
-	                                                       mag=mag, emag=emag, filters=filters)
+	                                                       mag=mag, emag=emag, filters=filters,
+	                                                       mag_system='Vega')
 	>>>
 	>>> # visualize the results
 	>>> seda.plots.plot_calibrate_spectrum(out)
@@ -837,6 +951,14 @@ def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None, svo_
 	Date: 2026-05-04
 	'''
 
+	# validate magnitude system
+	if mag_system not in ('Vega', 'AB'):
+		raise ValueError("mag_system must be 'Vega' or 'AB'")
+
+	# ensure input flux and eflux are numpy arrays
+	flux = utils.astropy_to_numpy(flux)
+	if eflux is not None: eflux = utils.astropy_to_numpy(eflux)
+
 	# ensure input mag and emag are numpy arrays
 	mag = utils.var_to_numpy(mag)
 	emag = utils.var_to_numpy(emag)
@@ -844,16 +966,22 @@ def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None, svo_
 	# synthetic photometry from the spectrum
 	if svo_data is None: svo_data = utils.read_SVO_table()
 	out_syn = synthetic_photometry(wl=wl, flux=flux, eflux=eflux, flux_unit=flux_unit,
-	                               filters=filters, svo_data=svo_data)
+	                               filters=filters, svo_data=svo_data, mag_system=mag_system)
 
 	syn_mag = out_syn['syn_mag']
 	if eflux is not None: esyn_mag = out_syn['esyn_mag']
 	else: esyn_mag = None
-	lambda_eff = out_syn['lambda_eff(um)']  # um
-	width_eff = out_syn['width_eff(um)']	# um
+	lambda_eff = out_syn['lambda_eff(um)'] # um
+	width_eff = out_syn['width_eff(um)'] # um
 
 	# residual between observed and synthetic magnitudes
-	res = np.mean(mag - syn_mag)
+	# select filters with valid magnitudes and complete spectral coverage
+	valid = np.isfinite(mag) & np.isfinite(syn_mag) & (out_syn['label'] == 'complete')
+	
+	if not np.any(valid):
+		raise ValueError('No valid observed and synthetic magnitudes available for calibration')
+	
+	res = np.mean(mag[valid] - syn_mag[valid])
 
 	# scaling factor
 	scaling = 10**(-res / 2.5)
@@ -871,7 +999,7 @@ def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None, svo_
 	# calibrate synthetic flux densities
 	out_syn_flux = mag_to_flux(mag=syn_mag_calib, emag=esyn_mag_calib,
 	                           filters=filters, flux_unit=flux_unit,
-	                           svo_data=svo_data)
+	                           svo_data=svo_data, mag_system=mag_system)
 	syn_flux_calib = out_syn_flux['flux']
 	if eflux is not None: esyn_flux_calib = out_syn_flux['eflux']
 	else: esyn_flux_calib = None
@@ -891,10 +1019,10 @@ def calibrate_spectrum(wl, flux, flux_unit, mag, emag, filters, eflux=None, svo_
 		'width_eff': width_eff,
 		'scaling': scaling,
 		'flux_unit': flux_unit,
+		'mag_system': mag_system,
 		'obs_mag': mag,
 		'eobs_mag': emag,
-		'filters': filters,
-		'flux_unit': flux_unit
+		'filters': filters
 	}
 
 	return out
@@ -994,16 +1122,28 @@ def filter_coverage_fraction(wl, filter_wl, filter_flux):
 #+++++++++++++++++
 def _compute_synthetic_flux(wl, flux, filter_wl, filter_flux, eflux=None, detector='photon'):
 	"""
-	Compute synthetic flux density, flux density uncertainty, lambda_eff, and width_eff.
+	Compute synthetic flux densities in F_lambda and F_nu, their uncertainties,
+	lambda_eff, and width_eff.
 
 	This is an internal helper function used by :func:`~seda.synthetic_photometry.synthetic_photometry`.
-	The input spectrum must be provided as F_lambda. The synthetic flux density is computed using
-	photon-counting weighting by default, appropriate for most astronomical detectors. Energy-integrating
-	weighting can be selected with ``detector='energy'``.
+	The input spectrum must be provided as F_lambda in erg/s/cm2/A, with wavelengths in micron. 
+	The synthetic flux densities are computed using photon-counting weighting by default, 
+	appropriate for most astronomical detectors. Energy-integrating weighting can be selected 
+	with ``detector='energy'``.
+
+	The synthetic F_nu is returned in Jy.
 	"""
 
 	# spectrum wavelengths within the filter wavelength range
 	mask_wl = (wl >= filter_wl.min()) & (wl <= filter_wl.max())
+
+	# ensure at least two spectral points are available for numerical integration
+	if np.count_nonzero(mask_wl) < 2:
+		raise ValueError('Insufficient spectral sampling within the filter wavelength range')
+
+	# ensure spectrum wavelengths are positive and strictly increasing
+	if np.any(wl <= 0) or np.any(np.diff(wl) <= 0):
+		raise ValueError('Spectrum wavelengths must be positive and strictly increasing')
 
 	# resample filter transmission to the spectrum wavelength
 	filter_flux_resam = np.interp(wl[mask_wl], filter_wl, filter_flux) # dimensionless
@@ -1011,37 +1151,58 @@ def _compute_synthetic_flux(wl, flux, filter_wl, filter_flux, eflux=None, detect
 	# detector weighting
 	if detector == 'photon':
 		weight = wl[mask_wl] * filter_flux_resam # photon-counting detector
+		weight_nu = filter_flux_resam / wl[mask_wl]
 	elif detector == 'energy':
 		weight = filter_flux_resam # energy-integrating detector
+		weight_nu = filter_flux_resam / wl[mask_wl]**2
 	else:
 		raise ValueError("detector must be either 'photon' or 'energy'")
 
-	# normalize the transmission curve
+	# normalize the transmission curve for F_lambda
 	weight_integral = utils.np_trapz(weight, wl[mask_wl])
-
 	if not np.isfinite(weight_integral) or weight_integral <= 0:
 		raise ValueError('Filter has no positive integrated transmission over the input spectrum')
-
 	weight_norm = weight / weight_integral
 
-	# synthetic flux density
-	syn_flux = utils.np_trapz(flux[mask_wl] * weight_norm, wl[mask_wl]) # in input F_lambda units
+	# normalize the transmission curve for F_nu
+	weight_nu_integral = utils.np_trapz(weight_nu, wl[mask_wl])
+	if not np.isfinite(weight_nu_integral) or weight_nu_integral <= 0:
+		raise ValueError('Filter has no positive integrated F_nu normalization')
+	weight_nu_norm = weight_nu / weight_nu_integral
+
+	# synthetic flux density in F_lambda
+	syn_flux = utils.np_trapz(flux[mask_wl] * weight_norm, wl[mask_wl]) # erg/s/cm2/A
+
 	esyn_flux = None
 	if eflux is not None:
 		# synthetic flux uncertainty as the median fractional flux uncertainties in the filter passband
 		esyn_flux = np.median(eflux[mask_wl] / flux[mask_wl]) * syn_flux
 
+	# convert F_lambda to F_nu (Jy)
+	flux_nu = convert_flux(flux=flux[mask_wl], wl=wl[mask_wl],
+	                       unit_in='erg/s/cm2/A', unit_out='Jy')['flux_out']
+
+	# synthetic flux density in F_nu (Jy)
+	syn_flux_Jy = utils.np_trapz(flux_nu * weight_nu_norm, wl[mask_wl]) # Jy
+
+	esyn_flux_Jy = None
+	if eflux is not None:
+		# same fractional uncertainty prescription as for F_lambda
+		esyn_flux_Jy = np.median(eflux[mask_wl] / flux[mask_wl]) * syn_flux_Jy
+
 	# compute the filter's effective wavelength and effective width
 	# effective wavelength
 	lambda_eff = utils.np_trapz(wl[mask_wl] * flux[mask_wl] * weight, wl[mask_wl]) / \
-	             utils.np_trapz(flux[mask_wl] * weight, wl[mask_wl])
+				 utils.np_trapz(flux[mask_wl] * weight, wl[mask_wl])
 
 	# SVO effective width (always energy-counter definition)
 	width_eff = utils.np_trapz(wl[mask_wl] * filter_flux_resam, wl[mask_wl]) / \
-	            (wl[mask_wl] * filter_flux_resam).max()
+				(wl[mask_wl] * filter_flux_resam).max()
 
 	# output dictionary
-	out = {'syn_flux': syn_flux, 'esyn_flux': esyn_flux, 'lambda_eff': lambda_eff, 'width_eff': width_eff}
+	out = {'syn_flux': syn_flux, 'esyn_flux': esyn_flux,
+		   'syn_flux_Jy': syn_flux_Jy, 'esyn_flux_Jy': esyn_flux_Jy,
+		   'lambda_eff': lambda_eff, 'width_eff': width_eff}
 
 	return out
 
