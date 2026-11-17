@@ -164,7 +164,7 @@ def bayes(my_bayes):
 			flux_model = scaling*flux_model
 
 			residual2 = weights[i] * ((flux_obs[i] - flux_model)**2 / eflux_obs[i]**2)
-			lnlike += -0.5 * np.sum(residual2 + np.log(2*np.pi*eflux_obs[i]**2))
+			lnlike += -0.5 * np.sum(residual2 + np.log(2*np.pi*eflux_obs[i]**2/weights[i]))
 
 		return lnlike
 
