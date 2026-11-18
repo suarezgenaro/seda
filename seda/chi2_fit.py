@@ -18,7 +18,7 @@ def chi2(my_chi2):
 	'''
 	Description:
 	------------
-		Minimize the chi-square statistic to find the best model fits.
+		Minimize the weighted least-squares statistic to find the best-fitting models.
 
 	Parameters:
 	-----------
@@ -27,22 +27,22 @@ def chi2(my_chi2):
 	Returns:
 	--------
 	- '``model``\_chi2\_minimization.dat' : ascii table
-		Table with the names of all model spectra fits sorted by chi square and including the information: 
-		spectrum name, chi square, reduced chi square, scaling, scaling error, extinction, extinction error, 
-		model free parameters, radius and error (if ``distance and ``edistance`` are provided), and
-		iterations to minimize chi-square.
+		Table with the names of all model spectra fits sorted by the weighted least-squares statistic and including the information:
+		Spectrum name, weighted least-squares statistic, reduced weighted least-squares statistic, scaling, scaling error, 
+		extinction, extinction error, model free parameters, radius and error (if ``distance and ``edistance`` are provided), and
+		iterations to minimize the fit statistic.
 	- '``model``\_chi2\_minimization.pickle' : dictionary
-		Dictionary with the results from the chi-square minimization, namely:
+		Dictionary with the results from the fit statistic minimization, namely:
 			- ``my_chi2`` input dictionary returned by ``input_parameters.Chi2Options``.
-			- ``iterations_fit``: number of iterations to minimize chi-square.
-			- ``Av_fit``: visual extinction (in mag) that minimizes chi-square.
+			- ``iterations_fit``: number of iterations to minimize the fit statistic.
+			- ``Av_fit``: visual extinction (in mag) that minimizes the fit statistic.
 			- ``eAv_fit``: visual extinction uncertainty (in mag).
-			- ``scaling_fit``: scaling factor that minimizes chi-square.
+			- ``scaling_fit``: scaling factor that minimizes the fit statistic.
 			- ``escaling_fit``: scaling factor uncertainty.
 			- ``chi2_wl_fit``: chi-square as a function of wavelength.
-			- ``chi2_red_wl_fit``: reduced chi-square as a function of wavelength.
-			- ``chi2_fit``: total chi-square.
-			- ``chi2_red_fit``: total reduced chi-square.
+			- ``chi2_red_wl_fit``: reduced the fit statistic as a function of wavelength.
+			- ``chi2_fit``: total fit statistic.
+			- ``chi2_red_fit``: total reduced fit statistic.
 			- ``radius``: (if ``distance`` is provided) radius (in Rjup) considering the ``scaling_fit`` and input ``distance``.
 			- ``eradius``: (if ``edistance`` is provided) radius uncertainty (in Rjup).
 			- ``params``: model free parameters for each model spectrum.
@@ -73,12 +73,12 @@ def chi2(my_chi2):
 	>>> my_model = seda.ModelOptions(model=model, model_dir=model_dir, 
 	>>>                              params_ranges=params_ranges)
 	>>> 
-	>>> # load chi-square options
+	>>> # load fitting options
 	>>> fit_wl_range = np.array([value1, value2]) # to make the fit between value1 and value2
 	>>> my_chi2 = seda.Chi2FitOptions(my_data=my_data, my_model=my_model, 
 	>>>                               fit_wl_range=fit_wl_range)
 	>>> 
-	>>> # run chi-square fit
+	>>> # run fit
 	>>> out_chi2 = seda.chi2(my_chi2)
 	    Chi square fit ran successfully
 
@@ -86,7 +86,7 @@ def chi2(my_chi2):
 	'''
 
 	ini_time_chi2 = time.time() # to estimate the time elapsed running chi2
-	print('\n   Running chi-square fitting...')
+	print('\n   Running weighted least-squares fitting...')
 
 	# load input parameters
 	# all are stored in my_chi2 but they were defined in different classes
@@ -165,7 +165,7 @@ def chi2(my_chi2):
 	chi2_red_wl_fit = []
 
 	# create a tqdm progress bar
-	chi2_bar = tqdm(total=N_model_spectra, desc='Minimizing chi-square')
+	chi2_bar = tqdm(total=N_model_spectra, desc='Minimizing weighted least-squares statistic')
 	for i in range(N_model_spectra): # for each model spectrum
 		# update the progress bar
 		chi2_bar.update(1)
@@ -177,7 +177,7 @@ def chi2(my_chi2):
 		if not scaling_free_param: params.add('scaling', value=scaling, vary=False) # fixed parameter
 		if scaling_free_param: params.add('scaling', value=1e-20) # free parameter
 
-		# minimize chi square
+		# minimize fit statistic
 		if fit_spectra and not fit_photometry:
 			data_fit = flux_array_obs_fit[i] # all input flux densities
 			edata_fit = eflux_array_obs_fit[i] # all input flux density uncertainties
@@ -203,12 +203,12 @@ def chi2(my_chi2):
 		eAv_fit[i] = out_lmfit.params['extinction'].stderr # half the difference between the 15.8 and 84.2 percentiles of the PDF
 		scaling_fit[i] = out_lmfit.params['scaling'].value
 		escaling_fit[i] = out_lmfit.params['scaling'].stderr # half the difference between the 15.8 and 84.2 percentiles of the PDF
-		chi2_fit[i] = out_lmfit.chisqr # resulting chi-square from lmfit
-		chi2_red_fit[i] = out_lmfit.redchi # resulting reduced chi square from lmfit
-		chi2_wl_fit.append(out_lmfit.residual**2) # chi square for each data point from lmfit
-		chi2_red_wl_fit.append(out_lmfit.residual**2 / out_lmfit.nfree) # reduced chi square for each data point from lmfit
+		chi2_fit[i] = out_lmfit.chisqr # resulting fit statistic from lmfit
+		chi2_red_fit[i] = out_lmfit.redchi # resulting reduced from lmfit
+		chi2_wl_fit.append(out_lmfit.residual**2) # fit statistic for each data point from lmfit
+		chi2_red_wl_fit.append(out_lmfit.residual**2 / out_lmfit.nfree) # reduced fit statistic for each data point from lmfit
 
-		# scale model flux densities by the value that minimizes chi2
+		# scale model flux densities by the value that minimizes the fit statistic
 		if fit_spectra:
 			for k in range(N_spectra): # for each input observed spectrum
 				flux_array_model_conv_resam[i][k] = flux_array_model_conv_resam[i][k] * scaling_fit[i]
@@ -320,12 +320,12 @@ def chi2(my_chi2):
 			with open(my_chi2.chi2_pickle_file, 'wb') as file:
 				# serialize and write the variable to the file
 				pickle.dump(out_chi2, file)
-			print('      chi-square minimization results saved successfully')
+			print('      weighted least-squares fitting results saved successfully')
 
 			# save table with model spectra names sorted by chi square along with the parameters from each spectrum
 			out_save_params = save_params(out_chi2=out_chi2)
 
-	print('\n   Chi-square fit ran successfully')
+	print('\n   Weighted least-squares fitting ran successfully')
 	fin_time_chi2 = time.time()
 	utils.print_time(fin_time_chi2-ini_time_chi2)
 
@@ -366,8 +366,8 @@ def residuals_for_chi2(params, data, edata, model, weight):
 	residuals = np.array([]) # initialize numpy array to save array with residual
 	for i in range(len(data)): # for each input spectrum
 		res = (data[i]-scaling*model[i]) / edata[i] # the square of this equation will be minimized by minner.minimize
-		wnorm = weight[i]/np.mean(np.concatenate(weight)) # this keeps the overall chi2 scale consistent, but does not change the relative importance between spectra and photometry
-		res = np.sqrt(wnorm)*res # multiply by weights normalized by mean(weight) so chi2 values have similar magnitude to the unweighted case
+		wnorm = weight[i]/np.mean(np.concatenate(weight)) # this keeps the overall fit scale consistent, but does not change the relative importance between spectra and photometry
+		res = np.sqrt(wnorm)*res # multiply by weights normalized by mean(weight) so the fit values have similar magnitude to the unweighted case
 		residuals = np.concatenate([residuals, res])
 
 	return  residuals
@@ -377,15 +377,16 @@ def save_params(out_chi2):
 	'''
 	Description:
 	------------
-		Create table with model spectra names sorted by chi square along with relevant parameters.
+		Create a table of model spectra sorted by the weighted least-squares statistic, 
+		along with relevant parameters.
 
 	Parameters:
 	-----------
 	- out_chi2 : dictionary
 		Dictionary with the following parameters:
 			- ``spectra_name`` : spectrum name
-			- ``chi2_fit`` : chi-square
-			- ``chi2_red_fit`` : reduced chi-square
+			- ``chi2_fit`` : fit statistic
+			- ``chi2_red_fit`` : reduced fit statistic
 			- ``scaling_fit`` : scaling factor 
 			- ``e_scaling_fit`` : scaling factor uncertainty
 			- ``Av_fit`` : extinction
@@ -393,18 +394,18 @@ def save_params(out_chi2):
 			- ``params`` : fundamental parameters provided by ``model``.
 			- ``R`` : radius, when a ``distance`` was provided.
 			- ``eR`` : radius error, when ``distance`` and ``edistance`` were provided.
-			- ``iterations_fit`` : iterations to minimize chi square.
+			- ``iterations_fit`` : iterations to minimize the fit statistic.
 
 	Returns:
 	--------
 	- ``chi2_table_file`` : ascii table
-		ASCII table with input parameters sorted according to reduced chi-square.
+		ASCII table with input parameters sorted according to reduced fit statistic.
 		Table named ``chi2_table_file``, as specified in ``seda.Chi2Options``.
 
 	Author: Genaro Suárez
 	'''
 
-	# sort index with respect to reduced chi-square
+	# sort index with respect to reduced fit statistic
 	ind = np.argsort(out_chi2['chi2_red_fit'])
 
 	# read and sort relevant parameters from the input dictionary
