@@ -19,12 +19,12 @@ def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None
 	'''
 	Description:
 	------------
-		Plot spectra with the best model fits from the chi-square minimization.
+		Plot the observed data and their best-fitting atmospheric models obtained using weighted least-squares fitting.
 
 	Parameters:
 	-----------
 	- output_chi2 : dictionary or str
-		Output dictionary with the results from the chi-square minimization by ``chi2``.
+		Output dictionary containing the weighted least-squares fitting results returned by ``chi2``.
 		It can be either the name of the pickle file or simply the output dictionary.
 	- N_best_fits : int 
 		Number (default 1) of best model fits for plotting.
@@ -58,7 +58,7 @@ def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None
 
 	Returns:
 	--------
-	Plot of the spectra and best model fits from the chi-square minimization that will be stored if ``save`` with the name ``out_file``.
+	Plot of the spectra and best-fitting atmospheric models obtained using weighted least-squares fitting, saved as ``out_file`` if ``save`` is True.
 
 	Example:
 	--------
@@ -99,7 +99,7 @@ def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None
 		flux_residuals_phot_best = output_best_chi2_fits['flux_residuals_phot_best']
 		logflux_residuals_phot_best = output_best_chi2_fits['logflux_residuals_phot_best']
 
-	# open results from the chi square analysis
+	# open results from the weighted least-squares fitting
 	try: # if given as a pickle file
 		output_chi2 = utils.load_output_fit(output_chi2)
 	except: # if given as the output of chi2_fit
@@ -188,7 +188,7 @@ def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None
 	if fit_photometry: 
 		for i in range(N_best_fits):
 			if ori_res: label = '' # so no label is shown
-			if not ori_res: label = label_model[i]+r' ($\chi^2_\nu=$'+str(round(chi2_red_fit_best[i],1))+')'
+			if not ori_res: label = label_model[i]+r' ($G_r=$'+str(round(chi2_red_fit_best[i],1))+')'
 			mask = (lambda_eff_array_model_fit_best[0]>=xrange[0]) & (lambda_eff_array_model_fit_best[0]<=xrange[1])
 			# consider the effective wavelength from the best fit
 			ax[0].errorbar(lambda_eff_array_model_fit_best[0][mask], flux_syn_array_model_scaled_fit_best[i][mask], 
@@ -212,7 +212,7 @@ def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None
 				                              lam_res=lam_res, disp_wl_range=xrange, convolve_wl_range=xrange)
 				wl_model_best_conv = out['wl_conv']
 				flux_model_best_conv = out['flux_conv']
-				label = label_model[i]+r' ($\chi^2_\nu=$'+str(round(chi2_red_fit_best[i],1))+')'
+				label = label_model[i]+r' ($G_r=$'+str(round(chi2_red_fit_best[i],1))+')'
 				mask = (wl_model_best_conv>xrange[0]) & (wl_model_best_conv<xrange[1])
 				ax[0].plot(wl_model_best_conv[mask], flux_model_best_conv[mask],
 				           '--', color=color, linewidth=1.0, label=label, zorder=4) # in erg/s/cm2
@@ -221,7 +221,7 @@ def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None
 	if fit_spectra: 
 		for i in range(N_best_fits): # for the best fits
 			for k in range(N_spectra): # for each input observed spectrum
-				label = label_model[i]+r' ($\chi^2_\nu=$'+str(round(chi2_red_fit_best[i],1))+')'
+				label = label_model[i]+r' ($G_r=$'+str(round(chi2_red_fit_best[i],1))+')'
 				mask = (wl_array_model_conv_resam_fit_best[i][k]>=xrange[0]) & (wl_array_model_conv_resam_fit_best[i][k]<=xrange[1])
 				color = plt.rcParams['axes.prop_cycle'].by_key()['color'][i] # default color
 				if k==0: 
@@ -291,12 +291,13 @@ def plot_chi2_red(output_chi2, N_best_fits=1, xlog=False, ylog=False, out_file=N
 	'''
 	Description:
 	------------
-		Plot reduced chi square as a function of wavelength for the best model fits form the chi-square minimization.
+		Plot the reduced weighted least-squares statistic as a function of wavelength 
+		for the best-fitting atmospheric models.
 
 	Parameters:
 	-----------
 	- output_chi2 : dictionary or str
-		Output dictionary with the results from the chi-square minimization by ``chi2``.
+		Output dictionary containing the weighted least-squares fitting results returned by ``chi2``.
 		It can be either the name of the pickle file or simply the output dictionary.
 	- N_best_fits : int 
 		Number (default 1) of best model fits for plotting.
@@ -306,14 +307,16 @@ def plot_chi2_red(output_chi2, N_best_fits=1, xlog=False, ylog=False, out_file=N
 		Use logarithmic (``True``) or linear (``False``) scale to plot the vertical axis.
 	- out_file : str, optional
 		File name to save the figure (it can include a path e.g. my_path/figure.pdf). 
-		Note: use file formats (pdf, eps, or ps). Image formats do not work because the figure is saved in several pages, according to ``N_best_fits``.
+		Note: use file formats (pdf, eps, or ps). Image formats do not work because the figure 
+		is saved in several pages, according to ``N_best_fits``.
 		Default name is 'SED_``model``_chi2.pdf', where ``model`` is read from ``output_chi2``.
 	- save : {``True``, ``False``}, optional (default ``True``)
 		Save (``'True'``) or do not save (``'False'``) the resulting figure.
 
 	Returns:
 	--------
-	Plot of reduced chi-square against wavelength for the best model fits indicated by ``N_best_fits`` that will be stored if ``save`` with the name ``out_file``.
+	Plot of the reduced weighted least-squares statistic as a function of wavelength for the best-fitting 
+	atmospheric models specified by ``N_best_fits`` that will be stored if ``save`` with the name ``out_file``.
 
 	Example:
 	--------
@@ -338,10 +341,10 @@ def plot_chi2_red(output_chi2, N_best_fits=1, xlog=False, ylog=False, out_file=N
 	if fit_spectra: wl_array_model_conv_resam_fit_best = output_best_chi2_fits['wl_array_model_conv_resam_fit_best']
 	if fit_photometry: lambda_eff_array_model_fit_best = output_best_chi2_fits['lambda_eff_array_model_fit_best']
 
-	# open results from the chi square analysis
+	# open results from the fitting analysis
 	try: # if given as a pickle file
 		output_chi2 = utils.load_output_fit(output_chi2)
-	except: # if given as the output of chi2_fit
+	except: # if given as the output of fitting
 		pass
 	model = output_chi2['my_chi2'].model
 
@@ -354,7 +357,7 @@ def plot_chi2_red(output_chi2, N_best_fits=1, xlog=False, ylog=False, out_file=N
 	for i in range(N_best_fits): # for best fits
 		fig, ax = plt.subplots()
 	
-		label = r' $\chi^2_r=$'+str(round(chi2_red_fit_best[i],1))
+		label = r' $G_r=$'+str(round(chi2_red_fit_best[i],1))
 
 		if fit_spectra and not fit_photometry:
 			wl_fit = np.array([]) # initialize numpy array to save wavelengths within the fit range of all input spectra as a single array
@@ -397,12 +400,12 @@ def plot_chi2_red(output_chi2, N_best_fits=1, xlog=False, ylog=False, out_file=N
 		plt.xlim(xrange)
 		plt.grid(True, which='both', color='gainsboro', alpha=0.5)
 		plt.xlabel(r'$\lambda$ ($\mu$m)', size=12)
-		plt.ylabel(r'$\chi^2_r$', size=12)
+		plt.ylabel(r'$\G_r$', size=12)
 		plt.title(plot_title[i])
 
 		# legend
 		if fit_spectra and fit_photometry:
-			# Add first legend with reduced chi-square value
+			# add first legend with reduced weighted least-squares statistic (G_r)
 			leg1 = ax.legend(handles=[plt_chi2], loc='upper right',handlelength=0, handletextpad=0)
 
 			# Get position of the first legend
@@ -461,8 +464,10 @@ def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None
 	- ori_res : {``True``, ``False``}, optional (default ``False``)
 		Plot (``True``) or do not plot (``False``) the best model spectrum with its original resolution.
 	- model_dir_ori : str, list, or array
-		Path to the directory (str, list, or array) or directories (as a list or array) containing the model spectra with the original resolution.
-		This parameter is needed to plot the original resolution spectra (if ``ori_res`` is True) when ``seda.chi2`` was run skipping the model spectra convolution (if ``skip_convolution`` is True).
+		Path to the directory (str, list, or array) or directories (as a list or array) containing the 
+		model spectra with the original resolution.
+		This parameter is needed to plot the original resolution spectra (if ``ori_res`` is True) when 
+		``seda.chi2`` was run skipping the model spectra convolution (if ``skip_convolution`` is True).
 	- res : float, optional
 		Spectral resolution (at ``lam_res``) desired to smooth model spectra with original resolution.
 		It is needed when only photometry is fit.
@@ -619,7 +624,7 @@ def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None
 	for i,param in enumerate(params_med): # for each sampled parameter
 		if i==0: label_model += f'{param}{params_med[param]}'
 		else: label_model += f'_{param}{params_med[param]}'
-	# find the reduced chi-square value for the best fit
+	# find the reduced weighted least-squares statistic for the best fit
 	if fit_spectra and not fit_photometry:
 		data_fit = flux_spectra_fit
 		edata_fit = eflux_spectra_fit
@@ -641,9 +646,9 @@ def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None
 	params.add('scaling', value=1e-20) # free parameter
 	minner = Minimizer(chi2_fit.residuals_for_chi2, params, fcn_args=(data_fit, edata_fit, model_fit, weight_fit))
 	out_lmfit = minner.minimize(method='leastsq') # 'leastsq': Levenberg-Marquardt (default)
-	chi2_red_fit = out_lmfit.redchi # resulting reduced chi square from lmfit
+	chi2_red_fit = out_lmfit.redchi # resulting reduced weighted least-squares value from lmfit
 	
-	label_model = label_model+r' ($\chi^2_\nu=$'+str(round(chi2_red_fit,1))+')'
+	label_model = label_model+r' ($\G_r=$'+str(round(chi2_red_fit,1))+')'
 
 	if fit_photometry: 
 		if not ori_res: label = label_model
