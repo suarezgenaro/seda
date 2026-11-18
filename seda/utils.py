@@ -366,20 +366,22 @@ def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False
 	'''
 	Description:
 	------------
-		Read best-fitting model spectra from the chi-square minimization.
+		Read the best-fitting model spectra obtained using weighted least-squares fitting.
 
 	Parameters:
 	-----------
 	- output_chi2 : dictionary or str
-		Output dictionary with the results from the chi-square minimization by ``chi2``.
+		Output dictionary containing the weighted least-squares fitting results returned by ``chi2``.
 		It can be either the name of the pickle file or simply the output dictionary.
 	- N_best_fits : int, optional (default 1)
 		Number of best model fits to be read.
 	- ori_res : {``True``, ``False``}, optional (default ``False``)
 		Read (``True``) or do not read (``False``) model spectra with the original resolution.
 	- model_dir_ori : str, list, or array
-		Path to the directory (str, list, or array) or directories (as a list or array) containing the model spectra with the original resolution.
-		This parameter is needed if ``ori_res=True`` and `seda.chi2_fit.chi2` was run skipping the model spectra convolution (if `skip_convolution=True``).
+		Path to the directory (str, list, or array) or directories (as a list or array) 
+		containing the model spectra with the original resolution.
+		This parameter is needed if ``ori_res=True`` and `seda.chi2_fit.chi2` was run skipping 
+		the model spectra convolution (if `skip_convolution=True``).
 
 	Returns:
 	--------
@@ -387,8 +389,8 @@ def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False
 		- ``'spectra_name_best'`` : model spectra names.
 		- ``'fit_spectra'``: label indicating whether spectra were fitted.
 		- ``'fit_photometry'``: label indicating whether photometry was fitted.
-		- ``'chi2_red_fit_best'`` : reduced chi-square.
-		- ``'chi2_red_wl_fit_best'`` : reduced chi-square as a function of wavelength.
+		- ``'chi2_red_fit_best'`` : reduced weighted least-squares statistic.
+		- ``'chi2_red_wl_fit_best'`` : reduced weighted least-squares statistic as a function of wavelength.
 		- ``'wl_model_best'`` : (if ``ori_res``) wavelength (in um) of original model spectra.
 		- ``'flux_model_best'`` : (if ``ori_res``) flux densities (in erg/s/cm2/A) of original model spectra.
 		- ``'wl_array_model_conv_resam_best'`` : (if ``fit_spectra``) wavelength (in um) of resampled, convolved model spectra in the input spectra ranges.
@@ -1440,7 +1442,7 @@ def best_bayesian_fit(output_bayes, grid_spec=None, grid_phot=None, model_dir_or
 		flux_scaled = []
 		for i in range(len(grid)): # for each input observed spectrum
 			# DOUBLE CHECK
-			scaling = np.sum(flux_obs[i]*flux/eflux_obs[i]**2) / np.sum(flux_model**2/eflux_obs[i]**2) # scaling that minimizes chi2
+			scaling = np.sum(flux_obs[i]*flux/eflux_obs[i]**2) / np.sum(flux_model**2/eflux_obs[i]**2) # scaling that minimizes the weighted least-squares statistic
 			flux_scaled.append(scaling*flux)
 			wl_scaled.append(wl)
 		
@@ -1692,7 +1694,7 @@ def read_SVO_params(filters, params, svo_data=None):
 	return filters_params
 
 ##########################
-# set wavelength range for the model comparison via chi-square or Bayes techniques
+# set wavelength range for fitting observed spectra
 def set_fit_wl_range(fit_wl_range, N_spectra, wl_spectra):
 
 	# handle fit_wl_range
@@ -1708,7 +1710,7 @@ def set_fit_wl_range(fit_wl_range, N_spectra, wl_spectra):
 	return fit_wl_range
 
 ##########################
-# set wavelength range for the model comparison via chi-square or Bayes techniques
+# set wavelength range for dispersion range
 def set_disp_wl_range(disp_wl_range, N_spectra, wl_spectra):
 
 	# same handling as for fit_wl_range
@@ -1717,7 +1719,7 @@ def set_disp_wl_range(disp_wl_range, N_spectra, wl_spectra):
 	return disp_wl_range
 
 ##########################
-# set wavelength range to cut models for comparisons via chi-square or Bayes techniques
+# set wavelength range for selecting model spectra used in fitting
 def set_model_wl_range(model_wl_range, wl_spectra_min, wl_spectra_max):
 
 	# define model_wl_range (if not provided) in terms of input spectra coverage
@@ -1728,7 +1730,7 @@ def set_model_wl_range(model_wl_range, wl_spectra_min, wl_spectra_max):
 	return model_wl_range
 
 ##########################
-# set wavelength range for photometry to cut models for comparisons via chi-square or Bayes techniques
+# set wavelength range for selecting model spectra used in photometric fitting
 def set_fit_phot_range(fit_phot_range, filters, svo_data=None):
 	if fit_phot_range is None: # define fit_phot_range when not provided
 		# get effective wavelengths from SVO for the input filters
