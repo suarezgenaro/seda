@@ -35,8 +35,8 @@ Handling Evolutionary Models
    notebooks/tutorial_evolutionary_models_examination.ipynb
    notebooks/tutorial_ingest_evolutionary_models.ipynb
 
-Chi-square minimization
-+++++++++++++++++++++++
+Weighted Least-squares Fitting
+++++++++++++++++++++++++++++++
 
 .. toctree::
    :maxdepth: 1
@@ -46,8 +46,8 @@ Chi-square minimization
    notebooks/tutorial_chi2_fit_photometry_only.ipynb
    notebooks/tutorial_chi2_fit_spectrophotometry.ipynb
 
-Bayesian sampling
-+++++++++++++++++
+Bayesian Inference
+++++++++++++++++++
 
 .. toctree::
    :maxdepth: 1
