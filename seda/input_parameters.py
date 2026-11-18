@@ -407,7 +407,7 @@ class Chi2Options:
 		This parameter is used if ``fit_photometry`` but ignored if only ``fit_spectra``.
 		Default values are the minimum and maximum of the filter effective
 		wavelengths from SVO.
-	- weight_label : str, optional (default ``'dataset'``)
+	- weight_label : str, optional (default ``'none'``)
 		Relative weighting scheme applied to input data points during fitting,
 		in addition to the weighting from observed flux density uncertainties.
 
@@ -418,7 +418,7 @@ class Chi2Options:
 
 		Available options are:
 
-		- ``'dataset'`` (default): each spectrum and the photometric dataset
+		- ``'dataset'``: each spectrum and the photometric dataset
 		  are assigned weights equal to the inverse of their respective numbers
 		  of data points. Each dataset therefore has the same total weight,
 		  regardless of its number of measurements.
@@ -426,10 +426,10 @@ class Chi2Options:
 		  step, and each photometric data point by the filter effective width.
 		  Broader filters and more widely sampled spectral regions receive
 		  larger weights.
-		- ``'none'``: all data points receive a weight of 1, equivalent to
+		- ``'none'`` (default): all data points receive a weight of 1, equivalent to
 		  applying no additional weighting beyond that based on the observed
-		  uncertainties. Datasets with more measurements can have a larger
-		  influence on the fit.
+		  uncertainties, as in standard chi-square minimization.
+		  Datasets with more measurements can have a larger influence on the fit.
 	- extinction_free_param : {``True``, ``False``}, optional (default ``False``)
 		Extinction as a free parameter:
 			- ``'False'``: null extinction is assumed and it will not change.
@@ -553,7 +553,7 @@ class Chi2Options:
 
 	def __init__(self, my_data, my_model, 
 		fit_wl_range=None, disp_wl_range=None, model_wl_range=None, fit_phot_range=None, 
-		weight_label='dataset', extinction_free_param=False, scaling_free_param=True, 
+		weight_label='none', extinction_free_param=False, scaling_free_param=True, 
 		scaling=None, avoid_IR_excess=False, IR_excess_limit=3, save_results=True,
 		chi2_pickle_file=None, chi2_table_file=None, svo_data=None):
 
@@ -1054,7 +1054,7 @@ class BayesOptions:
 		E.g., ``fit_phot_range = np.array([fit_phot_min1, fit_phot_max1])``.
 		This parameter is used if ``fit_photometry`` but ignored if only ``fit_spectra``.
 		Default values are the minimum and the maximum of the filter effective wavelengths from SVO.
-	- weight_label : str, optional (default ``dataset``)
+	- weight_label : str, optional (default ``none``)
 		Weight applied to each input data point (photometric and spectroscopic) during Bayesian inference.
 		This parameter is different from the weighting derived from the observed flux density
 		uncertainties, which appears in the Gaussian likelihood.
@@ -1066,7 +1066,7 @@ class BayesOptions:
 
 		Available options are:
 
-		- ``'dataset'`` (default): each spectrum and the photometric dataset
+		- ``'dataset'``: each spectrum and the photometric dataset
 		  are assigned weights equal to the inverse of their respective numbers
 		  of data points. Each dataset therefore has the same total weight,
 		  regardless of its number of measurements.
@@ -1074,9 +1074,10 @@ class BayesOptions:
 		  step, and each photometric data point by the filter effective width.
 		  Broader filters and more widely sampled spectral regions receive
 		  larger weights.
-		- ``'none'``: all data points receive a weight of 1, equivalent to
+		- ``'none'`` (default): all data points receive a weight of 1, equivalent to
 		  applying no additional weighting beyond that based on the observed
-		  uncertainties. Datasets with more measurements can have a larger
+		  uncertainties, as in the standard Gaussian likelihood for independent
+		  measurements. Datasets with more measurements can have a larger
 		  influence on the fit.
 
 		The additional weighting schemes can be applied when fitting multiple datasets, including
@@ -1187,7 +1188,7 @@ class BayesOptions:
 
 	def __init__(self, my_data, my_model, 
 	             fit_wl_range=None, disp_wl_range=None, model_wl_range=None, fit_phot_range=None,
-	             weight_label='dataset', R_range=None, chi2_pickle_file=None, bayes_pickle_file=None,
+	             weight_label='none', R_range=None, chi2_pickle_file=None, bayes_pickle_file=None,
 		         grid=None, dynamic_sampling=True, nlive=500, save_results=True):
 
 		# associate input parameters as attributes
