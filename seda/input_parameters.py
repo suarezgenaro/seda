@@ -370,7 +370,7 @@ class Chi2Options:
 	'''
 	Description:
 	------------
-		Define chi-square fit options.
+		Define weighted least-squares fitting options.
 
 	Parameters:
 	-----------
@@ -433,10 +433,10 @@ class Chi2Options:
 	- extinction_free_param : {``True``, ``False``}, optional (default ``False``)
 		Extinction as a free parameter:
 			- ``'False'``: null extinction is assumed and it will not change.
-			- ``'True'``: null extinction is assumed and it varies to minimize chi-square.
+			- ``'True'``: null extinction is assumed and it varies to minimize the fit statistic.
 	- scaling_free_param : {``True``, ``False``}, optional (default ``True``)
 		Scaling as a free parameter:
-			- ``'True'``: find the scaling that minimizes chi-square for each model.
+			- ``'True'``: find the scaling that minimizes the fit statistic for each model.
 			- ``'False'``: fix ``scaling`` if radius and distance are known.
 	- scaling : float, optional
 		Required if ``scaling_free_param=False``.
@@ -665,7 +665,7 @@ class Chi2Options:
 			fit_phot_range = utils.set_fit_phot_range(fit_phot_range=fit_phot_range, filters=filters, svo_data=svo_data)
 			self.fit_phot_range = fit_phot_range
 
-		# file name to save the chi2 results as a pickle
+		# file name to save the fitting results as a pickle
 		if chi2_pickle_file is None: self.chi2_pickle_file = f'{model}_chi2_minimization.pickle'
 		else: self.chi2_pickle_file = chi2_pickle_file
 		if chi2_table_file is None: self.chi2_table_file = f'{model}_chi2_minimization.dat'
@@ -929,7 +929,7 @@ class Chi2Options:
 				# close progress bar
 				model_bar.close()
 
-		# prepare input spectra and model spectra for the chi-square minimization
+		# prepare input spectra and model spectra for the fit statistic minimization
 		if fit_spectra:
 			# cut input spectra to the wavelength region for the fit or model coverage, whatever is narrower
 			wl_spectra_fit = []
@@ -1086,7 +1086,7 @@ class BayesOptions:
 		Minimum and maximum radius values to sample the posterior for radius.
 		It requires the parameter ``distance`` in ``input_parameters.InputData``.
 	- chi2_pickle_file : dictionary, optional
-		Pickle file with a dictionary with the results from the chi-square minimization
+		Pickle file with a dictionary with the results from the fit statistic minimization
 		by ``chi2_fit.chi2``.
 		If given, the grid nodes around the best fit will be used as ``params_ranges``
 		to select a grid subset and as sampling priors.
@@ -1294,7 +1294,7 @@ class BayesOptions:
 
 		# parameter ranges to select the grid and then used for the posterior priors
 		if chi2_pickle_file:
-			# params for the best chi-square fit
+			# params for the best weighted least-squares fit
 			params = utils.best_chi2_fits(chi2_pickle_file, N_best_fits=1)['params']
 
 			# grid values around the best fit (which is also a grid node)
