@@ -203,7 +203,7 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 	
 		# complement SED with the input model spectrum
 		if (wl_model is not None) & (flux_model is not None):
-			if scale_model: if scale_model: # scale model flux densities to minimize the weighted least-squares statistic
+			if scale_model: # scale model flux densities to minimize the weighted least-squares statistic
 				# calculate the optimal scaling factor using weighted least squares
 				my_data = input_parameters.InputData(wl_spectra=wl_spectra, flux_spectra=flux_spectra, 
 													 eflux_spectra=eflux_spectra, flux_unit=flux_unit, 
