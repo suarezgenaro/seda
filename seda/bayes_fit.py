@@ -127,12 +127,25 @@ def bayes(my_bayes):
 	for param in params_priors:
 		print(f'         {param} range = {params_priors[param]}')
 
+	# conversion factor for geometric scaling
+	if distance is not None:
+		R_index = list(params_priors.keys()).index('R')
+		scaling_factor = (u.R_jup.to(u.km) / (distance*u.pc).to_value(u.km))**2
+
+	# Gaussian normalization term (constant during sampling)
+	lnlike_norm = 0.0
+	for i in range(len(flux_obs)):
+		lnlike_norm += -0.5 * np.sum(
+			np.log(2*np.pi*eflux_obs[i]**2/weights[i]))
+
 	#------------------
 	def prior_transform(p):
 		# p (sampler's live points) takes random values between 0 and 1 for each free parameter
 		v = p # just to have the same dimension as p
 		for i,param in enumerate(params_priors):
-			v[i] = (params_priors[param][1]-params_priors[param][0]) * p[i] + params_priors[param][0] # parameter minimum < parameter < parameter maximum
+			# transform unit interval to parameter range
+			# parameter minimum < parameter < parameter maximum
+			v[i] = (params_priors[param][1]-params_priors[param][0]) * p[i] + params_priors[param][0]
 
 		return v
 
@@ -140,31 +153,42 @@ def bayes(my_bayes):
 	def loglike(p):
 		# arrange parameter values in the sampling related to model free parameters
 		# to be used to generate the corresponding model spectrum
+
+		# extract model parameters
 		params = {}
-		for i,param in enumerate(params_priors.keys()): # for each parameter in the sampling
-			if param in params_unique: # only keep the free parameters in the model
+		for i, param in enumerate(params_priors.keys()):
+			if param in params_unique:
 				params[param] = p[i]
-		
-		lnlike = 0.0 # initialize the log-likelihood variable
 
+		# generate model spectra for all datasets
+		flux_models = []
 		for i in range(len(flux_obs)): # for each input spectrum and/or photometric set
-			# generate a model with the sampled parameters 
+			# generate a model with the sampled parameters
 			# (the model will have the resolution and be resampled to the fit region for each input spectrum)
-			out_generate_model_spectrum = generate_model_spectrum(params=params, model=model, grid=grid[i])#, model_dir=model_dir)
-			flux_model = out_generate_model_spectrum['flux']
+			out_generate_model_spectrum = generate_model_spectrum(
+				params=params, model=model, grid=grid[i])
+			flux_models.append(out_generate_model_spectrum['flux'])
 
-			# scaled model spectrum
-			if distance is not None:
-				R = p[list(params_priors.keys()).index('R')] # sampling value for radius
-				scaling = (((R*u.R_jup).to(u.km) / (distance*u.pc).to(u.km))**2).value # scaling = (R/d)^2
-				#flux_model = scale_synthetic_spectrum(wl=wl_model, flux=flux_model, distance=distance, radius=R)
-			else:
-				# scaling factor that maximizes the weighted Gaussian log-likelihood (it is the same factor that minimizes the weighted chi-square)
-				scaling = np.sum(weights[i]*flux_obs[i]*flux_model/eflux_obs[i]**2) / np.sum(weights[i]*flux_model**2/eflux_obs[i]**2)
-			flux_model = scaling*flux_model
+		# calculate a common scaling factor for all datasets
+		if distance is not None:
+			R = p[R_index]
+			scaling = R**2 * scaling_factor
+		else:
+			# common scaling factor that maximizes the weighted Gaussian log-likelihood
+			# (equivalently, minimizes the weighted least-squares objective)
+			numerator = 0.0
+			denominator = 0.0
+			for i in range(len(flux_obs)):
+				numerator += np.sum(weights[i]*flux_obs[i]*flux_models[i]/eflux_obs[i]**2)
+				denominator += np.sum(weights[i]*flux_models[i]**2/eflux_obs[i]**2)
+			scaling = numerator / denominator
 
+		# calculate the weighted Gaussian log-likelihood
+		lnlike = lnlike_norm
+		for i in range(len(flux_obs)):
+			flux_model = scaling * flux_models[i]
 			residual2 = weights[i] * ((flux_obs[i] - flux_model)**2 / eflux_obs[i]**2)
-			lnlike += -0.5 * np.sum(residual2 + np.log(2*np.pi*eflux_obs[i]**2))
+			lnlike += -0.5 * np.sum(residual2)
 
 		return lnlike
 
