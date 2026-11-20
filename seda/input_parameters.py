@@ -1440,46 +1440,41 @@ class BayesOptions:
 # useful functions for the classes
 #+++++++++++++++++++++++++++++++++
 # set the weights based on the input parameter weight_label
-def compute_weights(fit_spectra, fit_photometry, weight_label, wl_spectra_fit=None, width_eff_SVO_fit=None):
-	# set weights for the fit
-	if fit_spectra and fit_photometry: # only when both spectra and photometry are provided
-		weight_spec_fit = []
-		if weight_label=='width': 
-			# for spectra
-			for k in range(len(wl_spectra_fit)): # for each input observed spectrum
-				delta_lam = wl_spectra_fit[k][1:] - wl_spectra_fit[k][:-1] # dispersion of data points
-				delta_lam = np.insert(delta_lam, delta_lam.size, delta_lam[-1]) # add an element equal to the last row to keep the same shape as the wl_ref_convolve_resample array
-				weight_spec_fit.append(delta_lam)
-			# for photometry
-			weight_phot_fit = width_eff_SVO_fit
-		if weight_label=='dataset': 
-			# for spectra
-			for k in range(len(wl_spectra_fit)): # for each input observed spectrum
-				weight_spec = np.repeat(1./len(wl_spectra_fit[k]), len(wl_spectra_fit[k]))
-				weight_spec_fit.append(weight_spec )
-			# for photometry
-			weight_phot_fit = np.repeat(1./len(width_eff_SVO_fit), len(width_eff_SVO_fit))
-		if weight_label=='none': 
-			# for spectra
-			for k in range(len(wl_spectra_fit)): # for each input observed spectrum
-				weight_spec = np.repeat(1, len(wl_spectra_fit[k]))
-				weight_spec_fit.append(weight_spec )
-			# for photometry
-			weight_phot_fit = np.repeat(1, len(width_eff_SVO_fit))
-	else: # only spectra or photometry are provided
-		# assign the same weight to each data point
-		if fit_spectra: # only when both spectra and photometry are provided
-			weight_spec_fit = []
-			for k in range(len(wl_spectra_fit)): # for each input observed spectrum
-				delta_lam = np.repeat(1, len(wl_spectra_fit[k]))
-				weight_spec_fit.append(delta_lam)
-		if fit_photometry: # only when both spectra and photometry are provided
-			weight_phot_fit = np.repeat(1, len(width_eff_SVO_fit))
+def compute_weights(fit_spectra, fit_photometry, weight_label,
+					wl_spectra_fit=None, width_eff_SVO_fit=None):
 
-	# output dictionary with the weights for both spectra and photometry
+	# set weights for spectra
 	out = {}
-	if fit_spectra: out['weight_spec_fit'] = weight_spec_fit
-	if fit_photometry: out['weight_phot_fit'] = weight_phot_fit
+	if fit_spectra:
+		weight_spec_fit = []
+
+		for wl in wl_spectra_fit:
+			if weight_label == 'width':
+				weight = np.diff(wl) # dispersion of data points
+				weight = np.append(weight, weight[-1])
+
+			elif weight_label == 'dataset':
+				weight = np.full(len(wl), 1. / len(wl))
+
+			else: # none
+				weight = np.ones(len(wl))
+
+			weight_spec_fit.append(weight)
+
+		out['weight_spec_fit'] = weight_spec_fit
+
+	# set weights for photometry
+	if fit_photometry:
+		if weight_label == 'width':
+			weight_phot_fit = width_eff_SVO_fit
+
+		elif weight_label == 'dataset':
+			weight_phot_fit = np.full(len(width_eff_SVO_fit), 1./len(width_eff_SVO_fit))
+
+		else: # none
+			weight_phot_fit = np.ones(len(width_eff_SVO_fit))
+
+		out['weight_phot_fit'] = weight_phot_fit
 
 	return out
 
