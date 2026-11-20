@@ -122,11 +122,6 @@ def bayes(my_bayes):
 		eflux_obs = eflux_obs_spec + eflux_obs_phot
 		weights = weight_spec_fit + [weight_phot_fit]
 
-	# print priors
-	print(f'\n      Uniform priors:')
-	for param in params_priors:
-		print(f'         {param} range = {params_priors[param]}')
-
 	# conversion factor for geometric scaling
 	if distance is not None:
 		R_index = list(params_priors.keys()).index('R')
@@ -137,6 +132,11 @@ def bayes(my_bayes):
 	for i in range(len(flux_obs)):
 		lnlike_norm += -0.5 * np.sum(
 			np.log(2*np.pi*eflux_obs[i]**2/weights[i]))
+
+	# print priors
+	print(f'\n      Uniform priors:')
+	for param in params_priors:
+		print(f'         {param} range = {params_priors[param]}')
 
 	#------------------
 	def prior_transform(p):
