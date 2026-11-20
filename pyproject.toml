@@ -28,8 +28,8 @@ dependencies = [
   "prettytable",
   "scipy",
   "specutils",
-  "spectres",
   "tqdm",
+  "spectres==3.0",
   "numba",
   "xarray",
 ]
