@@ -400,7 +400,7 @@ def plot_chi2_red(output_chi2, N_best_fits=1, xlog=False, ylog=False, out_file=N
 		plt.xlim(xrange)
 		plt.grid(True, which='both', color='gainsboro', alpha=0.5)
 		plt.xlabel(r'$\lambda$ ($\mu$m)', size=12)
-		plt.ylabel(r'$\G_r$', size=12)
+		plt.ylabel(r'$G_r$', size=12)
 		plt.title(plot_title[i])
 
 		# legend
@@ -648,7 +648,7 @@ def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None
 	out_lmfit = minner.minimize(method='leastsq') # 'leastsq': Levenberg-Marquardt (default)
 	chi2_red_fit = out_lmfit.redchi # resulting reduced weighted least-squares value from lmfit
 	
-	label_model = label_model+r' ($\G_r=$'+str(round(chi2_red_fit,1))+')'
+	label_model = label_model+r' ($G_r=$'+str(round(chi2_red_fit,1))+')'
 
 	if fit_photometry: 
 		if not ori_res: label = label_model
