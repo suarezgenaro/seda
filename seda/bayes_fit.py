@@ -7,6 +7,7 @@ from .utils import *
 import importlib
 import copy
 from spectres import spectres # resample spectra
+from scipy.stats import truncnorm
 from sys import exit
 
 def bayes(my_bayes):
@@ -125,7 +126,10 @@ def bayes(my_bayes):
 	# conversion factor for geometric scaling
 	if distance is not None:
 		R_index = list(params_priors.keys()).index('R')
-		scaling_factor = (u.R_jup.to(u.km) / (distance*u.pc).to_value(u.km))**2
+		scaling_factor = (u.R_jup.to(u.km) / u.pc.to(u.km))**2
+	
+		if edistance is not None:
+			d_index = list(params_priors.keys()).index('distance')
 
 	# Gaussian normalization term (constant during sampling)
 	lnlike_norm = 0.0
@@ -134,18 +138,26 @@ def bayes(my_bayes):
 			np.log(2*np.pi*eflux_obs[i]**2/weights[i]))
 
 	# print priors
-	print(f'\n      Uniform priors:')
+	print('\n      Priors:')
 	for param in params_priors:
-		print(f'         {param} range = {params_priors[param]}')
+		if param != 'distance':
+			print(f'         {param}: Uniform{params_priors[param]}')
+		else:
+			print(f'         {param}: Truncated Gaussian(mean={distance}, std={edistance}, min=0)')
 
 	#------------------
 	def prior_transform(p):
-		# p (sampler's live points) takes random values between 0 and 1 for each free parameter
-		v = p # just to have the same dimension as p
-		for i,param in enumerate(params_priors):
-			# transform unit interval to parameter range
-			# parameter minimum < parameter < parameter maximum
-			v[i] = (params_priors[param][1]-params_priors[param][0]) * p[i] + params_priors[param][0]
+		# transform unit-cube samples into physical parameter values
+		v = p.copy()
+
+		for i, param in enumerate(params_priors):
+			if param == 'distance':
+				# Gaussian distance prior truncated to positive values
+				a = -distance / edistance
+				v[i] = truncnorm.ppf(p[i], a=a, b=np.inf, loc=distance, scale=edistance)
+			else:
+				# uniform prior within the parameter range
+				v[i] = (params_priors[param][1] - params_priors[param][0]) * p[i] + params_priors[param][0]
 
 		return v
 
@@ -172,15 +184,22 @@ def bayes(my_bayes):
 		# calculate a common scaling factor for all datasets
 		if distance is not None:
 			R = p[R_index]
-			scaling = R**2 * scaling_factor
+		
+			if edistance is not None:
+				d = p[d_index]  # sampled distance
+			else:
+				d = distance    # fixed distance
+		
+			scaling = (R/d)**2 * scaling_factor
+		
 		else:
 			# common scaling factor that maximizes the weighted Gaussian log-likelihood
 			# (equivalently, minimizes the weighted least-squares objective)
 			numerator = 0.0
 			denominator = 0.0
 			for i in range(len(flux_obs)):
-				numerator += np.sum(weights[i]*flux_obs[i]*flux_models[i]/eflux_obs[i]**2)
-				denominator += np.sum(weights[i]*flux_models[i]**2/eflux_obs[i]**2)
+				numerator += np.sum(weights[i] * flux_obs[i] * flux_models[i] / eflux_obs[i]**2)
+				denominator += np.sum(weights[i] * flux_models[i]**2 / eflux_obs[i]**2)
 			scaling = numerator / denominator
 
 		# calculate the weighted Gaussian log-likelihood
