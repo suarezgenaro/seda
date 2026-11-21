@@ -184,14 +184,14 @@ def bayes(my_bayes):
 		# calculate a common scaling factor for all datasets
 		if distance is not None:
 			R = p[R_index]
-		
+
 			if edistance is not None:
 				d = p[d_index]  # sampled distance
 			else:
 				d = distance    # fixed distance
 		
 			scaling = (R/d)**2 * scaling_factor
-		
+
 		else:
 			# common scaling factor that maximizes the weighted Gaussian log-likelihood
 			# (equivalently, minimizes the weighted least-squares objective)
