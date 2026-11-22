@@ -11,7 +11,7 @@ from scipy.stats import truncnorm
 from scipy.special import roots_legendre
 from scipy.interpolate import PchipInterpolator
 from scipy.integrate import cumulative_trapezoid
-from dynesty.utils import resample_equal
+from dynesty.utils import resample_equal, Results
 from sys import exit
 
 def bayes(my_bayes):
@@ -31,11 +31,12 @@ def bayes(my_bayes):
 	- out_bayes : dictionary
 		Dictionary containing:
 			- ``my_bayes``: input parameters from ``seda.BayesOptions``.
-			- ``out_dynesty``: dynesty sampling results.
-			- ``samples_equal``: equal-weight posterior samples (when distance
-			  uncertainty is provided).
-			- ``R_samples``: reconstructed radius posterior samples in Rjup
+			- ``out_dynesty``: dynesty results, with R replacing q in the posterior
+			  samples when distance uncertainty is provided.
+			- ``out_dynesty_sampling``: original dynesty sampling results
 			  (when distance uncertainty is provided).
+			- ``samples_equal``: equal-weight posterior samples, including R
+			  instead of q (when distance uncertainty is provided).
 			- ``d_samples``: reconstructed distance posterior samples in pc
 			  (when distance uncertainty is provided).
 
@@ -284,23 +285,45 @@ def bayes(my_bayes):
 	# remove model grid from my_bayes dictionary to have a lighter output file
 	my_bayes_copy = copy.copy(my_bayes) # to avoid affecting the original object when removing "grid"
 	del my_bayes_copy.grid
+
+	# replace q with R in the output parameter definitions
+	if distance is not None and edistance is not None:
+		my_bayes_copy.params_priors = {}
+		for param, prior in params_priors.items():
+			if param == 'q':
+				my_bayes_copy.params_priors['R'] = R_range
+			else:
+				my_bayes_copy.params_priors[param] = prior
+
 	out_bayes = {'my_bayes': my_bayes_copy, 'out_dynesty': results}
 
 	# reconstruct radius posterior samples when distance uncertainty is included
 	if distance is not None and edistance is not None:
-		# convert dynesty's weighted posterior samples to equal weights.
-		# the same resampled rows must be used for q and other parameters.
+		# generate equal-weight posterior samples
 		weights_post = np.exp(results.logwt - results.logz[-1])
 		samples_equal = resample_equal(results.samples, weights_post, rstate=np.random.default_rng(42))
-		q_samples = samples_equal[:, q_index]
 
-		# reconstruct radius without adding distance to the nested sampler.
+		# reconstruct radius and distance posterior samples
+		q_samples = samples_equal[:, q_index].copy()
 		R_samples, d_samples = _recover_radius(q_samples, R_range, dist)
 
-		# keep dynesty's original weighted results unchanged.
-		# R_samples and d_samples correspond to rows of samples_equal.
+		# replace q with R in the equal-weight samples
+		samples_equal[:, q_index] = R_samples
+
+		# create dynesty results with equal-weight posterior samples
+		results_dict = results.asdict()
+		results_dict['samples'] = samples_equal
+		results_dict['logwt'] = np.zeros(len(samples_equal))
+		results_dict['logz'] = np.zeros(len(samples_equal))
+
+		# preserve original sampling results
+		out_bayes['out_dynesty_sampling'] = results
+
+		# replace q with R for posterior analysis
+		out_bayes['out_dynesty'] = Results(results_dict)
+
+		# save posterior samples
 		out_bayes['samples_equal'] = samples_equal
-		out_bayes['R_samples'] = R_samples
 		out_bayes['d_samples'] = d_samples
 
 	# save output dictionary
