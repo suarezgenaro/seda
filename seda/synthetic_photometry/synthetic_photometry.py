@@ -15,7 +15,7 @@ ERG_TO_JY = (1.0*u.erg/u.s/u.cm**2/(u.nm*0.1)).to(u.Jy, equivalencies=EQ).value
 JY_TO_ERG = (1.0*u.Jy).to(u.erg/u.s/u.cm**2/(u.nm*0.1), equivalencies=EQ).value
 
 
-def synthetic_photometry(wl, flux, filters, flux_unit, eflux=None, detector='photon', svo_data=None, mag_system='Vega', custom_filters=None, out_file=None): 
+def synthetic_photometry(wl, flux, filters=None, flux_unit=None, eflux=None, detector='photon', svo_data=None, mag_system='Vega', custom_filters=None, out_file=None): 
 	'''
 	Description:
 	------------
