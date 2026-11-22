@@ -624,7 +624,7 @@ def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None
 	for i,param in enumerate(params_med): # for each sampled parameter
 		if i==0: label_model += f'{param}{params_med[param]}'
 		else: label_model += f'_{param}{params_med[param]}'
-	# find the reduced weighted least-squares statistic for the best fit
+	# calculate the reduced weighted least-squares statistic for the median posterior model
 	if fit_spectra and not fit_photometry:
 		data_fit = flux_spectra_fit
 		edata_fit = eflux_spectra_fit
@@ -641,12 +641,15 @@ def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None
 		model_fit = flux_model
 		weight_fit = weight_spec_fit + [weight_phot_fit]
 
-	params = Parameters()
-	params.add('extinction', value=0, vary=False) # fixed parameter
-	params.add('scaling', value=1e-20) # free parameter
-	minner = Minimizer(chi2_fit.residuals_for_chi2, params, fcn_args=(data_fit, edata_fit, model_fit, weight_fit))
-	out_lmfit = minner.minimize(method='leastsq') # 'leastsq': Levenberg-Marquardt (default)
-	chi2_red_fit = out_lmfit.redchi # resulting reduced weighted least-squares value from lmfit
+	chi2_fit_value = 0
+	N_data = 0
+
+	for data, edata, model_flux, weight in zip(data_fit, edata_fit, model_fit, weight_fit):
+		chi2_fit_value += np.sum(weight * ((data - model_flux) / edata)**2)
+		N_data += len(data)
+
+	N_params = len(params_med)
+	chi2_red_fit = chi2_fit_value / (N_data - N_params)
 	
 	label_model = label_model+r' ($G_r=$'+str(round(chi2_red_fit,1))+')'
 
