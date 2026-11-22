@@ -1094,7 +1094,7 @@ class BayesOptions:
 		multiple spectra or a combination of spectra and photometry.
 		For a single spectrum or photometry alone, option ``'none'`` is applied.
 	- R_range : float array, optional (used in ``bayes_fit``)
-		Minimum and maximum radius values to sample the posterior for radius.
+		Minimum and maximum radius values (in Jupiter radii) to sample the posterior for radius.
 		It requires the parameter ``distance`` in ``input_parameters.InputData``.
 	- chi2_pickle_file : dictionary, optional
 		Pickle file with a dictionary with the results from the fit statistic minimization
@@ -1133,16 +1133,16 @@ class BayesOptions:
 			If ``fit_photometry``, a dictionary containing synthetic model flux densities
 			(in erg/s/cm2/A) for ``filters_fit`` computed from the selected model spectra.
 		ndim : int
-			Number of sampled parameters, including radius (if ``distance`` is provided)
-			and distance (if ``edistance`` is also provided).
+			Number of sampled parameters, including R (if ``distance`` is provided
+			without ``edistance``) or q = R/d (if both are provided).
 		filename_pattern : list
 			String as a list with a common pattern in model spectra filenames.
 		params_unique : dictionary
 			Dictionary with unique values for each free parameter in the selected models.
 		params_priors : dictionary
-			Dictionary with uniform prior ranges for model free parameters and radius
-			(if ``distance`` is provided), and the Gaussian mean and standard deviation
-			for distance (if ``edistance`` is also provided).
+			Dictionary with uniform prior ranges for model free parameters
+			and R (if ``distance`` is provided without ``edistance``), or
+			q = R/d with a marginalized prior (if both are provided).
 		if ``fit_spectra``:
 			wl_spectra_min : float
 				Minimum wavelength from the input spectra.
@@ -1388,11 +1388,12 @@ class BayesOptions:
 			                    'or remove the "distance" parameter in seda.InputData')
 			if len(R_range) != 2 or not np.all(np.isfinite(R_range)) or R_range[0] <= 0 or R_range[1] <= R_range[0]:
 				raise ValueError('"R_range" must contain two finite, positive values in ascending order.')
-			params_priors['R'] = R_range
-
 			if edistance is not None:
-				# store the Gaussian mean and standard deviation
-				params_priors['distance'] = [distance, edistance]
+				# sample R/d using a marginalized prior
+				params_priors['q'] = None
+			else:
+				# sample radius using a fixed distance
+				params_priors['R'] = R_range
 
 		self.params_priors = params_priors
 		self.ndim = len(params_priors)
