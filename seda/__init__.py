@@ -5,7 +5,7 @@ from . import utils
 from . import models
 from . import chi2_fit
 from . import bayes_fit
-from . import phy_params
+from . import fund_params
 from . import variability
 from . import archival_data
 from .synthetic_photometry import synthetic_photometry
@@ -25,7 +25,7 @@ __all__ = [
     "models",
     "chi2_fit",
     "bayes_fit",
-    "phy_params",
+    "fund_params",
     "synthetic_photometry",
     "spectral_indices",
     "variability"

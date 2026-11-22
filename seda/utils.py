@@ -1,3 +1,5 @@
+from __future__ import print_function, division, absolute_import
+
 import numpy as np
 import time
 import os
@@ -7,7 +9,7 @@ import pickle
 import astropy
 import warnings
 from prettytable import PrettyTable
-from spectres import spectres
+from spectres import spectres, spectres_numba
 from astropy import units as u
 from astropy.io import ascii
 from astropy.table import Column, MaskedColumn, Table
@@ -22,7 +24,6 @@ from .synthetic_photometry.synthetic_photometry import synthetic_photometry
 from specutils import Spectrum1D
 
 from numpy.typing import ArrayLike
-
 
 def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=None,
 	                  convolve_wl_range=None, out_file=None, resolution_mode='constant_fwhm',
@@ -557,7 +558,7 @@ def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False
 	return out
 
 ##################################################
-def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spectrum=False):
+def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spectrum=False, free_params=None):
 	'''
 	Description:
 	------------
@@ -663,7 +664,9 @@ def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spect
 			                f'spectra in "model_dir", which is [{params_models[param].min()}, {params_models[param].max()}]')
 
 	# sort input params in the same order as the dictionary with free parameters returned by `models.separate_params`
-	params = models.reorder_dict(params, models.Models(model).free_params)
+	# config = models.Models(model)._load_model_configs()
+	if free_params == None: free_params = model.free_params
+	params = models.reorder_dict(params, free_params)
 
 	# read model grid if not provided
 	if grid is None:
@@ -954,7 +957,7 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 				# mask to select data points within the fit range or model coverage range, whichever is narrower
 				mask_fit = (wl_resample >= max(fit_wl_range[0], wl_model.min())) & \
 				           (wl_resample <= min(fit_wl_range[1], wl_model.max()))
-				flux_model = spectres(wl_resample[mask_fit], wl_model, flux_model)
+				flux_model = spectres_numba(wl_resample[mask_fit], wl_model, flux_model)
 				wl_model = wl_resample[mask_fit]
 
 			# save spectrum for each combination
