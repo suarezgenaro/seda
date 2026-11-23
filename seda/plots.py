@@ -470,7 +470,8 @@ def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None
 		Path to the directory (str, list, or array) or directories (as a list or array) containing the 
 		model spectra with the original resolution.
 		This parameter is needed to plot the original resolution spectra (if ``ori_res`` is True) when 
-		:func:`~seda.bayes_fit.bayes` was run skipping the model spectra convolution (if ``skip_convolution`` is True).
+		:func:`~seda.bayes_fit.bayes` was run skipping the model spectra convolution
+		(if ``skip_convolution`` is ``True``).
 	- res : float, optional
 		Spectral resolution (at ``lam_res``) desired to smooth model spectra with original resolution.
 		It is needed when only photometry is fit.
