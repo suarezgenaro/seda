@@ -484,10 +484,12 @@ def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None
 	- save : {``True``, ``False``}, optional (default ``True``)
 		Save (``'True'``) or do not save (``'False'``) the resulting figure.
 
-	Returns:
-	--------
-	Plot of the observed data and best model fit from the Bayesian sampling that will be stored if ``save`` 
-	with the name ``out_file``.
+    Returns:
+    --------
+    Plot of the observed data and best model fit from the Bayesian sampling that will be stored if ``save``
+    with the name ``out_file``.
+    The reduced weighted least-squares statistic (``G_r``) is calculated without dataset weights to provide
+    a goodness-of-fit diagnostic independent of the weighting scheme used during Bayesian spectral fitting.
 
 	Example:
 	--------
@@ -649,7 +651,7 @@ def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None
 	N_data = 0
 
 	for data, edata, model_flux, weight in zip(data_fit, edata_fit, model_fit, weight_fit):
-		chi2_fit_value += np.sum(weight * ((data - model_flux) / edata)**2)
+		chi2_fit_value += np.sum(((data - model_flux) / edata)**2)
 		N_data += len(data)
 
 	N_params = len(params_med)
