@@ -24,7 +24,7 @@ def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None
 	Parameters:
 	-----------
 	- output_chi2 : dictionary or str
-		Output dictionary containing the weighted least-squares fitting results returned by ``chi2``.
+		Output dictionary containing the weighted least-squares fitting results returned by :func:`~seda.chi2_fit.chi2`.
 		It can be either the name of the pickle file or simply the output dictionary.
 	- N_best_fits : int 
 		Number (default 1) of best model fits for plotting.
@@ -36,13 +36,15 @@ def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None
 		Horizontal range of the plot.
 	- yrange : list or array, optional (default is full range in ``xrange``)
 		Vertical range of the plot.
-	- set_title : str, optional
+	- plot_title : str, optional
 		Title for the plot which, if not provided, will be '``models.Models(model).name`` Atmospheric Models'.
 	- ori_res : {``True``, ``False``}, optional (default ``False``)
 		Plot (``True``) or do not plot (``False``) model spectra with the original resolution.
 	- model_dir_ori : str, list, or array
-		Path to the directory (str, list, or array) or directories (as a list or array) containing the model spectra with the original resolution.
-		This parameter is needed to plot the original resolution spectra (if ``ori_res`` is True) when ``seda.chi2`` was run skipping the model spectra convolution (if ``skip_convolution`` is True).
+		Path to the directory (str, list, or array) or directories (as a list or array) containing the model 
+		spectra with the original resolution.
+		This parameter is needed to plot the original resolution spectra (if ``ori_res`` is True) when
+		:func:`~seda.chi2_fit.chi2` was run skipping the model spectra convolution (if ``skip_convolution`` is True).
 	- res : float, optional
 		Spectral resolution (at ``lam_res``) desired to smooth model spectra with original resolution.
 		It is needed when only photometry is fit.
@@ -58,7 +60,8 @@ def plot_chi2_fit(output_chi2, N_best_fits=1, xlog=False, ylog=True, xrange=None
 
 	Returns:
 	--------
-	Plot of the spectra and best-fitting atmospheric models obtained using weighted least-squares fitting, saved as ``out_file`` if ``save`` is True.
+	Plot of the spectra and best-fitting atmospheric models obtained using weighted least-squares fitting, 
+	saved as ``out_file`` if ``save`` is True.
 
 	Example:
 	--------
@@ -297,7 +300,7 @@ def plot_chi2_red(output_chi2, N_best_fits=1, xlog=False, ylog=False, out_file=N
 	Parameters:
 	-----------
 	- output_chi2 : dictionary or str
-		Output dictionary containing the weighted least-squares fitting results returned by ``chi2``.
+		Output dictionary containing the weighted least-squares fitting results returned by :func:`~seda.chi2_fit.chi2`.
 		It can be either the name of the pickle file or simply the output dictionary.
 	- N_best_fits : int 
 		Number (default 1) of best model fits for plotting.
@@ -451,7 +454,7 @@ def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None
 	Parameters:
 	-----------
 	- output_bayes : str
-		Output dictionary with the results from the nested sampling by ``bayes``.
+		Output dictionary with the results from the nested sampling by :func:`~seda.bayes_fit.bayes`.
 		It can be either the name of the pickle file or simply the output dictionary.
 	- xlog : {``True``, ``False``}, optional (default ``False``)
 		Use logarithmic (``True``) or linear (``False``) scale to plot the horizontal axis.
@@ -467,7 +470,7 @@ def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None
 		Path to the directory (str, list, or array) or directories (as a list or array) containing the 
 		model spectra with the original resolution.
 		This parameter is needed to plot the original resolution spectra (if ``ori_res`` is True) when 
-		``seda.chi2`` was run skipping the model spectra convolution (if ``skip_convolution`` is True).
+		:func:`~seda.bayes_fit.bayes` was run skipping the model spectra convolution (if ``skip_convolution`` is True).
 	- res : float, optional
 		Spectral resolution (at ``lam_res``) desired to smooth model spectra with original resolution.
 		It is needed when only photometry is fit.
@@ -483,7 +486,8 @@ def plot_bayes_fit(output_bayes, xlog=False, ylog=True, xrange=None, yrange=None
 
 	Returns:
 	--------
-	Plot of the observed data and best model fit from the Bayesian sampling that will be stored if ``save`` with the name ``out_file``.
+	Plot of the observed data and best model fit from the Bayesian sampling that will be stored if ``save`` 
+	with the name ``out_file``.
 
 	Example:
 	--------
@@ -754,18 +758,23 @@ def plot_model_coverage(model, xparam, yparam, model_dir=None, params_ranges=Non
 	Parameters:
 	-----------
 	- model : str
-		Atmospheric models. See available models in ``seda.Models().available_models``.  
+		Atmospheric models. See available models in :attr:`~seda.models.Models.available_models`.
 	- xparam : str
-		Parameter in ``model`` to be plotted in the horizontal axis. ``seda.Models('model').params_unique`` provides more details about available parameters for ``model``.
+		Parameter in ``model`` to be plotted in the horizontal axis. :attr:`~seda.models.Models.params_unique`
+		provides more details about available parameters for ``model``.
 	- yparam : str
-		Parameter in ``model`` to be plotted in the vertical axis. ``seda.Models('model').params_unique`` provides more details about available parameters for ``model``.
+		Parameter in ``model`` to be plotted in the vertical axis. :attr:`~seda.models.Models.params_unique`
+		provides more details about available parameters for ``model``.
 	- model_dir : str or list, optional
-		Path to the directory (str or list) or directories (as a list) containing model spectra (e.g., ``model_dir = ['path_1', 'path_2']``) to display their parameters coverage. 
+		Path to the directory (str or list) or directories (as a list) containing model spectra 
+		(e.g., ``model_dir = ['path_1', 'path_2']``) to display their parameters coverage. 
 		If not provided, the code will read pre-saved pickle files the full coverage of ``model``.
 	- params_ranges : dictionary, optional
 		Minimum and maximum values for any model free parameters to select a model grid subset.
-		E.g., ``params_ranges = {'Teff': [1000, 1200], 'logg': [4., 5.]}`` to consider spectra within those Teff and logg ranges.
-		If a parameter range is not provided, the full range in ``model_dir`` or the pre-saved pickle files is considered.
+		E.g., ``params_ranges = {'Teff': [1000, 1200], 'logg': [4., 5.]}`` to consider spectra within 
+		those Teff and logg ranges.
+		If a parameter range is not provided, the full range in ``model_dir`` or the pre-saved pickle 
+		files is considered.
 	- xrange : list or array, optional (default is full range in the input spectra)
 		Horizontal range of the plot.
 	- yrange : list or array, optional (default is full range in ``xrange``)
@@ -794,7 +803,7 @@ def plot_model_coverage(model, xparam, yparam, model_dir=None, params_ranges=Non
 	>>> model_dir = ['my_path/CEQ_spectra/', 
 	>>>              'my_path/NEQ_weak_spectra/', 
 	>>>              'my_path/NEQ_strong_spectra/']
-	>>> seda.plot_chi2_fit(model=model, model_dir=model_dir, xparam='Teff', yparam='logg')
+	>>> seda.plot_model_coverage(model=model, model_dir=model_dir, xparam='Teff', yparam='logg')
 
 	Author: Genaro Suárez
 	'''
@@ -803,7 +812,9 @@ def plot_model_coverage(model, xparam, yparam, model_dir=None, params_ranges=Non
 
 	# verify model is recognized
 	available_models = models.Models().available_models
-	if model not in available_models: raise Exception(f'"{model}" models are not recognized. Available models: \n          {available_models}')
+	if model not in available_models: 
+		raise Exception(f'"{model}" models are not recognized. '
+		                f'Available models: \n          {available_models}')
 
 	# get the coverage of model free parameters
 	if model_dir is not None: # coverage from input model spectra
@@ -857,7 +868,7 @@ def plot_model_resolution(model, spectra_name_full, xlog=True, ylog=False, xrang
 	Parameters:
 	-----------
 	- model : str
-		Atmospheric models. See available models in ``seda.Models().available_models``.  
+		Atmospheric models. See available models in :attr:`~seda.models.Models.available_models`.
 	- spectra_name_full: str, list, or array
 		Spectra file names with full path.
 	- xlog : {``True``, ``False``}, optional (default ``True``)
@@ -871,17 +882,19 @@ def plot_model_resolution(model, spectra_name_full, xlog=True, ylog=False, xrang
 	- delta_wl_log : {``True``, ``False``}, optional (default ``False``)
 		Consider wavelength steps in linear (``False``) or logarithmic (``True``) scale.
 	- resolving_power : {``True``, ``False``}, optional (default ``True``)
-		Calculate resolving power (``True``; R=lambda/Delta(lambda)) or spectral resolution (``False``, Delta(lambda)).
+		Calculate resolving power (``True``; R=lambda/Delta(lambda)) or spectral 
+		resolution (``False``, Delta(lambda)).
 	- save : {``True``, ``False``}, optional (default ``True``)
 		Save (``'True'``) or do not save (``'False'``) the resulting figure.
 	- out_file : str, optional
 		File name to save the figure (it can include a path e.g. my_path/figure.pdf). 
 		Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
-		Default name is '``model``\_resolution.pdf'.
+		Default name is '``model``\\_resolution.pdf'.
 
 	Returns:
 	--------
-	Plot of the resolution of the input model spectra that will be stored if ``save`` with the name ``out_file``.
+	Plot of the resolution of the input model spectra that will be stored if ``save`` 
+	with the name ``out_file``.
 
 	Example:
 	--------
@@ -974,17 +987,19 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False, 
 	Parameters:
 	-----------
 	- out_synthetic_photometry : dictionary
-		Output dictionary by ``synthetic_photometry``.
+		Output dictionary by :func:`~seda.synthetic_photometry.synthetic_photometry`.
 	- xlog : {``True``, ``False``}, optional (default ``False``)
 		Use logarithmic (``True``) or linear (``False``) scale to plot wavelengths.
 	- ylog : {``True``, ``False``}, optional (default ``False``)
 		Use logarithmic (``True``) or linear (``False``) scale to plot flux densities.
 	- flux_unit : str, optional (default 'erg/s/cm2/A')
-		Units used to plot the spectrum and synthetic flux densities: ``'erg/s/cm2/A'`` (default), ``'Jy'``, or ``erg/s/cm2/um``.
+		Units used to plot the spectrum and synthetic flux densities: 
+		``'erg/s/cm2/A'`` (default), ``'Jy'``, or ``erg/s/cm2/um``.
 	- out_file : str, optional
 		File name to save the figure (it can include a path e.g. my_path/figure.pdf). 
 		Note: use a supported format by savefig() such as pdf, ps, eps, png, jpg, or svg.
-		Default name is 'SED_synthetic_photometry.pdf', where ``model`` is read from ``out_synthetic_photometry``.
+		Default name is 'SED_synthetic_photometry.pdf', where ``model`` is read 
+		from ``out_synthetic_photometry``.
 	- save : {``True``, ``False``}, optional (default ``True``)
 		Save (``'True'``) or do not save (``'False'``) the resulting figure.
 	- sed_kwargs : dict, optional
@@ -994,7 +1009,8 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False, 
 
 	Returns:
 	--------
-	Plot of the synthetic flux densities over the SED used to calculate them, which will be stored if ``save`` with the name ``out_file``.
+	Plot of the synthetic flux densities over the SED used to calculate them, which will 
+	be stored if ``save`` with the name ``out_file``.
 
 	Example:
 	--------
@@ -1110,7 +1126,7 @@ def plot_calibrate_spectrum(dic, xrange=None, yrange=None):
 	Parameters:
 	-----------
 	- dic : dictionary
-		Output dictionary from ``synthetic_photometry.calibrate_spectrum``.
+		Output dictionary from :func:`~seda.synthetic_photometry.calibrate_spectrum`.
 	- xrange : list or array, optional (default is full range in the input spectra)
 		Horizontal range of the plot.
 	- yrange : list or array, optional (default is full range in ``xrange``)
@@ -1118,7 +1134,8 @@ def plot_calibrate_spectrum(dic, xrange=None, yrange=None):
 
 	Returns:
 	--------
-	Plot showing a flux-calibrated spectrum, the observed photometry used as a reference, and synthetic photometry for comparison.
+	Plot showing a flux-calibrated spectrum, the observed photometry used as a reference, 
+	and synthetic photometry for comparison.
 
 	Example:
 	--------
@@ -1202,7 +1219,7 @@ def plot_full_SED(out_bol_lum, xlog=True, ylog=True, xrange=None, yrange=None,
 	Parameters:
 	-----------
 	- out_bol_lum : dictionary
-		Output dictionary from `bol_lum`.
+		Output dictionary returned by :func:`~seda.phy_params.bol_lum`.
 	- xlog : {``True``, ``False``}, optional (default ``True``)
 		Use logarithmic (``True``) or linear (``False``) scale to plot the horizontal axis.
 	- ylog : {``True``, ``False``}, optional (default ``True``)
@@ -1226,7 +1243,8 @@ def plot_full_SED(out_bol_lum, xlog=True, ylog=True, xrange=None, yrange=None,
 
 	Returns:
 	--------
-	Plot of full SED from observations complemented with a model that will be stored if ``save`` with the name ``out_file``.
+	Plot of full SED from observations complemented with a model that will be stored 
+	if ``save`` with the name ``out_file``.
 
 	Example:
 	--------
@@ -1381,10 +1399,10 @@ def plot_evolutionary_coverage(model, filename, xparam='Lbol', yparam='R',
 	-----------
 	- model : str
 		Evolutionary models. See available models in
-		``seda.models.EvolutionaryModels().available_models``.
+		:attr:`~seda.models.EvolutionaryModels.available_models`
 	- filename : str
 		Basename of an evolutionary table inside ``evolution_aux/<model>/``.
-		See available tables using ``seda.models.EvolutionaryModels('model').available_tables``.
+		See available tables using :attr:`~seda.models.EvolutionaryModels.available_tables`.
 	- xparam : str, optional (default ``'Lbol'``)
 		Horizontal axis: any grid parameter, ``'Lbol'`` (from ``logL``), or
 		``'R'`` (alias for the ``radius``, in R_jup).

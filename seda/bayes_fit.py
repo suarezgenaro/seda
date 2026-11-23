@@ -19,26 +19,53 @@ def bayes(my_bayes):
 	Description:
 	------------
 		Estimate posterior distributions of atmospheric model parameters
-		and radius using Bayesian inference with dynesty nested sampling.
+		and radius using Bayesian inference with Dynesty nested sampling.
+
+		The code interpolates atmospheric model spectra using 
+		:func:`~seda.utils.generate_model_spectrum` and compares them
+		with the input spectra and/or photometry using a Gaussian 
+		log-likelihood with optional additional weighting.
 
 	Parameters:
 	-----------
-	- my_bayes : object returned by ``seda.BayesOptions``, which also
-	  includes parameters from ``seda.InputData`` and ``seda.ModelOptions``.
+	- my_bayes : object returned by :class:`~seda.BayesOptions`, which also
+		includes parameters from :class:`~seda.InputData` and
+		:class:`~seda.ModelOptions`.
 
 	Returns:
 	--------
 	- out_bayes : dictionary
 		Dictionary containing:
-			- ``my_bayes``: input parameters from ``seda.BayesOptions``.
+			- ``my_bayes``: input parameters from :class:`~seda.BayesOptions`.
 			- ``out_dynesty``: dynesty results, with R replacing q in the posterior
 			  samples when distance uncertainty is provided.
-			- ``out_dynesty_sampling``: original dynesty sampling results
-			  (when distance uncertainty is provided).
+			- ``out_dynesty_sampling``: original dynesty sampling results, with q
+			  retained when distance uncertainty is provided.
 			- ``samples_equal``: equal-weight posterior samples, including R
 			  instead of q (when distance uncertainty is provided).
 			- ``d_samples``: reconstructed distance posterior samples in pc
 			  (when distance uncertainty is provided).
+
+	Notes:
+	------
+		The code adopts uniform priors for the atmospheric model parameters,
+		with user-defined ranges specified in :class:`~seda.ModelOptions`.
+		The radius is also assigned a uniform prior, with limits specified
+		by ``R_range`` in :class:`~seda.BayesOptions`.
+	
+		When distance and its uncertainty are provided, the code adopts
+		a Gaussian prior for the distance, centered on the measured value
+		with a standard deviation equal to its uncertainty, and truncated
+		to positive values. When distance is provided without an uncertainty,
+		it is treated as a fixed parameter.
+	
+		During sampling, each synthetic model spectrum is scaled using
+		:math:`(R/d)^2` when distance is provided, or the scaling factor that
+		maximizes the Gaussian log-likelihood when distance is unavailable.
+		When distance uncertainties are included, the code samples
+		:math:`q = R/d` using a prior obtained by marginalizing over the
+		distance distribution, and subsequently reconstructs the posterior
+		distributions of radius and distance.
 
 	Example:
 	--------

@@ -48,13 +48,16 @@ def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=Non
 		Reference wavelength at which ``res`` is given.
 		Default is the integer closest to the median wavelength of the spectrum.
 	disp_wl_range : array, optional
-		Minimum and maximum wavelengths (same units as ``wl``) to compute the median wavelength dispersion of the input spectrum.
+		Minimum and maximum wavelengths (same units as ``wl``) to compute the 
+		median wavelength dispersion of the input spectrum.
 		Default values are the minimum and maximum wavelengths in ``wl``.
 	convolve_wl_range : array, optional
-		Minimum and maximum wavelengths (same units as ``wl``) to convolve the input spectrum.
+		Minimum and maximum wavelengths (same units as ``wl``) to convolve 
+		the input spectrum.
 		Default values are the minimum and maximum wavelengths in ``wl``.
 	out_file : str, optional
-		File name to save the convolved spectrum as netCDF with xarray (it produces lighter files compared to normal ASCII files).
+		File name to save the convolved spectrum as netCDF with xarray 
+		(it produces lighter files compared to normal ASCII files).
 		The file name can include a path e.g. my_path/convolved_spectrum.nc
 		If not provided, the convolved spectrum will not be saved.
 	resolution_mode : {'constant_fwhm', 'constant_R'}, optional, default='constant_fwhm'
@@ -77,12 +80,15 @@ def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=Non
 	--------
 	- Dictionary
 		Dictionary with the convolved spectrum:
-			- ``'wl_conv'`` : wavelengths for the convolved spectrum (equal to input ``wl`` within ``convolve_wl_range``).
+			- ``'wl_conv'`` : wavelengths for the convolved spectrum 
+			  (equal to input ``wl`` within ``convolve_wl_range``).
 			- ``'flux_conv'`` : convolved flux densities.
-			- ``'eflux_conv'`` : convolved flux density uncertainties (if ``eflux`` is provided).
+			- ``'eflux_conv'`` : convolved flux density uncertainties 
+			  (if ``eflux`` is provided).
 	- ``out_file`` file
 		netCDF file with the convolved spectrum, if ``out_file`` is provided.
-		Wavelengths and flux densities for the convolved spectrum have the same units as the input spectrum.
+		Wavelengths and flux densities for the convolved spectrum have the 
+		same units as the input spectrum.
 		Note: the wavelength data points are the same as in the input spectrum,
 		so wavelength steps do not reflect the resolution of the convolved spectrum.
 
@@ -144,7 +150,8 @@ def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=Non
 	# check the convolution mode
 	valid_modes = ('constant_fwhm', 'constant_R', 'auto')
 	if resolution_mode not in valid_modes:
-		raise ValueError(f'Invalid resolution_mode: {resolution_mode}. Allowed values are {valid_modes}.')
+		raise ValueError(f'Invalid resolution_mode: {resolution_mode}.'
+		                 f' Allowed values are {valid_modes}.')
 
 	# remove NaN and infinite values
 	mask_nonan = np.isfinite(wl) & np.isfinite(flux)
@@ -371,7 +378,8 @@ def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False
 	Parameters:
 	-----------
 	- output_chi2 : dictionary or str
-		Output dictionary containing the weighted least-squares fitting results returned by ``chi2``.
+		Output dictionary containing the weighted least-squares fitting results returned 
+		by :func:`~seda.chi2_fit.chi2`.
 		It can be either the name of the pickle file or simply the output dictionary.
 	- N_best_fits : int, optional (default 1)
 		Number of best model fits to be read.
@@ -380,8 +388,8 @@ def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False
 	- model_dir_ori : str, list, or array
 		Path to the directory (str, list, or array) or directories (as a list or array) 
 		containing the model spectra with the original resolution.
-		This parameter is needed if ``ori_res=True`` and `seda.chi2_fit.chi2` was run skipping 
-		the model spectra convolution (if `skip_convolution=True``).
+		This parameter is needed if ``ori_res=True`` and :func:`~seda.chi2_fit.chi2` 
+		was run skipping the model spectra convolution (if ``skip_convolution=True``).
 
 	Returns:
 	--------
@@ -390,20 +398,33 @@ def best_chi2_fits(output_chi2, N_best_fits=1, model_dir_ori=None, ori_res=False
 		- ``'fit_spectra'``: label indicating whether spectra were fitted.
 		- ``'fit_photometry'``: label indicating whether photometry was fitted.
 		- ``'chi2_red_fit_best'`` : reduced weighted least-squares statistic.
-		- ``'chi2_red_wl_fit_best'`` : reduced weighted least-squares statistic as a function of wavelength.
+		- ``'chi2_red_wl_fit_best'`` : reduced weighted least-squares statistic as a 
+		  function of wavelength.
 		- ``'wl_model_best'`` : (if ``ori_res``) wavelength (in um) of original model spectra.
-		- ``'flux_model_best'`` : (if ``ori_res``) flux densities (in erg/s/cm2/A) of original model spectra.
-		- ``'wl_array_model_conv_resam_best'`` : (if ``fit_spectra``) wavelength (in um) of resampled, convolved model spectra in the input spectra ranges.
-		- ``'flux_array_model_conv_resam_best'`` : (if ``fit_spectra``) flux densities (in erg/s/cm2/A) of resampled, convolved model spectra in the input spectra ranges.
-		- ``'wl_array_model_conv_resam_fit_best'`` : (if ``fit_spectra``) wavelength (in um) of resampled, convolved model spectra within the fit range.
-		- ``'flux_array_model_conv_resam_fit_best'`` : (if ``fit_spectra``) flux densities (in erg/s/cm2/A) of resampled, convolved model spectra within the fit range.
-		- ``'flux_residuals_spec_best'`` : (if ``fit_spectra``) flux density residuals in linear scale between model and input spectra.
-		- ``'logflux_residuals_spec_best'`` : (if ``fit_spectra``) flux density residuals in log scale between model and input spectra.
-		- ``'flux_syn_array_model_fit_best'`` : (if ``fit_photometry``) synthetic photometry (in erg/s/cm2/A) for the filters within the fit range.
-		- ``'lambda_eff_array_model_fit_best'`` : (if ``fit_photometry``) effective wavelength (in um) from model spectra for filters within the fit range.
-		- ``'width_eff_array_model_fit_best'`` : (if ``fit_photometry``) effective width (in um) from model spectra for filters within the fit range.
-		- ``'flux_residuals_phot_best'`` : (if ``fit_photometry``) flux density residuals in linear scale between model and input spectra.
-		- ``'logflux_residuals_phot_best'`` : (if ``fit_photometry``) flux density residuals in log scale between model and input spectra.
+		- ``'flux_model_best'`` : (if ``ori_res``) flux densities (in erg/s/cm2/A) of original 
+		  model spectra.
+		- ``'wl_array_model_conv_resam_best'`` : (if ``fit_spectra``) wavelength (in um) of 
+		  resampled, convolved model spectra in the input spectra ranges.
+		- ``'flux_array_model_conv_resam_best'`` : (if ``fit_spectra``) flux densities (in erg/s/cm2/A) 
+		  of resampled, convolved model spectra in the input spectra ranges.
+		- ``'wl_array_model_conv_resam_fit_best'`` : (if ``fit_spectra``) wavelength (in um) 
+		  of resampled, convolved model spectra within the fit range.
+		- ``'flux_array_model_conv_resam_fit_best'`` : (if ``fit_spectra``) flux densities (in erg/s/cm2/A) 
+		  of resampled, convolved model spectra within the fit range.
+		- ``'flux_residuals_spec_best'`` : (if ``fit_spectra``) flux density residuals in linear 
+		  scale between model and input spectra.
+		- ``'logflux_residuals_spec_best'`` : (if ``fit_spectra``) flux density residuals in log scale 
+		  between model and input spectra.
+		- ``'flux_syn_array_model_fit_best'`` : (if ``fit_photometry``) synthetic photometry (in erg/s/cm2/A) 
+		  for the filters within the fit range.
+		- ``'lambda_eff_array_model_fit_best'`` : (if ``fit_photometry``) effective wavelength (in um) 
+		  from model spectra for filters within the fit range.
+		- ``'width_eff_array_model_fit_best'`` : (if ``fit_photometry``) effective width (in um) from 
+		  model spectra for filters within the fit range.
+		- ``'flux_residuals_phot_best'`` : (if ``fit_photometry``) flux density residuals in linear 
+		  scale between model and input spectra.
+		- ``'logflux_residuals_phot_best'`` : (if ``fit_photometry``) flux density residuals in log 
+		  scale between model and input spectra.
 		- ``'params'`` : model free parameters
 
 	Author: Genaro Suárez
@@ -577,21 +598,28 @@ def generate_model_spectrum(params, model, grid=None, model_dir=None, save_spect
 	Parameters:
 	-----------
 	- params : dictionary
-		Value for each free parameter in the models to generate a synthetic spectrum with the desired parameter values.
-		E.g., ``params = {'Teff': 1010, 'logg': 4.2, 'Z': 0.1, 'fsed': 2.2}`` for a model grid with those free parameters.
+		Value for each free parameter in the models to generate a synthetic 
+		spectrum with the desired parameter values.
+		E.g., ``params = {'Teff': 1010, 'logg': 4.2, 'Z': 0.1, 'fsed': 2.2}`` 
+		for a model grid with those free parameters.
 	- model : str
 		Atmospheric models to generate the synthetic spectrum. 
-		See available models in ``seda.models.Models().available_models``.  
+		See available models in :attr:`~seda.models.Models.available_models`.
 	- grid : dictionary, optional
-		Model grid (``'wavelength'`` and ``'flux'``) generated by ``seda.utils.read_grid`` for interpolations.
-		If not provided (default), then the grid is read (``model`` and ``model_dir`` must be provided). 
-		If provided, the code will skip reading the grid, which will save some time (a few minutes).
+		Model grid (``'wavelength'`` and ``'flux'``) generated by 
+		:func:`~seda.utils.read_grid` for interpolations.
+		If not provided (default), then the grid is read (``model`` and 
+		``model_dir`` must be provided). 
+		If provided, the code will skip reading the grid, which will save 
+		some time (a few minutes).
 	- model_dir : str or list, optional
-		Path to the directory (str or list) or directories (as a list) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
+		Path to the directory (str or list) or directories (as a list) containing 
+		the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
 		Required if ``grid`` is not provided.
 	- save_spectrum : {``True``, ``False``}, optional (default ``False``)
-		Save (``True``) or do not save (``False``) the generated spectrum as an ascii table.
-		Default name is '``model``\_``params``\_.dat'.
+		Save (``True``) or do not save (``False``) the generated spectrum 
+		as an ascii table.
+		Default name is '``model``\\_``params``\\_.dat'.
 
 	Returns:
 	--------
@@ -750,29 +778,41 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 	Parameters:
 	-----------
 	- model : str
-		Atmospheric models. See available models in ``seda.models.Models().available_models``.  
+		Atmospheric models. See available models in 
+		:attr:`~seda.models.Models.available_models`.
 	- model_dir : str or list
-		Path to the directory (str or list) or directories (as a list) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
+		Path to the directory (str or list) or directories (as a list) 
+		containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
 	- params_ranges : dictionary, optional
-		Minimum and maximum values for any model free parameters to select a model grid subset.
-		E.g., ``params_ranges = {'Teff': [1000, 1200], 'logg': [4., 5.]}`` to consider spectra within those Teff and logg ranges.
-		If a parameter range is not provided, the full range in ``model_dir`` is considered.
+		Minimum and maximum values for any model free parameters to select 
+		a model grid subset.
+		E.g., ``params_ranges = {'Teff': [1000, 1200], 'logg': [4., 5.]}`` 
+		to consider spectra within those Teff and logg ranges.
+		If a parameter range is not provided, the full range in ``model_dir`` 
+		is considered.
 	- convolve: {``True``, ``False``}, optional (default ``False``)
-		Convolve (``'True'``) or do not convolve (``'False'``) the model grid spectra to the indicated ``res`` at ``lam_res``.
+		Convolve (``'True'``) or do not convolve (``'False'``) the model grid 
+		spectra to the indicated ``res`` at ``lam_res``.
 	- fit_wl_range : float array, optional
-		Minimum and maximum wavelengths (in micron) to resample the model spectra to the fit range. E.g., ``fit_wl_range = np.array([fit_wl_min1, fit_wl_max1])``. 
+		Minimum and maximum wavelengths (in micron) to resample the model spectra 
+		to the fit range. E.g., ``fit_wl_range = np.array([fit_wl_min1, fit_wl_max1])``. 
 		Default values are the minimum and the maximum wavelengths in ``wl_resample``.
 	- disp_wl_range : float array, optional
-		Minimum and maximum wavelengths (in micron) to compute the median wavelength dispersion of model spectra to convolve them.
+		Minimum and maximum wavelengths (in micron) to compute the median wavelength 
+		dispersion of model spectra to convolve them.
 		Default values are the minimum and the maximum wavelengths in ``wl_resample``.
 	- model_wl_range : float array (optional)
-		Minimum and maximum wavelength (in microns) to cut model spectra to keep only wavelengths of interest.
-		Default values are the minimum and maximum wavelengths in ``wl_resample``, if provided, with a padding to avoid issues with the resampling.
+		Minimum and maximum wavelength (in microns) to cut model spectra to keep 
+		only wavelengths of interest.
+		Default values are the minimum and maximum wavelengths in ``wl_resample``, 
+		if provided, with a padding to avoid issues with the resampling.
 		Otherwise, ``model_wl_range=None``, so model spectra will not be trimmed.
 	- fit_phot_range : float array or list, optional
-		Minimum and maximum wavelengths (in micron) where photometry will be compared to the models. E.g., ``fit_phot_range = np.array([fit_phot_min1, fit_phot_max1])``. 
+		Minimum and maximum wavelengths (in micron) where photometry will be compared 
+		to the models. E.g., ``fit_phot_range = np.array([fit_phot_min1, fit_phot_max1])``. 
 		This parameter is used if ``fit_photometry`` but ignored if only ``fit_spectra``. 
-		Default values are the minimum and the maximum of the filter effective wavelengths from SVO.
+		Default values are the minimum and the maximum of the filter effective wavelengths 
+		from SVO.
 	- res : float, optional (required if ``convolve``).
 		Spectral resolution (at ``lam_res``) to smooth model spectra.
 	- lam_res : float, optional.
@@ -781,20 +821,29 @@ def read_grid(model, model_dir, params_ranges=None, convolve=False, model_wl_ran
 	- wl_resample : float array or list, optional
 		Wavelength data points to resample the grid
 	- disp_wl_range : float array, optional
-		Minimum and maximum wavelengths (in microns) to compute the median wavelength dispersion of model spectrum.
+		Minimum and maximum wavelengths (in microns) to compute the median wavelength 
+		dispersion of model spectrum.
 		Default values are the minimum and maximum wavelengths in model spectra.
 	- skip_convolution : {``True``, ``False``}, optional (default ``False``)
-		Convolution of model spectra (the slowest process in the code) can (``True``) or cannot (``False``) be avoided. 
-		Once the code has be run and the convolved spectra were stored in ``path_save_spectra_conv``, the convolved grid can be reused for other input data with the same resolution as the convolved spectra.
+		Convolution of model spectra (the slowest process in the code) can (``True``) or 
+		cannot (``False``) be avoided. 
+		Once the code has be run and the convolved spectra were stored in ``path_save_spectra_conv``, 
+		the convolved grid can be reused for other input data with the same resolution as 
+		the convolved spectra.
 	- filename_pattern : str, optional
 		Pattern to select only files including it.
-		Default is a common pattern in all spectra original filenames in ``model``, as indicated by ``models.Models(model).filename_pattern``.
+		Default is a common pattern in all spectra original filenames in ``model``, 
+		as indicated by :attr:`~seda.models.Models.filename_pattern`. 
 	- path_save_spectra_conv: str, optional
 		Directory path to store convolved model spectra. 
 		If not provided (default), the convolved spectra will not be saved. 
-		If the directory does not exist, it will be created. Otherwise, the spectra will be added to the existing folder.
-		The convolved spectra will keep the same original names along with the ``res`` and ``lam_res`` parameters, e.g. 'original_spectrum_name_R100at1um.nc' for ``res=100`` and ``lam_res=1``.
-		They will be saved as netCDF with xarray (it produces lighter files compared to normal ASCII files).
+		If the directory does not exist, it will be created. Otherwise, the spectra 
+		will be added to the existing folder.
+		The convolved spectra will keep the same original names along with the ``res`` 
+		and ``lam_res`` parameters, e.g. 'original_spectrum_name_R100at1um.nc' for 
+		``res=100`` and ``lam_res=1``.
+		They will be saved as netCDF with xarray (it produces lighter files compared to 
+		normal ASCII files).
 
 	Returns:
 	--------
@@ -1007,19 +1056,25 @@ def read_grid_phot(model, model_dir, filters, params_ranges=None, fit_phot_range
 	Parameters:
 	-----------
 	- model : str
-		Atmospheric models. See available models in ``seda.models.Models().available_models``.  
+		Atmospheric models. See available models in 
+		:attr:`~seda.models.Models.available_models`.
 	- model_dir : str or list
-		Path to the directory (str or list) or directories (as a list) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
+		Path to the directory (str or list) or directories (as a list) containing the 
+		model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
 	- params_ranges : dictionary, optional
 		Minimum and maximum values for any model free parameters to select a model grid subset.
-		E.g., ``params_ranges = {'Teff': [1000, 1200], 'logg': [4., 5.]}`` to consider spectra within those Teff and logg ranges.
+		E.g., ``params_ranges = {'Teff': [1000, 1200], 'logg': [4., 5.]}`` to consider spectra 
+		within those Teff and logg ranges.
 		If a parameter range is not provided, the full range in ``model_dir`` is considered.
 	- model_wl_range : float array (optional)
-		Minimum and maximum wavelength (in microns) to cut model spectra to keep only wavelengths of interest.
-		Default values are the minimum and maximum wavelengths in ``wl_resample``, if provided, with a padding to avoid issues with the resampling.
+		Minimum and maximum wavelength (in microns) to cut model spectra to keep only 
+		wavelengths of interest.
+		Default values are the minimum and maximum wavelengths in ``wl_resample``, if provided, 
+		with a padding to avoid issues with the resampling.
 		Otherwise, ``model_wl_range=None``, so model spectra will not be trimmed.
 	- fit_phot_range : float array or list, optional
-		Minimum and maximum wavelengths (in micron) where photometry will be compared to the models. E.g., ``fit_phot_range = np.array([fit_phot_min1, fit_phot_max1])``. 
+		Minimum and maximum wavelengths (in micron) where photometry will be compared to the 
+		models. E.g., ``fit_phot_range = np.array([fit_phot_min1, fit_phot_max1])``. 
 		This parameter is used if ``fit_photometry`` but ignored if only ``fit_spectra``. 
 		Default values are the minimum and the maximum of the filter effective wavelengths from SVO.
 	- filters : float array
@@ -1030,21 +1085,30 @@ def read_grid_phot(model, model_dir, filters, params_ranges=None, fit_phot_range
 	- path_save_syn_phot: str, optional
 		Directory path to store the synthetic flux densities (in erg/s/cm2/A).
 		If not provided (default), the synthetic photometry will not be saved. 
-		If the directory does not exist, it will be created. Otherwise, the photometry will be added to the existing folder.
-		The synthetic photometry for different filters derived from the same model spectrum will be saved in a single ASCII table, named after the model with the suffix "_syn_phot.dat".
-		If a synthetic photometry file for a given model spectrum already exists, it will be updated to include photometry for any new filters as needed.
+		If the directory does not exist, it will be created. Otherwise, the photometry will be 
+		added to the existing folder.
+		The synthetic photometry for different filters derived from the same model spectrum will 
+		be saved in a single ASCII table, named after the model with the suffix "_syn_phot.dat".
+		If a synthetic photometry file for a given model spectrum already exists, it will be 
+		updated to include photometry for any new filters as needed.
 	- skip_syn_phot : {``True``, ``False``}, optional (default ``False``)
-		Synthetic photometry calculation (the lowest process when fitting photometry) can (``True``) or cannot (``False``) be avoided. 
-		If 'True', ``model_dir`` should correspond to the directory with the synthetic photometry for ``filters`` in ``input_parameters.InputData``. 
+		Synthetic photometry calculation (the lowest process when fitting photometry) can (``True``) 
+		or cannot (``False``) be avoided. 
+		If 'True', ``model_dir`` should correspond to the directory with the synthetic photometry 
+		for ``filters`` in ``input_parameters.InputData``. 
 
 	Returns:
 	--------
 	Dictionary with the model grid of synthetic photometry:
 		- ``'wavelength'`` : fixed SVO effective wavelengths in microns for the filters.
-		- ``'flux'`` : synthetic flux densities in erg/s/cm2/A for each combination of model parameters and filters.
-		- ``'lambda_eff'`` : model-dependent effective wavelengths in microns for each combination of model parameters and filters.
-		- ``'width_eff'`` : model-dependent effective filter widths in microns for each combination of model parameters and filters.
-		- ``'params_unique'`` : dictionary with unique (non-repetitive) values for each model free parameter.
+		- ``'flux'`` : synthetic flux densities in erg/s/cm2/A for each combination of 
+		  model parameters and filters.
+		- ``'lambda_eff'`` : model-dependent effective wavelengths in microns for each 
+		  combination of model parameters and filters.
+		- ``'width_eff'`` : model-dependent effective filter widths in microns for each 
+		  combination of model parameters and filters.
+		- ``'params_unique'`` : dictionary with unique (non-repetitive) values for each 
+		  model free parameter.
 		- ``'N_model_spectra'`` : number of model spectra in the grid.
 
 	Example:
@@ -1247,43 +1311,68 @@ def best_bayesian_fit(output_bayes, grid_spec=None, grid_phot=None, model_dir_or
 	Parameters:
 	-----------
 	- 'output_bayes' : dictionary or str
-		Output dictionary with the results from the nested sampling by ``bayes``.
-		It can be either the name of the pickle file or simply the output dictionary.
+		Output dictionary with the results from the nested sampling 
+		by :func:`~seda.bayes_fit.bayes`.
+		It can be either the name of the pickle file or simply the 
+		output dictionary.
 	- grid_spec : dictionary, optional
-		Model grid (``'wavelength'`` and ``'flux'``) generated by ``seda.utils.read_grid`` for interpolations.
-		If not provided (default), then a grid subset with model spectra around the median posteriors is read.
-		If provided, the code will skip reading the grid, which will save some time.
+		Model grid (``'wavelength'`` and ``'flux'``) generated by 
+		:func:`~seda.utils.read_grid` for interpolations.
+		If not provided (default), then a grid subset with model 
+		spectra around the median posteriors is read.
+		If provided, the code will skip reading the grid, which 
+		will save some time.
 	- grid_phot : dictionary, optional
-		Model grid (``'wavelength'`` and ``'flux'``) generated by ``seda.utils.read_grid_phot`` for interpolations.
-		If not provided (default), then a grid subset with model spectra around the median posteriors is read.
-		If provided, the code will skip reading the grid, which will save some time.
+		Model grid (``'wavelength'`` and ``'flux'``) generated 
+		by :func:`~seda.utils.read_grid_phot` for interpolations.
+		If not provided (default), then a grid subset with model 
+		spectra around the median posteriors is read.
+		If provided, the code will skip reading the grid, which 
+		will save some time.
 	- ori_res : {``True``, ``False``}, optional (default ``False``)
-		Read (``True``) or do not read (``False``) model spectrum for the best fit with the original resolution.
+		Read (``True``) or do not read (``False``) model spectrum 
+		for the best fit with the original resolution.
 	- model_dir_ori : str, list, or array
-		Path to the directory (str, list, or array) or directories (as a list or array) containing the model spectra with the original resolution.
-		This parameter is needed if ``ori_res=True`` and `seda.bayes_fit.bayes` was run skipping the model spectra convolution (if `skip_convolution=True``).
+		Path to the directory (str, list, or array) or directories 
+		(as a list or array) containing the model spectra with the 
+		original resolution.
+		This parameter is needed if ``ori_res=True`` and :func:`~seda.bayes_fit.bayes`
+		was run skipping the model spectra convolution (if ``skip_convolution=True``).
 	- save_spectrum : {``True``, ``False``}, optional (default ``False``)
-		Save (``True``) or do not save (``False``) best model fit from the nested sampling.
+		Save (``True``) or do not save (``False``) best model fit from 
+		the nested sampling.
 
 	Returns:
 	--------
-	- '``model``\_best\_fit\_bayesian\_sampling.dat' : ascii table
+	- '``model``\\_best\\_fit\\_bayesian\\_sampling.dat' : ascii table
 		Table with best model fit (if ``save_spectrum``).
 	- dictionary
 		Dictionary with the best model fit from the nested sampling:
-			- ``'wl_spectra_fit'`` : (if ``fit_spectra``) wavelength in um of the input spectra within ``fit_wl_range``.
-			- ``'flux_spectra_fit'`` : (if ``fit_spectra``) flux densities in erg/cm2/s/A of the input spectra within ``fit_wl_range``.
-			- ``'eflux_spectra_fit'`` : (if ``fit_spectra``) flux density uncertainties in erg/cm2/s/A of the input spectra within ``fit_wl_range``.
-			- ``'phot_fit'`` : (if ``fit_photometry``) flux densities in erg/cm2/s/A of the input photometry within ``fit_wl_range``.
-			- ``'ephot_fit'`` : (if ``fit_photometry``) flux density uncertainties in erg/cm2/s/A of the input photometry within ``fit_wl_range``.
+			- ``'wl_spectra_fit'`` : (if ``fit_spectra``) wavelength in um 
+			  of the input spectra within ``fit_wl_range``.
+			- ``'flux_spectra_fit'`` : (if ``fit_spectra``) flux densities 
+			  in erg/cm2/s/A of the input spectra within ``fit_wl_range``.
+			- ``'eflux_spectra_fit'`` : (if ``fit_spectra``) flux density 
+			  uncertainties in erg/cm2/s/A of the input spectra within ``fit_wl_range``.
+			- ``'phot_fit'`` : (if ``fit_photometry``) flux densities in erg/cm2/s/A 
+			  of the input photometry within ``fit_wl_range``.
+			- ``'ephot_fit'`` : (if ``fit_photometry``) flux density uncertainties 
+			  in erg/cm2/s/A of the input photometry within ``fit_wl_range``.
 			- ``'params_med'`` : median values for sampled parameters.
-			- ``'params_errors'`` : lower and upper parameter errors considering the confidence interval ``params_confidence_interval``.
+			- ``'params_errors'`` : lower and upper parameter errors considering 
+			  the confidence interval ``params_confidence_interval``.
 			- ``'params_confidence_interval'`` : confidence interval for sampled parameters.
-			- ``'confidence_interval(%)'`` : central percentage considered to calculate the confidence interval.
-			- ``'wl_model'`` : wavelength in um of the best scaled model fit (convolved, and resampled when fit_spectra or synthetic flux densities when fit_spectra) within ``fit_wl_range``.
-			- ``'flux_model'`` : flux densities in erg/cm2/s/A of the best scaled, convolved, and resampled model fit
-			- ``'wl_model_best'`` : (if ``ori_res`` is ``True``) wavelength in um of the best scaled model fit with its original resolution
-			- ``'flux_model_best'`` : (if ``ori_res`` is ``True``) flux densities in erg/cm2/s/A of the best scaled model fit with its original resolution
+			- ``'confidence_interval(%)'`` : central percentage considered to 
+			  calculate the confidence interval.
+			- ``'wl_model'`` : wavelength in um of the best scaled model fit 
+			  (convolved, and resampled when fit_spectra or synthetic flux densities 
+			  when fit_spectra) within ``fit_wl_range``.
+			- ``'flux_model'`` : flux densities in erg/cm2/s/A of the best scaled, 
+			  convolved, and resampled model fit.
+			- ``'wl_model_best'`` : (if ``ori_res`` is ``True``) wavelength in um 
+			  of the best scaled model fit with its original resolution.
+			- ``'flux_model_best'`` : (if ``ori_res`` is ``True``) flux densities 
+			  in erg/cm2/s/A of the best scaled model fit with its original resolution.
 
 	Author: Genaro Suárez
 
@@ -1476,7 +1565,8 @@ def best_bayesian_fit(output_bayes, grid_spec=None, grid_phot=None, model_dir_or
 	return out
 
 ##########################
-def select_model_spectra(model, model_dir, params_ranges=None, filename_pattern=None, save_results=False, out_file=None):
+def select_model_spectra(model, model_dir, params_ranges=None, filename_pattern=None, 
+	                     save_results=False, out_file=None):
 	'''
 	Description:
 	------------
@@ -1485,28 +1575,33 @@ def select_model_spectra(model, model_dir, params_ranges=None, filename_pattern=
 	Parameters:
 	-----------
 	- model : str
-		Atmospheric models. See available models in ``seda.models.Models().available_models``.  
+		Atmospheric models. See available models in :attr:`~seda.models.Models.available_models`.
 	- model_dir : str or list
-		Path to the directory (str or list) or directories (as a list) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
+		Path to the directory (str or list) or directories (as a list) containing the model 
+		spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
 	- params_ranges : dictionary, optional
 		Minimum and maximum values for any model free parameters to select a model grid subset.
-		E.g., ``params_ranges = {'Teff': [1000, 1200], 'logg': [4., 5.]}`` to consider spectra within those Teff and logg ranges.
+		E.g., ``params_ranges = {'Teff': [1000, 1200], 'logg': [4., 5.]}`` to consider spectra 	
+		within those Teff and logg ranges.
 		If a parameter range is not provided, the full range in ``model_dir`` is considered.
 	- filename_pattern : str, optional
 		Pattern to select only files including it.
-		Default is a common pattern in all spectra original filenames in ``model``, as indicated by ``models.Models(model).filename_pattern``.
+		Default is a common pattern in all spectra original filenames in ``model``, as indicated 
+		by :attr:`~seda.models.Models.filename_pattern`.
 	- save_results : {``True``, ``False``}, optional (default ``False``)
-		Save (``True``) or do not save (``False``) the output as a pickle file named '``model``\_free\_parameters.pickle'.
+		Save (``True``) or do not save (``False``) the output as a pickle file named 
+		'``model``\\_free\\_parameters.pickle'.
 	- out_file : str, optional
-		File name to save the results as a pickle file (it can include a path e.g. my_path/free\_params.pickle).
-		Default name is '``model``\_free_parameters.pickle' and is stored at the notebook location.
+		File name to save the results as a pickle file (it can include a path e.g. my_path/free\\_params.pickle).
+		Default name is '``model``\\_free_parameters.pickle' and is stored at the notebook location.
 
 	Returns:
 	--------
 	Dictionary with the parameters:
 		- ``spectra_name``: selected model spectra names.
 		- ``spectra_name_full``: selected model spectra names with full path.
-		- ``params``: parameters for the selected model spectra, as given by the ``seda.models.separate_params`` output dictionary.
+		- ``params``: parameters for the selected model spectra, as given by the 
+		  :func:`~seda.models.separate_params` output dictionary.
 
 	Example:
 	--------
@@ -1794,7 +1889,8 @@ def app_to_abs_flux(flux, distance, eflux=None, edistance=None, reverse=False):
 	'''
 	Description:
 	------------
-		Convert apparent flux densities into absolute flux densities considering a distance.
+		Convert apparent flux densities into absolute flux densities 
+		considering a distance.
 
 	Parameters:
 	-----------
@@ -1807,13 +1903,16 @@ def app_to_abs_flux(flux, distance, eflux=None, edistance=None, reverse=False):
 	- edistance : float, optional
 		Distance error (in pc).
 	- reverse : {``True``, ``False``}, optional (default ``False``)
-		Label to indicate if apparent flux densities are converted into absolute flux densities (``False``) or vice versa (``True``).
+		Label to indicate if apparent flux densities are converted into absolute 
+		flux densities (``False``) or vice versa (``True``).
 
 	Returns:
 	--------
 	- Dictionary with absolute flux densities and input parameters:
-		- ``'flux_abs'`` : absolute flux densities in the same units as the input flux densities.
-		- ``'eflux_abs'`` : (if ``eflux`` or ``edistance`` is provided) absolute flux density uncertainties.
+		- ``'flux_abs'`` : absolute flux densities in the same units 
+		  as the input flux densities.
+		- ``'eflux_abs'`` : (if ``eflux`` or ``edistance`` is provided) absolute 
+		  flux density uncertainties.
 		- ``'flux_app'`` : input apparent flux densities.
 		- ``'eflux_app'`` : (if provided) input apparent flux density uncertainties.
 		- ``'distance'`` : input distance.
@@ -1898,7 +1997,8 @@ def app_to_abs_mag(magnitude, distance, emagnitude=None, edistance=None):
 	'''
 	Description:
 	------------
-		Convert apparent magnitudes into absolute fluxes considering a distance, assuming no extinction.
+		Convert apparent magnitudes into absolute fluxes considering a 
+		distance, assuming no extinction.
 
 	Parameters:
 	-----------
@@ -1915,7 +2015,8 @@ def app_to_abs_mag(magnitude, distance, emagnitude=None, edistance=None):
 	--------
 	- Dictionary with absolute mages and input parameters:
 		- ``'mag_abs'`` : absolute mages in the same units as the input mages.
-		- ``'emag_abs'`` : (if ``emag`` or ``edistance`` is provided) absolute mag uncertainties.
+		- ``'emag_abs'`` : (if ``emag`` or ``edistance`` is provided) absolute 
+		  mag uncertainties.
 		- ``'mag_app'`` : input apparent mages.
 		- ``'emag_app'`` : (if provided) input apparent mag errors.
 		- ``'distance'`` : input distance.
@@ -2091,7 +2192,8 @@ def teff_to_spt(teff, ref=None):
 	'''
 	Description:
 	------------
-		Estimate the spectral type (returned as a string) from effective temperature, using numerical inversion of spt_to_teff() and the same spectral-type conventions.
+		Estimate the spectral type (returned as a string) from effective temperature, 
+		using numerical inversion of spt_to_teff() and the same spectral-type conventions.
 
 	Parameters:
 	-----------
@@ -2295,7 +2397,8 @@ def merge_MRS(fits_files):
 	-----------
 	- fits_files : array, list
 		File names (with full path) to the spectra to be merged.
-		It is not necessary to include all four channels and three grating settings (short, medium, and long).
+		It is not necessary to include all four channels and three grating 
+		settings (short, medium, and long).
 		The function works with any combination of channels and grating settings.
 
 	Returns:
