@@ -103,6 +103,9 @@ def bayes(my_bayes):
 	    Bayesian sampling ran successfully
 
 	Author: Genaro Suárez
+
+	Created: 2024
+	Updated: 2026-11
 	'''
 
 	# suppress noisy Dynesty logging
