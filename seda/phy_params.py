@@ -925,6 +925,12 @@ def evol_params(logL, elogL, R, eR, model, filename=None,
 		with a Monte Carlo simulation. This is the complement to :func:`isochrone_params`, 
 		which uses ``(logL, age)`` instead of ``(logL, R)``.
 
+		Interpolation is performed using SciPy's ``LinearNDInterpolator``, which
+		implements piecewise linear interpolation on a Delaunay triangulation
+		in the ``(logL, R)`` plane. Age is interpolated in logarithmic space to
+		improve interpolation accuracy and converted back to Gyr before
+		calculating the Monte Carlo statistics.
+
 		Every evolutionary model reads its tables into the same units, so ``R``
 		is in R_jup, returned ``mass`` is in M_jup, returned ``age`` is in Gyr,
 		and ``Teff`` is in Kelvin, whatever units the published table uses.
@@ -1035,8 +1041,23 @@ def evol_params(logL, elogL, R, eR, model, filename=None,
 	for param, grid_values in grid.items():  # loop over each quantity stored in the table
 		if param in ('logL', 'radius'):  # skip axes already used to build xi
 			continue
-		interp = LinearNDInterpolator(points, np.asarray(grid_values, dtype=float))  # 2D interpolator for this column
-		samples = interp(xi)  # infer this parameter at each MC (logL, R) draw
+
+		# Ensure a floating-point NumPy array
+		grid_values = np.asarray(grid_values, dtype=float)
+
+		# Interpolate age in logarithmic space to improve accuracy
+		if param == 'age':
+			if np.any(~np.isfinite(grid_values)) or np.any(grid_values <= 0):
+				raise ValueError('Grid ages must be finite and positive.')
+			grid_values = np.log10(grid_values)
+
+		interp = LinearNDInterpolator(points, grid_values)
+		samples = interp(xi)
+
+		# Convert interpolated ages back to Gyr
+		if param == 'age':
+			samples = 10**samples
+
 		param_samples[param] = samples  # store samples for later summarization
 		if first_samples is None:  # remember first column only once
 			first_samples = samples  # NaN mask is the same for all columns at the same xi
