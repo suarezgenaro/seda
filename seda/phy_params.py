@@ -927,9 +927,9 @@ def evol_params(logL, elogL, R, eR, model, filename=None,
 
 		Interpolation is performed using SciPy's ``LinearNDInterpolator``, which
 		implements piecewise linear interpolation on a Delaunay triangulation
-		in the ``(logL, R)`` plane. Age is interpolated in logarithmic space to
-		improve interpolation accuracy and converted back to Gyr before
-		calculating the Monte Carlo statistics.
+		in the ``(logL, R)`` plane. Mass and age are interpolated in logarithmic
+		space to improve interpolation accuracy and converted back to linear
+		units (M_jup and Gyr) before calculating the Monte Carlo statistics.
 
 		Every evolutionary model reads its tables into the same units, so ``R``
 		is in R_jup, returned ``mass`` is in M_jup, returned ``age`` is in Gyr,
@@ -1045,17 +1045,19 @@ def evol_params(logL, elogL, R, eR, model, filename=None,
 		# Ensure a floating-point NumPy array
 		grid_values = np.asarray(grid_values, dtype=float)
 
-		# Interpolate age in logarithmic space to improve accuracy
-		if param == 'age':
+		# Interpolate mass and age in logarithmic space to improve accuracy
+		if param in ('mass', 'age'):
+			# Ensure values are valid for logarithmic transformation
 			if np.any(~np.isfinite(grid_values)) or np.any(grid_values <= 0):
-				raise ValueError('Grid ages must be finite and positive.')
+				raise ValueError(f'Grid {param} values must be finite and positive.')
 			grid_values = np.log10(grid_values)
 
+		# Build a 2D piecewise linear interpolator in (logL, radius)
 		interp = LinearNDInterpolator(points, grid_values)
-		samples = interp(xi)
+		samples = interp(xi)  # evaluate at each Monte Carlo draw
 
-		# Convert interpolated ages back to Gyr
-		if param == 'age':
+		# Convert interpolated mass and age back to linear units
+		if param in ('mass', 'age'):
 			samples = 10**samples
 
 		param_samples[param] = samples  # store samples for later summarization
