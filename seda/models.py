@@ -697,7 +697,7 @@ def _split_evolutionary_tracks(grid):
 
 
 def _build_isochrone(tracks, age):
-	"""Build a constant-age isochrone by interpolating each mass track to ``age``."""
+	"""Build a constant-age isochrone by interpolating each mass track in logarithmic age."""
 
 	age = float(age)
 	isochrone = {col: [] for col in tracks[0]}
@@ -705,8 +705,17 @@ def _build_isochrone(tracks, age):
 		ages = track['age']
 		if age < ages[0] or age > ages[-1]:
 			continue
+
+		# Interpolate along evolutionary tracks in logarithmic age
+		log_ages = np.log10(ages)
+		log_age = np.log10(age)
+
 		for col in track:
-			val = np.interp(age, ages, track[col])
+			if col == 'age':
+				val = age
+			else:
+				val = np.interp(log_age, log_ages, track[col])
+
 			isochrone[col].append(val)
 
 	if not isochrone['age']:
@@ -765,7 +774,7 @@ def _nan_on_isochrone(isochrone, logL_targets):
 
 
 def _lookup_on_isochrone_grid(isochrone_cache, tabulated_ages, age, logL_targets):
-	"""Look up evolutionary parameters at ``(age, logL)``, interpolating in age."""
+	"""Look up evolutionary parameters at ``(age, logL)``, interpolating in logarithmic age."""
 
 	logL_targets = np.atleast_1d(np.asarray(logL_targets, dtype=float))
 	tabulated_ages = np.asarray(tabulated_ages, dtype=float)
@@ -787,13 +796,21 @@ def _lookup_on_isochrone_grid(isochrone_cache, tabulated_ages, age, logL_targets
 	if age == age_hi:
 		return _interp_on_isochrone(isochrone_cache[age_hi], logL_targets)
 
-	weight = (age - age_lo) / (age_hi - age_lo)
+	# Interpolation weight in logarithmic age
+	weight = (
+		(np.log10(age) - np.log10(age_lo)) /
+		(np.log10(age_hi) - np.log10(age_lo))
+	)
 	interp_lo = _interp_on_isochrone(isochrone_cache[age_lo], logL_targets)
 	interp_hi = _interp_on_isochrone(isochrone_cache[age_hi], logL_targets)
 
 	out = {}
 	for col in interp_lo:
-		out[col] = (1.0 - weight) * interp_lo[col] + weight * interp_hi[col]
+		if col == 'age':
+			out[col] = np.full(logL_targets.shape, age)
+		else:
+			out[col] = (1.0 - weight) * interp_lo[col] + weight * interp_hi[col]
+
 	return out
 
 ##########################

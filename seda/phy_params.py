@@ -732,9 +732,15 @@ def isochrone_params(logL, elogL, age, eage, model, filename=None,
 		the complement to :func:`evol_params`, which uses ``(logL, R)`` instead
 		of ``(logL, age)``.
 
-		Every evolutionary model reads its tables into the same units, namely
-		``age`` in Gyr, ``mass`` in M_jup, ``radius`` R_jup, and ``Teff`` in Kelvin, 
-		whatever units the published table uses.
+		Isochrones are constructed by linearly interpolating along constant-mass
+		evolutionary tracks in logarithmic age. Fundamental parameters are then
+		inferred by linear interpolation along the isochrones in logarithmic
+		bolometric luminosity. When age uncertainties are provided, interpolation
+		between neighboring isochrones is also performed in logarithmic age.
+
+		All evolutionary model tables are converted to common units:
+		``age`` in Gyr, ``mass`` in M_jup, ``radius`` in R_jup, and
+		``Teff`` in Kelvin, regardless of the units in the original tables.
 
 	Parameters:
 	-----------
