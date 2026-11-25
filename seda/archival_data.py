@@ -85,7 +85,7 @@ class Spectrum:
 
 		Returns
 		-------
-		self : Spectrum
+		self : :class:`~seda.archival_data.Spectrum`
 			Returns self to allow method chaining.
 
 		Author: Genaro Suárez
@@ -221,7 +221,7 @@ class IRS:
 
 		Returns
 		-------
-		list of Spectrum
+		list of :class:`~seda.archival_data.Spectrum`
 			List of Spectrum objects, one per target.
 		"""
 
@@ -260,7 +260,8 @@ class IRS:
 
 	def _load_spectrum(self, row):
 		"""
-		Load a single IRS spectrum from file and wrap it in a Spectrum object.
+		Load a single IRS spectrum from file and wrap it in a 
+		:class:`~seda.archival_data.Spectrum` object.
 
 		Parameters
 		----------

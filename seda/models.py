@@ -22,7 +22,7 @@ class Models:
 	-----------
 	- model : str, optional.
 		Atmospheric models for which basic information will be read. 
-		See available models with ``seda.models.Models().available_models``.
+		See available models with :attr:`~seda.models.Models.available_models`.
 
 	Attributes:
 	-----------
@@ -347,13 +347,13 @@ def resolve_evolutionary_table(model, filename=None):
 	-----------
 	- model : str
 		Evolutionary models. See available models in
-		``seda.models.EvolutionaryModels().available_models``.
+		:attr:`~seda.models.EvolutionaryModels.available_models`.
 	- filename : str, optional
-		Basename of a table file inside ``evolution_aux/<model>/`` available using 
-		``seda.models.EvolutionaryModels('model').available_tables``.
+		Basename of a table file inside ``evolution_aux/<model>/``.
+		See available tables using ``EvolutionaryModels(model).available_tables``.
 		If omitted and exactly one table exists, it is selected automatically.
-		If omitted and multiple tables exist, available basenames are printed
-		and a ``ValueError`` is raised.
+		If omitted and multiple tables exist, a ``ValueError`` is raised
+		listing the available tables.
 
 	Returns:
 	--------
@@ -396,14 +396,15 @@ def separate_params(model, spectra_name, save_results=False, out_file=None):
 	Parameters:
 	-----------
 	- model : str
-		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
+		Atmospheric model to use. See available models in
+		:attr:`~seda.models.Models.available_models`.
 	- spectra_name : array or list
 		Model spectra names (without full path).
 	- save_results : {``True``, ``False``}, optional (default ``False``)
-		Save (``True``) or do not save (``False``) the output as a pickle file named '``model``\_free\_parameters.pickle'.
+		Save (``True``) or do not save (``False``) the output as a pickle file.
 	- out_file : str, optional
-		File name to save the results as a pickle file (it can include a path e.g. my_path/free\_params.pickle).
-		Default name is '``model``\_free_parameters.pickle' and is stored at the notebook location.
+		Filename for saving the results as a pickle file (can include a path).
+		Default name is '``model``\\_coverage.pickle'.
 
 	Returns:
 	--------
@@ -472,7 +473,8 @@ def read_model_spectrum(spectrum_name_full, model, model_wl_range=None):
 	Parameters:
 	-----------
 	- model : str
-		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
+		Atmospheric model to use. See available models in
+		:attr:`~seda.models.Models.available_models`.
 	- spectrum_name_full: str
 		Spectrum file name with full path.
 	- model_wl_range : float array, optional
@@ -557,7 +559,8 @@ def read_PT_profile(filename, model):
 	Parameters:
 	-----------
 	- model : str
-		Atmospheric models. See available models in ``input_parameters.ModelOptions``.  
+		Atmospheric model to use. See available models in
+		:attr:`~seda.models.Models.available_models`.
 	- filename: str
 		Spectrum file name with full path.
 
@@ -610,8 +613,8 @@ def read_evolutionary_model(filename, model):
 		Basename of an evolutionary table file inside ``evolution_aux/<model>/``.
 		Pass ``None`` to auto-select when only one table is bundled.
 	- model : str
-		Evolutionary models. See available models in
-		``seda.models.EvolutionaryModels().available_models``.
+		Evolutionary model to use. See available models in
+		:attr:`~seda.models.EvolutionaryModels.available_models`.
 
 	Returns:
 	--------
@@ -645,12 +648,14 @@ def read_evolutionary_model(filename, model):
 	_, plugin = _load_evolutionary_model(model)
 	out = plugin._read_evolutionary_model(basename)
 
-	for key in ('logL', 'radius'):
-		if key not in out:
-			raise ValueError(
-				f'{model}/plugin.py must return "{key}" in the grid dictionary '
-				f'for evolutionary interpolation.'
-			)
+	if 'logL' not in out:
+		raise ValueError(f'{model}/plugin.py must return "logL" in the grid dictionary.')
+	
+	if 'radius' not in out and 'age' not in out:
+		raise ValueError(
+			f'{model}/plugin.py must return either "radius" or "age" '
+			f'in the grid dictionary for evolutionary interpolation.'
+		)
 
 	return out
 

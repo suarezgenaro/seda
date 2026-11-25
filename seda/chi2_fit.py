@@ -21,7 +21,8 @@ def chi2(my_chi2):
 
 	Parameters:
 	-----------
-	- my_chi2 : return parameters from ``seda.Chi2Options``, which also includes the parameters from ``seda.InputData`` and ``seda.ModelOptions``.
+	- my_chi2 : object returned by :class:`~seda.Chi2Options`, which also includes
+		parameters from :class:`~seda.InputData` and :class:`~seda.ModelOptions`.
 
 	Returns:
 	--------
@@ -32,7 +33,7 @@ def chi2(my_chi2):
 		(if distance and edistance are provided).
 	- '``model``\\_chi2\\_minimization.pickle' : dictionary
 		Dictionary with the weighted least-squares fitting results, namely:
-			- ``my_chi2`` input dictionary returned by ``input_parameters.Chi2Options``.
+			- ``my_chi2``: input parameters from :class:`~seda.Chi2Options`.
 			- ``scaling_fit``: scaling factor that minimizes the fit statistic.
 			- ``escaling_fit``: scaling factor uncertainty.
 			- ``chi2_wl_fit``: weighted least-squares statistic as a function of wavelength.
@@ -400,7 +401,7 @@ def save_params(out_chi2):
 	--------
 	- ``chi2_table_file`` : ascii table
 		ASCII table with input parameters sorted according to reduced fit statistic.
-		Table named ``chi2_table_file``, as specified in ``seda.Chi2Options``.
+		Table named ``chi2_table_file``, as specified in :class:`~seda.Chi2Options`.
 
 	Author: Genaro Suárez
 	'''

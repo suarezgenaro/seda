@@ -60,7 +60,8 @@ class InputData:
 		For multiple input spectra, ``lam_res`` should be a list or array with a value for each spectrum.
 		Default is the integer closest to the median wavelength for each input spectrum.
 		If lam_res is provided, the values are also rounded to the nearest integer.
-		This will facilitate managing (saving and reading) convolved model spectra in ``seda.ModelOptions``.
+		This will facilitate managing (saving and reading) convolved model spectra 
+		in :class:`~seda.input_parameters.ModelOptions`.
 	- distance : float, optional
 		Target distance (in pc) used to derive radii from scaling factors for models.
 	- edistance : float, optional
@@ -109,6 +110,16 @@ class InputData:
 		self.edistance = edistance
 		self.flux_unit = flux_unit
 		self.phot_unit = phot_unit
+
+		# validate distance and its uncertainty
+		if distance is not None and distance <= 0:
+			raise ValueError('"distance" must be positive.')
+		
+		if edistance is not None:
+			if edistance <= 0:
+				raise ValueError('"edistance" must be positive.')
+			if distance is None:
+				raise ValueError('"distance" must be provided when "edistance" is specified.')
 
 		# verify that all the mandatory parameters are given
 		# reshape some input parameters and define non-provided parameters in terms of other parameters
@@ -273,16 +284,23 @@ class ModelOptions:
 
 	Parameters:
 	-----------
-	- model : str, optional (required if a model spectrum is not provided via `wl_model` and `flux_model` or for nested sampling)
+	- model : str, optional (required if a model spectrum is not provided via `wl_model` 
+		and `flux_model` or for nested sampling)
 		Label for any of the available atmospheric models.
-		See more info in ``seda.models.Models``.
-	- model_dir : str, list, or array, optional (required if a model spectrum is not provided via `wl_model` and `flux_model` or for nested sampling)
-		Path to the directory (str, list, or array) or directories (as a list or array) containing the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
+		See more info in :class:`~seda.models.Models`.
+	- model_dir : str, list, or array, optional (required if a model spectrum is not provided 
+		via `wl_model` and `flux_model` or for nested sampling)
+		Path to the directory (str, list, or array) or directories (as a list or array) containing 
+		the model spectra (e.g., ``model_dir = ['path_1', 'path_2']``). 
 		Avoid using paths with null spaces. 
 	- params_ranges : dictionary, optional
 		Minimum and maximum values for any free model parameters to select a model grid subset.
-		E.g., ``params_ranges = {'Teff': [1000, 1200], 'logg': [4., 5.]}`` to consider spectra within those Teff and logg ranges.
+		E.g., ``params_ranges = {'Teff': [1000, 1200], 'logg': [4., 5.]}`` to consider spectra 
+		within those Teff and logg ranges.
 		If a parameter range is not provided, the full range in ``model_dir`` is considered.
+		The specified ranges must include at least one model spectrum, but their limits may extend 
+		beyond the model grid coverage.
+		For Bayesian fitting, these ranges are also used to define uniform priors.
 	- wl_model : array, optional (required if `model_dir` is not provided)
 		Wavelengths in micron of model spectrum.
 	- flux_model : array, optional (required if `model_dir` is not provided)
@@ -290,24 +308,34 @@ class ModelOptions:
 	- path_save_spectra_conv: str, optional
 		Directory path to store convolved model spectra. 
 		If not provided (default), the convolved spectra will not be saved. 
-		If the directory does not exist, it will be created. Otherwise, the spectra will be added to the existing folder.
-		The convolved spectra will keep the same original names along with the ``res`` and ``lam_res`` parameters, e.g. 'original_spectrum_name_R100at1um.nc' for ``res=100`` and ``lam_res=1``.
+		If the directory does not exist, it will be created. Otherwise, the spectra will be added to 
+		the existing folder.
+		The convolved spectra will keep the same original names along with the ``res`` and ``lam_res`` 
+		parameters, e.g. 'original_spectrum_name_R100at1um.nc' for ``res=100`` and ``lam_res=1``.
 		They will be saved as netCDF with xarray (it produces lighter files compared to normal ASCII files).
 	- skip_convolution : {``True``, ``False``}, optional (default ``False``)
-		Convolution of model spectra (the slowest process when fitting spectra) can (``True``) or cannot (``False``) be avoided. 
-		Once the code has be run and the convolved spectra were stored in ``path_save_spectra_conv``, the convolved grid can be reused for other input data with the same resolution as the convolved spectra.
-		If 'True', ``model_dir`` should include the previously convolved spectra for ``res`` at ``lam_res`` in ``input_parameters.InputData``. 
+		Convolution of model spectra (the slowest process when fitting spectra) can (``True``) 
+		or cannot (``False``) be avoided. 
+		Once the code has be run and the convolved spectra were stored in ``path_save_spectra_conv``, 
+		the convolved grid can be reused for other input data with the same resolution as the convolved spectra.
+		If 'True', ``model_dir`` should include the previously convolved spectra for ``res`` at ``lam_res`` 
+		in :class:`~seda.input_parameters.InputData`.
 	- path_save_syn_phot: str, optional
 		Directory path to store the synthetic flux densities (in erg/s/cm2/A).
 		If not provided (default), the synthetic photometry will not be saved. 
-		If the directory does not exist, it will be created. Otherwise, the photometry will be added to the existing folder.
-		The synthetic photometry for different filters derived from the same model spectrum will be saved in a single ASCII table, named after the model with the suffix "_syn_phot.dat".
-		If a synthetic photometry file for a given model spectrum already exists, it will be updated to include photometry for any new filters as needed.
+		If the directory does not exist, it will be created. Otherwise, the photometry will be added to the 
+		existing folder.
+		The synthetic photometry for different filters derived from the same model spectrum will be saved in 
+		a single ASCII table, named after the model with the suffix "_syn_phot.dat".
+		If a synthetic photometry file for a given model spectrum already exists, it will be updated to include 
+		photometry for any new filters as needed.
 	- skip_syn_phot : {``True``, ``False``}, optional (default ``False``)
-		Synthetic photometry calculation (the lowest process when fitting photometry) can (``True``) or cannot (``False``) be avoided. 
+		Synthetic photometry calculation (the lowest process when fitting photometry) can (``True``) or 
+		cannot (``False``) be avoided. 
 		Once the code has be run and the synthetic photometry was stored in ``path_save_syn_phot``, 
 		the synthetic values can be reused for other input photometric SEDs that use the same set of filters.
-		If 'True', ``model_dir`` should correspond to the directory with the synthetic photometry for ``filters`` in ``input_parameters.InputData``. 
+		If 'True', ``model_dir`` should correspond to the directory with the synthetic photometry for ``filters`` 
+		in :class:`~seda.input_parameters.InputData`.
 
 	Attributes:
 	-----------
@@ -324,7 +352,7 @@ class ModelOptions:
 	>>>              'my_path/output_850.0_950.0/'] # folders to seek model spectra
 	>>> 
 	>>> # some parameter ranges to read a model grid subset
-	>>> params_ranges = {'Teff': [700, 900, 'logg': [4.0, 5.0]
+	>>> params_ranges = {'Teff': [700, 900], 'logg': [4.0, 5.0]}
 	>>> 
 	>>> # load model options
 	>>> my_model = seda.ModelOptions(model=model, model_dir=model_dir, 
@@ -374,10 +402,10 @@ class Chi2Options:
 
 	Parameters:
 	-----------
-	- my_data : dictionary
-		Output dictionary by ``input_parameters.InputData`` with input data.
-	- my_model : dictionary
-		Output dictionary by ``input_parameters.ModelOptions`` with model options.
+	- my_data : InputData object
+		Output from :class:`~seda.input_parameters.InputData` with input data.
+	- my_model : ModelOptions object
+		Output from :class:`~seda.input_parameters.ModelOptions` with model options.
 	- fit_wl_range : float array or list, optional
 		Minimum and maximum wavelengths (in micron) where each input spectrum
 		will be compared to the models. E.g.,
@@ -451,18 +479,18 @@ class Chi2Options:
 		Save (``True``) or do not save (``False``) ``seda.chi2_fit`` results.
 	- chi2_pickle_file : str, optional
 		Filename for the output dictionary stored as a pickle file, if ``save_results``.
-		Default name is '``model``\_chi2\_minimization.pickle'.
+		Default name is '``model``\\_chi2\\_minimization.pickle'.
 	- chi2_table_file : str, optional
 		Filename for an output ASCII table (if ``save_results``) with relevant
 		information from the fit.
-		Default name is '``model``\_chi2\_minimization.dat'.
+		Default name is '``model``\\_chi2\\_minimization.dat'.
 	- svo_data : astropy.table.Table, optional
 		Astropy table retrieved from SVO using :func:`~seda.utils.read_SVO_table`.
 
 	Attributes:
 	-----------
-	Input parameters either from this class or attributes from the ``InputData``
-	and ``ModelOptions`` classes.
+	Input parameters either from this class or attributes from the :class:`~seda.input_parameters.InputData`
+	and :class:`~seda.input_parameters.ModelOptions` classes.
 	All input parameters are stored as attributes with their default values if not specified.
 
 	Other parameters
@@ -543,7 +571,7 @@ class Chi2Options:
 	>>> # input spectrum wl_input, flux_input, eflux_input
 	>>> fit_wl_range = np.array([value1, value2]) # to make the fit between value1 and value2
 	>>> # fit between value1 and value2
-	>>> my_chi2 = seda.Chi2FitOptions(
+	>>> my_chi2 = seda.Chi2Options(
 	...     my_data=my_data, my_model=my_model,
 	...     fit_wl_range=fit_wl_range)
 		Chi2 fit options loaded successfully
@@ -1029,10 +1057,10 @@ class BayesOptions:
 
 	Parameters:
 	-----------
-	- my_data : dictionary
-		Output dictionary by ``input_parameters.InputData`` with input data.
-	- my_model : dictionary
-		Output dictionary by ``input_parameters.ModelOptions`` with model options.
+	- my_data : InputData object
+		Output from :class:`~seda.input_parameters.InputData` with input data.
+	- my_model : ModelOptions object
+		Output from :class:`~seda.input_parameters.ModelOptions` with model options.
 	- fit_wl_range : float array, optional
 		Minimum and maximum wavelengths (in microns) where model spectra will be compared to the data.
 		This parameter is used if ``fit_spectra`` but ignored if only ``fit_photometry``.
@@ -1084,16 +1112,16 @@ class BayesOptions:
 		multiple spectra or a combination of spectra and photometry.
 		For a single spectrum or photometry alone, option ``'none'`` is applied.
 	- R_range : float array, optional (used in ``bayes_fit``)
-		Minimum and maximum radius values to sample the posterior for radius.
-		It requires the parameter ``distance`` in ``input_parameters.InputData``.
+		Minimum and maximum radius values (in Jupiter radii) to sample the posterior for radius.
+		It requires the parameter ``distance`` in :class:`~seda.input_parameters.InputData`.
 	- chi2_pickle_file : dictionary, optional
 		Pickle file with a dictionary with the results from the fit statistic minimization
-		by ``chi2_fit.chi2``.
+		by :func:`~seda.chi2_fit.chi2`.
 		If given, the grid nodes around the best fit will be used as ``params_ranges``
 		to select a grid subset and as sampling priors.
-		Otherwise, ``params_ranges`` provided in ``ModelOptions`` will be considered.
+		Otherwise, ``params_ranges`` provided in :class:`~seda.input_parameters.ModelOptions` will be considered.
 	- grid : dictionary, optional
-		Model grid (``'wavelength'`` and ``'flux'``) generated by ``seda.utils.read_grid``
+		Model grid (``'wavelength'`` and ``'flux'``) generated by :func:`~seda.utils.read_grid`
 		to interpolate model spectra.
 		If not provided (default), then the grid is read (``model`` and ``model_dir`` must be provided).
 		If provided, the code will skip reading the grid, which will save some time (a few minutes).
@@ -1107,11 +1135,12 @@ class BayesOptions:
 		Save (``True``) or do not save (``False``) ``seda.bayes_fit`` results.
 	- bayes_pickle_file : str, optional
 		Filename for the output dictionary stored as a pickle file, if ``save_results``.
-		Default name is '``model``\_bayesian\_sampling.pickle'.
+		Default name is '``model``\\_bayesian\\_sampling.pickle'.
 
 	Attributes:
 	-----------
-	Input parameters either from this class or attributes from the ``InputData`` and ``ModelOptions`` classes.
+	Input parameters either from this class or attributes from the :class:`~seda.input_parameters.InputData`
+		and :class:`~seda.input_parameters.ModelOptions` classes.
 		All input parameters are stored as attributes with their default values if not specified.
 	Other parameters
 		grid : list
@@ -1123,14 +1152,17 @@ class BayesOptions:
 			If ``fit_photometry``, a dictionary containing synthetic model flux densities
 			(in erg/s/cm2/A) for ``filters_fit`` computed from the selected model spectra.
 		ndim : int
-			Number of free parameters in the model fit equal to the number of free parameters
-			plus radius (if a ``distance`` is provided).
+			Number of sampled parameters, including R (if ``distance`` is provided
+			without ``edistance``) or q = R/d (if both are provided).
 		filename_pattern : list
 			String as a list with a common pattern in model spectra filenames.
 		params_unique : dictionary
 			Dictionary with unique values for each free parameter in the selected models.
 		params_priors : dictionary
-			Dictionary with the prior ranges for each model free parameter.
+			Dictionary with uniform prior ranges for the atmospheric model parameters,
+			defined by ``params_ranges`` in :class:`~seda.input_parameters.ModelOptions`.
+			It also includes R (if ``distance`` is provided without ``edistance``),
+			or q = R/d with a marginalized prior (if both are provided).
 		if ``fit_spectra``:
 			wl_spectra_min : float
 				Minimum wavelength from the input spectra.
@@ -1238,6 +1270,7 @@ class BayesOptions:
 		flux_spectra = my_data.flux_spectra
 		eflux_spectra = my_data.eflux_spectra
 		distance = my_data.distance
+		edistance = my_data.edistance
 		res = my_data.res
 		lam_res = my_data.lam_res
 		phot = my_data.phot
@@ -1304,13 +1337,6 @@ class BayesOptions:
 			for param in params_models: # for each free parameter in the grid
 				params_ranges[param] = utils.find_two_around_node(params_models[param], params[param])
 			
-		# define the dimensionality of our problem
-		if distance is not None: # sample radius distribution
-			ndim = len(models.Models(model).free_params) + 1
-		else:
-			ndim = len(models.Models(model).free_params)
-		self.ndim = ndim
- 
 		# read model grid
 		if grid is None: 
 			# initialize list
@@ -1380,9 +1406,17 @@ class BayesOptions:
 			if R_range is None: 
 				raise Exception('Please provide the "R_range" parameter to sample the radius '
 			                    'or remove the "distance" parameter in seda.InputData')
-			params_priors['R'] = R_range
+			if len(R_range) != 2 or not np.all(np.isfinite(R_range)) or R_range[0] <= 0 or R_range[1] <= R_range[0]:
+				raise ValueError('"R_range" must contain two finite, positive values in ascending order.')
+			if edistance is not None:
+				# sample R/d using a marginalized prior
+				params_priors['q'] = None
+			else:
+				# sample radius using a fixed distance
+				params_priors['R'] = R_range
 
 		self.params_priors = params_priors
+		self.ndim = len(params_priors)
 
 		# cut input spectra to the wavelength region or model coverage for the fit
 		if fit_spectra:

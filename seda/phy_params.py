@@ -29,26 +29,26 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 	- output_fit : dictionary or str, optional (required if no input model spectrum is provided)
 		Output dictionary with the results from ``chi2`` or ``bayes``.
 		It can be either the name of the pickle file or simply the output dictionary.
-	- wl_spectra : float array or list, optional (require if `output_chi2` is not provided)
+	- wl_spectra : float array or list, optional (require if `output_fit` is not provided)
 		Wavelength in micron of the spectra to construct an SED.
 		For multiple spectra, provide them as a list (e.g., ``wl_spectra = [wl_spectrum1, wl_spectrum2]``).
-	- flux_spectra : float array or list, optional (require if `output_chi2` is not provided)
+	- flux_spectra : float array or list, optional (require if `output_fit` is not provided)
 		Flux densities for the input spectra in units indicated by ``flux_unit``.
 		Use a list for multiple spectra (similar to ``wl_spectra``).
-	- eflux_spectra : float array or list, optional (require if `output_chi2` is not provided)
+	- eflux_spectra : float array or list, optional (require if `output_fit` is not provided)
 		Flux density uncertainties in units indicated by ``flux_unit``.
 		Use a list for multiple spectra (similar to ``wl_spectra``).
 	- flux_unit : str, optional (default ``'erg/s/cm2/A'``)
 		Units of the input flux densities: ``'Jy'``, ``'erg/s/cm2/A'``, or ``erg/s/cm2/um``.
-	- distance : float, optional (require if `output_chi2` is not provided)
+	- distance : float, optional (require if `output_fit` is not provided)
 		Target distance (in pc) used to obtain luminosity from total flux.
-	- edistance : float, optional (require if `output_chi2` is not provided)
+	- edistance : float, optional (require if `output_fit` is not provided)
 		Distance error (in pc).
-	- wl_model : array, optional (required if `model_dir` is not provided)
+	- wl_model : array, optional (required if ``output_fit`` is not provided and ``complement_SED=True``)
 		Wavelengths in micron of model spectrum to complement the input observed SED.
-	- flux_model : array, optional (required if `model_dir` is not provided)
+	- flux_model : array, optional (required if ``output_fit`` is not provided and ``complement_SED=True``)
 		Flux densities in erg/s/cm2/A of model spectrum to complement the input observed SED.
-	- params : dictionary, optional (require if `output_chi2` is not provided)
+	- params : dictionary, optional (require if `output_fit` is not provided)
 		Value for each free parameter for the model spectrum used in the hybrid SED.
 	- scale_model : {``True``, ``False``}, optional (default ``True``)
 		Label to indicate if the input model spectrum needs to be scaled (``True``) by minimizing chi-square or it was already scaled (``False``).
@@ -304,7 +304,7 @@ def bol_lum(output_fit=None, wl_spectra=None, flux_spectra=None, eflux_spectra=N
 	elogLbol_tot = eLbol_tot/(Lbol_tot*np.log(10))
 
 	# print Lbol
-	print('\nlog(Lbol) = {:.3f}'.format(round(logLbol_tot,3))+'\pm'+'{:.3f}'.format(round(elogLbol_tot,3)))
+	print('\nlog(Lbol) = {:.3f}'.format(round(logLbol_tot,3))+'\\pm'+'{:.3f}'.format(round(elogLbol_tot,3)))
 
 	if complement_SED: # if the SED will be complemented with a model spectrum
 		# fraction of the hybrid SED covered by the observations
@@ -570,7 +570,7 @@ def inclination(vsini, evsini, P, eP, R, eR, n_mc=10000, central="median",
 	if mode not in mode_valid:
 		raise ValueError(
 			f"mode={mode!r} is not recognized. "
-			f"Valid options: {central_valid}."
+			f"Valid options: {mode_valid}."
 		)
  
 	# attach units
@@ -746,14 +746,15 @@ def isochrone_params(logL, elogL, age, eage, model, filename=None,
 		Object age in Gyr.
 	- eage : float
 		Uncertainty in age (Gyr). Use ``0`` for a fixed age.
-	- model : str, required
-		Evolutionary models whose tables are used. See available models using 
-		``seda.models.EvolutionaryModels().available_models``.
+	- model : str
+		Evolutionary model to use. See available models in
+		:attr:`~seda.models.EvolutionaryModels.available_models`.
 	- filename : str, optional
 		Basename of an evolutionary table inside ``evolution_aux/<model>/``.
-		If only one table is bundled, it is selected automatically.
-		If multiple tables exist, available basenames are printed.
-		See available tables using ``seda.models.EvolutionaryModels('model').available_tables``.
+		See available tables using ``EvolutionaryModels(model).available_tables``.
+		If omitted and exactly one table exists, it is selected automatically.
+		If omitted and multiple tables exist, a ``ValueError`` is raised
+		listing the available tables.
 	- n_mc : int, optional (default 10000)
 		Number of Monte Carlo samples for uncertainties.
 	- central : str, optional (default "median")
@@ -938,14 +939,15 @@ def evol_params(logL, elogL, R, eR, model, filename=None,
 		Radius in units of R_jup.
 	- eR : float
 		Uncertainty in radius (R_jup).
-	- model : str, required
-		Evolutionary models whose tables are used. See available models in
-		``seda.models.EvolutionaryModels().available_models``.
+	- model : str
+		Evolutionary model to use. See available models in
+		:attr:`~seda.models.EvolutionaryModels.available_models`.
 	- filename : str, optional
 		Basename of an evolutionary table inside ``evolution_aux/<model>/``.
-		If only one table is bundled, it is selected automatically.
-		If multiple tables exist, available basenames are printed.
-		See available tables using ``seda.models.EvolutionaryModels('model').available_tables``.
+		See available tables using ``EvolutionaryModels(model).available_tables``.
+		If omitted and exactly one table exists, it is selected automatically.
+		If omitted and multiple tables exist, a ``ValueError`` is raised
+		listing the available tables.
 	- n_mc : int, optional (default 10000)
 		Number of Monte Carlo samples for uncertainties.
 	- central : str, optional (default "median")
@@ -1162,13 +1164,14 @@ def color_anomaly(color, color_name, spt, table, ecolor=None,
 	Example:
 	--------
 	>>> import seda
+	>>> import numpy as np
 	>>>
 	>>> # 2MASS J03552337+1133437 (L5; Suárez et al. 2023)
 	>>> color = 14.05 - 11.526  # J-K from 2MASS photometry
 	>>> ecolor = np.sqrt(0.024**2 + 0.031**2)
 	>>> seda.phy_params.color_anomaly(
 	...     color=color, color_name='J-K', spt='L5',
-	...     table='faherty16', age_group='young', ecolor=color)
+	...     table='faherty16', age_group='young', ecolor=ecolor)
 	    (0.37071428571428644, 0.03920459156782532)
 
 	Author: Theo Olsen
