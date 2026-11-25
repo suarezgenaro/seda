@@ -798,7 +798,7 @@ def isochrone_params(logL, elogL, age, eage, model, filename=None,
 	...     model='Sonora_Bobcat', filename='nc+0.0_co1.0_mass',
 	... )
 	>>> out['mass'], out['radius']  # M_jup, R_jup
-	    (45.02, 0.98)
+	    (45.45, 0.98)
 
 	Author: Theo Olsen
 
@@ -996,7 +996,7 @@ def evol_params(logL, elogL, R, eR, model, filename=None,
 	>>> out = seda.phy_params.evol_params(logL=logL, elogL=elogL, R=R, eR=eR,
 	>>>                                   model='Sonora_Bobcat', filename='nc+0.0_co1.0_mass')
 	>>> out['mass'], out['age']  # M_jup, Gyr
-	    (39.24, 0.366)  
+	    (39.29, 0.36)  
 
 	Author: Theo Olsen
 
