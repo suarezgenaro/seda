@@ -170,7 +170,7 @@ def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=Non
 		eflux = np.asarray(astropy_to_numpy(eflux), dtype=float)
 
 	# check the convolution mode
-	valid_modes = ('constant_fwhm', 'constant_R', 'auto')
+	valid_modes = ('constant_fwhm', 'constant_R')
 	if resolution_mode not in valid_modes:
 		raise ValueError(f'Invalid resolution_mode: {resolution_mode}.'
 		                 f' Allowed values are {valid_modes}.')
@@ -278,7 +278,7 @@ def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=Non
 			# convolve the flux densities using FFT
 			flux_conv = convolve_fft(flux_input, gauss)
 
-			if eflux_input is not None:
+			if eflux is not None:
 				# propagate independent uncertainties using squared kernel weights
 				variance_conv = convolve_fft(
 					eflux_input**2, gauss.array**2, normalize_kernel=False
