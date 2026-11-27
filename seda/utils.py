@@ -26,13 +26,15 @@ from numpy.typing import ArrayLike
 
 def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=None,
 	                  convolve_wl_range=None, out_file=None, resolution_mode='constant_fwhm',
-	                  verbose=False):
+	                  resampling=False, pixels_per_resolution=2, verbose=False):
 	'''
 	Description:
 	------------
 		Convolve a spectrum with a Gaussian kernel to a desired resolving power.
 		Supports constant Gaussian FWHM at a reference wavelength or constant
 		resolving power across the wavelength range (see Notes for details).
+		Optionally resample the convolved spectrum to a specified number of
+		wavelength points per resolution element.
 
 	Parameters:
 	-----------
@@ -73,18 +75,30 @@ def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=Non
 			spaced log-wavelength grids and a wavelength-dependent
 			Gaussian kernel otherwise.
 
+	resampling : bool, optional, default=False
+		If True, additionally return the convolved spectrum resampled
+		according to its spectral resolution.
+	pixels_per_resolution : float, optional, default=2
+		Approximate number of wavelength points per resolution element
+		for the resampled spectrum. Only used if ``resampling`` is True.
 	verbose : bool, optional, default=False
 		If True, print information about the convolution method used.
 
 	Returns:
 	--------
 	- Dictionary
-		Dictionary with the convolved spectrum:
+		Dictionary with the convolved and optionally resampled spectra:
 			- ``'wl_conv'`` : wavelengths for the convolved spectrum 
 			  (equal to input ``wl`` within ``convolve_wl_range``).
 			- ``'flux_conv'`` : convolved flux densities.
 			- ``'eflux_conv'`` : convolved flux density uncertainties 
 			  (if ``eflux`` is provided).
+			- ``'wl_conv_resamp'`` : resampled wavelengths
+			  (if ``resampling`` is True).
+			- ``'flux_conv_resamp'`` : resampled, convolved flux densities
+			  (if ``resampling`` is True).
+			- ``'eflux_conv_resamp'`` : resampled, convolved flux density uncertainties
+			  (if ``resampling`` is True and ``eflux`` is provided).
 	- ``out_file`` file
 		netCDF file with the convolved spectrum, if ``out_file`` is provided.
 		Wavelengths and flux densities for the convolved spectrum have the 
@@ -104,6 +118,14 @@ def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=Non
 
 		The convolved spectrum retains the wavelength sampling of the
 		input spectrum. No interpolation is performed.
+
+		If resampling is requested, an additional spectrum is obtained
+		by selecting existing wavelength points from the convolved spectrum
+		according to its spectral resolution and the desired number of
+		points per resolution element. No additional smoothing or
+		interpolation is performed.	Resampling reduces spectral oversampling 
+		but does not eliminate correlations between neighboring data points 
+		introduced by convolution.
 
 		The Gaussian kernel width is calculated from the desired
 		resolving power and converted into pixels using the wavelength
@@ -152,6 +174,11 @@ def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=Non
 	if resolution_mode not in valid_modes:
 		raise ValueError(f'Invalid resolution_mode: {resolution_mode}.'
 		                 f' Allowed values are {valid_modes}.')
+
+	# check the resampling parameters
+	if resampling:
+		if not np.isfinite(pixels_per_resolution) or pixels_per_resolution <= 0:
+			raise ValueError('pixels_per_resolution must be a positive finite number.')
 
 	# remove NaN and infinite values
 	mask_nonan = np.isfinite(wl) & np.isfinite(flux)
@@ -301,16 +328,39 @@ def convolve_spectrum(wl, flux, res, eflux=None, lam_res=None, disp_wl_range=Non
 	if eflux is not None: out['eflux_conv'] = eflux_conv
 	out['convolution_method'] = convolution_method
 
+	# resample the convolved spectrum if requested
+	if resampling:
+		indices = [0]
+		for i in range(1, len(wl_conv)):
+			# desired wavelength spacing
+			if resolution_mode == 'constant_fwhm':
+				sampling = lam_res / (res * pixels_per_resolution)
+			elif resolution_mode == 'constant_R':
+				sampling = wl_conv[indices[-1]] / (res * pixels_per_resolution)
+
+			# select wavelength points separated by the desired spacing
+			if wl_conv[i] - wl_conv[indices[-1]] >= sampling:
+				indices.append(i)
+
+		# add the resampled spectrum to the output dictionary
+		out['wl_conv_resamp'] = wl_conv[indices]
+		out['flux_conv_resamp'] = flux_conv[indices]
+		if eflux is not None: out['eflux_conv_resamp'] = eflux_conv[indices]
+
+		if verbose:
+			print(f'   Resampled spectrum: {len(wl_conv)} to {len(indices)} wavelength points.')
+
 	# save the convolved spectrum if requested
 	if out_file is not None:
 		data_vars = {'flux': ('wl', flux_conv)}
-		if eflux_input is not None:
+		if eflux is not None:
 			data_vars['eflux'] = ('wl', eflux_conv)
 
 		ds = xarray.Dataset(data_vars, coords={'wl': wl_conv})
 		ds.to_netcdf(out_file)
 
 	return out
+
 
 ##########################
 def scale_synthetic_spectrum(wl, flux, distance, radius):
