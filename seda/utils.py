@@ -2457,6 +2457,7 @@ def merge_MRS(fits_files, merge_method='midpoint'):
 	- merge_method : str, optional, default='midpoint'
 		Method used to determine the merging wavelength between consecutive
 		overlapping spectra:
+
 			- 'midpoint': midpoint of the overlapping wavelength region.
 			- 'min_uncertainty': wavelength that minimizes the overall
 			  flux density uncertainty across the overlapping region.
