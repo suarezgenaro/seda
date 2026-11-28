@@ -1110,7 +1110,7 @@ def plot_synthetic_photometry(out_synthetic_photometry, xlog=False, ylog=False, 
 	ax[1].yaxis.set_minor_locator(AutoMinorLocator())
 	ax[1].grid(True, which='both', color='gainsboro', linewidth=0.5, alpha=1.0)
 	
-	ax[1].set_xlabel(r'$\lambda\ (\mu$m)', size=12)
+	ax[1].set_xlabel(r'Wavelength $(\mu$m)', size=12)
 	ax[1].set_ylabel('Transmission', size=12)
 	
 	if save:
