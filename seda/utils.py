@@ -15,6 +15,8 @@ from astropy.convolution import Gaussian1DKernel, convolve, convolve_fft
 from scipy.interpolate import RegularGridInterpolator
 from scipy.interpolate import interp1d
 from tqdm.auto import tqdm
+from scipy.integrate import cumulative_trapezoid
+from astropy.nddata import StdDevUncertainty
 from sys import exit
 
 from . import models
@@ -2437,31 +2439,56 @@ def convert_photometric_table(table, save_table=False, table_name=None):
 	return out
 
 ##########################
-def merge_MRS(fits_files):
+def merge_MRS(fits_files, merge_method='midpoint'):
 	'''
 	Description:
 	------------
-		Merge spectra from different MRS channels and grating settings
+		Merge JWST MIRI MRS spectra from different channels and grating
+		settings, preserving the original wavelength sampling, flux densities,
+		and uncertainties of the retained measurements.
 
 	Parameters:
 	-----------
 	- fits_files : array, list
 		File names (with full path) to the spectra to be merged.
-		It is not necessary to include all four channels and three grating 
+		It is not necessary to include all four channels and three grating
 		settings (short, medium, and long).
 		The function works with any combination of channels and grating settings.
+	- merge_method : str, optional, default='midpoint'
+		Method used to determine the merging wavelength between consecutive
+		overlapping spectra:
+
+			- 'midpoint': midpoint of the overlapping wavelength region.
+			- 'min_uncertainty': wavelength that minimizes the overall
+			  flux density uncertainty across the overlapping region.
 
 	Returns:
 	--------
-	Dictionary with the merged spectrum: 
-		- ``'channel_grating'``: channel-grating setting label
-		- ``'channel_grating_range'``: wavelength range used for each channel-grating setting
-		- ``'wl_merge'``: wavelength value at which two consecutive overlapping spectra where merged
-		- ``'wl'``: wavelength in micron of the merged spectrum
-		- ``'flux_Jy'``: flux density in Jy of the merged spectrum
-		- ``'eflux_Jy'``: flux density uncertainties in Jy of the merged spectrum
-		- ``'flux_erg/s/cm2/A'``: flux density in erg/s/cm2/A of the merged spectrum
-		- ``'eflux_erg/s/cm2/A'``: flux density uncertainties in erg/s/cm2/A of the merged spectrum
+	Dictionary with the merged spectrum:
+		- ``'channel_grating'``: channel-grating setting label.
+		- ``'channel_grating_range'``: wavelength range retained from each
+		  channel-grating setting.
+		- ``'wl_overlap_range'``: overlapping wavelength range between
+		  consecutive spectra (NaN if there is no overlap).
+		- ``'wl_merge'``: wavelength at which two consecutive overlapping
+		  spectra are merged (NaN if there is no overlap).
+		- ``'wl'``: wavelength in micron of the merged spectrum.
+		- ``'flux_Jy'``: flux density in Jy of the merged spectrum.
+		- ``'eflux_Jy'``: flux density uncertainties in Jy of the merged spectrum.
+		- ``'flux_erg/s/cm2/A'``: flux density in erg/s/cm2/A of the merged spectrum.
+		- ``'eflux_erg/s/cm2/A'``: flux density uncertainties in erg/s/cm2/A
+		  of the merged spectrum.
+
+	Notes:
+	------
+		For 'min_uncertainty', uncertainties are linearly interpolated onto
+		a common wavelength grid only to determine the merging wavelength.
+		Both methods preserve the original wavelength sampling, flux
+		densities, and uncertainties of the retained measurements.
+
+		Measurements with nonfinite values or nonpositive uncertainties
+		are excluded. Systematic effects such as residual fringing and
+		flux calibration differences are not accounted for.
 
 	Example:
 	--------
@@ -2477,87 +2504,207 @@ def merge_MRS(fits_files):
 	...               'jw05474-o001_t001_miri_ch3-long_x1d.fits',
 	...               'jw05474-o001_t001_miri_ch3-medium_x1d.fits',
 	...               'jw05474-o001_t001_miri_ch3-short_x1d.fits']
-	>>> # merge files
+	>>>
+	>>> # merge spectra at the midpoint of overlapping regions
 	>>> out_merge_MRS = seda.utils.merge_MRS(fits_files)
+	>>>
+	>>> # merge spectra based on flux density uncertainties
+	>>> out_merge_MRS = seda.utils.merge_MRS(
+	...     fits_files, merge_method='min_uncertainty')
 
 	Author: Genaro Suárez
 
-	Date: 2025-10-13
+	Created: 2025-10-13
+	Updated: 2026-11-28
 	'''
 
-	# directory separator for the current operating system
-	dir_sep = os.sep
+	# check the merging method
+	if merge_method not in ['midpoint', 'min_uncertainty']:
+		raise ValueError("merge_method must be 'midpoint' or 'min_uncertainty'.")
 
-	# convert to numpy array if input files are a list
-	if isinstance (fits_files, list): fits_files = np.array(fits_files)
+	# convert input files to a numpy array
+	fits_files = np.asarray(fits_files)
 
-	# combine channels
-	file_wl_min = np.zeros(len(fits_files))
-	for i,file in enumerate(fits_files):	  
-		# minimum wavelength cover by each fits file
-		file_wl_min[i] = Spectrum1D.read(file).wavelength.to(u.um).value.min()
-
-	# rearrange fits files from the one covering the minimum 
-	# wavelength to the one with the maximum wavelength
-	mask_ind = np.argsort(file_wl_min)
-	fits_files = fits_files[mask_ind]
+	if len(fits_files) == 0:
+		raise ValueError('At least one spectrum must be provided.')
 
 	# read each fits file
 	wl_MRS_each = []
 	flux_MRS_each = []
 	eflux_MRS_each = []
-	for i,file in enumerate(fits_files):
-		out_read_JWST_spectrum = Spectrum1D.read(file)
-		wl_MRS_each.append(out_read_JWST_spectrum.wavelength.to(u.um).value) # um
-		flux_MRS_each.append(out_read_JWST_spectrum.flux.value) # Jy
-		eflux_MRS_each.append(out_read_JWST_spectrum.uncertainty.array) # Jy
+	file_wl_min = np.zeros(len(fits_files))
 
-	# merge all fits file spectra
+	for i, file in enumerate(fits_files):
+		spectrum = Spectrum1D.read(file)
+
+		wl = spectrum.wavelength.to(u.um).value
+		flux = spectrum.flux.to(u.Jy).value
+		eflux = spectrum.uncertainty.represent_as(StdDevUncertainty).quantity.to(u.Jy).value
+
+		# exclude invalid measurements
+		mask = (np.isfinite(wl) & np.isfinite(flux) &
+			    np.isfinite(eflux) & (eflux > 0))
+
+		wl = wl[mask]
+		flux = flux[mask]
+		eflux = eflux[mask]
+
+		if len(wl) == 0:
+			raise ValueError(f'No valid measurements in {file}.')
+
+		# sort each spectrum by wavelength
+		sort_ind = np.argsort(wl)
+		wl = wl[sort_ind]
+		flux = flux[sort_ind]
+		eflux = eflux[sort_ind]
+
+		wl_MRS_each.append(wl)
+		flux_MRS_each.append(flux)
+		eflux_MRS_each.append(eflux)
+
+		file_wl_min[i] = wl.min()
+
+	# rearrange spectra by increasing minimum wavelength
+	sort_ind = np.argsort(file_wl_min)
+	fits_files = fits_files[sort_ind]
+
+	wl_sorted = []
+	flux_sorted = []
+	eflux_sorted = []
+	for i in sort_ind:
+		wl_sorted.append(wl_MRS_each[i])
+		flux_sorted.append(flux_MRS_each[i])
+		eflux_sorted.append(eflux_MRS_each[i])
+
+	wl_MRS_each = wl_sorted
+	flux_MRS_each = flux_sorted
+	eflux_MRS_each = eflux_sorted
+
+	# determine merging wavelengths
+	wl_merge = np.full(len(fits_files)-1, np.nan)
+	wl_overlap_range = np.full((len(fits_files)-1, 2), np.nan)
+
+	for i in range(len(fits_files)-1):
+		# wavelength range of the overlapping region
+		wl_min_overlap = max(wl_MRS_each[i].min(), wl_MRS_each[i+1].min())
+		wl_max_overlap = min(wl_MRS_each[i].max(), wl_MRS_each[i+1].max())
+
+		# skip non-overlapping spectra
+		if wl_min_overlap > wl_max_overlap:
+			continue
+
+		# store the overlapping wavelength range
+		wl_overlap_range[i, :] = [wl_min_overlap, wl_max_overlap]
+
+		# spectra sharing a single wavelength
+		if wl_min_overlap == wl_max_overlap:
+			wl_merge[i] = wl_min_overlap
+
+		# midpoint of the overlapping region
+		elif merge_method == 'midpoint':
+			wl_merge[i] = np.mean([wl_min_overlap, wl_max_overlap])
+
+		# minimize the overall uncertainty in the overlapping region
+		elif merge_method == 'min_uncertainty':
+			# wavelength points within the overlapping region
+			wl1 = wl_MRS_each[i]
+			wl2 = wl_MRS_each[i+1]
+
+			mask1 = (wl1 >= wl_min_overlap) & (wl1 <= wl_max_overlap)
+			mask2 = (wl2 >= wl_min_overlap) & (wl2 <= wl_max_overlap)
+
+			# common wavelength grid for uncertainty comparison
+			wl_overlap = np.unique(np.concatenate(([wl_min_overlap],
+				                                   wl1[mask1],
+				                                   wl2[mask2],
+				                                   [wl_max_overlap]
+			                                      )))
+
+			# interpolate flux density uncertainties
+			eflux1 = np.interp(wl_overlap, wl1, eflux_MRS_each[i])
+			eflux2 = np.interp(wl_overlap, wl2, eflux_MRS_each[i+1])
+
+			# calculate variances
+			var1 = eflux1**2
+			var2 = eflux2**2
+
+			# cumulative integrated variance of the first spectrum
+			cum_var1 = cumulative_trapezoid(var1, wl_overlap, initial=0)
+
+			# cumulative integrated variance of the second spectrum
+			cum_var2 = cumulative_trapezoid(var2, wl_overlap, initial=0)
+
+			# integrated variance retained for each merging wavelength
+			total_var = cum_var1 + (cum_var2[-1] - cum_var2)
+
+			# merging wavelength that minimizes the integrated variance
+			wl_merge[i] = wl_overlap[np.argmin(total_var)]
+
+	# merge all spectra
 	wl_MRS = np.array([])
 	flux_MRS = np.array([])
 	eflux_MRS = np.array([])
-	wl_merge = np.zeros(len(fits_files)-1)
-	channel_grating_range = np.zeros((len(fits_files), 2))
+
 	channel_grating = np.array([])
-	for i,file in enumerate(fits_files):
-		sfile = file.split(dir_sep)[-1] # file name without full path
-		channel_grating = np.append(channel_grating, sfile.split('_')[-2]) # label with corresponding channel and grating setting
+	channel_grating_range = np.full((len(fits_files), 2), np.nan)
+	for i, file in enumerate(fits_files):
+		# label with corresponding channel and grating setting
+		sfile = os.path.basename(file)
+		channel_grating = np.append(channel_grating, sfile.split('_')[-2])
 
-		# mean wavelength in the overlapping region between two consecutive individual spectra
-		if i<(len(fits_files)-1): # avoid last spectrum 
-			wl_min_overlap = wl_MRS_each[i+1].min()
-			wl_max_overlap = wl_MRS_each[i].max()
-			wl_merge[i] = np.mean([wl_min_overlap, wl_max_overlap])
+		# initially retain all wavelength points
+		mask = np.ones(len(wl_MRS_each[i]), dtype=bool)
 
-		if i==0: # for the first spectrum
-			mask = wl_MRS_each[i]<=wl_merge[i]
-			channel_grating_range[i,:] = np.array([wl_MRS_each[i].min(), wl_merge[i]])
-		elif i==(len(fits_files))-1: # for the last spectrum
-			mask = wl_MRS_each[i]>wl_merge[i-1]
-			channel_grating_range[i,:] = np.array([wl_merge[i-1], wl_MRS_each[i].max()])
-		else: # for intermediate spectra
-			mask = (wl_MRS_each[i]<=wl_merge[i]) & (wl_MRS_each[i]>wl_merge[i-1])
-			channel_grating_range[i,:] = np.array([wl_merge[i-1], wl_merge[i]])
+		# lower wavelength boundary
+		if i > 0 and np.isfinite(wl_merge[i-1]):
+			mask &= wl_MRS_each[i] > wl_merge[i-1]
+
+		# upper wavelength boundary
+		if i < len(fits_files)-1 and np.isfinite(wl_merge[i]):
+			mask &= wl_MRS_each[i] <= wl_merge[i]
+
+		# actual wavelength range retained
+		if np.any(mask):
+			channel_grating_range[i, :] = [wl_MRS_each[i][mask].min(),
+				                           wl_MRS_each[i][mask].max()
+			                              ]
+
+		# append retained measurements
 		wl_MRS = np.append(wl_MRS, wl_MRS_each[i][mask])
 		flux_MRS = np.append(flux_MRS, flux_MRS_each[i][mask])
 		eflux_MRS = np.append(eflux_MRS, eflux_MRS_each[i][mask])
 
-	# sort wl_MRS
+	# sort merged spectrum by wavelength
 	sort_ind = np.argsort(wl_MRS)
 	wl_MRS = wl_MRS[sort_ind]
 	flux_Jy_MRS = flux_MRS[sort_ind]
 	eflux_Jy_MRS = eflux_MRS[sort_ind]
 
 	# convert flux densities from Jy to erg/s/cm2/A
-	flux_MRS = (flux_Jy_MRS*u.Jy).to(u.erg/u.s/u.cm**2/(u.nm*0.1), equivalencies=u.spectral_density(wl_MRS*u.micron)).value
-	eflux_MRS = (eflux_Jy_MRS*u.Jy).to(u.erg/u.s/u.cm**2/(u.nm*0.1), equivalencies=u.spectral_density(wl_MRS*u.micron)).value
+	flux_MRS = (flux_Jy_MRS*u.Jy).to(
+		u.erg/u.s/u.cm**2/u.AA,
+		equivalencies=u.spectral_density(wl_MRS*u.um)
+	).value
+
+	eflux_MRS = (eflux_Jy_MRS*u.Jy).to(
+		u.erg/u.s/u.cm**2/u.AA,
+		equivalencies=u.spectral_density(wl_MRS*u.um)
+	).value
 
 	# output dictionary
-	out = {'channel_grating': channel_grating, 'channel_grating_range': channel_grating_range, 'wl_merge': wl_merge, 
-	       'wl': wl_MRS, 'flux_Jy': flux_Jy_MRS, 'eflux_Jy': eflux_Jy_MRS,
-	       'flux_erg/s/cm2/A': flux_MRS, 'eflux_erg/s/cm2/A': eflux_MRS}
+	out = {'channel_grating': channel_grating,
+	       'channel_grating_range': channel_grating_range,
+	       'wl_overlap_range': wl_overlap_range,
+	       'wl_merge': wl_merge,
+	       'wl': wl_MRS,
+	       'flux_Jy': flux_Jy_MRS,
+	       'eflux_Jy': eflux_Jy_MRS,
+	       'flux_erg/s/cm2/A': flux_MRS,
+	       'eflux_erg/s/cm2/A': eflux_MRS
+	      }
 
 	return out
+
 
 ##########################
 def fill_gap_spectrum(wl, flux, eflux, disp_threshold=None):
