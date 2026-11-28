@@ -732,9 +732,15 @@ def isochrone_params(logL, elogL, age, eage, model, filename=None,
 		the complement to :func:`evol_params`, which uses ``(logL, R)`` instead
 		of ``(logL, age)``.
 
-		Every evolutionary model reads its tables into the same units, namely
-		``age`` in Gyr, ``mass`` in M_jup, ``radius`` R_jup, and ``Teff`` in Kelvin, 
-		whatever units the published table uses.
+		Isochrones are constructed by linearly interpolating along constant-mass
+		evolutionary tracks in logarithmic age. Fundamental parameters are then
+		inferred by linear interpolation along the isochrones in logarithmic
+		bolometric luminosity. When age uncertainties are provided, interpolation
+		between neighboring isochrones is also performed in logarithmic age.
+
+		All evolutionary model tables are converted to common units:
+		``age`` in Gyr, ``mass`` in M_jup, ``radius`` in R_jup, and
+		``Teff`` in Kelvin, regardless of the units in the original tables.
 
 	Parameters:
 	-----------
@@ -792,7 +798,7 @@ def isochrone_params(logL, elogL, age, eage, model, filename=None,
 	...     model='Sonora_Bobcat', filename='nc+0.0_co1.0_mass',
 	... )
 	>>> out['mass'], out['radius']  # M_jup, R_jup
-	    (45.02, 0.98)
+	    (45.45, 0.98)
 
 	Author: Theo Olsen
 
@@ -925,6 +931,12 @@ def evol_params(logL, elogL, R, eR, model, filename=None,
 		with a Monte Carlo simulation. This is the complement to :func:`isochrone_params`, 
 		which uses ``(logL, age)`` instead of ``(logL, R)``.
 
+		Interpolation is performed using SciPy's ``LinearNDInterpolator``, which
+		implements piecewise linear interpolation on a Delaunay triangulation
+		in the ``(logL, R)`` plane. Mass and age are interpolated in logarithmic
+		space to improve interpolation accuracy and converted back to linear
+		units (M_jup and Gyr) before calculating the Monte Carlo statistics.
+
 		Every evolutionary model reads its tables into the same units, so ``R``
 		is in R_jup, returned ``mass`` is in M_jup, returned ``age`` is in Gyr,
 		and ``Teff`` is in Kelvin, whatever units the published table uses.
@@ -984,7 +996,7 @@ def evol_params(logL, elogL, R, eR, model, filename=None,
 	>>> out = seda.phy_params.evol_params(logL=logL, elogL=elogL, R=R, eR=eR,
 	>>>                                   model='Sonora_Bobcat', filename='nc+0.0_co1.0_mass')
 	>>> out['mass'], out['age']  # M_jup, Gyr
-	    (39.24, 0.366)  
+	    (39.29, 0.36)  
 
 	Author: Theo Olsen
 
@@ -1035,8 +1047,25 @@ def evol_params(logL, elogL, R, eR, model, filename=None,
 	for param, grid_values in grid.items():  # loop over each quantity stored in the table
 		if param in ('logL', 'radius'):  # skip axes already used to build xi
 			continue
-		interp = LinearNDInterpolator(points, np.asarray(grid_values, dtype=float))  # 2D interpolator for this column
-		samples = interp(xi)  # infer this parameter at each MC (logL, R) draw
+
+		# Ensure a floating-point NumPy array
+		grid_values = np.asarray(grid_values, dtype=float)
+
+		# Interpolate mass and age in logarithmic space to improve accuracy
+		if param in ('mass', 'age'):
+			# Ensure values are valid for logarithmic transformation
+			if np.any(~np.isfinite(grid_values)) or np.any(grid_values <= 0):
+				raise ValueError(f'Grid {param} values must be finite and positive.')
+			grid_values = np.log10(grid_values)
+
+		# Build a 2D piecewise linear interpolator in (logL, radius)
+		interp = LinearNDInterpolator(points, grid_values)
+		samples = interp(xi)  # evaluate at each Monte Carlo draw
+
+		# Convert interpolated mass and age back to linear units
+		if param in ('mass', 'age'):
+			samples = 10**samples
+
 		param_samples[param] = samples  # store samples for later summarization
 		if first_samples is None:  # remember first column only once
 			first_samples = samples  # NaN mask is the same for all columns at the same xi
